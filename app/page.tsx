@@ -2,13 +2,6 @@
 
 import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from "react";
 
-const progress = [
-  { label: "TOC", name: "Time on course", value: 68 },
-  { label: "KSB", name: "Knowledge, skills & behaviours", value: 42 },
-  { label: "OTJ", name: "Off-the-job training", value: 74 },
-  { label: "EPA", name: "End-point assessment", value: 56 },
-];
-
 type EviaExpression = "idle" | "look-down" | "look-up-left" | "look-up-right" | "smile";
 type View =
   | "root"
@@ -17,6 +10,13 @@ type View =
   | "portfolio"
   | "settings"
   | "install-app"
+  | "toc-settings"
+  | "ksb-progress"
+  | "otj-progress"
+  | "epa-practice"
+  | "epa-session"
+  | "evidence"
+  | "evidence-list"
   | "profile"
   | "manage-course"
   | "import-course"
@@ -29,6 +29,8 @@ type View =
   | "placeholder";
 type KsbType = "Skill" | "Knowledge" | "Behaviour";
 type CourseSource = "auto" | "layout" | "file";
+type EvidenceMethod = "photo" | "video" | "written" | "audio" | "reflection" | "witness";
+type EpaArea = "practical" | "interview" | "mcq";
 
 type EviaInstallPrompt = Event & {
   prompt: () => Promise<void>;
@@ -61,7 +63,166 @@ type LearnerCourse = {
 
 type CourseBuildResult = { course: LearnerCourse | null; error: string };
 
+type CourseTimeline = {
+  startDate: string;
+  endDate: string;
+  weeklyHours: number;
+};
+
+type EvidenceRecord = {
+  id: string;
+  ksbCode: string;
+  ksbType: KsbType;
+  method: EvidenceMethod;
+  createdAt: number;
+  fileIds: string[];
+  fileNames: string[];
+  text?: string;
+  witness?: {
+    name: string;
+    role: string;
+    date: string;
+    testimony: string;
+  };
+};
+
+type OtjEntry = {
+  id: string;
+  date: string;
+  title: string;
+  hours: number;
+};
+
+type ProgressItem = {
+  label: "TOC" | "KSB" | "OTJ" | "EPA";
+  name: string;
+  value: number;
+  onClick: () => void;
+};
+
+const evidenceOptions: Record<KsbType, { method: EvidenceMethod; label: string; rule: string }[]> = {
+  Skill: [
+    { method: "photo", label: "3 photos", rule: "Three clear, specific photos" },
+    { method: "video", label: "1 video", rule: "One continuous practical video" },
+  ],
+  Knowledge: [
+    { method: "written", label: "Written statement", rule: "One written statement" },
+    { method: "audio", label: "Audio explanation", rule: "One audio explanation" },
+  ],
+  Behaviour: [
+    { method: "reflection", label: "Reflection", rule: "One reflective account" },
+    { method: "witness", label: "Witness testimony", rule: "One witness testimony" },
+  ],
+};
+
+const evidenceMethodNames: Record<EvidenceMethod, string> = {
+  photo: "Photographic evidence",
+  video: "Video evidence",
+  written: "Written statement",
+  audio: "Audio explanation",
+  reflection: "Reflective account",
+  witness: "Witness testimony",
+};
+
+const epaPracticeAreas: Record<EpaArea, { title: string; summary: string; steps: string[] }> = {
+  practical: {
+    title: "Practical mock",
+    summary: "Rehearse the full practical assessment in the correct sequence and to the required standard.",
+    steps: [
+      "Read the practical brief and identify exactly what must be produced.",
+      "Plan the sequence, materials, tools, safety controls and quality checks.",
+      "Complete a timed practical rehearsal without tutor prompts.",
+      "Review the finished work against tolerances and record what to improve.",
+    ],
+  },
+  interview: {
+    title: "Interview mock",
+    summary: "Practise explaining your decisions, evidence and technical knowledge clearly.",
+    steps: [
+      "Choose evidence examples that show your strongest Skills and Behaviours.",
+      "Practise describing what you did, why you did it and the result.",
+      "Answer follow-up questions without reading from notes.",
+      "Record the areas where your answer needs more detail or technical language.",
+    ],
+  },
+  mcq: {
+    title: "MCQ mock",
+    summary: "Complete a timed multiple-choice knowledge check and review every incorrect answer.",
+    steps: [
+      "Select a mock covering the Knowledge statements in your course.",
+      "Complete it under timed conditions without notes.",
+      "Review each incorrect answer and return to the matching Knowledge statement.",
+      "Repeat the weak topics, then record your final mock result.",
+    ],
+  },
+};
+
 const courseMappingVersion = 4;
+const dayInMilliseconds = 86_400_000;
+const evidenceDatabaseName = "evia-evidence-files";
+const evidenceStoreName = "files";
+
+function clampPercentage(value: number) {
+  return Math.max(0, Math.min(100, Math.round(Number.isFinite(value) ? value : 0)));
+}
+
+function parseLocalDate(value: string) {
+  if (!value) return null;
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
+}
+
+function dateDifferenceInDays(start: Date, end: Date) {
+  const startUtc = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
+  const endUtc = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
+  return Math.max(0, (endUtc - startUtc) / dayInMilliseconds);
+}
+
+function todayDateValue() {
+  const today = new Date();
+  const local = new Date(today.getTime() - today.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 10);
+}
+
+function countWords(value: string) {
+  return value.trim() ? value.trim().split(/\s+/).length : 0;
+}
+
+function openEvidenceDatabase() {
+  return new Promise<IDBDatabase>((resolve, reject) => {
+    const request = indexedDB.open(evidenceDatabaseName, 1);
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains(evidenceStoreName)) {
+        request.result.createObjectStore(evidenceStoreName, { keyPath: "id" });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error ?? new Error("Evidence storage is unavailable."));
+  });
+}
+
+async function saveEvidenceFile(id: string, file: File) {
+  const database = await openEvidenceDatabase();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const transaction = database.transaction(evidenceStoreName, "readwrite");
+      transaction.objectStore(evidenceStoreName).put({
+        id,
+        blob: file,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        savedAt: Date.now(),
+      });
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error ?? new Error("The evidence file could not be saved."));
+      transaction.onabort = () => reject(transaction.error ?? new Error("The evidence file could not be saved."));
+    });
+  } finally {
+    database.close();
+  }
+}
 
 const calmExpressionSequence: { pose: EviaExpression; duration: number }[] = [
   { pose: "idle", duration: 2800 },
@@ -89,9 +250,9 @@ const stopWords = new Set([
   "of", "in", "on", "a", "an", "or", "as", "be", "by", "at",
 ]);
 
-function ProgressArch({ label, name, value }: { label: string; name: string; value: number }) {
+function ProgressArch({ label, name, value, onClick }: ProgressItem) {
   return (
-    <div className="progress-arch" aria-label={`${name}: ${value}%`}>
+    <button type="button" className="progress-arch" aria-label={`${name}: ${value}%. Open ${label} details`} onClick={onClick}>
       <svg viewBox="0 0 100 62" aria-hidden="true">
         <path className="arch-track" pathLength="100" d="M 9 54 A 41 41 0 0 1 91 54" />
         <path
@@ -103,7 +264,7 @@ function ProgressArch({ label, name, value }: { label: string; name: string; val
       </svg>
       <span className="arch-label" aria-hidden="true">{label}</span>
       <span className="arch-number">{value}%</span>
-    </div>
+    </button>
   );
 }
 
@@ -775,6 +936,14 @@ export default function Home() {
   const [onboardingStep, setOnboardingStep] = useState<number | null>(null);
   const [fullName, setFullName] = useState("");
   const [course, setCourse] = useState<LearnerCourse | null>(null);
+  const [timeline, setTimeline] = useState<CourseTimeline>({ startDate: "", endDate: "", weeklyHours: 37 });
+  const [evidenceRecords, setEvidenceRecords] = useState<EvidenceRecord[]>([]);
+  const [otjEntries, setOtjEntries] = useState<OtjEntry[]>([]);
+  const [epaChecks, setEpaChecks] = useState<Record<EpaArea, boolean[]>>({
+    practical: [false, false, false, false],
+    interview: [false, false, false, false],
+    mcq: [false, false, false, false],
+  });
   const [ksbsText, setKsbsText] = useState("");
   const [layoutText, setLayoutText] = useState("");
   const [courseFileName, setCourseFileName] = useState("");
@@ -783,6 +952,18 @@ export default function Home() {
   const [courseManagerBack, setCourseManagerBack] = useState<View>("profile");
   const [unitSearch, setUnitSearch] = useState("");
   const [selectedUnitId, setSelectedUnitId] = useState("");
+  const [activeEpaArea, setActiveEpaArea] = useState<EpaArea>("practical");
+  const [activeEvidenceKsb, setActiveEvidenceKsb] = useState<CourseKsb | null>(null);
+  const [activeEvidenceMethod, setActiveEvidenceMethod] = useState<EvidenceMethod>("photo");
+  const [evidenceStep, setEvidenceStep] = useState(0);
+  const [evidenceFiles, setEvidenceFiles] = useState<(File | null)[]>([]);
+  const [evidenceText, setEvidenceText] = useState("");
+  const [evidenceError, setEvidenceError] = useState("");
+  const [timelineError, setTimelineError] = useState("");
+  const [otjError, setOtjError] = useState("");
+  const [savingEvidence, setSavingEvidence] = useState(false);
+  const [witnessDraft, setWitnessDraft] = useState({ name: "", role: "", date: todayDateValue(), testimony: "" });
+  const [otjDraft, setOtjDraft] = useState({ date: todayDateValue(), title: "", hours: "" });
   const [adminCode, setAdminCode] = useState("");
   const [adminError, setAdminError] = useState("");
   const [placeholder, setPlaceholder] = useState({ title: "", back: "root" as View });
@@ -832,12 +1013,26 @@ export default function Home() {
     let savedName = "";
     let onboardingComplete = false;
     let savedCourse: LearnerCourse | null = null;
+    let savedTimeline: CourseTimeline | null = null;
+    let savedEvidence: EvidenceRecord[] = [];
+    let savedOtjEntries: OtjEntry[] = [];
+    let savedEpaChecks: Record<EpaArea, boolean[]> | null = null;
 
     try {
       savedName = window.localStorage.getItem("evia-full-name") ?? "";
       onboardingComplete = window.localStorage.getItem("evia-onboarding-complete") === "true";
       const storedCourse = window.localStorage.getItem("evia-course");
       savedCourse = storedCourse ? JSON.parse(storedCourse) as LearnerCourse : null;
+      const storedTimeline = window.localStorage.getItem("evia-course-timeline");
+      savedTimeline = storedTimeline ? JSON.parse(storedTimeline) as CourseTimeline : null;
+      const storedEvidence = window.localStorage.getItem("evia-evidence-records");
+      const parsedEvidence = storedEvidence ? JSON.parse(storedEvidence) : [];
+      savedEvidence = Array.isArray(parsedEvidence) ? parsedEvidence as EvidenceRecord[] : [];
+      const storedOtj = window.localStorage.getItem("evia-otj-entries");
+      const parsedOtj = storedOtj ? JSON.parse(storedOtj) : [];
+      savedOtjEntries = Array.isArray(parsedOtj) ? parsedOtj as OtjEntry[] : [];
+      const storedEpa = window.localStorage.getItem("evia-epa-checks");
+      savedEpaChecks = storedEpa ? JSON.parse(storedEpa) as Record<EpaArea, boolean[]> : null;
     } catch {
       onboardingComplete = false;
     }
@@ -861,6 +1056,22 @@ export default function Home() {
       setCourse(currentCourse);
       if (currentCourse.sourceType === "layout") setLayoutText(currentCourse.rawKsbs ?? "");
       else if ((currentCourse.sourceType ?? "auto") === "auto") setKsbsText(currentCourse.rawKsbs ?? "");
+    }
+    if (savedTimeline?.startDate || savedTimeline?.endDate || savedTimeline?.weeklyHours) {
+      setTimeline({
+        startDate: savedTimeline.startDate ?? "",
+        endDate: savedTimeline.endDate ?? "",
+        weeklyHours: Number(savedTimeline.weeklyHours) || 37,
+      });
+    }
+    setEvidenceRecords(savedEvidence.filter((record) => record?.ksbCode && record?.method));
+    setOtjEntries(savedOtjEntries.filter((entry) => entry?.date && Number(entry?.hours) > 0));
+    if (savedEpaChecks) {
+      setEpaChecks({
+        practical: Array.isArray(savedEpaChecks.practical) ? savedEpaChecks.practical.slice(0, 4) : [false, false, false, false],
+        interview: Array.isArray(savedEpaChecks.interview) ? savedEpaChecks.interview.slice(0, 4) : [false, false, false, false],
+        mcq: Array.isArray(savedEpaChecks.mcq) ? savedEpaChecks.mcq.slice(0, 4) : [false, false, false, false],
+      });
     }
     setOnboardingChecked(true);
   }, []);
@@ -902,6 +1113,31 @@ export default function Home() {
   const firstName = fullName.trim().split(/\s+/)[0] || "there";
   const isOnboarding = onboardingChecked && onboardingStep !== null;
   const selectedUnit = course?.units.find((unit) => unit.id === selectedUnitId) ?? null;
+  const courseKsbs = [...new Map(
+    (course?.units.flatMap((unit) => unit.ksbs) ?? []).map((ksb) => [ksb.code, ksb]),
+  ).values()];
+  const courseKsbCodes = new Set(courseKsbs.map((ksb) => ksb.code));
+  const completedKsbCodes = new Set(
+    evidenceRecords.filter((record) => courseKsbCodes.has(record.ksbCode)).map((record) => record.ksbCode),
+  );
+  const ksbProgress = courseKsbs.length ? clampPercentage((completedKsbCodes.size / courseKsbs.length) * 100) : 0;
+  const courseStart = parseLocalDate(timeline.startDate);
+  const courseEnd = parseLocalDate(timeline.endDate);
+  const today = parseLocalDate(todayDateValue()) ?? new Date();
+  const validTimeline = Boolean(courseStart && courseEnd && courseEnd > courseStart);
+  const totalCourseDays = validTimeline && courseStart && courseEnd ? Math.max(1, dateDifferenceInDays(courseStart, courseEnd)) : 0;
+  const courseElapsedDays = validTimeline && courseStart && courseEnd
+    ? Math.min(totalCourseDays, dateDifferenceInDays(courseStart, today))
+    : 0;
+  const tocProgress = totalCourseDays ? clampPercentage((courseElapsedDays / totalCourseDays) * 100) : 0;
+  const weeklyOtjTarget = Math.max(0, Number(timeline.weeklyHours) || 0) * 0.2;
+  const totalOtjHours = weeklyOtjTarget * (totalCourseDays / 7);
+  const requiredOtjHours = weeklyOtjTarget * (courseElapsedDays / 7);
+  const loggedOtjHours = otjEntries.reduce((total, entry) => total + (Number(entry.hours) || 0), 0);
+  const otjProgress = requiredOtjHours > 0 ? clampPercentage((loggedOtjHours / requiredOtjHours) * 100) : 0;
+  const completedEpaAreas = (Object.keys(epaPracticeAreas) as EpaArea[])
+    .filter((area) => epaChecks[area]?.length === epaPracticeAreas[area].steps.length && epaChecks[area].every(Boolean));
+  const epaProgress = clampPercentage((completedEpaAreas.length / 3) * 100);
   const searchTerm = unitSearch.trim().toLowerCase();
   const filteredUnits = course?.units.filter((unit) => {
     if (!searchTerm) return true;
@@ -926,6 +1162,169 @@ export default function Home() {
     setNotice(message);
     if (noticeTimer.current) clearTimeout(noticeTimer.current);
     noticeTimer.current = setTimeout(() => setNotice(""), 2800);
+  };
+
+  const saveTimeline = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const start = parseLocalDate(timeline.startDate);
+    const end = parseLocalDate(timeline.endDate);
+    const weeklyHours = Number(timeline.weeklyHours);
+    if (!start || !end) {
+      setTimelineError("Add both your course start date and planned end date.");
+      return;
+    }
+    if (end <= start) {
+      setTimelineError("Your planned end date must be after your start date.");
+      return;
+    }
+    if (dateDifferenceInDays(start, end) > 3650) {
+      setTimelineError("Check those dates. A course timeline can be up to 10 years long.");
+      return;
+    }
+    if (!Number.isFinite(weeklyHours) || weeklyHours <= 0 || weeklyHours > 100) {
+      setTimelineError("Add your normal weekly working hours, between 1 and 100.");
+      return;
+    }
+    const savedTimeline = { ...timeline, weeklyHours };
+    setTimeline(savedTimeline);
+    setTimelineError("");
+    try { window.localStorage.setItem("evia-course-timeline", JSON.stringify(savedTimeline)); } catch { /* Keep session data. */ }
+    showNotice("Your course timeline has been updated.");
+  };
+
+  const startEvidence = (ksb: CourseKsb, method: EvidenceMethod) => {
+    setActiveEvidenceKsb(ksb);
+    setActiveEvidenceMethod(method);
+    setEvidenceStep(0);
+    setEvidenceFiles(method === "photo" ? [null, null, null] : [null]);
+    setEvidenceText("");
+    setWitnessDraft({ name: "", role: "", date: todayDateValue(), testimony: "" });
+    setEvidenceError("");
+    navigate("evidence");
+  };
+
+  const selectEvidenceFile = (index: number, event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    setEvidenceFiles((current) => {
+      const next = [...current];
+      next[index] = file;
+      return next;
+    });
+    setEvidenceError("");
+  };
+
+  const validateEvidence = () => {
+    if (activeEvidenceMethod === "photo" && evidenceFiles.filter(Boolean).length !== 3) {
+      return "Add all three photos: preparation, work in progress and the finished result.";
+    }
+    if (["video", "audio"].includes(activeEvidenceMethod) && !evidenceFiles[0]) {
+      return `Choose one ${activeEvidenceMethod} file before continuing.`;
+    }
+    if (["written", "reflection"].includes(activeEvidenceMethod) && countWords(evidenceText) < 30) {
+      return "Add at least 30 words so your evidence gives the assessor enough specific detail.";
+    }
+    if (activeEvidenceMethod === "witness") {
+      if (!witnessDraft.name.trim() || !witnessDraft.role.trim() || !witnessDraft.date) {
+        return "Add the witness’s name, role and the date they observed you.";
+      }
+      if (countWords(witnessDraft.testimony) < 30) {
+        return "The witness testimony needs at least 30 words describing what they personally observed.";
+      }
+    }
+    return "";
+  };
+
+  const continueEvidence = () => {
+    if (evidenceStep === 0) {
+      setEvidenceStep(1);
+      return;
+    }
+    const error = validateEvidence();
+    if (error) {
+      setEvidenceError(error);
+      return;
+    }
+    setEvidenceError("");
+    setEvidenceStep(2);
+  };
+
+  const saveEvidence = async () => {
+    if (!activeEvidenceKsb || savingEvidence) return;
+    const error = validateEvidence();
+    if (error) {
+      setEvidenceError(error);
+      setEvidenceStep(1);
+      return;
+    }
+    setSavingEvidence(true);
+    setEvidenceError("");
+    const recordId = `evidence-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const selectedFiles = evidenceFiles.filter((file): file is File => Boolean(file));
+    const fileIds = selectedFiles.map((_, index) => `${recordId}-file-${index + 1}`);
+    try {
+      await Promise.all(selectedFiles.map((file, index) => saveEvidenceFile(fileIds[index], file)));
+      const nextRecord: EvidenceRecord = {
+        id: recordId,
+        ksbCode: activeEvidenceKsb.code,
+        ksbType: activeEvidenceKsb.type,
+        method: activeEvidenceMethod,
+        createdAt: Date.now(),
+        fileIds,
+        fileNames: selectedFiles.map((file) => file.name),
+        ...(["written", "reflection"].includes(activeEvidenceMethod) ? { text: evidenceText.trim() } : {}),
+        ...(activeEvidenceMethod === "witness" ? { witness: { ...witnessDraft, name: witnessDraft.name.trim(), role: witnessDraft.role.trim(), testimony: witnessDraft.testimony.trim() } } : {}),
+      };
+      const nextRecords = [...evidenceRecords, nextRecord];
+      setEvidenceRecords(nextRecords);
+      try { window.localStorage.setItem("evia-evidence-records", JSON.stringify(nextRecords)); } catch { /* Keep session data. */ }
+      showNotice(`${activeEvidenceKsb.code} evidence saved on this device.`);
+      setSavingEvidence(false);
+      navigate("unit");
+    } catch {
+      setSavingEvidence(false);
+      setEvidenceError("Evia couldn’t save that file on this device. Check your available storage and try again.");
+    }
+  };
+
+  const addOtjEntry = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const hours = Number(otjDraft.hours);
+    if (!otjDraft.date || !otjDraft.title.trim() || !Number.isFinite(hours) || hours <= 0 || hours > 24) {
+      setOtjError("Add the activity, date and the number of off-the-job hours, up to 24 hours per entry.");
+      return;
+    }
+    const nextEntries = [...otjEntries, {
+      id: `otj-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      date: otjDraft.date,
+      title: otjDraft.title.trim(),
+      hours,
+    }];
+    setOtjEntries(nextEntries);
+    setOtjDraft({ date: todayDateValue(), title: "", hours: "" });
+    setOtjError("");
+    try { window.localStorage.setItem("evia-otj-entries", JSON.stringify(nextEntries)); } catch { /* Keep session data. */ }
+    showNotice(`${hours} OTJ hour${hours === 1 ? "" : "s"} added.`);
+  };
+
+  const toggleEpaStep = (area: EpaArea, index: number) => {
+    setEpaChecks((current) => {
+      const nextArea = [...current[area]];
+      nextArea[index] = !nextArea[index];
+      const next = { ...current, [area]: nextArea };
+      try { window.localStorage.setItem("evia-epa-checks", JSON.stringify(next)); } catch { /* Keep session data. */ }
+      return next;
+    });
+  };
+
+  const startEpa = (area: EpaArea) => {
+    setActiveEpaArea(area);
+    navigate("epa-session");
+  };
+
+  const completeEpaSession = () => {
+    if (!epaChecks[activeEpaArea].every(Boolean)) return;
+    showNotice(`${epaPracticeAreas[activeEpaArea].title} completed.`);
+    navigate("epa-practice");
   };
 
   const installEvia = async () => {
@@ -955,6 +1354,22 @@ export default function Home() {
     }, 180);
   };
 
+  const openProgressView = (nextView: View) => {
+    if (!open) {
+      setView(nextView);
+      setOpen(true);
+      return;
+    }
+    navigate(nextView);
+  };
+
+  const progressItems: ProgressItem[] = [
+    { label: "TOC", name: "Time on course", value: tocProgress, onClick: () => openProgressView("toc-settings") },
+    { label: "KSB", name: "KSB evidence", value: ksbProgress, onClick: () => openProgressView("ksb-progress") },
+    { label: "OTJ", name: "Off-the-job training", value: otjProgress, onClick: () => openProgressView("otj-progress") },
+    { label: "EPA", name: "EPA practice", value: epaProgress, onClick: () => openProgressView("epa-practice") },
+  ];
+
   const openPlaceholder = (title: string, back: View) => {
     setPlaceholder({ title, back });
     navigate("placeholder");
@@ -975,6 +1390,8 @@ export default function Home() {
       course: "root", study: "root", portfolio: "root", settings: "root", "install-app": "settings", profile: "settings",
       "manage-course": courseManagerBack, "import-course": "manage-course", "paste-layout": "manage-course",
       "build-course": "manage-course", units: "course", unit: "units", "admin-lock": "settings", admin: "settings",
+      "toc-settings": "root", "ksb-progress": "root", "otj-progress": "course", "epa-practice": "course",
+      "epa-session": "epa-practice", evidence: "unit", "evidence-list": "portfolio",
     };
     if (view === "placeholder") navigate(placeholder.back);
     else navigate(targets[view] ?? "root");
@@ -1082,17 +1499,22 @@ export default function Home() {
   const viewTitles: Record<View, string> = {
     root: "", course: "My Course", study: "Self Study", portfolio: "My Portfolio", settings: "Settings",
     "install-app": "Install Evia",
+    "toc-settings": "Time On Course", "ksb-progress": "KSB Progress", "otj-progress": "Off The Job",
+    "epa-practice": "EPA Practice", "epa-session": "EPA Mock", evidence: "Add Evidence", "evidence-list": "My Evidence",
     profile: "My Profile", "manage-course": "Manage My Course", "import-course": "Import Course File",
     "paste-layout": "Paste Course Layout", "build-course": "Let Evia Build It", units: "Units",
     unit: "Course Unit", "admin-lock": "Admin Settings",
     admin: "Admin Settings", placeholder: placeholder.title,
   };
 
-  const workspaceViews: View[] = ["manage-course", "import-course", "paste-layout", "build-course", "units", "unit"];
+  const workspaceViews: View[] = [
+    "manage-course", "import-course", "paste-layout", "build-course", "units", "unit", "toc-settings",
+    "ksb-progress", "otj-progress", "epa-practice", "epa-session", "evidence", "evidence-list",
+  ];
   const tallViews: View[] = ["root", "settings", "install-app", "admin"];
   const shellClasses = `menu-shell${workspaceViews.includes(view) ? " is-workspace" : ""}${tallViews.includes(view) ? " is-tall" : ""}`;
 
-  const renderKsbGroup = (type: KsbType, title: string, methods: string[]) => {
+  const renderKsbGroup = (type: KsbType, title: string) => {
     const items = [...(selectedUnit?.ksbs.filter((ksb) => ksb.type === type) ?? [])]
       .sort((left, right) => left.code.localeCompare(right.code, undefined, { numeric: true }));
     return (
@@ -1101,15 +1523,17 @@ export default function Home() {
           <h3 id={`${type.toLowerCase()}-heading`}>{title}</h3><span>{items.length}</span>
         </div>
         {items.length ? items.map((ksb) => {
+          const savedRecords = evidenceRecords.filter((record) => record.ksbCode === ksb.code);
+          const isComplete = savedRecords.length > 0;
           return (
-            <article className="ksb-item" key={`${selectedUnit?.id}-${ksb.code}`}>
+            <article className={`ksb-item${isComplete ? " is-complete" : ""}`} key={`${selectedUnit?.id}-${ksb.code}`}>
               <div className="ksb-item-copy">
                 <span className="ksb-code">{ksb.code}</span>
-                <div><h4>{ksb.description}</h4></div>
+                <div><h4>{ksb.description}</h4><p className="ksb-status">{isComplete ? `${savedRecords.length} evidence record${savedRecords.length === 1 ? "" : "s"} saved` : "Choose one evidence route below"}</p></div>
               </div>
               <div className="evidence-methods" aria-label={`Evidence options for ${ksb.code}`}>
-                {methods.map((method) => (
-                  <button type="button" key={method} onClick={() => showNotice(`${method} selected for ${ksb.code}.`)}>{method}</button>
+                {evidenceOptions[type].map((option) => (
+                  <button type="button" key={option.method} onClick={() => startEvidence(ksb, option.method)}>{option.label}</button>
                 ))}
               </div>
             </article>
@@ -1130,15 +1554,15 @@ export default function Home() {
     );
 
     if (view === "course") return (
-      <div className="option-list">
+      <div className="option-list is-fill">
         <OptionRow title="Units" note={course ? `${course.units.length} ready` : "Course not added"} onClick={() => navigate("units")} />
-        <OptionRow title="Off The Job" onClick={() => openPlaceholder("Off The Job", "course")} />
-        <OptionRow title="EPA Practice" onClick={() => openPlaceholder("EPA Practice", "course")} />
+        <OptionRow title="Off The Job" note={`${loggedOtjHours.toFixed(1)} hours recorded`} onClick={() => navigate("otj-progress")} />
+        <OptionRow title="EPA Practice" note={`${completedEpaAreas.length} of 3 mocks complete`} onClick={() => navigate("epa-practice")} />
       </div>
     );
 
     if (view === "study") return (
-      <div className="option-list">
+      <div className="option-list is-fill">
         <OptionRow title="Maths & English" onClick={() => openPlaceholder("Maths & English", "study")} />
         <OptionRow title="Trade Subjects" onClick={() => openPlaceholder("Trade Subjects", "study")} />
         <OptionRow title="EDI Subjects" onClick={() => openPlaceholder("EDI Subjects", "study")} />
@@ -1146,15 +1570,15 @@ export default function Home() {
     );
 
     if (view === "portfolio") return (
-      <div className="option-list">
-        <OptionRow title="Portfolio Health" onClick={() => openPlaceholder("Portfolio Health", "portfolio")} />
-        <OptionRow title="My Evidence" onClick={() => openPlaceholder("My Evidence", "portfolio")} />
+      <div className="option-list is-fill">
+        <OptionRow title="Portfolio Health" note={`${completedKsbCodes.size} of ${courseKsbs.length} KSBs evidenced`} onClick={() => navigate("ksb-progress")} />
+        <OptionRow title="My Evidence" note={`${evidenceRecords.length} record${evidenceRecords.length === 1 ? "" : "s"}`} onClick={() => navigate("evidence-list")} />
         <OptionRow title="Download Portfolio" onClick={() => openPlaceholder("Download Portfolio", "portfolio")} />
       </div>
     );
 
     if (view === "settings") return (
-      <div className="option-list four-options">
+      <div className="option-list is-fill four-options">
         <OptionRow title="Install Evia" note={isInstalled ? "Installed on this device" : "Add Evia to this device"} onClick={() => navigate("install-app")} />
         <OptionRow title="My Profile" onClick={() => navigate("profile")} />
         <OptionRow title="General Settings" onClick={() => openPlaceholder("General Settings", "settings")} />
@@ -1178,8 +1602,169 @@ export default function Home() {
       </div>
     );
 
+    if (view === "toc-settings") return (
+      <form className="progress-workspace" onSubmit={saveTimeline}>
+        <div className="evia-guidance">
+          <span className="guidance-mark" aria-hidden="true">E</span>
+          <div><strong>Let’s set your timeline.</strong><p>I calculate TOC from your start date to your planned end date, using today as the point you have reached.</p></div>
+        </div>
+        <div className="progress-summary-grid">
+          <div className="progress-summary-main"><span>Time on course</span><strong>{tocProgress}%</strong><small>{validTimeline ? `${Math.round(courseElapsedDays)} of ${Math.round(totalCourseDays)} days elapsed` : "Add your course dates"}</small></div>
+          <div className="progress-summary-stat"><span>OTJ each week</span><strong>{weeklyOtjTarget.toFixed(1)}h</strong><small>20% of working hours</small></div>
+        </div>
+        <div className="field-grid">
+          <label className="clean-field"><span>Course start date</span><input type="date" min="2000-01-01" max="2100-12-31" value={timeline.startDate} onChange={(event) => { setTimeline({ ...timeline, startDate: event.target.value }); setTimelineError(""); }} /></label>
+          <label className="clean-field"><span>Planned end date</span><input type="date" min="2000-01-01" max="2100-12-31" value={timeline.endDate} onChange={(event) => { setTimeline({ ...timeline, endDate: event.target.value }); setTimelineError(""); }} /></label>
+          <label className="clean-field is-wide"><span>Normal working hours each week</span><input type="number" min="1" max="100" step="0.5" inputMode="decimal" value={timeline.weeklyHours} onChange={(event) => { setTimeline({ ...timeline, weeklyHours: Number(event.target.value) }); setTimelineError(""); }} /></label>
+        </div>
+        <p className="calculation-note">TOC = elapsed course days ÷ total planned course days. Dates stay on this device and can be changed whenever your plan changes.</p>
+        {timelineError && <p className="form-error" role="alert">{timelineError}</p>}
+        <button className="make-course-button" type="submit">Save course timeline<span aria-hidden="true">→</span></button>
+      </form>
+    );
+
+    if (view === "ksb-progress") {
+      if (!course) return (
+        <div className="empty-course-state">
+          <span className="empty-course-mark" aria-hidden="true">+</span><h3>Add your course first</h3>
+          <p>Once your KSBs are added, Evia will calculate progress from the number with valid evidence against them.</p>
+          <button type="button" onClick={() => openCourseManager("ksb-progress")}>Add course <span aria-hidden="true">→</span></button>
+        </div>
+      );
+      return (
+        <div className="progress-workspace">
+          <div className="evia-guidance"><span className="guidance-mark" aria-hidden="true">E</span><div><strong>I count each KSB once.</strong><p>A KSB is complete when at least one of its approved evidence routes has been saved.</p></div></div>
+          <div className="progress-summary-grid">
+            <div className="progress-summary-main"><span>KSB evidence</span><strong>{ksbProgress}%</strong><small>{completedKsbCodes.size} of {courseKsbs.length} KSBs evidenced</small></div>
+            <div className="progress-summary-stat"><span>Remaining</span><strong>{Math.max(0, courseKsbs.length - completedKsbCodes.size)}</strong><small>KSBs need evidence</small></div>
+          </div>
+          <div className="ksb-progress-list">
+            {courseKsbs
+              .sort((left, right) => left.code.localeCompare(right.code, undefined, { numeric: true }))
+              .map((ksb) => {
+                const complete = completedKsbCodes.has(ksb.code);
+                const unitForKsb = course.units.find((unit) => unit.ksbs.some((item) => item.code === ksb.code));
+                return (
+                  <button type="button" className={`ksb-progress-row${complete ? " is-complete" : ""}`} key={ksb.code} onClick={() => { if (unitForKsb) { setSelectedUnitId(unitForKsb.id); navigate("unit"); } }}>
+                    <span className="ksb-progress-code">{ksb.code}</span><span className="ksb-progress-copy"><strong>{ksb.description}</strong><small>{ksb.type} · {complete ? "Evidence saved" : "Evidence needed"}</small></span><span className="status-dot" aria-hidden="true">{complete ? "✓" : "›"}</span>
+                  </button>
+                );
+              })}
+          </div>
+        </div>
+      );
+    }
+
+    if (view === "otj-progress") return (
+      <div className="progress-workspace">
+        <div className="evia-guidance"><span className="guidance-mark" aria-hidden="true">E</span><div><strong>I’ll keep your OTJ target clear.</strong><p>Your target is 20% of normal working hours, paced against the amount of your course that has elapsed.</p></div></div>
+        <div className="progress-summary-grid">
+          <div className="progress-summary-main"><span>OTJ progress</span><strong>{otjProgress}%</strong><small>{loggedOtjHours.toFixed(1)}h logged · {requiredOtjHours.toFixed(1)}h expected by today</small></div>
+          <div className="progress-summary-stat"><span>Course target</span><strong>{validTimeline ? `${totalOtjHours.toFixed(1)}h` : "—"}</strong><small>{weeklyOtjTarget.toFixed(1)} hours per week</small></div>
+        </div>
+        {!validTimeline && <button type="button" className="inline-action" onClick={() => navigate("toc-settings")}>Set course dates to calculate your target <span aria-hidden="true">→</span></button>}
+        <form className="otj-form" onSubmit={addOtjEntry}>
+          <div className="section-heading"><span>Record an activity</span><small>Learning completed away from normal productive duties</small></div>
+          <div className="field-grid">
+            <label className="clean-field"><span>Date</span><input type="date" value={otjDraft.date} onChange={(event) => { setOtjDraft({ ...otjDraft, date: event.target.value }); setOtjError(""); }} /></label>
+            <label className="clean-field"><span>Hours</span><input type="number" min="0.1" max="24" step="0.1" inputMode="decimal" value={otjDraft.hours} onChange={(event) => { setOtjDraft({ ...otjDraft, hours: event.target.value }); setOtjError(""); }} placeholder="1.5" /></label>
+            <label className="clean-field is-wide"><span>What did you learn?</span><input type="text" value={otjDraft.title} onChange={(event) => { setOtjDraft({ ...otjDraft, title: event.target.value }); setOtjError(""); }} placeholder="Example: cavity wall workshop" maxLength={120} /></label>
+          </div>
+          {otjError && <p className="form-error" role="alert">{otjError}</p>}
+          <button className="make-course-button" type="submit">Add OTJ activity<span aria-hidden="true">→</span></button>
+        </form>
+        <div className="record-list">
+          <div className="section-heading"><span>Recent OTJ</span><small>{otjEntries.length} recorded activit{otjEntries.length === 1 ? "y" : "ies"}</small></div>
+          {[...otjEntries].sort((left, right) => right.date.localeCompare(left.date)).map((entry) => <div className="record-row" key={entry.id}><div><strong>{entry.title}</strong><small>{new Date(`${entry.date}T12:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</small></div><span>{entry.hours.toFixed(1)}h</span></div>)}
+          {!otjEntries.length && <p className="empty-list-copy">No OTJ activities recorded yet.</p>}
+        </div>
+      </div>
+    );
+
+    if (view === "epa-practice") return (
+      <div className="progress-workspace">
+        <div className="evia-guidance"><span className="guidance-mark" aria-hidden="true">E</span><div><strong>Let’s make EPA feel familiar.</strong><p>Complete each mock step by step. Your EPA arch reflects the number of practice areas you have fully completed.</p></div></div>
+        <div className="progress-summary-grid">
+          <div className="progress-summary-main"><span>EPA readiness</span><strong>{epaProgress}%</strong><small>{completedEpaAreas.length} of 3 practice areas complete</small></div>
+          <div className="progress-summary-stat"><span>Next step</span><strong>{completedEpaAreas.length === 3 ? "Ready" : `${3 - completedEpaAreas.length} left`}</strong><small>Practical · Interview · MCQ</small></div>
+        </div>
+        <div className="epa-card-list">
+          {(Object.keys(epaPracticeAreas) as EpaArea[]).map((area) => {
+            const practice = epaPracticeAreas[area];
+            const completedSteps = epaChecks[area].filter(Boolean).length;
+            const complete = completedSteps === practice.steps.length;
+            return <button type="button" className={`epa-card${complete ? " is-complete" : ""}`} key={area} onClick={() => startEpa(area)}><span className="epa-card-number">{complete ? "✓" : completedSteps}</span><span><strong>{practice.title}</strong><small>{practice.summary}</small><em>{complete ? "Complete" : `${completedSteps} of ${practice.steps.length} steps`}</em></span><span className="row-chevron" aria-hidden="true">›</span></button>;
+          })}
+        </div>
+      </div>
+    );
+
+    if (view === "epa-session") {
+      const practice = epaPracticeAreas[activeEpaArea];
+      const allStepsComplete = epaChecks[activeEpaArea].every(Boolean);
+      return (
+        <div className="progress-workspace">
+          <div className="evia-guidance"><span className="guidance-mark" aria-hidden="true">E</span><div><strong>I’ll take you through this one step at a time.</strong><p>Only tick a step once you have genuinely completed it. You can leave and return without losing your place.</p></div></div>
+          <header className="practice-header"><span>EPA practice</span><h3>{practice.title}</h3><p>{practice.summary}</p></header>
+          <div className="practice-steps">
+            {practice.steps.map((step, index) => <button type="button" className={`practice-step${epaChecks[activeEpaArea][index] ? " is-checked" : ""}`} key={step} onClick={() => toggleEpaStep(activeEpaArea, index)} aria-pressed={epaChecks[activeEpaArea][index]}><span>{epaChecks[activeEpaArea][index] ? "✓" : index + 1}</span><strong>{step}</strong></button>)}
+          </div>
+          <button className="make-course-button" type="button" disabled={!allStepsComplete} onClick={completeEpaSession}>{allStepsComplete ? "Complete this mock" : "Complete every step first"}<span aria-hidden="true">→</span></button>
+        </div>
+      );
+    }
+
+    if (view === "evidence" && activeEvidenceKsb) {
+      const selectedOption = evidenceOptions[activeEvidenceKsb.type].find((option) => option.method === activeEvidenceMethod);
+      const photoPrompts = [
+        ["Preparation", `Show the working area, materials, tools and controls before you begin ${activeEvidenceKsb.code}.`],
+        ["Work in progress", `Show yourself carrying out the activity so the assessor can see how you meet ${activeEvidenceKsb.code}.`],
+        ["Finished result", "Show the completed work clearly, including the quality, finish and any relevant measurements."],
+      ];
+      return (
+        <div className="evidence-wizard">
+          <div className="wizard-progress" aria-label={`Evidence step ${evidenceStep + 1} of 3`}><span className={evidenceStep >= 0 ? "is-current" : ""} /><span className={evidenceStep >= 1 ? "is-current" : ""} /><span className={evidenceStep >= 2 ? "is-current" : ""} /></div>
+          {evidenceStep === 0 && <>
+            <div className="evia-guidance"><span className="guidance-mark" aria-hidden="true">E</span><div><strong>We’ll build this evidence together.</strong><p>I’ll explain exactly what to include, check the minimum requirement and save it against the right KSB.</p></div></div>
+            <header className="evidence-criterion"><span>{activeEvidenceKsb.code} · {activeEvidenceKsb.type}</span><h3>{activeEvidenceKsb.description}</h3></header>
+            <div className="evidence-route"><small>Your chosen route</small><strong>{evidenceMethodNames[activeEvidenceMethod]}</strong><p>{selectedOption?.rule}. You only need to complete one approved route for this KSB.</p></div>
+            <button className="make-course-button" type="button" onClick={continueEvidence}>Show me what to do<span aria-hidden="true">→</span></button>
+          </>}
+          {evidenceStep === 1 && <>
+            <div className="evia-guidance"><span className="guidance-mark" aria-hidden="true">E</span><div><strong>{evidenceMethodNames[activeEvidenceMethod]}</strong><p>{activeEvidenceMethod === "photo" ? "Use three different, specific images—not three angles of the same finished result." : activeEvidenceMethod === "video" ? "Record one clear sequence showing you doing the work, not only the finished result." : activeEvidenceMethod === "audio" ? "Explain what you know in your own words and connect it to a real example from your work." : activeEvidenceMethod === "written" ? "Explain what you know, why it matters and how it applies in your work." : activeEvidenceMethod === "reflection" ? "Describe what happened, what you did, what you learned and what you would do next time." : "The witness must describe what they personally saw you do and how it met the criterion."}</p></div></div>
+            <header className="evidence-criterion compact"><span>{activeEvidenceKsb.code}</span><h3>{activeEvidenceKsb.description}</h3></header>
+            {activeEvidenceMethod === "photo" && <div className="evidence-upload-list">{photoPrompts.map(([title, prompt], index) => <label className={`evidence-upload${evidenceFiles[index] ? " has-file" : ""}`} key={title}><input type="file" accept="image/*" capture="environment" onChange={(event) => selectEvidenceFile(index, event)} /><span>{index + 1}</span><div><strong>{title}</strong><small>{prompt}</small><em>{evidenceFiles[index]?.name ?? "Tap to take or choose a photo"}</em></div></label>)}</div>}
+            {activeEvidenceMethod === "video" && <label className={`evidence-upload is-single${evidenceFiles[0] ? " has-file" : ""}`}><input type="file" accept="video/*" capture="environment" onChange={(event) => selectEvidenceFile(0, event)} /><span>1</span><div><strong>One practical video</strong><small>Show the preparation, key stages, safe technique and finished result in one clear sequence. Keep the work and your actions visible.</small><em>{evidenceFiles[0]?.name ?? "Tap to record or choose a video"}</em></div></label>}
+            {activeEvidenceMethod === "audio" && <label className={`evidence-upload is-single${evidenceFiles[0] ? " has-file" : ""}`}><input type="file" accept="audio/*" capture="user" onChange={(event) => selectEvidenceFile(0, event)} /><span>1</span><div><strong>One audio explanation</strong><small>State the KSB, explain the key principles, give a work-based example and finish with why the knowledge matters.</small><em>{evidenceFiles[0]?.name ?? "Tap to record or choose audio"}</em></div></label>}
+            {["written", "reflection"].includes(activeEvidenceMethod) && <label className="guided-textarea"><span>{activeEvidenceMethod === "written" ? "Your knowledge statement" : "Your reflection"}</span><small>{activeEvidenceMethod === "written" ? "Use: what I know → how it applies → a real example → why it matters." : "Use: what happened → what I did → the result → what I learned → what I will improve."}</small><textarea rows={9} value={evidenceText} onChange={(event) => { setEvidenceText(event.target.value); setEvidenceError(""); }} placeholder={activeEvidenceMethod === "written" ? "I understand that… In my work this applies when… For example… This matters because…" : "The situation was… I decided to… The result was… I learned… Next time I will…"} /><em className={countWords(evidenceText) >= 30 ? "is-ready" : ""}>{countWords(evidenceText)} / 30 minimum words</em></label>}
+            {activeEvidenceMethod === "witness" && <div className="witness-form"><div className="field-grid"><label className="clean-field"><span>Witness name</span><input type="text" value={witnessDraft.name} onChange={(event) => { setWitnessDraft({ ...witnessDraft, name: event.target.value }); setEvidenceError(""); }} /></label><label className="clean-field"><span>Witness role</span><input type="text" value={witnessDraft.role} onChange={(event) => { setWitnessDraft({ ...witnessDraft, role: event.target.value }); setEvidenceError(""); }} placeholder="Supervisor" /></label><label className="clean-field is-wide"><span>Date observed</span><input type="date" value={witnessDraft.date} onChange={(event) => { setWitnessDraft({ ...witnessDraft, date: event.target.value }); setEvidenceError(""); }} /></label></div><label className="guided-textarea"><span>What did the witness observe?</span><small>Write in the witness’s own words. Include the task, the learner’s actions, the standard achieved and how this demonstrated the Behaviour.</small><textarea rows={8} value={witnessDraft.testimony} onChange={(event) => { setWitnessDraft({ ...witnessDraft, testimony: event.target.value }); setEvidenceError(""); }} placeholder="I personally observed the learner…" /><em className={countWords(witnessDraft.testimony) >= 30 ? "is-ready" : ""}>{countWords(witnessDraft.testimony)} / 30 minimum words</em></label></div>}
+            {evidenceError && <p className="form-error" role="alert">{evidenceError}</p>}
+            <button className="make-course-button" type="button" onClick={continueEvidence}>Review my evidence<span aria-hidden="true">→</span></button>
+          </>}
+          {evidenceStep === 2 && <>
+            <div className="evia-guidance"><span className="guidance-mark" aria-hidden="true">E</span><div><strong>This meets the minimum evidence route.</strong><p>Check the details below. Saving it will mark {activeEvidenceKsb.code} as evidenced and update your KSB arch.</p></div></div>
+            <div className="evidence-review"><span className="review-check" aria-hidden="true">✓</span><div><small>{activeEvidenceKsb.code} · {activeEvidenceKsb.type}</small><strong>{evidenceMethodNames[activeEvidenceMethod]}</strong><p>{activeEvidenceMethod === "photo" ? "3 specific photos ready" : ["video", "audio"].includes(activeEvidenceMethod) ? evidenceFiles[0]?.name : activeEvidenceMethod === "witness" ? `${witnessDraft.name}, ${witnessDraft.role} · ${countWords(witnessDraft.testimony)} words` : `${countWords(evidenceText)} words ready`}</p></div></div>
+            <header className="evidence-criterion compact"><span>Mapped criterion</span><h3>{activeEvidenceKsb.description}</h3></header>
+            {evidenceError && <p className="form-error" role="alert">{evidenceError}</p>}
+            <button className="make-course-button" type="button" disabled={savingEvidence} onClick={saveEvidence}>{savingEvidence ? "Saving on this device…" : "Save evidence"}<span aria-hidden="true">→</span></button>
+          </>}
+        </div>
+      );
+    }
+
+    if (view === "evidence-list") return (
+      <div className="progress-workspace">
+        <div className="evia-guidance"><span className="guidance-mark" aria-hidden="true">E</span><div><strong>Your evidence stays mapped.</strong><p>Every record below is attached to its KSB and stored on this device. File evidence is kept in the app’s private local storage.</p></div></div>
+        <div className="progress-summary-grid"><div className="progress-summary-main"><span>Evidence records</span><strong>{evidenceRecords.length}</strong><small>{completedKsbCodes.size} unique KSBs covered</small></div><div className="progress-summary-stat"><span>KSB progress</span><strong>{ksbProgress}%</strong><small>{Math.max(0, courseKsbs.length - completedKsbCodes.size)} KSBs remaining</small></div></div>
+        <div className="evidence-record-list">
+          {[...evidenceRecords].sort((left, right) => right.createdAt - left.createdAt).map((record) => <article className="evidence-record" key={record.id}><span className="evidence-record-code">{record.ksbCode}</span><div><strong>{evidenceMethodNames[record.method]}</strong><small>{record.ksbType} · {new Date(record.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</small><p>{record.fileNames.length ? record.fileNames.join(" · ") : record.method === "witness" ? `Witness: ${record.witness?.name ?? "Recorded"}` : `${countWords(record.text ?? "")} words`}</p></div><span className="status-dot" aria-hidden="true">✓</span></article>)}
+          {!evidenceRecords.length && <div className="empty-evidence"><span aria-hidden="true">＋</span><h3>No evidence saved yet</h3><p>Open a course Unit, choose a KSB and Evia will guide you through the right evidence route.</p><button type="button" onClick={() => navigate("units")}>Open Units <span aria-hidden="true">→</span></button></div>}
+        </div>
+      </div>
+    );
+
     if (view === "profile") return (
-      <div className="option-list">
+      <div className="option-list is-fill">
         <OptionRow title="Manage My Course" note={course ? "Course added" : "Set up your course"} onClick={() => openCourseManager("profile")} />
         <OptionRow title="Edit My Details" onClick={() => openPlaceholder("Edit My Details", "profile")} />
         <OptionRow title="Update My Schedule" onClick={() => openPlaceholder("Update My Schedule", "profile")} />
@@ -1305,9 +1890,9 @@ export default function Home() {
     if (view === "unit" && selectedUnit) return (
       <div className="duty-detail">
         <header className="duty-summary"><span>Evidence collection</span><h3>{selectedUnit.title}</h3><p>{selectedUnit.summary}</p></header>
-        {renderKsbGroup("Skill", "Skills", ["Photo", "Video"])}
-        {renderKsbGroup("Knowledge", "Knowledge", ["Written", "Audio"])}
-        {renderKsbGroup("Behaviour", "Behaviours", ["Reflection", "Witness testimony"])}
+        {renderKsbGroup("Skill", "Skills")}
+        {renderKsbGroup("Knowledge", "Knowledge")}
+        {renderKsbGroup("Behaviour", "Behaviours")}
       </div>
     );
 
@@ -1321,7 +1906,7 @@ export default function Home() {
     );
 
     if (view === "admin") return (
-      <div className="option-list admin-options">
+      <div className="option-list is-fill admin-options">
         <div className="admin-status"><span /> Admin settings unlocked</div>
         <OptionRow title="Course Controls" onClick={() => openPlaceholder("Course Controls", "admin")} />
         <OptionRow title="Learner Access" onClick={() => openPlaceholder("Learner Access", "admin")} />
@@ -1348,7 +1933,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="progress-dock" aria-label="Your progress"><div className="progress-row">{progress.map((item) => <ProgressArch key={item.label} {...item} />)}</div></section>
+      <section className="progress-dock" aria-label="Your progress"><div className="progress-row">{progressItems.map((item) => <ProgressArch key={item.label} {...item} />)}</div></section>
       {notice && <div className="app-toast" role="status">{notice}</div>}
 
       {onboardingChecked && onboardingStep !== null && (
@@ -1357,7 +1942,7 @@ export default function Home() {
             {onboardingStep === 0 && <><p className="onboarding-kicker">Hello, I’m Evia</p><h1 id="onboarding-title">What’s your full name?</h1><p id="onboarding-description" className="onboarding-copy">I’m your apprenticeship personal assistant. Let’s get to know each other.</p><form className="name-form" onSubmit={submitName}><label className="sr-only" htmlFor="learner-name">Full name</label><div className="name-pill"><input id="learner-name" type="text" value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="Enter your full name" autoComplete="name" maxLength={80} /><button type="submit" disabled={!fullName.trim()} aria-label="Continue"><span aria-hidden="true">→</span></button></div></form></>}
             {onboardingStep === 1 && <><p className="onboarding-kicker">Welcome to Evia</p><h1 id="onboarding-title">Nice to meet you, {firstName}.</h1><p id="onboarding-description" className="onboarding-copy">I’m your apprenticeship PA. I’ll help you stay on top of your course, evidence, study and EPA preparation without making things complicated.</p><button type="button" className="onboarding-action" onClick={() => setOnboardingStep(2)}>Let me show you around <span aria-hidden="true">→</span></button><div className="onboarding-dots" aria-hidden="true"><span className="is-current" /><span /><span /></div></>}
             {onboardingStep === 2 && <><p className="onboarding-kicker">Your assistant</p><h1 id="onboarding-title">Tap me whenever you need help.</h1><p id="onboarding-description" className="onboarding-copy">Tap me to open your options. I can guide you to your course, self-study tools, portfolio and settings from one simple place.</p><button type="button" className="onboarding-action" onClick={() => setOnboardingStep(3)}>Next <span aria-hidden="true">→</span></button><div className="onboarding-dots" aria-hidden="true"><span /><span className="is-current" /><span /></div></>}
-            {onboardingStep === 3 && <><p className="onboarding-kicker">Your progress</p><h1 id="onboarding-title">Four arches. One clear view.</h1><p id="onboarding-description" className="onboarding-copy compact-copy">The arches stay at the bottom of the app so you can see what needs attention at a glance.</p><div className="arch-guide" aria-label="Progress arch meanings">{progress.map((item) => <div className="arch-guide-item" key={item.label}><span className="arch-guide-code">{item.label}</span><span className="arch-guide-name">{item.name}</span></div>)}</div><button type="button" className="onboarding-action" onClick={completeOnboarding}>Start using Evia <span aria-hidden="true">→</span></button><div className="onboarding-dots" aria-hidden="true"><span /><span /><span className="is-current" /></div></>}
+            {onboardingStep === 3 && <><p className="onboarding-kicker">Your progress</p><h1 id="onboarding-title">Four arches. One clear view.</h1><p id="onboarding-description" className="onboarding-copy compact-copy">Tap any arch to see how it is calculated, update its details or continue the work behind it.</p><div className="arch-guide" aria-label="Progress arch meanings">{progressItems.map((item) => <div className="arch-guide-item" key={item.label}><span className="arch-guide-code">{item.label}</span><span className="arch-guide-name">{item.name}</span></div>)}</div><button type="button" className="onboarding-action" onClick={completeOnboarding}>Start using Evia <span aria-hidden="true">→</span></button><div className="onboarding-dots" aria-hidden="true"><span /><span /><span className="is-current" /></div></>}
           </div>
         </section>
       )}

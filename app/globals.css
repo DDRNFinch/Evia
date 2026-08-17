@@ -2172,3 +2172,840 @@ body {
     min-height: 3.2rem;
   }
 }
+
+/* Full-height option area, live progress and guided evidence */
+.menu-stage {
+  place-items: stretch center;
+  padding-top: 0.2rem;
+}
+
+.menu-shell,
+.menu-shell.is-tall,
+.menu-shell.is-workspace {
+  --menu-height: 100%;
+  height: 100%;
+}
+
+.option-list.is-fill {
+  height: 100%;
+  align-content: space-evenly;
+  grid-auto-rows: minmax(3.3rem, 4.15rem);
+}
+
+.root-list {
+  align-content: space-evenly;
+  grid-template-rows: repeat(4, minmax(3.3rem, 4.15rem));
+}
+
+.progress-arch {
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.progress-arch::after {
+  position: absolute;
+  inset: 8% 4% 0;
+  border-radius: 999px 999px 0 0;
+  background: rgba(255, 255, 255, 0);
+  content: "";
+  transition: background 0.2s ease, scale 0.2s var(--ease-out);
+  z-index: -1;
+}
+
+.progress-arch:hover::after,
+.progress-arch:focus-visible::after {
+  background: rgba(255, 255, 255, 0.32);
+  scale: 1.04;
+}
+
+.progress-workspace,
+.evidence-wizard {
+  display: grid;
+  gap: 0.72rem;
+  padding-bottom: 0.3rem;
+}
+
+.evia-guidance,
+.progress-summary-main,
+.progress-summary-stat,
+.otj-form,
+.record-list,
+.epa-card,
+.practice-header,
+.practice-step,
+.evidence-criterion,
+.evidence-route,
+.evidence-upload,
+.guided-textarea,
+.evidence-review,
+.evidence-record,
+.empty-evidence {
+  border: 1px solid rgba(255, 255, 255, 0.74);
+  background: rgba(255, 255, 255, 0.58);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(20px) saturate(1.08);
+  -webkit-backdrop-filter: blur(20px) saturate(1.08);
+}
+
+.evia-guidance {
+  display: grid;
+  grid-template-columns: 2.35rem minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+  padding: 0.82rem 0.9rem;
+  border-radius: 1.3rem;
+}
+
+.guidance-mark {
+  display: grid;
+  width: 2.35rem;
+  height: 2.35rem;
+  place-items: center;
+  border: 1.25px solid rgba(202, 151, 11, 0.48);
+  border-radius: 50%;
+  background: rgba(249, 205, 67, 0.12);
+  color: #87660d;
+  font-size: 0.66rem;
+  font-weight: 520;
+}
+
+.evia-guidance strong {
+  color: #3c3c3f;
+  font-size: 0.78rem;
+  font-weight: 460;
+  letter-spacing: -0.008em;
+}
+
+.evia-guidance p {
+  margin: 0.28rem 0 0;
+  color: #7f7f84;
+  font-size: 0.67rem;
+  font-weight: 350;
+  line-height: 1.42;
+}
+
+.progress-summary-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.8fr);
+  gap: 0.58rem;
+}
+
+.progress-summary-main,
+.progress-summary-stat {
+  display: grid;
+  align-content: center;
+  min-height: 5.6rem;
+  padding: 0.85rem 1rem;
+  border-radius: 1.35rem;
+}
+
+.progress-summary-main > span,
+.progress-summary-stat > span {
+  color: #8b8b90;
+  font-size: 0.59rem;
+  font-weight: 430;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.progress-summary-main strong,
+.progress-summary-stat strong {
+  margin-top: 0.15rem;
+  color: #37373a;
+  font-size: 1.55rem;
+  font-weight: 390;
+  letter-spacing: -0.045em;
+  line-height: 1;
+}
+
+.progress-summary-stat strong {
+  font-size: 1.12rem;
+}
+
+.progress-summary-main small,
+.progress-summary-stat small {
+  margin-top: 0.35rem;
+  color: #85858a;
+  font-size: 0.6rem;
+  font-weight: 350;
+  line-height: 1.35;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.clean-field {
+  display: grid;
+  gap: 0.38rem;
+  padding: 0.72rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 1.05rem;
+  background: rgba(255, 255, 255, 0.5);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.clean-field:focus-within {
+  border-color: rgba(216, 168, 31, 0.32);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.clean-field.is-wide {
+  grid-column: 1 / -1;
+}
+
+.clean-field > span {
+  color: #85858a;
+  font-size: 0.59rem;
+  font-weight: 390;
+}
+
+.clean-field input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #404043;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 370;
+}
+
+.calculation-note {
+  margin: 0;
+  padding: 0.05rem 0.4rem;
+  color: #8a8a8f;
+  font-size: 0.62rem;
+  font-weight: 350;
+  line-height: 1.42;
+}
+
+.inline-action {
+  display: flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  border: 1px solid rgba(230, 187, 58, 0.3);
+  border-radius: 999px;
+  background: rgba(239, 195, 61, 0.14);
+  color: #6d5514;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 400;
+}
+
+.section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.section-heading > span {
+  color: #424245;
+  font-size: 0.77rem;
+  font-weight: 440;
+}
+
+.section-heading small {
+  color: #929297;
+  font-size: 0.59rem;
+  font-weight: 350;
+  text-align: right;
+}
+
+.otj-form,
+.record-list {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.9rem;
+  border-radius: 1.35rem;
+}
+
+.otj-form .make-course-button {
+  min-height: 3.1rem;
+  margin: 0;
+}
+
+.record-row {
+  display: flex;
+  min-height: 3.25rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.65rem 0.2rem;
+  border-top: 1px solid rgba(60, 60, 67, 0.065);
+}
+
+.record-row > div {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.record-row strong {
+  color: #464649;
+  font-size: 0.7rem;
+  font-weight: 400;
+}
+
+.record-row small,
+.record-row > span {
+  color: #89898e;
+  font-size: 0.61rem;
+  font-weight: 370;
+}
+
+.record-row > span {
+  color: #795d12;
+  font-weight: 500;
+}
+
+.empty-list-copy {
+  margin: 0;
+  padding: 0.7rem 0 0.15rem;
+  border-top: 1px solid rgba(60, 60, 67, 0.065);
+  color: #949499;
+  font-size: 0.65rem;
+  text-align: center;
+}
+
+.ksb-progress-list,
+.evidence-record-list,
+.epa-card-list,
+.practice-steps,
+.evidence-upload-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.ksb-progress-row {
+  display: grid;
+  min-height: 4rem;
+  grid-template-columns: 2.1rem minmax(0, 1fr) 1.4rem;
+  gap: 0.65rem;
+  align-items: center;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 1.2rem;
+  background: rgba(255, 255, 255, 0.52);
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.ksb-progress-code,
+.evidence-record-code {
+  display: grid;
+  width: 2.1rem;
+  height: 2.1rem;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(239, 195, 61, 0.12);
+  color: #84650f;
+  font-size: 0.6rem;
+  font-weight: 530;
+}
+
+.ksb-progress-row.is-complete .ksb-progress-code,
+.evidence-record-code {
+  background: rgba(111, 156, 99, 0.11);
+  color: #58784f;
+}
+
+.ksb-progress-copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+}
+
+.ksb-progress-copy strong {
+  display: -webkit-box;
+  overflow: hidden;
+  color: #464649;
+  font-size: 0.67rem;
+  font-weight: 390;
+  line-height: 1.32;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.ksb-progress-copy small {
+  color: #909095;
+  font-size: 0.57rem;
+  font-weight: 350;
+}
+
+.status-dot {
+  display: grid;
+  width: 1.4rem;
+  height: 1.4rem;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(60, 60, 67, 0.045);
+  color: #8b8b90;
+  font-size: 0.69rem;
+}
+
+.is-complete .status-dot {
+  background: rgba(111, 156, 99, 0.11);
+  color: #5d8155;
+}
+
+.ksb-item.is-complete .ksb-code {
+  background: rgba(111, 156, 99, 0.11);
+  color: #58784f;
+}
+
+.ksb-status {
+  margin-top: 0.3rem !important;
+}
+
+.ksb-item.is-complete .ksb-status {
+  color: #67805f;
+}
+
+.epa-card {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr) 0.7rem;
+  gap: 0.72rem;
+  align-items: center;
+  padding: 0.85rem;
+  border-radius: 1.3rem;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s ease, translate 0.22s var(--ease-out);
+}
+
+.epa-card:hover,
+.epa-card:focus-visible {
+  outline: none;
+  background: rgba(255, 255, 255, 0.76);
+  translate: 0 -1px;
+}
+
+.epa-card-number {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(239, 195, 61, 0.12);
+  color: #84650f;
+  font-size: 0.67rem;
+  font-weight: 520;
+}
+
+.epa-card.is-complete .epa-card-number {
+  background: rgba(111, 156, 99, 0.11);
+  color: #58784f;
+}
+
+.epa-card > span:nth-child(2) {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.epa-card strong {
+  color: #3f3f42;
+  font-size: 0.75rem;
+  font-weight: 440;
+}
+
+.epa-card small {
+  color: #85858a;
+  font-size: 0.61rem;
+  font-weight: 350;
+  line-height: 1.35;
+}
+
+.epa-card em {
+  color: #806315;
+  font-size: 0.58rem;
+  font-style: normal;
+  font-weight: 430;
+}
+
+.practice-header,
+.evidence-criterion {
+  padding: 0.9rem 1rem;
+  border-radius: 1.3rem;
+}
+
+.practice-header > span,
+.evidence-criterion > span {
+  color: #896b17;
+  font-size: 0.59rem;
+  font-weight: 540;
+  letter-spacing: 0.065em;
+  text-transform: uppercase;
+}
+
+.practice-header h3,
+.evidence-criterion h3 {
+  margin: 0.3rem 0 0;
+  color: #3d3d40;
+  font-size: 0.88rem;
+  font-weight: 420;
+  letter-spacing: -0.012em;
+  line-height: 1.35;
+}
+
+.practice-header p {
+  margin: 0.35rem 0 0;
+  color: #838388;
+  font-size: 0.64rem;
+  font-weight: 350;
+  line-height: 1.4;
+}
+
+.practice-step {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: 0.7rem;
+  align-items: center;
+  min-height: 4.25rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 1.25rem;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s ease;
+}
+
+.practice-step > span {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border: 1px solid rgba(204, 158, 24, 0.24);
+  border-radius: 50%;
+  color: #87670f;
+  font-size: 0.62rem;
+}
+
+.practice-step strong {
+  color: #4c4c4f;
+  font-size: 0.69rem;
+  font-weight: 380;
+  line-height: 1.38;
+}
+
+.practice-step.is-checked {
+  background: rgba(245, 251, 243, 0.65);
+}
+
+.practice-step.is-checked > span {
+  border-color: rgba(104, 143, 94, 0.2);
+  background: rgba(111, 156, 99, 0.12);
+  color: #58784f;
+}
+
+.wizard-progress {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.35rem;
+  padding: 0.05rem 0.35rem;
+}
+
+.wizard-progress span {
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(60, 60, 67, 0.1);
+}
+
+.wizard-progress span.is-current {
+  background: rgba(199, 151, 13, 0.62);
+}
+
+.evidence-criterion.compact h3 {
+  font-size: 0.74rem;
+  font-weight: 390;
+}
+
+.evidence-route {
+  display: grid;
+  padding: 1rem;
+  border-radius: 1.3rem;
+}
+
+.evidence-route small,
+.evidence-review small {
+  color: #8e8e93;
+  font-size: 0.59rem;
+  font-weight: 380;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.evidence-route strong,
+.evidence-review strong {
+  margin-top: 0.25rem;
+  color: #3e3e41;
+  font-size: 0.87rem;
+  font-weight: 430;
+}
+
+.evidence-route p,
+.evidence-review p {
+  margin: 0.35rem 0 0;
+  color: #85858a;
+  font-size: 0.64rem;
+  font-weight: 350;
+  line-height: 1.42;
+}
+
+.evidence-upload {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.1rem minmax(0, 1fr);
+  gap: 0.72rem;
+  align-items: start;
+  padding: 0.82rem;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.evidence-upload:hover,
+.evidence-upload:focus-within {
+  border-color: rgba(216, 168, 31, 0.3);
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.evidence-upload.has-file {
+  background: rgba(245, 251, 243, 0.64);
+}
+
+.evidence-upload input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.evidence-upload > span {
+  display: grid;
+  width: 2.1rem;
+  height: 2.1rem;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(239, 195, 61, 0.12);
+  color: #84650f;
+  font-size: 0.62rem;
+  font-weight: 520;
+}
+
+.evidence-upload.has-file > span {
+  background: rgba(111, 156, 99, 0.11);
+  color: #58784f;
+}
+
+.evidence-upload > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.evidence-upload strong {
+  color: #414144;
+  font-size: 0.72rem;
+  font-weight: 430;
+}
+
+.evidence-upload small {
+  color: #85858a;
+  font-size: 0.61rem;
+  font-weight: 350;
+  line-height: 1.38;
+}
+
+.evidence-upload em {
+  margin-top: 0.2rem;
+  color: #806315;
+  font-size: 0.58rem;
+  font-style: normal;
+  font-weight: 410;
+  overflow-wrap: anywhere;
+}
+
+.guided-textarea {
+  display: grid;
+  gap: 0.28rem;
+  padding: 0.9rem;
+  border-radius: 1.3rem;
+}
+
+.guided-textarea > span {
+  color: #414144;
+  font-size: 0.75rem;
+  font-weight: 430;
+}
+
+.guided-textarea > small {
+  color: #89898e;
+  font-size: 0.61rem;
+  font-weight: 350;
+  line-height: 1.4;
+}
+
+.guided-textarea textarea {
+  width: 100%;
+  min-height: 9rem;
+  margin-top: 0.45rem;
+  padding: 0;
+  resize: vertical;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #434346;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 360;
+  line-height: 1.5;
+}
+
+.guided-textarea em {
+  color: #9a6d48;
+  font-size: 0.57rem;
+  font-style: normal;
+  text-align: right;
+}
+
+.guided-textarea em.is-ready {
+  color: #5e8056;
+}
+
+.witness-form {
+  display: grid;
+  gap: 0.58rem;
+}
+
+.evidence-review {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+  gap: 0.8rem;
+  align-items: center;
+  padding: 0.9rem;
+  border-radius: 1.3rem;
+}
+
+.evidence-review > div {
+  display: grid;
+}
+
+.review-check {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(111, 156, 99, 0.11);
+  color: #58784f;
+  font-size: 0.76rem;
+}
+
+.evidence-record {
+  display: grid;
+  grid-template-columns: 2.1rem minmax(0, 1fr) 1.4rem;
+  gap: 0.68rem;
+  align-items: center;
+  padding: 0.75rem 0.82rem;
+  border-radius: 1.25rem;
+}
+
+.evidence-record > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.15rem;
+}
+
+.evidence-record strong {
+  color: #414144;
+  font-size: 0.71rem;
+  font-weight: 430;
+}
+
+.evidence-record small,
+.evidence-record p {
+  margin: 0;
+  color: #8b8b90;
+  font-size: 0.58rem;
+  font-weight: 350;
+  overflow-wrap: anywhere;
+}
+
+.empty-evidence {
+  display: grid;
+  justify-items: center;
+  padding: 1.6rem 1rem;
+  border-radius: 1.35rem;
+  text-align: center;
+}
+
+.empty-evidence > span {
+  color: #9a7410;
+  font-size: 1.45rem;
+  font-weight: 250;
+}
+
+.empty-evidence h3 {
+  margin: 0.45rem 0 0;
+  color: #3f3f42;
+  font-size: 0.84rem;
+  font-weight: 430;
+}
+
+.empty-evidence p {
+  max-width: 20rem;
+  margin: 0.4rem 0 0;
+  color: #85858a;
+  font-size: 0.64rem;
+  font-weight: 350;
+  line-height: 1.4;
+}
+
+.empty-evidence button {
+  min-height: 2.8rem;
+  margin-top: 0.85rem;
+  padding: 0 1.1rem;
+  border: 1px solid rgba(235, 190, 55, 0.3);
+  border-radius: 999px;
+  background: rgba(239, 195, 61, 0.14);
+  color: #6d5514;
+  cursor: pointer;
+  font-size: 0.67rem;
+  font-weight: 410;
+}
+
+@media (max-width: 430px) {
+  .progress-summary-grid {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.82fr);
+  }
+
+  .progress-summary-main,
+  .progress-summary-stat {
+    padding: 0.75rem 0.8rem;
+  }
+
+  .evia-guidance {
+    grid-template-columns: 2.1rem minmax(0, 1fr);
+    gap: 0.65rem;
+  }
+
+  .guidance-mark {
+    width: 2.1rem;
+    height: 2.1rem;
+  }
+}
