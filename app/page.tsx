@@ -3570,7 +3570,7 @@ export default function Home() {
               <div className="field-grid">
                 <label className="clean-field is-required"><span>Date</span><input required type="date" value={otjDraft.date} onChange={(event) => { setOtjDraft({ ...otjDraft, date: event.target.value, unitId: selectedUnit.id }); setOtjError(""); }} /></label>
                 <label className="clean-field is-required"><span>Hours</span><input required type="number" min="0.1" max="24" step="0.1" inputMode="decimal" value={otjDraft.hours} onChange={(event) => { setOtjDraft({ ...otjDraft, hours: event.target.value, unitId: selectedUnit.id }); setOtjError(""); }} placeholder="1.5" /></label>
-                <label className="clean-field is-wide is-required"><span>What did you learn?</span><input required type="text" value={otjDraft.title} onChange={(event) => { setOtjDraft({ ...otjDraft, title: event.target.value, unitId: selectedUnit.id }); setOtjError(""); }} placeholder="Example: cavity wall workshop" maxLength={120} /></label>
+                <label className="clean-field is-wide is-required"><span>What did you learn?</span><textarea required rows={5} value={otjDraft.title} onChange={(event) => { setOtjDraft({ ...otjDraft, title: event.target.value, unitId: selectedUnit.id }); setOtjError(""); }} placeholder="Describe what you did and what you learned" /></label>
               </div>
               {otjError && <p className="form-error" role="alert">{otjError}</p>}
               <button className="make-course-button" type="submit">Save OTJ activity</button>
