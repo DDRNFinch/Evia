@@ -1,6 +1,6 @@
 "use client";
 
-import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from "react";
+import { type ChangeEvent, type FormEvent, type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
 
 type EviaExpression = "idle" | "look-down" | "look-up-left" | "look-up-right" | "smile";
 type View =
@@ -15,9 +15,15 @@ type View =
   | "otj-progress"
   | "epa-practice"
   | "epa-session"
+  | "evidence-options"
   | "evidence"
   | "evidence-list"
+  | "portfolio-download"
   | "profile"
+  | "profile-details"
+  | "accessibility"
+  | "study-library"
+  | "study-module"
   | "manage-course"
   | "import-course"
   | "paste-layout"
@@ -26,6 +32,7 @@ type View =
   | "unit"
   | "admin-lock"
   | "admin"
+  | "admin-rpl"
   | "placeholder";
 type KsbType = "Skill" | "Knowledge" | "Behaviour";
 type CourseSource = "auto" | "layout" | "file";
@@ -75,6 +82,7 @@ type EvidenceRecord = {
   ksbType: KsbType;
   method: EvidenceMethod;
   createdAt: number;
+  updatedAt?: number;
   fileIds: string[];
   fileNames: string[];
   text?: string;
@@ -84,6 +92,33 @@ type EvidenceRecord = {
     date: string;
     testimony: string;
   };
+};
+
+type AccessibilitySettings = {
+  textSize: "standard" | "large" | "extra";
+  highContrast: boolean;
+  reduceMotion: boolean;
+  readingFocus: boolean;
+  readAloud: boolean;
+};
+
+type StudyCategory = "maths-english" | "trade" | "edi";
+
+type StudyQuestion = {
+  prompt: string;
+  options: string[];
+  answer: number;
+  explanation: string;
+};
+
+type StudyModule = {
+  id: string;
+  category: StudyCategory;
+  title: string;
+  level: string;
+  summary: string;
+  sections: { title: string; body: string }[];
+  questions: StudyQuestion[];
 };
 
 type OtjEntry = {
@@ -157,6 +192,204 @@ const epaPracticeAreas: Record<EpaArea, { title: string; summary: string; steps:
   },
 };
 
+const epaMcqQuestions: StudyQuestion[] = [
+  {
+    prompt: "What is the best first action when an EPA question feels unclear?",
+    options: ["Guess quickly", "Ask for the permitted clarification", "Skip the whole assessment", "Read a prepared answer"],
+    answer: 1,
+    explanation: "Ask for clarification within the assessment rules, then answer the question that has actually been asked.",
+  },
+  {
+    prompt: "Which answer structure gives an assessor the strongest work-based evidence?",
+    options: ["A definition only", "What I did, why, result and learning", "A one-word answer", "What someone else usually does"],
+    answer: 1,
+    explanation: "A specific example showing your action, reasoning, result and learning demonstrates both competence and understanding.",
+  },
+  {
+    prompt: "During a practical mock, when should quality be checked?",
+    options: ["Only at the end", "Before, during and at completion", "Only if something fails", "After the assessor leaves"],
+    answer: 1,
+    explanation: "Planned checks throughout the task catch errors early and show a controlled working method.",
+  },
+  {
+    prompt: "What should you do after an incorrect mock-test answer?",
+    options: ["Memorise the option letter", "Review the linked KSB and explain the correct reasoning", "Delete the result", "Avoid that topic"],
+    answer: 1,
+    explanation: "Returning to the mapped KSB and explaining the reasoning turns the error into useful learning.",
+  },
+];
+
+const studyModules: StudyModule[] = [
+  {
+    id: "maths-l1-number", category: "maths-english", title: "Maths: Number, Ratio & Percentages", level: "Level 1",
+    summary: "Use whole numbers, fractions, decimals, ratios and percentages in realistic workplace problems.",
+    sections: [
+      { title: "Choose the operation", body: "Underline what the problem asks for, identify the known quantities and decide whether to add, subtract, multiply or divide. Estimate first so you can spot an unreasonable calculator answer." },
+      { title: "Fractions, decimals and percentages", body: "These are different ways of showing a proportion. Convert a percentage to a decimal by dividing by 100. To find 20% of 85, calculate 0.20 × 85 = 17." },
+      { title: "Ratio at work", body: "A ratio compares quantities in the same units. For a 1:4 mix, there are 5 total parts. A 25 litre batch therefore uses 5 litres of the first material and 20 litres of the second." },
+    ],
+    questions: [
+      { prompt: "A job needs 240 items and 15% extra for waste. How many should be ordered?", options: ["255", "264", "276", "300"], answer: 2, explanation: "15% of 240 is 36, so 240 + 36 = 276." },
+      { prompt: "A 1:3 mix totals 20 litres. How much is the first part?", options: ["4 L", "5 L", "6 L", "15 L"], answer: 1, explanation: "There are 4 equal parts; 20 ÷ 4 = 5 litres per part." },
+      { prompt: "Which is equal to 0.35?", options: ["3.5%", "35%", "350%", "0.35%"], answer: 1, explanation: "Multiply a decimal by 100 to express it as a percentage." },
+    ],
+  },
+  {
+    id: "maths-l2-measure", category: "maths-english", title: "Maths: Measures, Formulae & Data", level: "Level 2",
+    summary: "Solve multi-step problems involving scale, area, volume, formulae and workplace data.",
+    sections: [
+      { title: "Area and volume", body: "Keep units consistent before calculating. Rectangle area is length × width; a cuboid volume is length × width × height. State square or cubic units and round only at the end." },
+      { title: "Scale and formulae", body: "At a 1:50 scale, 1 cm on a drawing represents 50 cm in reality. Substitute known values into a formula carefully, follow the order of operations and include the unit in the final answer." },
+      { title: "Interpreting data", body: "Check titles, axes, units and sample size before drawing a conclusion. The mean can be distorted by an extreme value, so compare it with the median and range when judging performance." },
+    ],
+    questions: [
+      { prompt: "A floor is 6.2 m by 4.5 m. What is its area?", options: ["10.7 m²", "21.4 m²", "27.9 m²", "55.8 m²"], answer: 2, explanation: "6.2 × 4.5 = 27.9 square metres." },
+      { prompt: "On a 1:50 drawing, a wall measures 8 cm. What is the real length?", options: ["0.4 m", "4 m", "40 m", "400 m"], answer: 1, explanation: "8 × 50 = 400 cm, which is 4 metres." },
+      { prompt: "Which measure is usually least affected by one extreme result?", options: ["Mean", "Median", "Range", "Total"], answer: 1, explanation: "The median is the middle value and is less influenced by a single outlier." },
+    ],
+  },
+  {
+    id: "english-l1", category: "maths-english", title: "English: Workplace Reading & Writing", level: "Level 1",
+    summary: "Find key information, follow instructions and write clear, accurate workplace messages.",
+    sections: [
+      { title: "Purpose and audience", body: "Before reading or writing, decide why the text exists and who will use it. A site notice, customer email and method statement need different detail, tone and vocabulary." },
+      { title: "Retrieve and check information", body: "Scan headings and keywords, then read the relevant section closely. Separate facts from opinions and cross-check dates, measurements, names and instructions before acting." },
+      { title: "Write for action", body: "Use a clear subject, logical order and specific request. Check sentence boundaries, spelling and punctuation. A reader should know what happened, what is needed, who is responsible and by when." },
+    ],
+    questions: [
+      { prompt: "Which email subject is clearest?", options: ["Hi", "Problem", "Action required: damaged delivery, 14 May", "Important!!!"], answer: 2, explanation: "It identifies the required action, issue and date without opening the message." },
+      { prompt: "Where should you look first for one detail in a long procedure?", options: ["The final sentence", "Headings and keywords", "Every word at the same speed", "Only the pictures"], answer: 1, explanation: "Scanning the structure helps locate the section before close reading." },
+      { prompt: "Which is a fact?", options: ["The room looks excellent", "The test was completed at 14:20", "This is probably safest", "The design feels modern"], answer: 1, explanation: "A recorded completion time can be checked objectively." },
+    ],
+  },
+  {
+    id: "english-l2", category: "maths-english", title: "English: Comparing Texts & Presenting a Case", level: "Level 2",
+    summary: "Compare viewpoints, judge evidence and communicate a convincing, well-structured response.",
+    sections: [
+      { title: "Compare, do not just summarise", body: "Identify each writer’s purpose, viewpoint, evidence, tone and language choices. Explain both a similarity and a difference, supporting each point with a precise reference." },
+      { title: "Judge reliability", body: "Ask who produced the information, when it was published, what evidence is supplied and whether another dependable source confirms it. Strong confidence needs more than confident wording." },
+      { title: "Build a reasoned response", body: "State your position, organise related points into paragraphs and support claims with evidence. Address a reasonable counterargument before ending with a clear recommendation." },
+    ],
+    questions: [
+      { prompt: "What makes a comparison analytical?", options: ["Retelling both texts", "Explaining how their evidence or viewpoints differ", "Counting paragraphs", "Choosing the longer text"], answer: 1, explanation: "Analysis links a specific feature to its effect or significance." },
+      { prompt: "Which source check is strongest?", options: ["It has many colours", "It agrees with me", "Its author, date and supporting evidence can be verified", "It is short"], answer: 2, explanation: "Authority, currency and verifiable evidence are meaningful reliability checks." },
+      { prompt: "Where should a counterargument appear?", options: ["It should never appear", "Where it can be answered with evidence", "Only in the title", "After the sign-off"], answer: 1, explanation: "Acknowledging and answering a reasonable objection strengthens the case." },
+    ],
+  },
+  {
+    id: "trade-coshh", category: "trade", title: "COSHH & Hazardous Substances", level: "Core construction",
+    summary: "Recognise hazardous substances and apply the hierarchy of controls before relying on PPE.",
+    sections: [
+      { title: "What COSHH controls", body: "COSHH covers substances that can harm health, including dusts, fumes, vapours, liquids and biological agents. Labels and safety data sheets help, but the work activity and route of exposure must also be assessed." },
+      { title: "Assess and control", body: "Identify the substance, who may be exposed, how exposure can occur and the likely harm. Prevent exposure where reasonably practicable; otherwise use suitable engineering controls, safe methods, training and only then appropriate PPE or RPE." },
+      { title: "Check the controls", body: "Controls must be used, maintained and reviewed. Report damaged extraction, unsuitable RPE, spills or symptoms immediately and follow emergency, storage and disposal arrangements." },
+    ],
+    questions: [
+      { prompt: "What should happen before PPE is treated as the main control?", options: ["Nothing", "Consider preventing exposure and engineering controls", "Ask workers to be careful", "Remove labels"], answer: 1, explanation: "PPE is important but sits below elimination and engineering controls in the control approach." },
+      { prompt: "Which may be a COSHH hazard?", options: ["Silica dust", "A clean chair", "A pencil drawing", "A calendar"], answer: 0, explanation: "Respirable crystalline silica dust can cause serious lung disease and needs effective control." },
+      { prompt: "When should a COSHH assessment be reviewed?", options: ["Never", "Only every ten years", "When work changes or controls may no longer be effective", "Only after a fine"], answer: 2, explanation: "A change, incident or evidence that controls are ineffective should trigger review." },
+    ],
+  },
+  {
+    id: "trade-riddor", category: "trade", title: "RIDDOR & Incident Reporting", level: "Core construction",
+    summary: "Know what to record, escalate and report after a work-related incident.",
+    sections: [
+      { title: "Immediate response", body: "Protect life first: stop the activity, summon help, make the area safe without creating more risk and preserve relevant evidence. Follow the organisation’s emergency and internal reporting procedure." },
+      { title: "What RIDDOR covers", body: "RIDDOR requires responsible persons to report specified work-related deaths, injuries, occupational diseases and dangerous occurrences. Not every accident is reportable, but internal records may still be required." },
+      { title: "Accurate records", body: "Record facts promptly: who, what, where, when, immediate controls, witnesses and the outcome. Avoid guesses or blame. Escalate to the responsible person, who decides and submits any statutory report." },
+    ],
+    questions: [
+      { prompt: "Who normally submits a RIDDOR report?", options: ["Any bystander", "The responsible person", "Only the injured person", "The equipment supplier"], answer: 1, explanation: "Employers, certain self-employed people and people in control of work premises may be responsible persons." },
+      { prompt: "What belongs in an incident record?", options: ["Rumours", "Facts, time, place, people and actions", "Only who is blamed", "A later guess"], answer: 1, explanation: "A timely factual record supports investigation and any reporting decision." },
+      { prompt: "What is the first priority after a serious incident?", options: ["Finish the task", "Protect people and summon help", "Post online", "Discard the evidence"], answer: 1, explanation: "Immediate safety and emergency response take priority." },
+    ],
+  },
+  {
+    id: "trade-handling", category: "trade", title: "Manual Handling & Safer Movement", level: "Core construction",
+    summary: "Avoid hazardous handling where possible and plan safer lifts using task, load, individual and environment factors.",
+    sections: [
+      { title: "Avoid, assess, reduce", body: "First avoid hazardous manual handling where reasonably practicable. If it cannot be avoided, assess the risk and reduce it using mechanical aids, smaller loads, better layout, suitable team handling and clear information." },
+      { title: "Dynamic assessment", body: "Consider the task, individual capability, load and environment. Check route, grip, stability, height, distance, repetition, lighting and floor condition. Stop if the conditions differ from the plan." },
+      { title: "A controlled movement", body: "Plan the destination, get close to the load, use a stable position, move smoothly and avoid twisting. Technique does not make an unsuitable load safe, and there is no single legal maximum lifting weight." },
+    ],
+    questions: [
+      { prompt: "What is the first control question?", options: ["Can hazardous handling be avoided?", "Can I lift faster?", "Who is watching?", "Can I hold my breath?"], answer: 0, explanation: "Avoiding the hazardous handling operation is the first consideration." },
+      { prompt: "Is there one legal maximum weight that is safe for everyone?", options: ["Yes, 25 kg", "Yes, 20 kg", "No", "Only outdoors"], answer: 2, explanation: "Risk depends on the task, load, individual and environment, not one universal number." },
+      { prompt: "When should a lift stop?", options: ["If the route or load is not as assessed", "Only after dropping it", "Never once started", "When someone speaks"], answer: 0, explanation: "A change in conditions can invalidate the assessment and requires a safer plan." },
+    ],
+  },
+  {
+    id: "trade-plans", category: "trade", title: "Drawings, Plans & Specifications", level: "Core construction",
+    summary: "Read dimensions, symbols, scale, notes and revisions before turning technical information into work.",
+    sections: [
+      { title: "Orientate the information", body: "Confirm the drawing title, location, scale, revision, units and relationship between plan, elevation, section and detail. Never assume an old print is the current instruction." },
+      { title: "Extract what controls the task", body: "Identify dimensions, levels, tolerances, materials, references and specification notes. Cross-check linked details and raise conflicts before work continues rather than choosing an interpretation silently." },
+      { title: "Communicate changes", body: "Record requests for information and approved changes through the agreed system. Marking up a personal copy does not replace formal revision control or authorisation." },
+    ],
+    questions: [
+      { prompt: "What should be checked before using a drawing?", options: ["Paper colour", "Revision and scale", "Who printed it", "Only the title font"], answer: 1, explanation: "Revision and scale are essential controls, together with title, units and location." },
+      { prompt: "What should you do if a dimension conflicts with a detail?", options: ["Guess", "Raise the conflict through the agreed process", "Use the smaller number", "Ignore the detail"], answer: 1, explanation: "The conflict needs authorised clarification before affected work proceeds." },
+      { prompt: "Which view usually shows a horizontal arrangement from above?", options: ["Plan", "Elevation", "Section", "Schedule"], answer: 0, explanation: "A plan conventionally shows the arrangement viewed from above." },
+    ],
+  },
+  {
+    id: "trade-law", category: "trade", title: "Construction Law & Site Responsibilities", level: "Core construction",
+    summary: "Understand CDM roles, worker responsibilities and how lawful duties become practical site controls.",
+    sections: [
+      { title: "CDM is about managed work", body: "The Construction (Design and Management) Regulations 2015 place duties across the project team. Clients, designers and contractors must exchange useful information, appoint capable people and plan, manage, monitor and coordinate work in proportion to the risk." },
+      { title: "The worker’s role", body: "A construction worker must have the skills, knowledge, training and experience needed for the work, or suitable training and supervision. Workers should understand site risks, follow rules and procedures, cooperate with dutyholders and report unsafe conditions." },
+      { title: "Instructions do not remove judgement", body: "Use the current construction phase plan, induction, RAMS and task instructions, but stop and raise a concern if the activity or conditions are different. Take reasonable care of yourself and others and use provided equipment in line with training." },
+    ],
+    questions: [
+      { prompt: "What is a contractor expected to do with construction work under CDM?", options: ["Plan, manage and monitor it", "Leave all safety to workers", "Start before planning", "Avoid coordination"], answer: 0, explanation: "Contractors plan, manage and monitor their work, provide suitable supervision and coordinate where required." },
+      { prompt: "What should a worker do if site conditions differ from the safe plan?", options: ["Continue silently", "Stop and raise the concern", "Remove the controls", "Guess a new method"], answer: 1, explanation: "A changed condition can invalidate the planned control measures and needs review." },
+      { prompt: "Which statement best describes worker competence?", options: ["A job title alone", "Relevant skills, knowledge, training and experience, or suitable supervision while learning", "Owning tools", "Time on site only"], answer: 1, explanation: "Competence is connected to the work and risk, with training and supervision supporting those still developing." },
+    ],
+  },
+  {
+    id: "edi-equality", category: "edi", title: "Equality, Diversity & Inclusion", level: "Core workplace",
+    summary: "Work fairly, challenge exclusion and understand the practical difference between equality, equity, diversity and inclusion.",
+    sections: [
+      { title: "Four connected ideas", body: "Equality means fair access and treatment; equity recognises that people may need different support to reach a fair outcome. Diversity is the presence of difference, while inclusion means people can participate, contribute and belong." },
+      { title: "Inclusive practice", body: "Use respectful language, pronounce names correctly, make information accessible and avoid assumptions about ability or background. Reasonable adjustments remove barriers without lowering the required occupational standard." },
+      { title: "Respond to concerns", body: "Challenge unsafe or discriminatory behaviour when it is safe to do so, support the person affected, record facts and use the organisation’s reporting route. Do not promise secrecy you cannot keep." },
+    ],
+    questions: [
+      { prompt: "What does an inclusive workplace do?", options: ["Treats every need as identical", "Removes barriers so people can participate", "Avoids all differences", "Lowers every standard"], answer: 1, explanation: "Inclusion creates meaningful participation while maintaining legitimate standards." },
+      { prompt: "What is a reasonable adjustment intended to do?", options: ["Give an unfair advantage", "Remove a disability-related disadvantage", "Change a person’s job title", "Hide performance"], answer: 1, explanation: "Adjustments address substantial disadvantage and enable fair access." },
+      { prompt: "What should a report of discrimination contain?", options: ["Facts and the agreed reporting route", "Online rumours", "A promise of total secrecy", "No dates"], answer: 0, explanation: "A factual, timely report through the proper route supports a fair response." },
+    ],
+  },
+  {
+    id: "edi-safeguarding", category: "edi", title: "Safeguarding & Speaking Up", level: "Core workplace",
+    summary: "Recognise concerns, respond calmly and pass information to the right safeguarding person without investigating it yourself.",
+    sections: [
+      { title: "Notice the concern", body: "A concern may arise from a disclosure, injury, behaviour change, neglect, exploitation, online contact or something that does not feel right. You do not need proof before sharing a genuine safeguarding concern." },
+      { title: "Receive a disclosure", body: "Listen, stay calm, take the person seriously and explain that you must share information with someone who can help. Do not interrogate, confront an alleged abuser or promise to keep the disclosure secret." },
+      { title: "Record and report", body: "Write the person’s own words where possible, distinguish observation from opinion, add date and time, and contact the designated safeguarding lead or emergency services if there is immediate danger." },
+    ],
+    questions: [
+      { prompt: "What should you promise after a safeguarding disclosure?", options: ["Complete secrecy", "That you will share it only with people who need to help", "That you will investigate", "That nobody will act"], answer: 1, explanation: "Be honest about the need to pass the concern to the appropriate safeguarding person." },
+      { prompt: "Do you need proof before reporting a genuine concern?", options: ["Yes", "No", "Only after asking colleagues", "Only if it happened at work"], answer: 1, explanation: "Safeguarding staff assess concerns; the learner should record and report rather than investigate." },
+      { prompt: "What should a disclosure record preserve?", options: ["The person’s own words", "Your improved version", "Only your opinion", "Nothing in writing"], answer: 0, explanation: "Accurate words, context, date and time matter." },
+    ],
+  },
+  {
+    id: "edi-values", category: "edi", title: "British Values & Prevent", level: "Core workplace",
+    summary: "Apply democracy, rule of law, individual liberty, mutual respect and tolerance while knowing how to raise a Prevent concern.",
+    sections: [
+      { title: "Values in daily work", body: "Democracy includes having a voice and listening to others; rule of law means understanding and following lawful rules; individual liberty supports informed choices; mutual respect and tolerance protect people with different beliefs and backgrounds." },
+      { title: "Professional disagreement", body: "People can disagree firmly without intimidation or dehumanising language. Test claims against reliable evidence, allow lawful viewpoints to be heard and challenge hatred or discrimination through safe reporting routes." },
+      { title: "Prevent concerns", body: "Changes in behaviour alone do not prove radicalisation. Notice the whole context, record factual concerns and follow the provider’s safeguarding or Prevent route. Do not investigate or label the person yourself." },
+    ],
+    questions: [
+      { prompt: "Which value supports people making lawful, informed choices?", options: ["Individual liberty", "Rule by rumour", "Silence", "Uniformity"], answer: 0, explanation: "Individual liberty includes protected, responsible choice within the law." },
+      { prompt: "How should a Prevent concern be handled?", options: ["Publicly label the person", "Record facts and use the safeguarding route", "Investigate their devices", "Ignore all changes"], answer: 1, explanation: "Use the provider’s safeguarding process; do not conduct your own investigation." },
+      { prompt: "Can mutual respect include disagreement?", options: ["No", "Yes, when expressed lawfully and without abuse", "Only online", "Only with a manager"], answer: 1, explanation: "Respectful disagreement is compatible with democratic participation and individual liberty." },
+    ],
+  },
+];
+
 const courseMappingVersion = 4;
 const dayInMilliseconds = 86_400_000;
 const evidenceDatabaseName = "evia-evidence-files";
@@ -222,6 +455,227 @@ async function saveEvidenceFile(id: string, file: File) {
   } finally {
     database.close();
   }
+}
+
+async function getEvidenceFile(id: string) {
+  const database = await openEvidenceDatabase();
+  try {
+    return await new Promise<{ blob: Blob; name: string; type: string } | null>((resolve, reject) => {
+      const transaction = database.transaction(evidenceStoreName, "readonly");
+      const request = transaction.objectStore(evidenceStoreName).get(id);
+      request.onsuccess = () => {
+        const value = request.result as { blob?: Blob; name?: string; type?: string } | undefined;
+        resolve(value?.blob ? { blob: value.blob, name: value.name ?? "evidence", type: value.type ?? value.blob.type } : null);
+      };
+      request.onerror = () => reject(request.error ?? new Error("The evidence file could not be opened."));
+    });
+  } finally {
+    database.close();
+  }
+}
+
+async function deleteEvidenceFile(id: string) {
+  const database = await openEvidenceDatabase();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const transaction = database.transaction(evidenceStoreName, "readwrite");
+      transaction.objectStore(evidenceStoreName).delete(id);
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error ?? new Error("The evidence file could not be deleted."));
+      transaction.onabort = () => reject(transaction.error ?? new Error("The evidence file could not be deleted."));
+    });
+  } finally {
+    database.close();
+  }
+}
+
+function evidenceRecordComplete(record: EvidenceRecord) {
+  if (record.method === "photo") return record.fileIds.length >= 3;
+  if (record.method === "video" || record.method === "audio") return record.fileIds.length >= 1;
+  if (record.method === "written" || record.method === "reflection") return countWords(record.text ?? "") >= 30;
+  return Boolean(
+    record.witness?.name.trim()
+    && record.witness.role.trim()
+    && record.witness.date
+    && countWords(record.witness.testimony) >= 30,
+  );
+}
+
+function evidenceRecordProgress(record: EvidenceRecord | undefined) {
+  if (!record) return 0;
+  if (record.method === "photo") return Math.min(100, Math.round((record.fileIds.length / 3) * 100));
+  if (record.method === "video" || record.method === "audio") return record.fileIds.length ? 100 : 0;
+  if (record.method === "written" || record.method === "reflection") return Math.min(100, Math.round((countWords(record.text ?? "") / 30) * 100));
+  const completeFields = [record.witness?.name, record.witness?.role, record.witness?.date].filter(Boolean).length;
+  const words = countWords(record.witness?.testimony ?? "");
+  return evidenceRecordComplete(record) ? 100 : Math.min(90, completeFields * 15 + Math.round(Math.min(30, words) / 30 * 45));
+}
+
+function fileSafe(value: string) {
+  return value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 72) || "Evidence";
+}
+
+function fileExtension(file: File) {
+  const fromName = file.name.match(/\.[a-zA-Z0-9]{1,8}$/)?.[0]?.toLowerCase();
+  if (fromName) return fromName;
+  const subtype = file.type.split("/")[1]?.split(";")[0]?.replace("jpeg", "jpg");
+  return subtype ? `.${subtype}` : "";
+}
+
+function evidenceFileName(ksb: CourseKsb, method: EvidenceMethod, index: number, file: File) {
+  const route = method === "photo" ? `Photo-${index + 1}` : evidenceMethodNames[method].replace(/\s+/g, "-");
+  return `${fileSafe(`${ksb.code}-${conciseTitle(ksb.description, 7)}-${route}`)}${fileExtension(file)}`;
+}
+
+function triggerDownload(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+function pdfSafe(value: string) {
+  return value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u2013\u2014]/g, "-")
+    .replace(/[^\x20-\x7E]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function wrapText(value: string, maximum = 86) {
+  const words = pdfSafe(value).split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let line = "";
+  words.forEach((word) => {
+    const candidate = line ? `${line} ${word}` : word;
+    if (candidate.length > maximum && line) {
+      lines.push(line);
+      line = word;
+    } else line = candidate;
+  });
+  if (line) lines.push(line);
+  return lines.length ? lines : [""];
+}
+
+function escapePdf(value: string) {
+  return pdfSafe(value).replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+}
+
+function createEvidencePdf(title: string, subtitle: string, sourceLines: string[]) {
+  const lines = sourceLines.flatMap((line) => line ? wrapText(line) : [""]);
+  const pages = Array.from({ length: Math.max(1, Math.ceil(lines.length / 43)) }, (_, index) => lines.slice(index * 43, (index + 1) * 43));
+  const objects: string[] = [];
+  const pageObjects = pages.map((_, index) => 5 + index * 2);
+  objects[1] = "<< /Type /Catalog /Pages 2 0 R >>";
+  objects[2] = `<< /Type /Pages /Count ${pages.length} /Kids [${pageObjects.map((number) => `${number} 0 R`).join(" ")}] >>`;
+  objects[3] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>";
+  objects[4] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>";
+  pages.forEach((pageLines, index) => {
+    const pageObject = pageObjects[index];
+    const contentObject = pageObject + 1;
+    const commands = [
+      "0.94 0.76 0.24 rg 0 806 595 36 re f",
+      `BT /F2 15 Tf 0.12 0.12 0.13 rg 42 818 Td (${escapePdf(title)}) Tj ET`,
+      `BT /F1 8.5 Tf 0.33 0.33 0.35 rg 42 789 Td (${escapePdf(`${subtitle} | Page ${index + 1} of ${pages.length}`)}) Tj ET`,
+    ];
+    let y = 765;
+    pageLines.forEach((line) => {
+      const isHeading = /^(UNIT EVIDENCE PACK|LEARNER DETAILS|MAPPING SUMMARY|[KSB]\d|EVIDENCE:|RPL:)/.test(line);
+      commands.push(`BT /${isHeading ? "F2" : "F1"} ${isHeading ? "10" : "9"} Tf ${isHeading ? "0.16 0.16 0.18" : "0.28 0.28 0.3"} rg 42 ${y} Td (${escapePdf(line)}) Tj ET`);
+      y -= line ? 14 : 8;
+    });
+    commands.push(`BT /F1 7.5 Tf 0.48 0.48 0.5 rg 42 28 Td (Created by Evia - Apprentice Vocational Assistant) Tj ET`);
+    const stream = commands.join("\n");
+    objects[pageObject] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${contentObject} 0 R >>`;
+    objects[contentObject] = `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`;
+  });
+
+  let pdf = "%PDF-1.4\n%EVIA\n";
+  const offsets = [0];
+  for (let index = 1; index < objects.length; index += 1) {
+    offsets[index] = pdf.length;
+    pdf += `${index} 0 obj\n${objects[index]}\nendobj\n`;
+  }
+  const xref = pdf.length;
+  pdf += `xref\n0 ${objects.length}\n0000000000 65535 f \n`;
+  for (let index = 1; index < objects.length; index += 1) pdf += `${String(offsets[index]).padStart(10, "0")} 00000 n \n`;
+  pdf += `trailer\n<< /Size ${objects.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  return new Blob([pdf], { type: "application/pdf" });
+}
+
+const crcTable = Array.from({ length: 256 }, (_, number) => {
+  let crc = number;
+  for (let bit = 0; bit < 8; bit += 1) crc = (crc & 1) ? 0xedb88320 ^ (crc >>> 1) : crc >>> 1;
+  return crc >>> 0;
+});
+
+function crc32(bytes: Uint8Array) {
+  let crc = 0xffffffff;
+  bytes.forEach((byte) => { crc = crcTable[(crc ^ byte) & 0xff] ^ (crc >>> 8); });
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function littleEndian(value: number, size: 2 | 4) {
+  const bytes = new Uint8Array(size);
+  const view = new DataView(bytes.buffer);
+  if (size === 2) view.setUint16(0, value, true);
+  else view.setUint32(0, value >>> 0, true);
+  return bytes;
+}
+
+function joinBytes(parts: Uint8Array[]) {
+  const result = new Uint8Array(parts.reduce((total, part) => total + part.length, 0));
+  let offset = 0;
+  parts.forEach((part) => { result.set(part, offset); offset += part.length; });
+  return result;
+}
+
+async function createZip(entries: { name: string; blob: Blob }[]) {
+  const encoder = new TextEncoder();
+  const localParts: Uint8Array[] = [];
+  const centralParts: Uint8Array[] = [];
+  let localOffset = 0;
+  const now = new Date();
+  const dosTime = (now.getHours() << 11) | (now.getMinutes() << 5) | Math.floor(now.getSeconds() / 2);
+  const dosDate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+
+  for (const entry of entries) {
+    const name = encoder.encode(fileSafe(entry.name.replace(/\.[^.]+$/, "")) + (entry.name.match(/\.[^.]+$/)?.[0] ?? ""));
+    const data = new Uint8Array(await entry.blob.arrayBuffer());
+    const crc = crc32(data);
+    const local = joinBytes([
+      littleEndian(0x04034b50, 4), littleEndian(20, 2), littleEndian(0x0800, 2), littleEndian(0, 2),
+      littleEndian(dosTime, 2), littleEndian(dosDate, 2), littleEndian(crc, 4), littleEndian(data.length, 4),
+      littleEndian(data.length, 4), littleEndian(name.length, 2), littleEndian(0, 2), name, data,
+    ]);
+    localParts.push(local);
+    centralParts.push(joinBytes([
+      littleEndian(0x02014b50, 4), littleEndian(20, 2), littleEndian(20, 2), littleEndian(0x0800, 2), littleEndian(0, 2),
+      littleEndian(dosTime, 2), littleEndian(dosDate, 2), littleEndian(crc, 4), littleEndian(data.length, 4),
+      littleEndian(data.length, 4), littleEndian(name.length, 2), littleEndian(0, 2), littleEndian(0, 2),
+      littleEndian(0, 2), littleEndian(0, 2), littleEndian(0, 4), littleEndian(localOffset, 4), name,
+    ]));
+    localOffset += local.length;
+  }
+  const central = joinBytes(centralParts);
+  const end = joinBytes([
+    littleEndian(0x06054b50, 4), littleEndian(0, 2), littleEndian(0, 2), littleEndian(entries.length, 2),
+    littleEndian(entries.length, 2), littleEndian(central.length, 4), littleEndian(localOffset, 4), littleEndian(0, 2),
+  ]);
+  const zipBytes = joinBytes([...localParts, central, end]);
+  return new Blob([zipBytes.buffer as ArrayBuffer], { type: "application/zip" });
 }
 
 const calmExpressionSequence: { pose: EviaExpression; duration: number }[] = [
@@ -935,6 +1389,7 @@ export default function Home() {
   const [onboardingChecked, setOnboardingChecked] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState<number | null>(null);
   const [fullName, setFullName] = useState("");
+  const [employer, setEmployer] = useState("");
   const [course, setCourse] = useState<LearnerCourse | null>(null);
   const [timeline, setTimeline] = useState<CourseTimeline>({ startDate: "", endDate: "", weeklyHours: 37 });
   const [evidenceRecords, setEvidenceRecords] = useState<EvidenceRecord[]>([]);
@@ -944,6 +1399,13 @@ export default function Home() {
     interview: [false, false, false, false],
     mcq: [false, false, false, false],
   });
+  const [epaResponses, setEpaResponses] = useState<Record<EpaArea, string[]>>({ practical: ["", "", "", ""], interview: ["", "", "", ""], mcq: ["", "", "", ""] });
+  const [epaAnswers, setEpaAnswers] = useState<number[]>([-1, -1, -1, -1]);
+  const [rplCodes, setRplCodes] = useState<string[]>([]);
+  const [accessibility, setAccessibility] = useState<AccessibilitySettings>({ textSize: "standard", highContrast: false, reduceMotion: false, readingFocus: false, readAloud: false });
+  const [selectedStudyCategory, setSelectedStudyCategory] = useState<StudyCategory>("maths-english");
+  const [selectedStudyModuleId, setSelectedStudyModuleId] = useState("");
+  const [studyAnswers, setStudyAnswers] = useState<Record<string, number[]>>({});
   const [ksbsText, setKsbsText] = useState("");
   const [layoutText, setLayoutText] = useState("");
   const [courseFileName, setCourseFileName] = useState("");
@@ -954,6 +1416,7 @@ export default function Home() {
   const [selectedUnitId, setSelectedUnitId] = useState("");
   const [activeEpaArea, setActiveEpaArea] = useState<EpaArea>("practical");
   const [activeEvidenceKsb, setActiveEvidenceKsb] = useState<CourseKsb | null>(null);
+  const [evidenceBack, setEvidenceBack] = useState<View>("unit");
   const [activeEvidenceMethod, setActiveEvidenceMethod] = useState<EvidenceMethod>("photo");
   const [evidenceStep, setEvidenceStep] = useState(0);
   const [evidenceFiles, setEvidenceFiles] = useState<(File | null)[]>([]);
@@ -962,6 +1425,7 @@ export default function Home() {
   const [timelineError, setTimelineError] = useState("");
   const [otjError, setOtjError] = useState("");
   const [savingEvidence, setSavingEvidence] = useState(false);
+  const [exporting, setExporting] = useState("");
   const [witnessDraft, setWitnessDraft] = useState({ name: "", role: "", date: todayDateValue(), testimony: "" });
   const [otjDraft, setOtjDraft] = useState({ date: todayDateValue(), title: "", hours: "" });
   const [adminCode, setAdminCode] = useState("");
@@ -977,6 +1441,7 @@ export default function Home() {
   });
   const transitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastReadTap = useRef<{ time: number; element: HTMLElement | null }>({ time: 0, element: null });
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => setReady(true));
@@ -1011,15 +1476,22 @@ export default function Home() {
 
   useEffect(() => {
     let savedName = "";
+    let savedEmployer = "";
     let onboardingComplete = false;
     let savedCourse: LearnerCourse | null = null;
     let savedTimeline: CourseTimeline | null = null;
     let savedEvidence: EvidenceRecord[] = [];
     let savedOtjEntries: OtjEntry[] = [];
     let savedEpaChecks: Record<EpaArea, boolean[]> | null = null;
+    let savedEpaResponses: Record<EpaArea, string[]> | null = null;
+    let savedEpaAnswers: number[] | null = null;
+    let savedRplCodes: string[] = [];
+    let savedAccessibility: AccessibilitySettings | null = null;
+    let savedStudyAnswers: Record<string, number[]> = {};
 
     try {
       savedName = window.localStorage.getItem("evia-full-name") ?? "";
+      savedEmployer = window.localStorage.getItem("evia-employer") ?? "";
       onboardingComplete = window.localStorage.getItem("evia-onboarding-complete") === "true";
       const storedCourse = window.localStorage.getItem("evia-course");
       savedCourse = storedCourse ? JSON.parse(storedCourse) as LearnerCourse : null;
@@ -1033,6 +1505,16 @@ export default function Home() {
       savedOtjEntries = Array.isArray(parsedOtj) ? parsedOtj as OtjEntry[] : [];
       const storedEpa = window.localStorage.getItem("evia-epa-checks");
       savedEpaChecks = storedEpa ? JSON.parse(storedEpa) as Record<EpaArea, boolean[]> : null;
+      const storedEpaResponses = window.localStorage.getItem("evia-epa-responses");
+      savedEpaResponses = storedEpaResponses ? JSON.parse(storedEpaResponses) as Record<EpaArea, string[]> : null;
+      const storedEpaAnswers = window.localStorage.getItem("evia-epa-answers");
+      savedEpaAnswers = storedEpaAnswers ? JSON.parse(storedEpaAnswers) as number[] : null;
+      const storedRpl = window.localStorage.getItem("evia-rpl-codes");
+      savedRplCodes = storedRpl ? JSON.parse(storedRpl) as string[] : [];
+      const storedAccessibility = window.localStorage.getItem("evia-accessibility");
+      savedAccessibility = storedAccessibility ? JSON.parse(storedAccessibility) as AccessibilitySettings : null;
+      const storedStudyAnswers = window.localStorage.getItem("evia-study-answers");
+      savedStudyAnswers = storedStudyAnswers ? JSON.parse(storedStudyAnswers) as Record<string, number[]> : {};
     } catch {
       onboardingComplete = false;
     }
@@ -1043,6 +1525,7 @@ export default function Home() {
     } else {
       setFullName(savedName);
     }
+    setEmployer(savedEmployer);
 
     if (savedCourse?.units?.length) {
       let currentCourse = savedCourse;
@@ -1073,6 +1556,19 @@ export default function Home() {
         mcq: Array.isArray(savedEpaChecks.mcq) ? savedEpaChecks.mcq.slice(0, 4) : [false, false, false, false],
       });
     }
+    if (savedEpaResponses) setEpaResponses({
+      practical: Array.isArray(savedEpaResponses.practical) ? savedEpaResponses.practical.slice(0, 4) : ["", "", "", ""],
+      interview: Array.isArray(savedEpaResponses.interview) ? savedEpaResponses.interview.slice(0, 4) : ["", "", "", ""],
+      mcq: Array.isArray(savedEpaResponses.mcq) ? savedEpaResponses.mcq.slice(0, 4) : ["", "", "", ""],
+    });
+    if (savedEpaAnswers) setEpaAnswers(savedEpaAnswers.slice(0, 4));
+    setRplCodes(Array.isArray(savedRplCodes) ? savedRplCodes.filter((code) => typeof code === "string") : []);
+    if (savedAccessibility) setAccessibility({
+      textSize: ["standard", "large", "extra"].includes(savedAccessibility.textSize) ? savedAccessibility.textSize : "standard",
+      highContrast: Boolean(savedAccessibility.highContrast), reduceMotion: Boolean(savedAccessibility.reduceMotion),
+      readingFocus: Boolean(savedAccessibility.readingFocus), readAloud: Boolean(savedAccessibility.readAloud),
+    });
+    setStudyAnswers(savedStudyAnswers && typeof savedStudyAnswers === "object" ? savedStudyAnswers : {});
     setOnboardingChecked(true);
   }, []);
 
@@ -1084,7 +1580,7 @@ export default function Home() {
       return;
     }
 
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduceMotion = accessibility.reduceMotion || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduceMotion) {
       setExpression(open ? "look-down" : "idle");
       return;
@@ -1103,7 +1599,7 @@ export default function Home() {
     };
     showNextExpression();
     return () => clearTimeout(timer);
-  }, [open, view, onboardingStep]);
+  }, [open, view, onboardingStep, accessibility.reduceMotion]);
 
   useEffect(() => () => {
     if (transitionTimer.current) clearTimeout(transitionTimer.current);
@@ -1118,7 +1614,10 @@ export default function Home() {
   ).values()];
   const courseKsbCodes = new Set(courseKsbs.map((ksb) => ksb.code));
   const completedKsbCodes = new Set(
-    evidenceRecords.filter((record) => courseKsbCodes.has(record.ksbCode)).map((record) => record.ksbCode),
+    [
+      ...evidenceRecords.filter((record) => courseKsbCodes.has(record.ksbCode) && evidenceRecordComplete(record)).map((record) => record.ksbCode),
+      ...rplCodes.filter((code) => courseKsbCodes.has(code)),
+    ],
   );
   const ksbProgress = courseKsbs.length ? clampPercentage((completedKsbCodes.size / courseKsbs.length) * 100) : 0;
   const courseStart = parseLocalDate(timeline.startDate);
@@ -1157,6 +1656,10 @@ export default function Home() {
     skills: layoutDraftKsbs.filter((item) => item.type === "Skill").length,
     behaviours: new Set(layoutDraftKsbs.filter((item) => item.type === "Behaviour").map((item) => item.code)).size,
   };
+  const selectedStudyModule = studyModules.find((module) => module.id === selectedStudyModuleId) ?? null;
+  const activeEvidenceRecord = activeEvidenceKsb
+    ? evidenceRecords.find((record) => record.ksbCode === activeEvidenceKsb.code && record.method === activeEvidenceMethod)
+    : undefined;
 
   const showNotice = (message: string) => {
     setNotice(message);
@@ -1192,17 +1695,89 @@ export default function Home() {
     showNotice("Your course timeline has been updated.");
   };
 
+  const persistEvidenceRecords = (records: EvidenceRecord[]) => {
+    setEvidenceRecords(records);
+    try { window.localStorage.setItem("evia-evidence-records", JSON.stringify(records)); } catch { /* Keep session data. */ }
+  };
+
+  const openEvidenceOptions = (ksb: CourseKsb) => {
+    setActiveEvidenceKsb(ksb);
+    setEvidenceBack(view);
+    setEvidenceError("");
+    navigate("evidence-options");
+  };
+
   const startEvidence = (ksb: CourseKsb, method: EvidenceMethod) => {
+    const saved = evidenceRecords.find((record) => record.ksbCode === ksb.code && record.method === method);
     setActiveEvidenceKsb(ksb);
     setActiveEvidenceMethod(method);
-    setEvidenceStep(0);
-    setEvidenceFiles(method === "photo" ? [null, null, null] : [null]);
-    setEvidenceText("");
-    setWitnessDraft({ name: "", role: "", date: todayDateValue(), testimony: "" });
+    setEvidenceStep(1);
+    setEvidenceFiles([]);
+    setEvidenceText(saved?.text ?? "");
+    setWitnessDraft(saved?.witness ?? { name: "", role: "", date: todayDateValue(), testimony: "" });
     setEvidenceError("");
     navigate("evidence");
   };
 
+  const saveMediaEvidence = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || !activeEvidenceKsb || savingEvidence) return;
+    const existing = evidenceRecords.find((record) => record.ksbCode === activeEvidenceKsb.code && record.method === activeEvidenceMethod);
+    if (activeEvidenceMethod === "photo" && (existing?.fileIds.length ?? 0) >= 3) return;
+    if (file.size > 250_000_000) {
+      setEvidenceError("That file is larger than 250 MB. Record a shorter clip or choose a smaller file.");
+      return;
+    }
+    setSavingEvidence(true);
+    setEvidenceError("");
+    const recordId = existing?.id ?? `evidence-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const index = activeEvidenceMethod === "photo" ? (existing?.fileIds.length ?? 0) : 0;
+    const fileId = `${recordId}-file-${Date.now()}-${index + 1}`;
+    const namedFile = new File([file], evidenceFileName(activeEvidenceKsb, activeEvidenceMethod, index, file), { type: file.type, lastModified: file.lastModified });
+    try {
+      await saveEvidenceFile(fileId, namedFile);
+      if (activeEvidenceMethod !== "photo" && existing?.fileIds.length) {
+        await Promise.all(existing.fileIds.map((id) => deleteEvidenceFile(id).catch(() => undefined)));
+      }
+      const nextRecord: EvidenceRecord = {
+        ...(existing ?? { id: recordId, ksbCode: activeEvidenceKsb.code, ksbType: activeEvidenceKsb.type, method: activeEvidenceMethod, createdAt: Date.now(), fileIds: [], fileNames: [] }),
+        updatedAt: Date.now(),
+        fileIds: activeEvidenceMethod === "photo" ? [...(existing?.fileIds ?? []), fileId] : [fileId],
+        fileNames: activeEvidenceMethod === "photo" ? [...(existing?.fileNames ?? []), namedFile.name] : [namedFile.name],
+      };
+      const nextRecords = existing ? evidenceRecords.map((record) => record.id === existing.id ? nextRecord : record) : [...evidenceRecords, nextRecord];
+      persistEvidenceRecords(nextRecords);
+      const progress = evidenceRecordProgress(nextRecord);
+      showNotice(progress === 100 ? `${activeEvidenceKsb.code} evidence complete.` : `${activeEvidenceKsb.code} saved · ${progress}% complete.`);
+    } catch {
+      setEvidenceError("Evia couldn’t save that file on this device. Check storage space and try again.");
+    } finally {
+      setSavingEvidence(false);
+    }
+  };
+
+  const removeMediaEvidence = async (index: number) => {
+    if (!activeEvidenceRecord || savingEvidence) return;
+    const fileId = activeEvidenceRecord.fileIds[index];
+    setSavingEvidence(true);
+    try {
+      await deleteEvidenceFile(fileId);
+      const nextIds = activeEvidenceRecord.fileIds.filter((_, itemIndex) => itemIndex !== index);
+      const nextNames = activeEvidenceRecord.fileNames.filter((_, itemIndex) => itemIndex !== index);
+      const nextRecords = nextIds.length
+        ? evidenceRecords.map((record) => record.id === activeEvidenceRecord.id ? { ...record, fileIds: nextIds, fileNames: nextNames, updatedAt: Date.now() } : record)
+        : evidenceRecords.filter((record) => record.id !== activeEvidenceRecord.id);
+      persistEvidenceRecords(nextRecords);
+      showNotice("Evidence file deleted.");
+    } catch {
+      setEvidenceError("That file could not be deleted. Try again.");
+    } finally {
+      setSavingEvidence(false);
+    }
+  };
+
+  // Retained for the legacy render branch below; the live evidence workflow saves media immediately.
   const selectEvidenceFile = (index: number, event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
     setEvidenceFiles((current) => {
@@ -1210,16 +1785,10 @@ export default function Home() {
       next[index] = file;
       return next;
     });
-    setEvidenceError("");
   };
+  const continueEvidence = () => setEvidenceStep((step) => Math.min(2, step + 1));
 
   const validateEvidence = () => {
-    if (activeEvidenceMethod === "photo" && evidenceFiles.filter(Boolean).length !== 3) {
-      return "Add all three photos: preparation, work in progress and the finished result.";
-    }
-    if (["video", "audio"].includes(activeEvidenceMethod) && !evidenceFiles[0]) {
-      return `Choose one ${activeEvidenceMethod} file before continuing.`;
-    }
     if (["written", "reflection"].includes(activeEvidenceMethod) && countWords(evidenceText) < 30) {
       return "Add at least 30 words so your evidence gives the assessor enough specific detail.";
     }
@@ -1234,52 +1803,30 @@ export default function Home() {
     return "";
   };
 
-  const continueEvidence = () => {
-    if (evidenceStep === 0) {
-      setEvidenceStep(1);
-      return;
-    }
-    const error = validateEvidence();
-    if (error) {
-      setEvidenceError(error);
-      return;
-    }
-    setEvidenceError("");
-    setEvidenceStep(2);
-  };
-
   const saveEvidence = async () => {
     if (!activeEvidenceKsb || savingEvidence) return;
     const error = validateEvidence();
     if (error) {
       setEvidenceError(error);
-      setEvidenceStep(1);
       return;
     }
     setSavingEvidence(true);
     setEvidenceError("");
-    const recordId = `evidence-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const selectedFiles = evidenceFiles.filter((file): file is File => Boolean(file));
-    const fileIds = selectedFiles.map((_, index) => `${recordId}-file-${index + 1}`);
+    const existing = evidenceRecords.find((record) => record.ksbCode === activeEvidenceKsb.code && record.method === activeEvidenceMethod);
+    const recordId = existing?.id ?? `evidence-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     try {
-      await Promise.all(selectedFiles.map((file, index) => saveEvidenceFile(fileIds[index], file)));
       const nextRecord: EvidenceRecord = {
-        id: recordId,
-        ksbCode: activeEvidenceKsb.code,
-        ksbType: activeEvidenceKsb.type,
-        method: activeEvidenceMethod,
-        createdAt: Date.now(),
-        fileIds,
-        fileNames: selectedFiles.map((file) => file.name),
+        ...(existing ?? { id: recordId, ksbCode: activeEvidenceKsb.code, ksbType: activeEvidenceKsb.type, method: activeEvidenceMethod, createdAt: Date.now(), fileIds: [], fileNames: [] }),
+        updatedAt: Date.now(),
+        fileNames: [`${fileSafe(`${activeEvidenceKsb.code}-${conciseTitle(activeEvidenceKsb.description, 7)}-${evidenceMethodNames[activeEvidenceMethod]}`)}.txt`],
         ...(["written", "reflection"].includes(activeEvidenceMethod) ? { text: evidenceText.trim() } : {}),
         ...(activeEvidenceMethod === "witness" ? { witness: { ...witnessDraft, name: witnessDraft.name.trim(), role: witnessDraft.role.trim(), testimony: witnessDraft.testimony.trim() } } : {}),
       };
-      const nextRecords = [...evidenceRecords, nextRecord];
-      setEvidenceRecords(nextRecords);
-      try { window.localStorage.setItem("evia-evidence-records", JSON.stringify(nextRecords)); } catch { /* Keep session data. */ }
+      const nextRecords = existing ? evidenceRecords.map((record) => record.id === existing.id ? nextRecord : record) : [...evidenceRecords, nextRecord];
+      persistEvidenceRecords(nextRecords);
       showNotice(`${activeEvidenceKsb.code} evidence saved on this device.`);
       setSavingEvidence(false);
-      navigate("unit");
+      navigate("evidence-options");
     } catch {
       setSavingEvidence(false);
       setEvidenceError("Evia couldn’t save that file on this device. Check your available storage and try again.");
@@ -1316,6 +1863,36 @@ export default function Home() {
     });
   };
 
+  const updateEpaResponse = (area: EpaArea, index: number, value: string) => {
+    setEpaResponses((current) => {
+      const nextArea = [...current[area]];
+      nextArea[index] = value;
+      const next = { ...current, [area]: nextArea };
+      try { window.localStorage.setItem("evia-epa-responses", JSON.stringify(next)); } catch { /* Keep session data. */ }
+      return next;
+    });
+    setEpaChecks((current) => {
+      const nextArea = [...current[area]];
+      nextArea[index] = countWords(value) >= 12;
+      const next = { ...current, [area]: nextArea };
+      try { window.localStorage.setItem("evia-epa-checks", JSON.stringify(next)); } catch { /* Keep session data. */ }
+      return next;
+    });
+  };
+
+  const answerEpaQuestion = (index: number, answer: number) => {
+    const nextAnswers = [...epaAnswers];
+    nextAnswers[index] = answer;
+    setEpaAnswers(nextAnswers);
+    try { window.localStorage.setItem("evia-epa-answers", JSON.stringify(nextAnswers)); } catch { /* Keep session data. */ }
+    setEpaChecks((current) => {
+      const nextMcq = epaMcqQuestions.map((question, questionIndex) => nextAnswers[questionIndex] === question.answer);
+      const next = { ...current, mcq: nextMcq };
+      try { window.localStorage.setItem("evia-epa-checks", JSON.stringify(next)); } catch { /* Keep session data. */ }
+      return next;
+    });
+  };
+
   const startEpa = (area: EpaArea) => {
     setActiveEpaArea(area);
     navigate("epa-session");
@@ -1325,6 +1902,156 @@ export default function Home() {
     if (!epaChecks[activeEpaArea].every(Boolean)) return;
     showNotice(`${epaPracticeAreas[activeEpaArea].title} completed.`);
     navigate("epa-practice");
+  };
+
+  const saveProfileDetails = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const cleanedName = fullName.trim().replace(/\s+/g, " ");
+    const cleanedEmployer = employer.trim().replace(/\s+/g, " ");
+    const start = parseLocalDate(timeline.startDate);
+    const end = parseLocalDate(timeline.endDate);
+    const weeklyHours = Number(timeline.weeklyHours);
+    if (!cleanedName || !cleanedEmployer) {
+      setTimelineError("Add the learner’s full name and employer.");
+      return;
+    }
+    if (!start || !end || end <= start) {
+      setTimelineError("Add a valid course start date and an end date after it.");
+      return;
+    }
+    if (!Number.isFinite(weeklyHours) || weeklyHours <= 0 || weeklyHours > 100) {
+      setTimelineError("Working hours must be between 1 and 100 per week.");
+      return;
+    }
+    const nextTimeline = { ...timeline, weeklyHours };
+    setFullName(cleanedName);
+    setEmployer(cleanedEmployer);
+    setTimeline(nextTimeline);
+    setTimelineError("");
+    try {
+      window.localStorage.setItem("evia-full-name", cleanedName);
+      window.localStorage.setItem("evia-employer", cleanedEmployer);
+      window.localStorage.setItem("evia-course-timeline", JSON.stringify(nextTimeline));
+    } catch { /* Keep session data. */ }
+    showNotice("Your learner details have been saved.");
+  };
+
+  const updateAccessibility = (changes: Partial<AccessibilitySettings>) => {
+    const next = { ...accessibility, ...changes };
+    setAccessibility(next);
+    try { window.localStorage.setItem("evia-accessibility", JSON.stringify(next)); } catch { /* Keep session data. */ }
+  };
+
+  const toggleRpl = (code: string) => {
+    const next = rplCodes.includes(code) ? rplCodes.filter((item) => item !== code) : [...rplCodes, code];
+    setRplCodes(next);
+    try { window.localStorage.setItem("evia-rpl-codes", JSON.stringify(next)); } catch { /* Keep session data. */ }
+  };
+
+  const answerStudyQuestion = (moduleId: string, index: number, answer: number) => {
+    const nextModule = [...(studyAnswers[moduleId] ?? [])];
+    nextModule[index] = answer;
+    const next = { ...studyAnswers, [moduleId]: nextModule };
+    setStudyAnswers(next);
+    try { window.localStorage.setItem("evia-study-answers", JSON.stringify(next)); } catch { /* Keep session data. */ }
+  };
+
+  const unitPdf = (unit: CourseUnit) => {
+    const date = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+    const uniqueKsbs = [...new Map(unit.ksbs.map((ksb) => [ksb.code, ksb])).values()];
+    const lines = [
+      "UNIT EVIDENCE PACK", "", "LEARNER DETAILS", `Learner: ${fullName || "Not supplied"}`,
+      `Employer: ${employer || "Not supplied"}`, `Course dates: ${timeline.startDate || "Not supplied"} to ${timeline.endDate || "Not supplied"}`,
+      `Working hours: ${timeline.weeklyHours || 0} per week`, `Generated: ${date}`, "", "MAPPING SUMMARY",
+      `${uniqueKsbs.length} mapped KSBs | ${uniqueKsbs.filter((ksb) => completedKsbCodes.has(ksb.code)).length} complete or RPL`, "",
+    ];
+    uniqueKsbs.forEach((ksb) => {
+      lines.push(`${ksb.code} - ${ksb.type}: ${ksb.description}`);
+      if (rplCodes.includes(ksb.code)) lines.push("RPL: Marked as recognised prior learning by an authorised administrator.");
+      const records = evidenceRecords.filter((record) => record.ksbCode === ksb.code);
+      if (!records.length && !rplCodes.includes(ksb.code)) lines.push("EVIDENCE: No evidence currently saved.");
+      records.forEach((record) => {
+        lines.push(`EVIDENCE: ${evidenceMethodNames[record.method]} - ${evidenceRecordComplete(record) ? "Complete" : `${evidenceRecordProgress(record)}% complete`}`);
+        record.fileNames.forEach((name) => lines.push(`Attached media: ${name}`));
+        if (record.text) lines.push(`Learner account: ${record.text}`);
+        if (record.witness) lines.push(`Witness: ${record.witness.name}, ${record.witness.role}, ${record.witness.date}. ${record.witness.testimony}`);
+      });
+      lines.push("");
+    });
+    return createEvidencePdf(`${unit.title} - Evidence Pack`, `${fullName || "Learner"} | Professionally mapped to the course KSBs`, lines);
+  };
+
+  const unitPackEntries = async (unit: CourseUnit, prefix = "") => {
+    const unitName = fileSafe(unit.title);
+    const entries: { name: string; blob: Blob }[] = [{ name: `${prefix}${unitName}-Evidence-Pack.pdf`, blob: unitPdf(unit) }];
+    const codes = new Set(unit.ksbs.map((ksb) => ksb.code));
+    const records = evidenceRecords.filter((record) => codes.has(record.ksbCode));
+    for (const record of records) {
+      for (let index = 0; index < record.fileIds.length; index += 1) {
+        const stored = await getEvidenceFile(record.fileIds[index]);
+        if (stored) entries.push({ name: `${prefix}${unitName}-${stored.name || record.fileNames[index]}`, blob: stored.blob });
+      }
+      if (record.text) entries.push({ name: `${prefix}${unitName}-${record.fileNames[0] ?? `${record.ksbCode}-${record.method}.txt`}`, blob: new Blob([record.text], { type: "text/plain;charset=utf-8" }) });
+      if (record.witness) entries.push({ name: `${prefix}${unitName}-${record.fileNames[0] ?? `${record.ksbCode}-Witness-Testimony.txt`}`, blob: new Blob([`Witness: ${record.witness.name}\nRole: ${record.witness.role}\nDate observed: ${record.witness.date}\nMapped KSB: ${record.ksbCode}\n\n${record.witness.testimony}`], { type: "text/plain;charset=utf-8" }) });
+    }
+    return entries;
+  };
+
+  const downloadUnitPack = async (unit: CourseUnit) => {
+    if (exporting) return;
+    setExporting(unit.id);
+    try {
+      const zip = await createZip(await unitPackEntries(unit));
+      triggerDownload(zip, `${fileSafe(unit.title)}-Evidence-Pack.zip`);
+      showNotice(`${unit.title} evidence pack downloaded.`);
+    } catch {
+      showNotice("Evia couldn’t build that evidence pack. Check the saved media and try again.");
+    } finally {
+      setExporting("");
+    }
+  };
+
+  const downloadFullPortfolio = async () => {
+    if (!course || exporting) return;
+    setExporting("all");
+    try {
+      const indexPdf = createEvidencePdf("Evia Apprenticeship Portfolio", fullName || "Learner", [
+        "PORTFOLIO SUMMARY", `Learner: ${fullName || "Not supplied"}`, `Employer: ${employer || "Not supplied"}`,
+        `Course dates: ${timeline.startDate || "Not supplied"} to ${timeline.endDate || "Not supplied"}`,
+        `KSB coverage: ${completedKsbCodes.size} of ${courseKsbs.length} (${ksbProgress}%)`, `Units: ${course.units.length}`, "",
+        ...course.units.map((unit) => `${unit.title}: ${unit.ksbs.filter((ksb) => completedKsbCodes.has(ksb.code)).length} of ${unit.ksbs.length} mapped KSB entries complete`),
+      ]);
+      const entries: { name: string; blob: Blob }[] = [{ name: "Evia-Portfolio-Index.pdf", blob: indexPdf }];
+      for (const unit of course.units) entries.push(...await unitPackEntries(unit, `${fileSafe(unit.title)}-`));
+      triggerDownload(await createZip(entries), `${fileSafe(fullName || "Learner")}-Evia-Portfolio.zip`);
+      showNotice("Your complete portfolio has been downloaded.");
+    } catch {
+      showNotice("Evia couldn’t build the full portfolio. Check the saved media and try again.");
+    } finally {
+      setExporting("");
+    }
+  };
+
+  const speakText = (text: string) => {
+    if (!("speechSynthesis" in window) || !text.trim()) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text.replace(/\s+/g, " ").trim().slice(0, 2500));
+    utterance.lang = "en-GB";
+    utterance.rate = 0.92;
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const handleTouchReadAloud = (event: ReactPointerEvent<HTMLElement>) => {
+    if (!accessibility.readAloud || event.pointerType !== "touch") return;
+    const target = event.target as HTMLElement;
+    if (target.matches("input, textarea")) return;
+    const readable = target.closest("button, article, label, header, p, h1, h2, h3, h4, section") as HTMLElement | null;
+    const now = Date.now();
+    if (readable && lastReadTap.current.element === readable && now - lastReadTap.current.time < 380) {
+      event.preventDefault();
+      speakText(readable.innerText);
+      lastReadTap.current = { time: 0, element: null };
+    } else lastReadTap.current = { time: now, element: readable };
   };
 
   const installEvia = async () => {
@@ -1388,10 +2115,12 @@ export default function Home() {
   const goBack = () => {
     const targets: Partial<Record<View, View>> = {
       course: "root", study: "root", portfolio: "root", settings: "root", "install-app": "settings", profile: "settings",
+      "profile-details": "profile", accessibility: "settings", "study-library": "study", "study-module": "study-library",
       "manage-course": courseManagerBack, "import-course": "manage-course", "paste-layout": "manage-course",
       "build-course": "manage-course", units: "course", unit: "units", "admin-lock": "settings", admin: "settings",
       "toc-settings": "root", "ksb-progress": "root", "otj-progress": "course", "epa-practice": "course",
-      "epa-session": "epa-practice", evidence: "unit", "evidence-list": "portfolio",
+      "epa-session": "epa-practice", "evidence-options": evidenceBack, evidence: "evidence-options", "evidence-list": "portfolio",
+      "portfolio-download": "portfolio", "admin-rpl": "admin",
     };
     if (view === "placeholder") navigate(placeholder.back);
     else navigate(targets[view] ?? "root");
@@ -1500,18 +2229,21 @@ export default function Home() {
     root: "", course: "My Course", study: "Self Study", portfolio: "My Portfolio", settings: "Settings",
     "install-app": "Install Evia",
     "toc-settings": "Time On Course", "ksb-progress": "KSB Progress", "otj-progress": "Off The Job",
-    "epa-practice": "EPA Practice", "epa-session": "EPA Mock", evidence: "Add Evidence", "evidence-list": "My Evidence",
-    profile: "My Profile", "manage-course": "Manage My Course", "import-course": "Import Course File",
+    "epa-practice": "EPA Practice", "epa-session": "EPA Mock", "evidence-options": "Evidence Options", evidence: "Add Evidence", "evidence-list": "My Evidence",
+    "portfolio-download": "Download Portfolio", profile: "My Profile", "profile-details": "Edit My Details", accessibility: "Accessibility",
+    "study-library": "Teaching Packs", "study-module": selectedStudyModule?.title ?? "Teaching Pack",
+    "manage-course": "Manage My Course", "import-course": "Import Course File",
     "paste-layout": "Paste Course Layout", "build-course": "Let Evia Build It", units: "Units",
     unit: "Course Unit", "admin-lock": "Admin Settings",
-    admin: "Admin Settings", placeholder: placeholder.title,
+    admin: "Admin Settings", "admin-rpl": "Recognised Prior Learning", placeholder: placeholder.title,
   };
 
   const workspaceViews: View[] = [
     "manage-course", "import-course", "paste-layout", "build-course", "units", "unit", "toc-settings",
-    "ksb-progress", "otj-progress", "epa-practice", "epa-session", "evidence", "evidence-list",
+    "ksb-progress", "otj-progress", "epa-practice", "epa-session", "evidence-options", "evidence", "evidence-list",
+    "portfolio-download", "profile-details", "accessibility", "study-library", "study-module", "admin-rpl",
   ];
-  const tallViews: View[] = ["root", "settings", "install-app", "admin"];
+  const tallViews: View[] = ["root", "course", "study", "portfolio", "settings", "install-app", "profile", "admin"];
   const shellClasses = `menu-shell${workspaceViews.includes(view) ? " is-workspace" : ""}${tallViews.includes(view) ? " is-tall" : ""}`;
 
   const renderKsbGroup = (type: KsbType, title: string) => {
@@ -1524,18 +2256,15 @@ export default function Home() {
         </div>
         {items.length ? items.map((ksb) => {
           const savedRecords = evidenceRecords.filter((record) => record.ksbCode === ksb.code);
-          const isComplete = savedRecords.length > 0;
+          const isRpl = rplCodes.includes(ksb.code);
+          const isComplete = isRpl || savedRecords.some(evidenceRecordComplete);
           return (
             <article className={`ksb-item${isComplete ? " is-complete" : ""}`} key={`${selectedUnit?.id}-${ksb.code}`}>
-              <div className="ksb-item-copy">
+              <button type="button" className="ksb-description-button" onClick={() => openEvidenceOptions(ksb)} aria-label={`Open evidence options for ${ksb.code}`}>
                 <span className="ksb-code">{ksb.code}</span>
-                <div><h4>{ksb.description}</h4><p className="ksb-status">{isComplete ? `${savedRecords.length} evidence record${savedRecords.length === 1 ? "" : "s"} saved` : "Choose one evidence route below"}</p></div>
-              </div>
-              <div className="evidence-methods" aria-label={`Evidence options for ${ksb.code}`}>
-                {evidenceOptions[type].map((option) => (
-                  <button type="button" key={option.method} onClick={() => startEvidence(ksb, option.method)}>{option.label}</button>
-                ))}
-              </div>
+                <span className="ksb-description-copy"><strong>{ksb.description}</strong><small>{isRpl ? "Recognised prior learning" : isComplete ? "Evidence route complete" : "Tap to add evidence"}</small></span>
+                <span className="status-dot" aria-hidden="true">{isComplete ? "✓" : "›"}</span>
+              </button>
             </article>
           );
         }) : <p className="empty-group">No {title.toLowerCase()} are mapped to this Unit yet.</p>}
@@ -1563,26 +2292,85 @@ export default function Home() {
 
     if (view === "study") return (
       <div className="option-list is-fill">
-        <OptionRow title="Maths & English" onClick={() => openPlaceholder("Maths & English", "study")} />
-        <OptionRow title="Trade Subjects" onClick={() => openPlaceholder("Trade Subjects", "study")} />
-        <OptionRow title="EDI Subjects" onClick={() => openPlaceholder("EDI Subjects", "study")} />
+        <OptionRow title="Maths & English" note="Level 1 and Level 2" onClick={() => { setSelectedStudyCategory("maths-english"); navigate("study-library"); }} />
+        <OptionRow title="Trade Subjects" note="Construction essentials" onClick={() => { setSelectedStudyCategory("trade"); navigate("study-library"); }} />
+        <OptionRow title="EDI Subjects" note="Safe, fair workplaces" onClick={() => { setSelectedStudyCategory("edi"); navigate("study-library"); }} />
       </div>
     );
+
+    if (view === "study-library") {
+      const labels: Record<StudyCategory, { title: string; copy: string }> = {
+        "maths-english": { title: "Maths & English", copy: "Original Level 1 and Level 2 lessons based on the Functional Skills subject content, followed by marked knowledge checks." },
+        trade: { title: "Trade essentials", copy: "Plain-English construction learning on safety, legislation, handling and technical information." },
+        edi: { title: "EDI & safeguarding", copy: "Practical learning for fair, safe and respectful workplaces." },
+      };
+      const category = labels[selectedStudyCategory];
+      const modules = studyModules.filter((module) => module.category === selectedStudyCategory);
+      return (
+        <div className="study-workspace">
+          <div className="evia-guidance"><span className="guidance-mark" aria-hidden="true">E</span><div><strong>I’ll guide you through each pack.</strong><p>{category.copy} Read each short lesson, then complete the MCQs and review my explanations.</p></div></div>
+          <header className="study-heading"><span>Self study</span><h3>{category.title}</h3><p>{modules.length} guided teaching packs</p></header>
+          <div className="study-card-list">
+            {modules.map((module) => {
+              const answers = studyAnswers[module.id] ?? [];
+              const correct = module.questions.filter((question, index) => answers[index] === question.answer).length;
+              const complete = answers.length >= module.questions.length && correct === module.questions.length;
+              return <button type="button" className={`study-card${complete ? " is-complete" : ""}`} key={module.id} onClick={() => { setSelectedStudyModuleId(module.id); navigate("study-module"); }}><span className="study-card-level">{complete ? "✓" : module.level}</span><span><strong>{module.title}</strong><small>{module.summary}</small><em>{answers.filter((answer) => answer !== undefined).length ? `${correct} of ${module.questions.length} correct` : "Not started"}</em></span><span className="row-chevron" aria-hidden="true">›</span></button>;
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    if (view === "study-module" && selectedStudyModule) {
+      const answers = studyAnswers[selectedStudyModule.id] ?? [];
+      const correct = selectedStudyModule.questions.filter((question, index) => answers[index] === question.answer).length;
+      const answered = selectedStudyModule.questions.filter((_, index) => answers[index] !== undefined).length;
+      return (
+        <div className="study-workspace">
+          <div className="evia-guidance"><span className="guidance-mark" aria-hidden="true">E</span><div><strong>Take this at your pace.</strong><p>Read the lesson in order. At the end I’ll mark each answer immediately and explain the reasoning, so a mistake becomes part of the learning.</p></div></div>
+          <header className="practice-header"><span>{selectedStudyModule.level}</span><h3>{selectedStudyModule.title}</h3><p>{selectedStudyModule.summary}</p></header>
+          <div className="lesson-sections">{selectedStudyModule.sections.map((section, index) => <article className="lesson-card" key={section.title}><span>{index + 1}</span><div><h4>{section.title}</h4><p>{section.body}</p></div></article>)}</div>
+          <div className="section-heading"><span>Knowledge check</span><small>{correct} of {selectedStudyModule.questions.length} correct</small></div>
+          <div className="quiz-list">{selectedStudyModule.questions.map((question, questionIndex) => {
+            const selected = answers[questionIndex];
+            return <article className="quiz-card" key={question.prompt}><h4>{questionIndex + 1}. {question.prompt}</h4><div className="quiz-options">{question.options.map((option, optionIndex) => <button type="button" className={`${selected === optionIndex ? "is-selected" : ""}${selected !== undefined && optionIndex === question.answer ? " is-correct" : ""}${selected === optionIndex && selected !== question.answer ? " is-wrong" : ""}`} key={option} onClick={() => answerStudyQuestion(selectedStudyModule.id, questionIndex, optionIndex)}>{option}</button>)}</div>{selected !== undefined && <p className={selected === question.answer ? "quiz-feedback is-correct" : "quiz-feedback"}><strong>{selected === question.answer ? "Correct." : "Not quite."}</strong> {question.explanation}</p>}</article>;
+          })}</div>
+          <div className={`quiz-result${answered === selectedStudyModule.questions.length && correct === selectedStudyModule.questions.length ? " is-complete" : ""}`}><span>{answered === selectedStudyModule.questions.length && correct === selectedStudyModule.questions.length ? "✓" : correct}</span><div><strong>{answered < selectedStudyModule.questions.length ? `${selectedStudyModule.questions.length - answered} question${selectedStudyModule.questions.length - answered === 1 ? "" : "s"} left` : correct === selectedStudyModule.questions.length ? "Teaching pack complete" : "Review the explanations and retry"}</strong><small>Your answers are saved on this device.</small></div></div>
+        </div>
+      );
+    }
 
     if (view === "portfolio") return (
       <div className="option-list is-fill">
         <OptionRow title="Portfolio Health" note={`${completedKsbCodes.size} of ${courseKsbs.length} KSBs evidenced`} onClick={() => navigate("ksb-progress")} />
         <OptionRow title="My Evidence" note={`${evidenceRecords.length} record${evidenceRecords.length === 1 ? "" : "s"}`} onClick={() => navigate("evidence-list")} />
-        <OptionRow title="Download Portfolio" onClick={() => openPlaceholder("Download Portfolio", "portfolio")} />
+        <OptionRow title="Download Portfolio" note="PDF evidence packs and attached media" onClick={() => navigate("portfolio-download")} />
       </div>
     );
+
+    if (view === "portfolio-download") {
+      if (!course) return <div className="empty-course-state"><span className="empty-course-mark" aria-hidden="true">+</span><h3>Add your course first</h3><p>Evia builds evidence packs from the Units, KSB mappings and evidence saved on this device.</p><button type="button" onClick={() => openCourseManager("portfolio-download")}>Add course <span aria-hidden="true">→</span></button></div>;
+      return (
+        <div className="progress-workspace">
+          <div className="evia-guidance"><span className="guidance-mark" aria-hidden="true">E</span><div><strong>Your evidence pack is mapped for you.</strong><p>Each download contains a professional Unit PDF with the full KSB wording, evidence status and mapping, plus every attached photo, video or audio file.</p></div></div>
+          <div className="progress-summary-grid"><div className="progress-summary-main"><span>Portfolio coverage</span><strong>{ksbProgress}%</strong><small>{completedKsbCodes.size} of {courseKsbs.length} KSBs complete or RPL</small></div><div className="progress-summary-stat"><span>Evidence packs</span><strong>{course.units.length}</strong><small>One per Unit</small></div></div>
+          <button className="make-course-button" type="button" disabled={Boolean(exporting)} onClick={downloadFullPortfolio}>{exporting === "all" ? "Building portfolio…" : "Download all evidence packs"}<span aria-hidden="true">↓</span></button>
+          <div className="download-unit-list">{course.units.map((unit) => {
+            const codes = new Set(unit.ksbs.map((ksb) => ksb.code));
+            const covered = [...codes].filter((code) => completedKsbCodes.has(code)).length;
+            return <button type="button" key={unit.id} disabled={Boolean(exporting)} onClick={() => downloadUnitPack(unit)}><span><strong>{unit.title}</strong><small>{covered} of {codes.size} KSBs complete · PDF + attached media</small></span><em>{exporting === unit.id ? "Building…" : "Download"}</em></button>;
+          })}</div>
+        </div>
+      );
+    }
 
     if (view === "settings") return (
       <div className="option-list is-fill four-options">
         <OptionRow title="Install Evia" note={isInstalled ? "Installed on this device" : "Add Evia to this device"} onClick={() => navigate("install-app")} />
         <OptionRow title="My Profile" onClick={() => navigate("profile")} />
         <OptionRow title="General Settings" onClick={() => openPlaceholder("General Settings", "settings")} />
-        <OptionRow title="Accessibility" onClick={() => openPlaceholder("Accessibility", "settings")} />
+        <OptionRow title="Accessibility" note={accessibility.readAloud ? "Read aloud enabled" : "Reading and display support"} onClick={() => navigate("accessibility")} />
         <OptionRow title="Admin Settings" note="Locked" onClick={() => navigate("admin-lock")} />
       </div>
     );
@@ -1613,9 +2401,9 @@ export default function Home() {
           <div className="progress-summary-stat"><span>OTJ each week</span><strong>{weeklyOtjTarget.toFixed(1)}h</strong><small>20% of working hours</small></div>
         </div>
         <div className="field-grid">
-          <label className="clean-field"><span>Course start date</span><input type="date" min="2000-01-01" max="2100-12-31" value={timeline.startDate} onChange={(event) => { setTimeline({ ...timeline, startDate: event.target.value }); setTimelineError(""); }} /></label>
-          <label className="clean-field"><span>Planned end date</span><input type="date" min="2000-01-01" max="2100-12-31" value={timeline.endDate} onChange={(event) => { setTimeline({ ...timeline, endDate: event.target.value }); setTimelineError(""); }} /></label>
-          <label className="clean-field is-wide"><span>Normal working hours each week</span><input type="number" min="1" max="100" step="0.5" inputMode="decimal" value={timeline.weeklyHours} onChange={(event) => { setTimeline({ ...timeline, weeklyHours: Number(event.target.value) }); setTimelineError(""); }} /></label>
+          <label className="clean-field is-required"><span>Course start date</span><input required type="date" min="2000-01-01" max="2100-12-31" value={timeline.startDate} onChange={(event) => { setTimeline({ ...timeline, startDate: event.target.value }); setTimelineError(""); }} /></label>
+          <label className="clean-field is-required"><span>Planned end date</span><input required type="date" min="2000-01-01" max="2100-12-31" value={timeline.endDate} onChange={(event) => { setTimeline({ ...timeline, endDate: event.target.value }); setTimelineError(""); }} /></label>
+          <label className="clean-field is-wide is-required"><span>Normal working hours each week</span><input required type="number" min="1" max="100" step="0.5" inputMode="decimal" value={timeline.weeklyHours} onChange={(event) => { setTimeline({ ...timeline, weeklyHours: Number(event.target.value) }); setTimelineError(""); }} /></label>
         </div>
         <p className="calculation-note">TOC = elapsed course days ÷ total planned course days. Dates stay on this device and can be changed whenever your plan changes.</p>
         {timelineError && <p className="form-error" role="alert">{timelineError}</p>}
@@ -1640,13 +2428,13 @@ export default function Home() {
           </div>
           <div className="ksb-progress-list">
             {courseKsbs
-              .sort((left, right) => left.code.localeCompare(right.code, undefined, { numeric: true }))
+              .sort((left, right) => Number(completedKsbCodes.has(left.code)) - Number(completedKsbCodes.has(right.code)) || left.code.localeCompare(right.code, undefined, { numeric: true }))
               .map((ksb) => {
                 const complete = completedKsbCodes.has(ksb.code);
-                const unitForKsb = course.units.find((unit) => unit.ksbs.some((item) => item.code === ksb.code));
+                const isRpl = rplCodes.includes(ksb.code);
                 return (
-                  <button type="button" className={`ksb-progress-row${complete ? " is-complete" : ""}`} key={ksb.code} onClick={() => { if (unitForKsb) { setSelectedUnitId(unitForKsb.id); navigate("unit"); } }}>
-                    <span className="ksb-progress-code">{ksb.code}</span><span className="ksb-progress-copy"><strong>{ksb.description}</strong><small>{ksb.type} · {complete ? "Evidence saved" : "Evidence needed"}</small></span><span className="status-dot" aria-hidden="true">{complete ? "✓" : "›"}</span>
+                  <button type="button" className={`ksb-progress-row${complete ? " is-complete" : ""}`} key={ksb.code} onClick={() => openEvidenceOptions(ksb)}>
+                    <span className="ksb-progress-code">{ksb.code}</span><span className="ksb-progress-copy"><strong>{ksb.description}</strong><small>{ksb.type} · {isRpl ? "Recognised prior learning" : complete ? "Evidence complete" : "No complete evidence — tap to add"}</small></span><span className="status-dot" aria-hidden="true">{complete ? "✓" : "›"}</span>
                   </button>
                 );
               })}
@@ -1666,9 +2454,9 @@ export default function Home() {
         <form className="otj-form" onSubmit={addOtjEntry}>
           <div className="section-heading"><span>Record an activity</span><small>Learning completed away from normal productive duties</small></div>
           <div className="field-grid">
-            <label className="clean-field"><span>Date</span><input type="date" value={otjDraft.date} onChange={(event) => { setOtjDraft({ ...otjDraft, date: event.target.value }); setOtjError(""); }} /></label>
-            <label className="clean-field"><span>Hours</span><input type="number" min="0.1" max="24" step="0.1" inputMode="decimal" value={otjDraft.hours} onChange={(event) => { setOtjDraft({ ...otjDraft, hours: event.target.value }); setOtjError(""); }} placeholder="1.5" /></label>
-            <label className="clean-field is-wide"><span>What did you learn?</span><input type="text" value={otjDraft.title} onChange={(event) => { setOtjDraft({ ...otjDraft, title: event.target.value }); setOtjError(""); }} placeholder="Example: cavity wall workshop" maxLength={120} /></label>
+            <label className="clean-field is-required"><span>Date</span><input required type="date" value={otjDraft.date} onChange={(event) => { setOtjDraft({ ...otjDraft, date: event.target.value }); setOtjError(""); }} /></label>
+            <label className="clean-field is-required"><span>Hours</span><input required type="number" min="0.1" max="24" step="0.1" inputMode="decimal" value={otjDraft.hours} onChange={(event) => { setOtjDraft({ ...otjDraft, hours: event.target.value }); setOtjError(""); }} placeholder="1.5" /></label>
+            <label className="clean-field is-wide is-required"><span>What did you learn?</span><input required type="text" value={otjDraft.title} onChange={(event) => { setOtjDraft({ ...otjDraft, title: event.target.value }); setOtjError(""); }} placeholder="Example: cavity wall workshop" maxLength={120} /></label>
           </div>
           {otjError && <p className="form-error" role="alert">{otjError}</p>}
           <button className="make-course-button" type="submit">Add OTJ activity<span aria-hidden="true">→</span></button>
@@ -1704,17 +2492,55 @@ export default function Home() {
       const allStepsComplete = epaChecks[activeEpaArea].every(Boolean);
       return (
         <div className="progress-workspace">
-          <div className="evia-guidance"><span className="guidance-mark" aria-hidden="true">E</span><div><strong>I’ll take you through this one step at a time.</strong><p>Only tick a step once you have genuinely completed it. You can leave and return without losing your place.</p></div></div>
+          <div className="evia-guidance"><span className="guidance-mark" aria-hidden="true">E</span><div><strong>I’ll take you through this one step at a time.</strong><p>{activeEpaArea === "mcq" ? "Choose an answer and I’ll explain the reasoning. All four must be correct to complete the mock." : "Complete the activity, then record a specific response of at least 12 words. Your work is saved as you go."}</p></div></div>
           <header className="practice-header"><span>EPA practice</span><h3>{practice.title}</h3><p>{practice.summary}</p></header>
-          <div className="practice-steps">
-            {practice.steps.map((step, index) => <button type="button" className={`practice-step${epaChecks[activeEpaArea][index] ? " is-checked" : ""}`} key={step} onClick={() => toggleEpaStep(activeEpaArea, index)} aria-pressed={epaChecks[activeEpaArea][index]}><span>{epaChecks[activeEpaArea][index] ? "✓" : index + 1}</span><strong>{step}</strong></button>)}
-          </div>
+          {activeEpaArea === "mcq" ? <div className="quiz-list">{epaMcqQuestions.map((question, index) => { const selected = epaAnswers[index]; return <article className="quiz-card" key={question.prompt}><h4>{index + 1}. {question.prompt}</h4><div className="quiz-options">{question.options.map((option, optionIndex) => <button type="button" className={`${selected === optionIndex ? "is-selected" : ""}${selected !== undefined && selected >= 0 && optionIndex === question.answer ? " is-correct" : ""}${selected === optionIndex && selected !== question.answer ? " is-wrong" : ""}`} key={option} onClick={() => answerEpaQuestion(index, optionIndex)}>{option}</button>)}</div>{selected !== undefined && selected >= 0 && <p className={selected === question.answer ? "quiz-feedback is-correct" : "quiz-feedback"}><strong>{selected === question.answer ? "Correct." : "Try again."}</strong> {question.explanation}</p>}</article>; })}</div> : <div className="epa-response-list">{practice.steps.map((step, index) => <label className={`epa-response${epaChecks[activeEpaArea][index] ? " is-complete" : ""}`} key={step}><span>{epaChecks[activeEpaArea][index] ? "✓" : index + 1}</span><div><strong>{step}</strong><small>{activeEpaArea === "practical" ? "Record what you planned or completed, the checks you made and the result." : "Write the answer you would give aloud. Include a specific example and why it mattered."}</small><textarea required rows={4} value={epaResponses[activeEpaArea][index] ?? ""} onChange={(event) => updateEpaResponse(activeEpaArea, index, event.target.value)} placeholder={activeEpaArea === "practical" ? "My approach was… I checked… The result was…" : "In this situation I… I chose this because… The result was…"} /><em>{countWords(epaResponses[activeEpaArea][index] ?? "")} / 12 words</em></div></label>)}</div>}
           <button className="make-course-button" type="button" disabled={!allStepsComplete} onClick={completeEpaSession}>{allStepsComplete ? "Complete this mock" : "Complete every step first"}<span aria-hidden="true">→</span></button>
         </div>
       );
     }
 
+    if (view === "evidence-options" && activeEvidenceKsb) return (
+      <div className="evidence-wizard">
+        <div className="evia-guidance"><span className="guidance-mark" aria-hidden="true">E</span><div><strong>Choose one evidence route.</strong><p>I’ll explain every step and save it directly against {activeEvidenceKsb.code}. A Skill needs three specific photos or one clear video; Knowledge and Behaviours use the two routes shown below.</p></div></div>
+        <header className="evidence-criterion"><span>{activeEvidenceKsb.code} · {activeEvidenceKsb.type}</span><h3>{activeEvidenceKsb.description}</h3></header>
+        <div className="evidence-option-list">{evidenceOptions[activeEvidenceKsb.type].map((option) => {
+          const record = evidenceRecords.find((item) => item.ksbCode === activeEvidenceKsb.code && item.method === option.method);
+          const progress = evidenceRecordProgress(record);
+          const complete = record ? evidenceRecordComplete(record) : false;
+          return <button type="button" className={`evidence-option-pill${complete ? " is-complete" : ""}`} style={{ background: complete ? "rgba(221, 239, 216, .92)" : `linear-gradient(90deg, rgba(247, 210, 88, .32) ${progress}%, rgba(252, 250, 244, .9) ${progress}%)` }} key={option.method} onClick={() => startEvidence(activeEvidenceKsb, option.method)}><span><strong>{option.label}</strong><small>{option.rule}</small></span><em>{complete ? "Complete" : progress ? `${progress}%` : "Start"}</em><span className="row-chevron" aria-hidden="true">›</span></button>;
+        })}</div>
+        {rplCodes.includes(activeEvidenceKsb.code) && <div className="rpl-note"><span>RPL</span><p>This KSB has been marked as recognised prior learning. New evidence can still be added.</p></div>}
+      </div>
+    );
+
     if (view === "evidence" && activeEvidenceKsb) {
+      const record = activeEvidenceRecord;
+      const progress = evidenceRecordProgress(record);
+      const photoPrompts = [
+        ["Preparation", "Show the working area, materials, tools and controls before the task begins."],
+        ["Work in progress", "Show yourself carrying out the activity, with the work and safe method visible."],
+        ["Finished result", "Show the completed work, finish, quality checks and relevant measurements."],
+      ];
+      const mediaMethod = ["photo", "video", "audio"].includes(activeEvidenceMethod);
+      return (
+        <div className="evidence-wizard">
+          <div className="evidence-progress-line"><span style={{ width: `${progress}%` }} /><small>{progress}% complete</small></div>
+          <div className="evia-guidance"><span className="guidance-mark" aria-hidden="true">E</span><div><strong>{evidenceMethodNames[activeEvidenceMethod]}</strong><p>{activeEvidenceMethod === "photo" ? "Take the photos at different stages. I save each one immediately, so you can leave and return later." : activeEvidenceMethod === "video" ? "Record one continuous practical sequence showing preparation, safe technique, the main stages and finished result." : activeEvidenceMethod === "audio" ? "Explain the full Knowledge statement in your own words, connect it to work and say why it matters." : activeEvidenceMethod === "written" ? "Write what you know, how it applies, a real example and why it matters." : activeEvidenceMethod === "reflection" ? "Describe the situation, your action, the result, what you learned and what you will improve." : "The witness must record what they personally saw, the standard achieved and how it demonstrates the Behaviour."}</p></div></div>
+          <header className="evidence-criterion compact"><span>{activeEvidenceKsb.code} · Files use a concise title from this criterion</span><h3>{activeEvidenceKsb.description}</h3></header>
+
+          {activeEvidenceMethod === "photo" && <div className="saved-media-list">{record?.fileNames.map((name, index) => <article className="saved-media" key={record.fileIds[index]}><span>{index + 1}</span><div><strong>{photoPrompts[index]?.[0] ?? `Photo ${index + 1}`}</strong><small>{name}</small></div><button type="button" className="delete-evidence" onClick={() => removeMediaEvidence(index)} aria-label={`Delete ${name}`}>×</button></article>)}{(record?.fileIds.length ?? 0) < 3 && <label className="capture-evidence"><input type="file" accept="image/*" capture="environment" onChange={saveMediaEvidence} disabled={savingEvidence} /><span>＋</span><div><strong>{savingEvidence ? "Saving…" : `Take photo ${(record?.fileIds.length ?? 0) + 1} of 3`}</strong><small>{photoPrompts[record?.fileIds.length ?? 0]?.[1]}</small></div></label>}</div>}
+          {activeEvidenceMethod === "video" && <div className="saved-media-list">{record?.fileNames[0] && <article className="saved-media is-complete"><span>✓</span><div><strong>Practical video saved</strong><small>{record.fileNames[0]}</small></div><button type="button" className="delete-evidence" onClick={() => removeMediaEvidence(0)} aria-label={`Delete ${record.fileNames[0]}`}>×</button></article>}<label className="capture-evidence"><input type="file" accept="video/*" capture="environment" onChange={saveMediaEvidence} disabled={savingEvidence} /><span>{record?.fileIds.length ? "↻" : "＋"}</span><div><strong>{savingEvidence ? "Saving…" : record?.fileIds.length ? "Replace video" : "Record or choose video"}</strong><small>Keep the task and your actions visible. You can replace the saved video if needed.</small></div></label></div>}
+          {activeEvidenceMethod === "audio" && <div className="saved-media-list">{record?.fileNames[0] && <article className="saved-media is-complete"><span>✓</span><div><strong>Audio explanation saved</strong><small>{record.fileNames[0]}</small></div><button type="button" className="delete-evidence" onClick={() => removeMediaEvidence(0)} aria-label={`Delete ${record.fileNames[0]}`}>×</button></article>}<label className="capture-evidence"><input type="file" accept="audio/*" capture="user" onChange={saveMediaEvidence} disabled={savingEvidence} /><span>{record?.fileIds.length ? "↻" : "＋"}</span><div><strong>{savingEvidence ? "Saving…" : record?.fileIds.length ? "Replace audio" : "Record or choose audio"}</strong><small>State the KSB, explain the principles, give an example and say why the knowledge matters.</small></div></label></div>}
+          {["written", "reflection"].includes(activeEvidenceMethod) && <label className="guided-textarea is-required"><span>{activeEvidenceMethod === "written" ? "Your knowledge statement" : "Your reflection"}</span><small>{activeEvidenceMethod === "written" ? "Use: what I know → how it applies → a real example → why it matters." : "Use: what happened → what I did → the result → what I learned → what I will improve."}</small><textarea required rows={10} value={evidenceText} onChange={(event) => { setEvidenceText(event.target.value); setEvidenceError(""); }} placeholder={activeEvidenceMethod === "written" ? "I understand that… In my work this applies when… For example… This matters because…" : "The situation was… I decided to… The result was… I learned… Next time I will…"} /><em className={countWords(evidenceText) >= 30 ? "is-ready" : ""}>{countWords(evidenceText)} / 30 minimum words</em></label>}
+          {activeEvidenceMethod === "witness" && <div className="witness-form"><div className="field-grid"><label className="clean-field is-required"><span>Witness name</span><input required type="text" value={witnessDraft.name} onChange={(event) => { setWitnessDraft({ ...witnessDraft, name: event.target.value }); setEvidenceError(""); }} placeholder="Full name" /></label><label className="clean-field is-required"><span>Witness role</span><input required type="text" value={witnessDraft.role} onChange={(event) => { setWitnessDraft({ ...witnessDraft, role: event.target.value }); setEvidenceError(""); }} placeholder="Supervisor" /></label><label className="clean-field is-wide is-required"><span>Date observed</span><input required type="date" value={witnessDraft.date} onChange={(event) => { setWitnessDraft({ ...witnessDraft, date: event.target.value }); setEvidenceError(""); }} /></label></div><label className="guided-textarea is-required"><span>What did the witness observe?</span><small>Use the witness’s own words. Include the task, learner actions, standard achieved and how this showed the Behaviour.</small><textarea required rows={9} value={witnessDraft.testimony} onChange={(event) => { setWitnessDraft({ ...witnessDraft, testimony: event.target.value }); setEvidenceError(""); }} placeholder="I personally observed the learner…" /><em className={countWords(witnessDraft.testimony) >= 30 ? "is-ready" : ""}>{countWords(witnessDraft.testimony)} / 30 minimum words</em></label></div>}
+          {evidenceError && <p className="form-error" role="alert">{evidenceError}</p>}
+          {mediaMethod ? <button className="make-course-button" type="button" onClick={() => navigate("evidence-options")}>{progress === 100 ? "Done — evidence complete" : "Done for now"}<span aria-hidden="true">→</span></button> : <button className="make-course-button" type="button" disabled={savingEvidence} onClick={saveEvidence}>{savingEvidence ? "Saving…" : record ? "Update evidence" : "Save evidence"}<span aria-hidden="true">→</span></button>}
+        </div>
+      );
+    }
+
+    if (view === "placeholder" && activeEvidenceKsb && placeholder.title === "__legacy-evidence-never__") {
       const selectedOption = evidenceOptions[activeEvidenceKsb.type].find((option) => option.method === activeEvidenceMethod);
       const photoPrompts = [
         ["Preparation", `Show the working area, materials, tools and controls before you begin ${activeEvidenceKsb.code}.`],
@@ -1757,7 +2583,7 @@ export default function Home() {
         <div className="evia-guidance"><span className="guidance-mark" aria-hidden="true">E</span><div><strong>Your evidence stays mapped.</strong><p>Every record below is attached to its KSB and stored on this device. File evidence is kept in the app’s private local storage.</p></div></div>
         <div className="progress-summary-grid"><div className="progress-summary-main"><span>Evidence records</span><strong>{evidenceRecords.length}</strong><small>{completedKsbCodes.size} unique KSBs covered</small></div><div className="progress-summary-stat"><span>KSB progress</span><strong>{ksbProgress}%</strong><small>{Math.max(0, courseKsbs.length - completedKsbCodes.size)} KSBs remaining</small></div></div>
         <div className="evidence-record-list">
-          {[...evidenceRecords].sort((left, right) => right.createdAt - left.createdAt).map((record) => <article className="evidence-record" key={record.id}><span className="evidence-record-code">{record.ksbCode}</span><div><strong>{evidenceMethodNames[record.method]}</strong><small>{record.ksbType} · {new Date(record.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</small><p>{record.fileNames.length ? record.fileNames.join(" · ") : record.method === "witness" ? `Witness: ${record.witness?.name ?? "Recorded"}` : `${countWords(record.text ?? "")} words`}</p></div><span className="status-dot" aria-hidden="true">✓</span></article>)}
+          {[...evidenceRecords].sort((left, right) => (right.updatedAt ?? right.createdAt) - (left.updatedAt ?? left.createdAt)).map((record) => { const complete = evidenceRecordComplete(record); return <article className={`evidence-record${complete ? " is-complete" : ""}`} key={record.id}><span className="evidence-record-code">{record.ksbCode}</span><div><strong>{evidenceMethodNames[record.method]}</strong><small>{record.ksbType} · {new Date(record.updatedAt ?? record.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</small><p>{record.fileNames.length ? record.fileNames.join(" · ") : record.method === "witness" ? `Witness: ${record.witness?.name ?? "Recorded"}` : `${countWords(record.text ?? "")} words`}</p></div><span className="status-dot" aria-hidden="true">{complete ? "✓" : `${evidenceRecordProgress(record)}%`}</span></article>; })}
           {!evidenceRecords.length && <div className="empty-evidence"><span aria-hidden="true">＋</span><h3>No evidence saved yet</h3><p>Open a course Unit, choose a KSB and Evia will guide you through the right evidence route.</p><button type="button" onClick={() => navigate("units")}>Open Units <span aria-hidden="true">→</span></button></div>}
         </div>
       </div>
@@ -1766,8 +2592,36 @@ export default function Home() {
     if (view === "profile") return (
       <div className="option-list is-fill">
         <OptionRow title="Manage My Course" note={course ? "Course added" : "Set up your course"} onClick={() => openCourseManager("profile")} />
-        <OptionRow title="Edit My Details" onClick={() => openPlaceholder("Edit My Details", "profile")} />
-        <OptionRow title="Update My Schedule" onClick={() => openPlaceholder("Update My Schedule", "profile")} />
+        <OptionRow title="Edit My Details" note={employer || "Learner, employer, hours and dates"} onClick={() => { setTimelineError(""); navigate("profile-details"); }} />
+      </div>
+    );
+
+    if (view === "profile-details") return (
+      <form className="progress-workspace" onSubmit={saveProfileDetails}>
+        <div className="evia-guidance"><span className="guidance-mark" aria-hidden="true">E</span><div><strong>These details identify your evidence packs.</strong><p>I also use your working hours and course dates to calculate TOC and your paced OTJ target.</p></div></div>
+        <div className="field-grid profile-fields">
+          <label className="clean-field is-wide is-required"><span>Learner’s full name</span><input required type="text" autoComplete="name" value={fullName} onChange={(event) => { setFullName(event.target.value); setTimelineError(""); }} placeholder="Full name" maxLength={80} /></label>
+          <label className="clean-field is-wide is-required"><span>Employer</span><input required type="text" value={employer} onChange={(event) => { setEmployer(event.target.value); setTimelineError(""); }} placeholder="Employer name" maxLength={120} /></label>
+          <label className="clean-field is-required"><span>Working hours per week</span><input required type="number" min="1" max="100" step="0.5" inputMode="decimal" value={timeline.weeklyHours} onChange={(event) => { setTimeline({ ...timeline, weeklyHours: Number(event.target.value) }); setTimelineError(""); }} /></label>
+          <label className="clean-field is-required"><span>Course start date</span><input required type="date" min="2000-01-01" max="2100-12-31" value={timeline.startDate} onChange={(event) => { setTimeline({ ...timeline, startDate: event.target.value }); setTimelineError(""); }} /></label>
+          <label className="clean-field is-wide is-required"><span>Planned end date</span><input required type="date" min="2000-01-01" max="2100-12-31" value={timeline.endDate} onChange={(event) => { setTimeline({ ...timeline, endDate: event.target.value }); setTimelineError(""); }} /></label>
+        </div>
+        {timelineError && <p className="form-error" role="alert">{timelineError}</p>}
+        <button className="make-course-button" type="submit">Save my details<span aria-hidden="true">→</span></button>
+      </form>
+    );
+
+    if (view === "accessibility") return (
+      <div className="accessibility-workspace">
+        <div className="evia-guidance"><span className="guidance-mark" aria-hidden="true">E</span><div><strong>Make Evia easier to use.</strong><p>Your choices apply across the app and stay on this device. Turn on read aloud, then double-tap text anywhere to hear it.</p></div></div>
+        <section className="accessibility-section"><h3>Text size</h3><div className="segmented-control" role="group" aria-label="Text size">{(["standard", "large", "extra"] as const).map((size) => <button type="button" className={accessibility.textSize === size ? "is-active" : ""} key={size} onClick={() => updateAccessibility({ textSize: size })}>{size === "standard" ? "Standard" : size === "large" ? "Large" : "Extra large"}</button>)}</div></section>
+        <section className="accessibility-section toggle-list">
+          <label><span><strong>Double-tap to read aloud</strong><small>Hear the text you double-tap anywhere in Evia</small></span><input type="checkbox" checked={accessibility.readAloud} onChange={(event) => updateAccessibility({ readAloud: event.target.checked })} /></label>
+          <label><span><strong>High contrast</strong><small>Stronger text, borders and controls</small></span><input type="checkbox" checked={accessibility.highContrast} onChange={(event) => updateAccessibility({ highContrast: event.target.checked })} /></label>
+          <label><span><strong>Reading focus</strong><small>Increase line spacing and reduce surrounding visual detail</small></span><input type="checkbox" checked={accessibility.readingFocus} onChange={(event) => updateAccessibility({ readingFocus: event.target.checked })} /></label>
+          <label><span><strong>Reduce motion</strong><small>Minimise Evia’s movement and page transitions</small></span><input type="checkbox" checked={accessibility.reduceMotion} onChange={(event) => updateAccessibility({ reduceMotion: event.target.checked })} /></label>
+        </section>
+        <button className="make-course-button" type="button" onClick={() => speakText("Hello, I’m Evia. Read aloud is working. Double tap text anywhere in the app and I will read it to you.")}>Test read aloud<span aria-hidden="true">▶</span></button>
       </div>
     );
 
@@ -1813,7 +2667,7 @@ export default function Home() {
           <span className="builder-kicker">Use your tutor’s structure</span>
           <p>Put each unit title above its KSBs. Evia preserves the titles, order and mappings rather than reorganising them.</p>
         </div>
-        <label className="course-text-block is-primary-input">
+        <label className="course-text-block is-primary-input is-required">
           <span>Paste course layout</span><small>Start each unit on a new line; leave a blank line between units</small>
           <textarea value={layoutText} onChange={(event) => { setLayoutText(event.target.value); setCourseError(""); }} placeholder={"Health and Safety\nK1: Awareness of health and safety regulations...\nK2: Safety control equipment and PPE...\nS1: Comply with health and safety regulations...\nS2: Identify and use PPE...\nB1: Put health, safety and wellbeing first.\n\nPlanning and Resources\nK10: Interpret drawings and specifications...\nK12: Resource estimation techniques...\nS5: Read and interpret drawings...\nS6: Estimate and select required resources..."} rows={16} />
         </label>
@@ -1835,7 +2689,7 @@ export default function Home() {
           <span className="builder-kicker">Let Evia organise it</span>
           <p>Paste a complete, unorganised KSB list. Evia will pair Skills, create activity titles and map the Knowledge and Behaviours.</p>
         </div>
-        <label className="course-text-block is-primary-input">
+        <label className="course-text-block is-primary-input is-required">
           <span>Paste KSBs</span><small>Headings and multi-line wording are fine</small>
           <textarea value={ksbsText} onChange={(event) => { setKsbsText(event.target.value); setCourseError(""); }} placeholder={"Knowledge\nK1: The regulations and guidance for...\nK2: The principles of...\n\nSkills\nS1: Comply with...\nS2: Apply...\n\nBehaviours\nB1: Put safety first.\nB2: Take ownership of work."} rows={16} />
         </label>
@@ -1889,7 +2743,7 @@ export default function Home() {
 
     if (view === "unit" && selectedUnit) return (
       <div className="duty-detail">
-        <header className="duty-summary"><span>Evidence collection</span><h3>{selectedUnit.title}</h3><p>{selectedUnit.summary}</p></header>
+        <header className="duty-summary"><span>Evidence collection</span><h3>{selectedUnit.title}</h3><p>{selectedUnit.summary}</p><button type="button" className="unit-download-button" disabled={Boolean(exporting)} onClick={() => downloadUnitPack(selectedUnit)}>{exporting === selectedUnit.id ? "Building evidence pack…" : "Download Unit evidence"}<span aria-hidden="true">↓</span></button></header>
         {renderKsbGroup("Skill", "Skills")}
         {renderKsbGroup("Knowledge", "Knowledge")}
         {renderKsbGroup("Behaviour", "Behaviours")}
@@ -1908,9 +2762,17 @@ export default function Home() {
     if (view === "admin") return (
       <div className="option-list is-fill admin-options">
         <div className="admin-status"><span /> Admin settings unlocked</div>
+        <OptionRow title="Recognised Prior Learning" note={`${rplCodes.length} KSB${rplCodes.length === 1 ? "" : "s"} marked RPL`} onClick={() => { setUnitSearch(""); navigate("admin-rpl"); }} />
         <OptionRow title="Course Controls" onClick={() => openPlaceholder("Course Controls", "admin")} />
         <OptionRow title="Learner Access" onClick={() => openPlaceholder("Learner Access", "admin")} />
         <OptionRow title="Data & Privacy" onClick={() => openPlaceholder("Data & Privacy", "admin")} />
+      </div>
+    );
+
+    if (view === "admin-rpl") return (
+      <div className="progress-workspace">
+        <div className="evia-guidance"><span className="guidance-mark" aria-hidden="true">E</span><div><strong>Only mark verified prior learning.</strong><p>An RPL KSB counts as covered in Portfolio Health and is clearly labelled in the evidence pack. Tap again to remove it.</p></div></div>
+        {!course ? <div className="empty-course-state"><h3>No course added</h3><p>Add a course before marking individual KSBs as RPL.</p></div> : <><label className="duty-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.75" cy="10.75" r="6.25" /><path d="m15.5 15.5 4 4" /></svg><input type="search" value={unitSearch} onChange={(event) => setUnitSearch(event.target.value)} placeholder="Search KSB code or wording" aria-label="Search KSBs for RPL" /></label><div className="rpl-list">{courseKsbs.filter((ksb) => !unitSearch.trim() || `${ksb.code} ${ksb.description}`.toLowerCase().includes(unitSearch.trim().toLowerCase())).sort((left, right) => left.code.localeCompare(right.code, undefined, { numeric: true })).map((ksb) => { const marked = rplCodes.includes(ksb.code); return <button type="button" className={marked ? "is-rpl" : ""} key={ksb.code} aria-pressed={marked} onClick={() => toggleRpl(ksb.code)}><span>{ksb.code}</span><strong>{ksb.description}</strong><em>{marked ? "RPL ✓" : "Mark RPL"}</em></button>; })}</div></>}
       </div>
     );
 
@@ -1918,7 +2780,17 @@ export default function Home() {
   };
 
   return (
-    <main className={`evia-app${ready ? " is-ready" : ""}${open ? " is-open" : ""}${isOnboarding ? " is-onboarding" : ""}`}>
+    <main
+      className={`evia-app${ready ? " is-ready" : ""}${open ? " is-open" : ""}${isOnboarding ? " is-onboarding" : ""} text-${accessibility.textSize}${accessibility.highContrast ? " is-high-contrast" : ""}${accessibility.readingFocus ? " is-reading-focus" : ""}${accessibility.reduceMotion ? " is-reduced-motion" : ""}`}
+      onDoubleClick={(event) => {
+        if (!accessibility.readAloud) return;
+        const target = event.target as HTMLElement;
+        if (target.matches("input, textarea")) return;
+        const readable = target.closest("button, article, label, header, p, h1, h2, h3, h4, section") as HTMLElement | null;
+        speakText(readable?.innerText ?? target.innerText ?? "");
+      }}
+      onPointerUp={handleTouchReadAloud}
+    >
       <div className="ambient ambient-one" aria-hidden="true" /><div className="ambient ambient-two" aria-hidden="true" />
       <button type="button" className="evia-anchor" aria-label={open ? "Close Evia menu" : "Open Evia menu"} aria-expanded={open} disabled={isOnboarding} onClick={toggleEvia}>
         <span className="evia-float"><span className="evia-halo" aria-hidden="true" /><span className={`evia-face expression-${expression}`} aria-hidden="true"><span className="evia-eyes"><span className="evia-eye eye-left" /><span className="evia-eye eye-right" /></span></span></span>
