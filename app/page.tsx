@@ -3494,11 +3494,26 @@ export default function Home() {
           <div className="duty-list">
             {filteredUnits.map((unit) => {
               const progress = unitProgressDetails(unit);
+              const unitLoggedOtj = unitOtjHours(unit.id);
+              const unitOtjPercentage = unitOtjTarget > 0
+                ? clampPercentage((unitLoggedOtj / unitOtjTarget) * 100)
+                : 0;
               return (
               <button type="button" className={`duty-row${progress.isComplete ? " is-complete" : ""}`} key={unit.id} onClick={() => { setSelectedUnitId(unit.id); navigate("unit"); }}>
                 <span className="duty-row-copy">
                   <span className="unit-title-line"><strong>{unit.title}</strong></span>
-                  {renderUnitCompletionDots(unit)}
+                  <span className="unit-row-progress">
+                    {renderUnitCompletionDots(unit)}
+                    <span className="unit-otj-mini" aria-label={`OTJ: ${unitOtjPercentage}% complete for this Unit`}>
+                      <b>OTJ</b>
+                      <i
+                        aria-hidden="true"
+                        style={{
+                          background: `conic-gradient(from -90deg, #efc33d 0deg ${unitOtjPercentage * 3.6}deg, rgba(80, 79, 75, 0.2) ${unitOtjPercentage * 3.6}deg 360deg)`,
+                        }}
+                      />
+                    </span>
+                  </span>
                 </span>
                         </button>
             );})}

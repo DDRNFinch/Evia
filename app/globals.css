@@ -5136,3 +5136,35 @@ html {
   font-weight: 360;
   line-height: 1.35;
 }
+
+/* Unit list OTJ pie progress */
+.unit-row-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.62rem;
+  flex-wrap: wrap;
+}
+
+.unit-otj-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.24rem;
+  color: #77736a;
+}
+
+.unit-otj-mini b {
+  font-size: 0.67rem;
+  font-weight: 560;
+  line-height: 1;
+}
+
+.unit-otj-mini i {
+  display: block;
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(80, 79, 75, 0.18);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+}
+
