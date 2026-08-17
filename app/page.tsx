@@ -949,7 +949,6 @@ function OptionRow({ title, note, onClick, tabIndex = 0 }: {
         <span>{title}</span>
         {note && <small>{note}</small>}
       </span>
-      <span className="row-chevron" aria-hidden="true">›</span>
     </button>
   );
 }
@@ -2987,7 +2986,7 @@ export default function Home() {
           const complete = items.filter((ksb) => completedKsbCodes.has(ksb.code)).length;
           return (
             <span className="unit-dot-group" key={type} aria-label={`${type}: ${complete} of ${items.length} complete`}>
-              <b>{label}:</b>
+              <b>{label}</b>
               <span>{items.map((ksb) => <i className={completedKsbCodes.has(ksb.code) ? "is-complete" : ""} key={ksb.code} />)}</span>
             </span>
           );
@@ -3013,7 +3012,7 @@ export default function Home() {
               <button type="button" className="ksb-description-button" onClick={() => openEvidenceOptions(ksb)} aria-label={`Open evidence options for ${ksb.code}`}>
                 <span className="ksb-code">{ksb.code}</span>
                 <span className="ksb-description-copy"><strong>{ksb.description}</strong><small>{isRpl ? "Recognised prior learning" : isComplete ? "Evidence route complete" : "Tap to add evidence"}</small></span>
-                <span className="status-dot" aria-hidden="true">{isComplete ? "✓" : "›"}</span>
+                <span className="status-dot" aria-hidden="true">{isComplete ? "✓" : ""}</span>
               </button>
             </article>
           );
@@ -3065,7 +3064,7 @@ export default function Home() {
               const answers = studyAnswers[module.id] ?? [];
               const correct = module.questions.filter((question, index) => answers[index] === question.answer).length;
               const complete = answers.length >= module.questions.length && correct === module.questions.length;
-              return <button type="button" className={`study-card${complete ? " is-complete" : ""}`} key={module.id} onClick={() => { setSelectedStudyModuleId(module.id); navigate("study-module"); }}><span className="study-card-level">{complete ? "✓" : module.level}</span><span><strong>{module.title}</strong><small>{module.summary}</small><em>{answers.filter((answer) => answer !== undefined).length ? `${correct} of ${module.questions.length} correct` : "Not started"}</em></span><span className="row-chevron" aria-hidden="true">›</span></button>;
+              return <button type="button" className={`study-card${complete ? " is-complete" : ""}`} key={module.id} onClick={() => { setSelectedStudyModuleId(module.id); navigate("study-module"); }}><span className="study-card-level">{complete ? "✓" : module.level}</span><span><strong>{module.title}</strong><small>{module.summary}</small><em>{answers.filter((answer) => answer !== undefined).length ? `${correct} of ${module.questions.length} correct` : "Not started"}</em></span></button>;
             })}
           </div>
         </div>
@@ -3100,7 +3099,7 @@ export default function Home() {
     );
 
     if (view === "portfolio-download") {
-      if (!course) return <div className="empty-course-state"><span className="empty-course-mark" aria-hidden="true">+</span><h3>Add your course first</h3><p>Evia builds evidence packs from the Units, KSB mappings and evidence saved on this device.</p><button type="button" onClick={() => openCourseManager("portfolio-download")}>Add course <span aria-hidden="true">→</span></button></div>;
+      if (!course) return <div className="empty-course-state"><span className="empty-course-mark" aria-hidden="true">+</span><h3>Add your course first</h3><p>Evia builds evidence packs from the Units, KSB mappings and evidence saved on this device.</p><button type="button" onClick={() => openCourseManager("portfolio-download")}>Add course</button></div>;
       return (
         <div className="progress-workspace">
           <div className="evia-guidance"><span className="guidance-mark" aria-hidden="true">E</span><div><strong>Your evidence pack is mapped for you.</strong><p>Each download contains a professional Unit PDF with the full KSB wording, evidence status and mapping, plus every attached photo, video or audio file.</p></div></div>
@@ -3134,7 +3133,7 @@ export default function Home() {
         </div>
         <button className="install-app-button" type="button" onClick={installEvia} disabled={isInstalled}>
           {isInstalled ? "Installed" : installPrompt ? "Install Evia" : "Add to Home Screen"}
-          {!isInstalled && <span aria-hidden="true">→</span>}
+          
         </button>
         <p className="install-app-help"><strong>Android:</strong> use Chrome’s menu and tap Install app. <strong>iPhone:</strong> use Safari’s Share menu and tap Add to Home Screen.</p>
       </div>
@@ -3157,7 +3156,7 @@ export default function Home() {
         </div>
         <p className="calculation-note">TOC = elapsed course days ÷ total planned course days. Dates stay on this device and can be changed whenever your plan changes.</p>
         {timelineError && <p className="form-error" role="alert">{timelineError}</p>}
-        <button className="make-course-button" type="submit">Save course timeline<span aria-hidden="true">→</span></button>
+        <button className="make-course-button" type="submit">Save course timeline</button>
       </form>
     );
 
@@ -3166,7 +3165,7 @@ export default function Home() {
         <div className="empty-course-state">
           <span className="empty-course-mark" aria-hidden="true">+</span><h3>Add your course first</h3>
           <p>Once your KSBs are added, Evia will calculate progress from the number with valid evidence against them.</p>
-          <button type="button" onClick={() => openCourseManager("ksb-progress")}>Add course <span aria-hidden="true">→</span></button>
+          <button type="button" onClick={() => openCourseManager("ksb-progress")}>Add course</button>
         </div>
       );
       return (
@@ -3184,7 +3183,7 @@ export default function Home() {
                 const isRpl = rplCodes.includes(ksb.code);
                 return (
                   <button type="button" className={`ksb-progress-row${complete ? " is-complete" : ""}`} key={ksb.code} onClick={() => openEvidenceOptions(ksb)}>
-                    <span className="ksb-progress-code">{ksb.code}</span><span className="ksb-progress-copy"><strong>{ksb.description}</strong><small>{ksb.type} · {isRpl ? "Recognised prior learning" : complete ? "Evidence complete" : "No complete evidence — tap to add"}</small></span><span className="status-dot" aria-hidden="true">{complete ? "✓" : "›"}</span>
+                    <span className="ksb-progress-code">{ksb.code}</span><span className="ksb-progress-copy"><strong>{ksb.description}</strong><small>{ksb.type} · {isRpl ? "Recognised prior learning" : complete ? "Evidence complete" : "No complete evidence — tap to add"}</small></span><span className="status-dot" aria-hidden="true">{complete ? "✓" : ""}</span>
                   </button>
                 );
               })}
@@ -3200,19 +3199,19 @@ export default function Home() {
           <div className="progress-summary-main"><span>OTJ progress</span><strong>{otjProgress}%</strong><small>{loggedOtjHours.toFixed(1)}h logged · {requiredOtjHours.toFixed(1)}h expected by today</small></div>
           <div className="progress-summary-stat"><span>Course target</span><strong>{validTimeline ? `${totalOtjHours.toFixed(1)}h` : "—"}</strong><small>{weeklyOtjTarget.toFixed(1)} hours per week</small></div>
         </div>
-        {!validTimeline && <button type="button" className="inline-action" onClick={() => navigate("toc-settings")}>Set course dates to calculate your target <span aria-hidden="true">→</span></button>}
-        {!course?.units.length && <button type="button" className="inline-action" onClick={() => openCourseManager("otj-progress")}>Add your course to allocate OTJ to Units <span aria-hidden="true">→</span></button>}
+        {!validTimeline && <button type="button" className="inline-action" onClick={() => navigate("toc-settings")}>Set course dates to calculate your target</button>}
+        {!course?.units.length && <button type="button" className="inline-action" onClick={() => openCourseManager("otj-progress")}>Add your course to allocate OTJ to Units</button>}
         <button type="button" className="make-course-button otj-download" disabled={!otjEntries.length || Boolean(exporting)} onClick={() => requestSignedExport({ kind: "otj" })}>{exporting === "otj" ? "Building OTJ pack…" : "Review, sign & download OTJ pack"}<span aria-hidden="true">↓</span></button>
         <form className="otj-form" onSubmit={addOtjEntry}>
           <div className="section-heading"><span>Record an activity</span><small>Learning completed away from normal productive duties</small></div>
           <div className="field-grid">
-            <label className="clean-field is-wide is-required"><span>Related Unit</span><select required value={otjDraft.unitId} onChange={(event) => { setOtjDraft({ ...otjDraft, unitId: event.target.value }); setOtjError(""); }}><option value="">Choose a Unit</option>{course?.units.map((unit) => <option value={unit.id} key={unit.id}>{unit.title}</option>)}</select></label>
+            <div className="clean-field is-wide is-required otj-unit-picker"><span>Related Unit</span><details><summary>{course?.units.find((unit) => unit.id === otjDraft.unitId)?.title ?? "Choose a Unit"}</summary><div className="otj-unit-options" role="listbox" aria-label="Choose related Unit">{course?.units.map((unit) => <button type="button" role="option" aria-selected={otjDraft.unitId === unit.id} className={otjDraft.unitId === unit.id ? "is-selected" : ""} key={unit.id} onClick={(event) => { setOtjDraft({ ...otjDraft, unitId: unit.id }); setOtjError(""); event.currentTarget.closest("details")?.removeAttribute("open"); }}>{unit.title}</button>)}</div></details></div>
             <label className="clean-field is-required"><span>Date</span><input required type="date" value={otjDraft.date} onChange={(event) => { setOtjDraft({ ...otjDraft, date: event.target.value }); setOtjError(""); }} /></label>
             <label className="clean-field is-required"><span>Hours</span><input required type="number" min="0.1" max="24" step="0.1" inputMode="decimal" value={otjDraft.hours} onChange={(event) => { setOtjDraft({ ...otjDraft, hours: event.target.value }); setOtjError(""); }} placeholder="1.5" /></label>
             <label className="clean-field is-wide is-required"><span>What did you learn?</span><input required type="text" value={otjDraft.title} onChange={(event) => { setOtjDraft({ ...otjDraft, title: event.target.value }); setOtjError(""); }} placeholder="Example: cavity wall workshop" maxLength={120} /></label>
           </div>
           {otjError && <p className="form-error" role="alert">{otjError}</p>}
-          <button className="make-course-button" type="submit">Add OTJ activity<span aria-hidden="true">→</span></button>
+          <button className="make-course-button" type="submit">Add OTJ activity</button>
         </form>
         {course?.units.length ? <div className="unit-otj-list">
           <div className="section-heading"><span>OTJ by Unit</span><small>{validTimeline ? `${unitOtjTarget.toFixed(1)}h allocated to each Unit` : "Set course dates for targets"}</small></div>
@@ -3242,7 +3241,7 @@ export default function Home() {
             const practice = epaPracticeAreas[area];
             const completedSteps = epaChecks[area].filter(Boolean).length;
             const complete = completedSteps === practice.steps.length;
-            return <button type="button" className={`epa-card${complete ? " is-complete" : ""}`} key={area} onClick={() => startEpa(area)}><span className="epa-card-number">{complete ? "✓" : completedSteps}</span><span><strong>{practice.title}</strong><small>{practice.summary}</small><em>{complete ? "Complete" : `${completedSteps} of ${practice.steps.length} steps`}</em></span><span className="row-chevron" aria-hidden="true">›</span></button>;
+            return <button type="button" className={`epa-card${complete ? " is-complete" : ""}`} key={area} onClick={() => startEpa(area)}><span className="epa-card-number">{complete ? "✓" : completedSteps}</span><span><strong>{practice.title}</strong><small>{practice.summary}</small><em>{complete ? "Complete" : `${completedSteps} of ${practice.steps.length} steps`}</em></span></button>;
           })}
         </div>
       </div>
@@ -3256,7 +3255,7 @@ export default function Home() {
           <div className="evia-guidance"><span className="guidance-mark" aria-hidden="true">E</span><div><strong>I’ll take you through this one step at a time.</strong><p>{activeEpaArea === "mcq" ? "Choose an answer and I’ll explain the reasoning. All four must be correct to complete the mock." : "Complete the activity, then record a specific response of at least 12 words. Your work is saved as you go."}</p></div></div>
           <header className="practice-header"><span>EPA practice</span><h3>{practice.title}</h3><p>{practice.summary}</p></header>
           {activeEpaArea === "mcq" ? <div className="quiz-list">{epaMcqQuestions.map((question, index) => { const selected = epaAnswers[index]; return <article className="quiz-card" key={question.prompt}><h4>{index + 1}. {question.prompt}</h4><div className="quiz-options">{question.options.map((option, optionIndex) => <button type="button" className={`${selected === optionIndex ? "is-selected" : ""}${selected !== undefined && selected >= 0 && optionIndex === question.answer ? " is-correct" : ""}${selected === optionIndex && selected !== question.answer ? " is-wrong" : ""}`} key={option} onClick={() => answerEpaQuestion(index, optionIndex)}>{option}</button>)}</div>{selected !== undefined && selected >= 0 && <p className={selected === question.answer ? "quiz-feedback is-correct" : "quiz-feedback"}><strong>{selected === question.answer ? "Correct." : "Try again."}</strong> {question.explanation}</p>}</article>; })}</div> : <div className="epa-response-list">{practice.steps.map((step, index) => <label className={`epa-response${epaChecks[activeEpaArea][index] ? " is-complete" : ""}`} key={step}><span>{epaChecks[activeEpaArea][index] ? "✓" : index + 1}</span><div><strong>{step}</strong><small>{activeEpaArea === "practical" ? "Record what you planned or completed, the checks you made and the result." : "Write the answer you would give aloud. Include a specific example and why it mattered."}</small><textarea required rows={4} value={epaResponses[activeEpaArea][index] ?? ""} onChange={(event) => updateEpaResponse(activeEpaArea, index, event.target.value)} placeholder={activeEpaArea === "practical" ? "My approach was… I checked… The result was…" : "In this situation I… I chose this because… The result was…"} /><em>{countWords(epaResponses[activeEpaArea][index] ?? "")} / 12 words</em></div></label>)}</div>}
-          <button className="make-course-button" type="button" disabled={!allStepsComplete} onClick={completeEpaSession}>{allStepsComplete ? "Complete this mock" : "Complete every step first"}<span aria-hidden="true">→</span></button>
+          <button className="make-course-button" type="button" disabled={!allStepsComplete} onClick={completeEpaSession}>{allStepsComplete ? "Complete this mock" : "Complete every step first"}</button>
         </div>
       );
     }
@@ -3269,7 +3268,7 @@ export default function Home() {
           const record = evidenceRecords.find((item) => item.ksbCode === activeEvidenceKsb.code && item.method === option.method);
           const progress = evidenceRecordProgress(record);
           const complete = record ? evidenceRecordComplete(record) : false;
-          return <button type="button" className={`evidence-option-pill${complete ? " is-complete" : ""}`} style={{ background: complete ? "rgba(221, 239, 216, .92)" : `linear-gradient(90deg, rgba(247, 210, 88, .32) ${progress}%, rgba(252, 250, 244, .9) ${progress}%)` }} key={option.method} onClick={() => startEvidence(activeEvidenceKsb, option.method)}><span><strong>{option.label}</strong><small>{option.rule}</small></span><em>{complete ? "Complete" : progress ? `${progress}%` : "Start"}</em><span className="row-chevron" aria-hidden="true">›</span></button>;
+          return <button type="button" className={`evidence-option-pill${complete ? " is-complete" : ""}`} style={{ background: complete ? "rgba(221, 239, 216, .92)" : `linear-gradient(90deg, rgba(247, 210, 88, .32) ${progress}%, rgba(252, 250, 244, .9) ${progress}%)` }} key={option.method} onClick={() => startEvidence(activeEvidenceKsb, option.method)}><span><strong>{option.label}</strong><small>{option.rule}</small></span><em>{complete ? "Complete" : progress ? `${progress}%` : "Start"}</em></button>;
         })}</div>
         {rplCodes.includes(activeEvidenceKsb.code) && <div className="rpl-note"><span>RPL</span><p>This KSB has been marked as recognised prior learning. New evidence can still be added.</p></div>}
       </div>
@@ -3301,7 +3300,7 @@ export default function Home() {
             <p className="signature-declaration">By signing, the witness confirms this is their own account of what they personally observed.</p>
           </div>}
           {evidenceError && <p className="form-error" role="alert">{evidenceError}</p>}
-          {mediaMethod ? <button className="make-course-button" type="button" onClick={() => navigate("evidence-options")}>{progress === 100 ? "Done — evidence complete" : "Done for now"}<span aria-hidden="true">→</span></button> : <button className="make-course-button" type="button" disabled={savingEvidence} onClick={saveEvidence}>{savingEvidence ? "Saving…" : record ? "Update evidence" : "Save evidence"}<span aria-hidden="true">→</span></button>}
+          {mediaMethod ? <button className="make-course-button" type="button" onClick={() => navigate("evidence-options")}>{progress === 100 ? "Done — evidence complete" : "Done for now"}</button> : <button className="make-course-button" type="button" disabled={savingEvidence} onClick={saveEvidence}>{savingEvidence ? "Saving…" : record ? "Update evidence" : "Save evidence"}</button>}
         </div>
       );
     }
@@ -3320,7 +3319,7 @@ export default function Home() {
             <div className="evia-guidance"><span className="guidance-mark" aria-hidden="true">E</span><div><strong>We’ll build this evidence together.</strong><p>I’ll explain exactly what to include, check the minimum requirement and save it against the right KSB.</p></div></div>
             <header className="evidence-criterion"><span>{activeEvidenceKsb.code} · {activeEvidenceKsb.type}</span><h3>{activeEvidenceKsb.description}</h3></header>
             <div className="evidence-route"><small>Your chosen route</small><strong>{evidenceMethodNames[activeEvidenceMethod]}</strong><p>{selectedOption?.rule}. You only need to complete one approved route for this KSB.</p></div>
-            <button className="make-course-button" type="button" onClick={continueEvidence}>Show me what to do<span aria-hidden="true">→</span></button>
+            <button className="make-course-button" type="button" onClick={continueEvidence}>Show me what to do</button>
           </>}
           {evidenceStep === 1 && <>
             <div className="evia-guidance"><span className="guidance-mark" aria-hidden="true">E</span><div><strong>{evidenceMethodNames[activeEvidenceMethod]}</strong><p>{activeEvidenceMethod === "photo" ? "Use three different, specific images—not three angles of the same finished result." : activeEvidenceMethod === "video" ? "Record one clear sequence showing you doing the work, not only the finished result." : activeEvidenceMethod === "audio" ? "Explain what you know in your own words and connect it to a real example from your work." : activeEvidenceMethod === "written" ? "Explain what you know, why it matters and how it applies in your work." : activeEvidenceMethod === "reflection" ? "Describe what happened, what you did, what you learned and what you would do next time." : "The witness must describe what they personally saw you do and how it met the criterion."}</p></div></div>
@@ -3331,14 +3330,14 @@ export default function Home() {
             {["written", "reflection"].includes(activeEvidenceMethod) && <label className="guided-textarea"><span>{activeEvidenceMethod === "written" ? "Your knowledge statement" : "Your reflection"}</span><small>{activeEvidenceMethod === "written" ? "Use: what I know → how it applies → a real example → why it matters." : "Use: what happened → what I did → the result → what I learned → what I will improve."}</small><textarea rows={9} value={evidenceText} onChange={(event) => { setEvidenceText(event.target.value); setEvidenceError(""); }} placeholder={activeEvidenceMethod === "written" ? "I understand that… In my work this applies when… For example… This matters because…" : "The situation was… I decided to… The result was… I learned… Next time I will…"} /><em className={countWords(evidenceText) >= 30 ? "is-ready" : ""}>{countWords(evidenceText)} / 30 minimum words</em></label>}
             {activeEvidenceMethod === "witness" && <div className="witness-form"><div className="field-grid"><label className="clean-field"><span>Witness name</span><input type="text" value={witnessDraft.name} onChange={(event) => { setWitnessDraft({ ...witnessDraft, name: event.target.value }); setEvidenceError(""); }} /></label><label className="clean-field"><span>Witness role</span><input type="text" value={witnessDraft.role} onChange={(event) => { setWitnessDraft({ ...witnessDraft, role: event.target.value }); setEvidenceError(""); }} placeholder="Supervisor" /></label><label className="clean-field is-wide"><span>Date observed</span><input type="date" value={witnessDraft.date} onChange={(event) => { setWitnessDraft({ ...witnessDraft, date: event.target.value }); setEvidenceError(""); }} /></label></div><label className="guided-textarea"><span>What did the witness observe?</span><small>Write in the witness’s own words. Include the task, the learner’s actions, the standard achieved and how this demonstrated the Behaviour.</small><textarea rows={8} value={witnessDraft.testimony} onChange={(event) => { setWitnessDraft({ ...witnessDraft, testimony: event.target.value }); setEvidenceError(""); }} placeholder="I personally observed the learner…" /><em className={countWords(witnessDraft.testimony) >= 30 ? "is-ready" : ""}>{countWords(witnessDraft.testimony)} / 30 minimum words</em></label></div>}
             {evidenceError && <p className="form-error" role="alert">{evidenceError}</p>}
-            <button className="make-course-button" type="button" onClick={continueEvidence}>Review my evidence<span aria-hidden="true">→</span></button>
+            <button className="make-course-button" type="button" onClick={continueEvidence}>Review my evidence</button>
           </>}
           {evidenceStep === 2 && <>
             <div className="evia-guidance"><span className="guidance-mark" aria-hidden="true">E</span><div><strong>This meets the minimum evidence route.</strong><p>Check the details below. Saving it will mark {activeEvidenceKsb.code} as evidenced and update your KSB arch.</p></div></div>
             <div className="evidence-review"><span className="review-check" aria-hidden="true">✓</span><div><small>{activeEvidenceKsb.code} · {activeEvidenceKsb.type}</small><strong>{evidenceMethodNames[activeEvidenceMethod]}</strong><p>{activeEvidenceMethod === "photo" ? "3 specific photos ready" : ["video", "audio"].includes(activeEvidenceMethod) ? evidenceFiles[0]?.name : activeEvidenceMethod === "witness" ? `${witnessDraft.name}, ${witnessDraft.role} · ${countWords(witnessDraft.testimony)} words` : `${countWords(evidenceText)} words ready`}</p></div></div>
             <header className="evidence-criterion compact"><span>Mapped criterion</span><h3>{activeEvidenceKsb.description}</h3></header>
             {evidenceError && <p className="form-error" role="alert">{evidenceError}</p>}
-            <button className="make-course-button" type="button" disabled={savingEvidence} onClick={saveEvidence}>{savingEvidence ? "Saving on this device…" : "Save evidence"}<span aria-hidden="true">→</span></button>
+            <button className="make-course-button" type="button" disabled={savingEvidence} onClick={saveEvidence}>{savingEvidence ? "Saving on this device…" : "Save evidence"}</button>
           </>}
         </div>
       );
@@ -3350,7 +3349,7 @@ export default function Home() {
         <div className="progress-summary-grid"><div className="progress-summary-main"><span>Evidence records</span><strong>{evidenceRecords.length}</strong><small>{completedKsbCodes.size} unique KSBs covered</small></div><div className="progress-summary-stat"><span>KSB progress</span><strong>{ksbProgress}%</strong><small>{Math.max(0, courseKsbs.length - completedKsbCodes.size)} KSBs remaining</small></div></div>
         <div className="evidence-record-list">
           {[...evidenceRecords].sort((left, right) => (right.updatedAt ?? right.createdAt) - (left.updatedAt ?? left.createdAt)).map((record) => { const complete = evidenceRecordComplete(record); return <article className={`evidence-record${complete ? " is-complete" : ""}`} key={record.id}><span className="evidence-record-code">{record.ksbCode}</span><div><strong>{evidenceMethodNames[record.method]}</strong><small>{record.ksbType} · {new Date(record.updatedAt ?? record.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</small><p>{record.fileNames.length ? record.fileNames.join(" · ") : record.method === "witness" ? `Witness: ${record.witness?.name ?? "Recorded"}` : `${countWords(record.text ?? "")} words`}</p></div><span className="status-dot" aria-hidden="true">{complete ? "✓" : `${evidenceRecordProgress(record)}%`}</span></article>; })}
-          {!evidenceRecords.length && <div className="empty-evidence"><span aria-hidden="true">＋</span><h3>No evidence saved yet</h3><p>Open a course Unit, choose a KSB and Evia will guide you through the right evidence route.</p><button type="button" onClick={() => navigate("units")}>Open Units <span aria-hidden="true">→</span></button></div>}
+          {!evidenceRecords.length && <div className="empty-evidence"><span aria-hidden="true">＋</span><h3>No evidence saved yet</h3><p>Open a course Unit, choose a KSB and Evia will guide you through the right evidence route.</p><button type="button" onClick={() => navigate("units")}>Open Units</button></div>}
         </div>
       </div>
     );
@@ -3373,7 +3372,7 @@ export default function Home() {
           <label className="clean-field is-wide is-required"><span>Planned end date</span><input required type="date" min="2000-01-01" max="2100-12-31" value={timeline.endDate} onChange={(event) => { setTimeline({ ...timeline, endDate: event.target.value }); setTimelineError(""); }} /></label>
         </div>
         {timelineError && <p className="form-error" role="alert">{timelineError}</p>}
-        <button className="make-course-button" type="submit">Save my details<span aria-hidden="true">→</span></button>
+        <button className="make-course-button" type="submit">Save my details</button>
       </form>
     );
 
@@ -3423,7 +3422,7 @@ export default function Home() {
           </div>
         )}
         {courseError && <p className="form-error" role="alert">{courseError}</p>}
-        <button className="make-course-button" type="button" disabled={!pendingFileCourse} onClick={importCourseFile}>Import course<span aria-hidden="true">→</span></button>
+        <button className="make-course-button" type="button" disabled={!pendingFileCourse} onClick={importCourseFile}>Import course</button>
       </div>
     );
 
@@ -3445,7 +3444,7 @@ export default function Home() {
           </div>
         )}
         {courseError && <p className="form-error" role="alert">{courseError}</p>}
-        <button className="make-course-button" type="submit">Use this layout<span aria-hidden="true">→</span></button>
+        <button className="make-course-button" type="submit">Use this layout</button>
       </form>
     );
 
@@ -3467,7 +3466,7 @@ export default function Home() {
           </div>
         )}
         {courseError && <p className="form-error" role="alert">{courseError}</p>}
-        <button className="make-course-button" type="submit">{course ? "Re-sort my course" : "Sort my course"}<span aria-hidden="true">→</span></button>
+        <button className="make-course-button" type="submit">{course ? "Re-sort my course" : "Sort my course"}</button>
       </form>
     );
 
@@ -3477,7 +3476,7 @@ export default function Home() {
           <span className="empty-course-mark" aria-hidden="true">+</span>
           <h3>No course added yet</h3>
           <p>Import a tutor file, paste a course layout, or let Evia organise a complete KSB list.</p>
-          <button type="button" onClick={() => openCourseManager("units")}>Add now <span aria-hidden="true">→</span></button>
+          <button type="button" onClick={() => openCourseManager("units")}>Add now</button>
         </div>
       );
 
@@ -3499,8 +3498,7 @@ export default function Home() {
                   <span className="unit-title-line"><strong>{unit.title}</strong></span>
                   {renderUnitCompletionDots(unit)}
                 </span>
-                <span className="row-chevron" aria-hidden="true">›</span>
-              </button>
+                        </button>
             );})}
             {!filteredUnits.length && <p className="no-results">No Units or KSBs match “{unitSearch}”.</p>}
           </div>
@@ -3584,7 +3582,7 @@ export default function Home() {
           </button>
           {remindersOpen && <div className="reminder-menu" role="menu" aria-label="Evia reminders">
             <div className="reminder-menu-heading"><strong>What’s next</strong><button type="button" onClick={() => setRemindersOpen(false)} aria-label="Close reminders">×</button></div>
-            {reminderItems.map((item) => <button type="button" role="menuitem" className={item.id === "progress-change" ? "is-progress" : ""} key={item.id} onClick={() => { if (item.onClick) item.onClick(); else setRemindersOpen(false); }}>{item.label}<span aria-hidden="true">›</span></button>)}
+            {reminderItems.map((item) => <button type="button" role="menuitem" className={item.id === "progress-change" ? "is-progress" : ""} key={item.id} onClick={() => { if (item.onClick) item.onClick(); else setRemindersOpen(false); }}>{item.label}</button>)}
             {!reminderItems.length && <p>You’re up to date.</p>}
           </div>}
         </div>
@@ -3619,7 +3617,7 @@ export default function Home() {
           <div className="evia-plus-progress" aria-hidden="true">{eviaGuideSteps.map((_, index) => <span className={index <= eviaGuideStep ? "is-active" : ""} key={index} />)}</div>
           <div className="evia-plus-actions">
             {eviaGuideStep > 0 ? <button type="button" className="evia-plus-back" onClick={moveGuideBack}>Back</button> : <span />}
-            <button type="button" className="evia-plus-next" onClick={moveGuideForward}>{eviaGuideStep === eviaGuideSteps.length - 1 ? isWritingGuide ? "Compile my statement" : "Done" : "Next step"}<span aria-hidden="true">→</span></button>
+            <button type="button" className="evia-plus-next" onClick={moveGuideForward}>{eviaGuideStep === eviaGuideSteps.length - 1 ? isWritingGuide ? "Compile my statement" : "Done" : "Next step"}</button>
           </div>
           {isWritingGuide && <small className="evia-plus-assurance">Only your answers are used. Evia corrects spelling, grammar and punctuation without adding technical content.</small>}
         </div>
@@ -3645,10 +3643,10 @@ export default function Home() {
       {onboardingChecked && onboardingStep !== null && (
         <section className={`onboarding-layer onboarding-step-${onboardingStep}`} role="dialog" aria-modal="true" aria-labelledby="onboarding-title" aria-describedby="onboarding-description">
           <div className="onboarding-panel" key={onboardingStep}>
-            {onboardingStep === 0 && <><p className="onboarding-kicker">Hello, I’m Evia</p><h1 id="onboarding-title">What’s your full name?</h1><p id="onboarding-description" className="onboarding-copy">I’m your apprenticeship personal assistant. Let’s get to know each other.</p><form className="name-form" onSubmit={submitName}><label className="sr-only" htmlFor="learner-name">Full name</label><div className="name-pill"><input id="learner-name" type="text" value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="Enter your full name" autoComplete="name" maxLength={80} /><button type="submit" disabled={!fullName.trim()} aria-label="Continue"><span aria-hidden="true">→</span></button></div></form></>}
-            {onboardingStep === 1 && <><p className="onboarding-kicker">Welcome to Evia</p><h1 id="onboarding-title">Nice to meet you, {firstName}.</h1><p id="onboarding-description" className="onboarding-copy">I’m your apprenticeship PA. I’ll help you stay on top of your course, evidence, study and EPA preparation without making things complicated.</p><button type="button" className="onboarding-action" onClick={() => setOnboardingStep(2)}>Let me show you around <span aria-hidden="true">→</span></button><div className="onboarding-dots" aria-hidden="true"><span className="is-current" /><span /><span /></div></>}
-            {onboardingStep === 2 && <><p className="onboarding-kicker">Your assistant</p><h1 id="onboarding-title">Tap me whenever you need help.</h1><p id="onboarding-description" className="onboarding-copy">Tap me to open your options. I can guide you to your course, self-study tools, portfolio and settings from one simple place.</p><button type="button" className="onboarding-action" onClick={() => setOnboardingStep(3)}>Next <span aria-hidden="true">→</span></button><div className="onboarding-dots" aria-hidden="true"><span /><span className="is-current" /><span /></div></>}
-            {onboardingStep === 3 && <><p className="onboarding-kicker">Your progress</p><h1 id="onboarding-title">Four arches. One clear view.</h1><p id="onboarding-description" className="onboarding-copy compact-copy">Tap any arch to see how it is calculated, update its details or continue the work behind it.</p><div className="arch-guide" aria-label="Progress arch meanings">{progressItems.map((item) => <div className="arch-guide-item" key={item.label}><span className="arch-guide-code">{item.label}</span><span className="arch-guide-name">{item.name}</span></div>)}</div><button type="button" className="onboarding-action" onClick={completeOnboarding}>Start using Evia <span aria-hidden="true">→</span></button><div className="onboarding-dots" aria-hidden="true"><span /><span /><span className="is-current" /></div></>}
+            {onboardingStep === 0 && <><p className="onboarding-kicker">Hello, I’m Evia</p><h1 id="onboarding-title">What’s your full name?</h1><p id="onboarding-description" className="onboarding-copy">I’m your apprenticeship personal assistant. Let’s get to know each other.</p><form className="name-form" onSubmit={submitName}><label className="sr-only" htmlFor="learner-name">Full name</label><div className="name-pill"><input id="learner-name" type="text" value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="Enter your full name" autoComplete="name" maxLength={80} /><button type="submit" disabled={!fullName.trim()} aria-label="Continue">Continue</button></div></form></>}
+            {onboardingStep === 1 && <><p className="onboarding-kicker">Welcome to Evia</p><h1 id="onboarding-title">Nice to meet you, {firstName}.</h1><p id="onboarding-description" className="onboarding-copy">I’m your apprenticeship PA. I’ll help you stay on top of your course, evidence, study and EPA preparation without making things complicated.</p><button type="button" className="onboarding-action" onClick={() => setOnboardingStep(2)}>Let me show you around</button><div className="onboarding-dots" aria-hidden="true"><span className="is-current" /><span /><span /></div></>}
+            {onboardingStep === 2 && <><p className="onboarding-kicker">Your assistant</p><h1 id="onboarding-title">Tap me whenever you need help.</h1><p id="onboarding-description" className="onboarding-copy">Tap me to open your options. I can guide you to your course, self-study tools, portfolio and settings from one simple place.</p><button type="button" className="onboarding-action" onClick={() => setOnboardingStep(3)}>Next</button><div className="onboarding-dots" aria-hidden="true"><span /><span className="is-current" /><span /></div></>}
+            {onboardingStep === 3 && <><p className="onboarding-kicker">Your progress</p><h1 id="onboarding-title">Four arches. One clear view.</h1><p id="onboarding-description" className="onboarding-copy compact-copy">Tap any arch to see how it is calculated, update its details or continue the work behind it.</p><div className="arch-guide" aria-label="Progress arch meanings">{progressItems.map((item) => <div className="arch-guide-item" key={item.label}><span className="arch-guide-code">{item.label}</span><span className="arch-guide-name">{item.name}</span></div>)}</div><button type="button" className="onboarding-action" onClick={completeOnboarding}>Start using Evia</button><div className="onboarding-dots" aria-hidden="true"><span /><span /><span className="is-current" /></div></>}
           </div>
         </section>
       )}
