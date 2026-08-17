@@ -91,7 +91,33 @@ type EvidenceRecord = {
     role: string;
     date: string;
     testimony: string;
+    signature?: SignatureData;
+    signedAt?: number;
   };
+};
+
+type SignaturePoint = { x: number; y: number };
+type SignatureData = { strokes: SignaturePoint[][] };
+
+type SignatureApproval = {
+  name: string;
+  role: string;
+  signedAt: number;
+  signature: SignatureData;
+};
+
+type PdfSignatureBlock = SignatureApproval & { label: string };
+
+type ExportRequest = {
+  kind: "unit" | "portfolio" | "otj";
+  unitId?: string;
+};
+
+type ProgressSnapshot = {
+  toc: number;
+  ksb: number;
+  otj: number;
+  epa: number;
 };
 
 type AccessibilitySettings = {
@@ -126,12 +152,16 @@ type OtjEntry = {
   date: string;
   title: string;
   hours: number;
+  unitId?: string;
+  createdAt?: number;
 };
 
 type ProgressItem = {
   label: "TOC" | "KSB" | "OTJ" | "EPA";
   name: string;
   value: number;
+  target?: number;
+  updated?: boolean;
   onClick: () => void;
 };
 
@@ -497,6 +527,7 @@ function evidenceRecordComplete(record: EvidenceRecord) {
     record.witness?.name.trim()
     && record.witness.role.trim()
     && record.witness.date
+    && record.witness.signature?.strokes.length
     && countWords(record.witness.testimony) >= 30,
   );
 }
@@ -506,7 +537,7 @@ function evidenceRecordProgress(record: EvidenceRecord | undefined) {
   if (record.method === "photo") return Math.min(100, Math.round((record.fileIds.length / 3) * 100));
   if (record.method === "video" || record.method === "audio") return record.fileIds.length ? 100 : 0;
   if (record.method === "written" || record.method === "reflection") return Math.min(100, Math.round((countWords(record.text ?? "") / 30) * 100));
-  const completeFields = [record.witness?.name, record.witness?.role, record.witness?.date].filter(Boolean).length;
+  const completeFields = [record.witness?.name, record.witness?.role, record.witness?.date, record.witness?.signature?.strokes.length].filter(Boolean).length;
   const words = countWords(record.witness?.testimony ?? "");
   return evidenceRecordComplete(record) ? 100 : Math.min(90, completeFields * 15 + Math.round(Math.min(30, words) / 30 * 45));
 }
@@ -573,30 +604,88 @@ function escapePdf(value: string) {
   return pdfSafe(value).replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
 }
 
-function createEvidencePdf(title: string, subtitle: string, sourceLines: string[]) {
-  const lines = sourceLines.flatMap((line) => line ? wrapText(line) : [""]);
-  const pages = Array.from({ length: Math.max(1, Math.ceil(lines.length / 43)) }, (_, index) => lines.slice(index * 43, (index + 1) * 43));
+function createEvidencePdf(title: string, subtitle: string, sourceLines: string[], signatures: PdfSignatureBlock[] = []) {
+  const lines = sourceLines.flatMap((line) => line ? wrapText(line, 82) : [""]);
+  const contentPages = Array.from({ length: Math.max(1, Math.ceil(lines.length / 37)) }, (_, index) => ({
+    kind: "content" as const,
+    lines: lines.slice(index * 37, (index + 1) * 37),
+  }));
+  const signaturePages = Array.from({ length: Math.ceil(signatures.length / 4) }, (_, index) => ({
+    kind: "signature" as const,
+    signatures: signatures.slice(index * 4, (index + 1) * 4),
+  }));
+  const pages = [...contentPages, ...signaturePages];
   const objects: string[] = [];
   const pageObjects = pages.map((_, index) => 5 + index * 2);
   objects[1] = "<< /Type /Catalog /Pages 2 0 R >>";
   objects[2] = `<< /Type /Pages /Count ${pages.length} /Kids [${pageObjects.map((number) => `${number} 0 R`).join(" ")}] >>`;
   objects[3] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>";
   objects[4] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>";
-  pages.forEach((pageLines, index) => {
+  pages.forEach((page, index) => {
     const pageObject = pageObjects[index];
     const contentObject = pageObject + 1;
     const commands = [
-      "0.94 0.76 0.24 rg 0 806 595 36 re f",
-      `BT /F2 15 Tf 0.12 0.12 0.13 rg 42 818 Td (${escapePdf(title)}) Tj ET`,
-      `BT /F1 8.5 Tf 0.33 0.33 0.35 rg 42 789 Td (${escapePdf(`${subtitle} | Page ${index + 1} of ${pages.length}`)}) Tj ET`,
+      "0.988 0.984 0.972 rg 0 0 595 842 re f",
+      "0.975 0.952 0.866 rg 0 762 595 80 re f",
+      "0.94 0.76 0.24 rg 42 778 8 42 re f",
+      `BT /F2 16 Tf 0.10 0.10 0.11 rg 62 805 Td (${escapePdf(title)}) Tj ET`,
+      `BT /F1 8.5 Tf 0.34 0.34 0.36 rg 62 785 Td (${escapePdf(subtitle)}) Tj ET`,
+      "0.88 0.84 0.72 RG 0.7 w 42 758 m 553 758 l S",
     ];
-    let y = 765;
-    pageLines.forEach((line) => {
-      const isHeading = /^(UNIT EVIDENCE PACK|LEARNER DETAILS|MAPPING SUMMARY|[KSB]\d|EVIDENCE:|RPL:)/.test(line);
-      commands.push(`BT /${isHeading ? "F2" : "F1"} ${isHeading ? "10" : "9"} Tf ${isHeading ? "0.16 0.16 0.18" : "0.28 0.28 0.3"} rg 42 ${y} Td (${escapePdf(line)}) Tj ET`);
-      y -= line ? 14 : 8;
-    });
-    commands.push(`BT /F1 7.5 Tf 0.48 0.48 0.5 rg 42 28 Td (Created by Evia - Apprentice Vocational Assistant) Tj ET`);
+    if (page.kind === "content") {
+      let y = 735;
+      page.lines.forEach((line) => {
+        const isSection = /^(UNIT EVIDENCE PACK|PORTFOLIO SUMMARY|OTJ EVIDENCE PACK|LEARNER DETAILS|MAPPING SUMMARY|UNIT OTJ SUMMARY|ACTIVITY RECORD|DECLARATION)/.test(line);
+        const isKsb = /^[KSB]\d/.test(line);
+        const isEvidence = /^(EVIDENCE:|RPL:|Attached media:|Witness:|Learner account:)/.test(line);
+        if (isSection) {
+          commands.push(`0.965 0.938 0.84 rg 42 ${y - 5} 511 20 re f`);
+          commands.push(`BT /F2 9.5 Tf 0.18 0.18 0.19 rg 50 ${y + 1} Td (${escapePdf(line)}) Tj ET`);
+          y -= 27;
+          return;
+        }
+        if (isKsb) {
+          commands.push(`0.94 0.76 0.24 rg 42 ${y - 4} 4 16 re f`);
+          commands.push(`BT /F2 9 Tf 0.14 0.14 0.15 rg 53 ${y} Td (${escapePdf(line)}) Tj ET`);
+        } else {
+          const x = isEvidence ? 56 : 48;
+          const font = isEvidence ? "F1" : "F1";
+          const size = isEvidence ? "8.2" : "8.7";
+          const colour = isEvidence ? "0.39 0.36 0.27" : "0.25 0.25 0.27";
+          commands.push(`BT /${font} ${size} Tf ${colour} rg ${x} ${y} Td (${escapePdf(line)}) Tj ET`);
+        }
+        y -= line ? 15 : 8;
+      });
+    } else {
+      commands.push("BT /F2 13 Tf 0.14 0.14 0.15 rg 42 730 Td (Declarations and signatures) Tj ET");
+      commands.push("BT /F1 8.5 Tf 0.37 0.37 0.39 rg 42 711 Td (Handwritten signatures were captured in Evia at the time shown below.) Tj ET");
+      page.signatures.forEach((block, blockIndex) => {
+        const top = 680 - blockIndex * 155;
+        commands.push(`0.975 0.967 0.93 rg 42 ${top - 122} 511 132 re f`);
+        commands.push(`0.94 0.76 0.24 rg 42 ${top + 3} 511 4 re f`);
+        commands.push(`BT /F2 9.5 Tf 0.16 0.16 0.17 rg 54 ${top - 16} Td (${escapePdf(block.label)}) Tj ET`);
+        commands.push(`BT /F1 8.5 Tf 0.29 0.29 0.31 rg 54 ${top - 34} Td (${escapePdf(`${block.name} | ${block.role}`)}) Tj ET`);
+        const boxX = 54;
+        const boxY = top - 96;
+        const boxWidth = 260;
+        const boxHeight = 46;
+        commands.push(`0.78 0.75 0.66 RG 0.65 w ${boxX} ${boxY} ${boxWidth} ${boxHeight} re S`);
+        commands.push("0.12 0.12 0.13 RG 0.9 w");
+        block.signature.strokes.forEach((stroke) => {
+          if (stroke.length < 2) return;
+          const first = stroke[0];
+          commands.push(`${(boxX + first.x * boxWidth).toFixed(2)} ${(boxY + (1 - first.y) * boxHeight).toFixed(2)} m`);
+          stroke.slice(1).forEach((point) => commands.push(`${(boxX + point.x * boxWidth).toFixed(2)} ${(boxY + (1 - point.y) * boxHeight).toFixed(2)} l`));
+          commands.push("S");
+        });
+        const timestamp = new Date(block.signedAt).toLocaleString("en-GB", { dateStyle: "long", timeStyle: "short" });
+        commands.push(`BT /F1 7.7 Tf 0.42 0.42 0.44 rg 330 ${top - 70} Td (Signed: ${escapePdf(timestamp)}) Tj ET`);
+        commands.push(`BT /F1 7.7 Tf 0.42 0.42 0.44 rg 330 ${top - 87} Td (Recorded by Evia) Tj ET`);
+      });
+    }
+    commands.push("0.86 0.83 0.74 RG 0.6 w 42 42 m 553 42 l S");
+    commands.push(`BT /F1 7.5 Tf 0.48 0.48 0.5 rg 42 25 Td (Evia - Apprentice Vocational Assistant) Tj ET`);
+    commands.push(`BT /F1 7.5 Tf 0.48 0.48 0.5 rg 492 25 Td (Page ${index + 1} of ${pages.length}) Tj ET`);
     const stream = commands.join("\n");
     objects[pageObject] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${contentObject} 0 R >>`;
     objects[contentObject] = `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`;
@@ -704,9 +793,103 @@ const stopWords = new Set([
   "of", "in", "on", "a", "an", "or", "as", "be", "by", "at",
 ]);
 
-function ProgressArch({ label, name, value, onClick }: ProgressItem) {
+function SignaturePad({ value, onChange, label }: {
+  value: SignatureData | null;
+  onChange: (signature: SignatureData | null) => void;
+  label: string;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const drawingRef = useRef(false);
+  const strokesRef = useRef<SignaturePoint[][]>(value?.strokes ?? []);
+
+  const renderSignature = (strokes: SignaturePoint[][]) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const context = canvas.getContext("2d");
+    if (!context) return;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.lineWidth = 4;
+    context.lineCap = "round";
+    context.lineJoin = "round";
+    context.strokeStyle = "#28282b";
+    strokes.forEach((stroke) => {
+      if (!stroke.length) return;
+      context.beginPath();
+      stroke.forEach((point, index) => {
+        const x = point.x * canvas.width;
+        const y = point.y * canvas.height;
+        if (!index) context.moveTo(x, y);
+        else context.lineTo(x, y);
+      });
+      context.stroke();
+    });
+  };
+
+  useEffect(() => {
+    strokesRef.current = value?.strokes ?? [];
+    renderSignature(strokesRef.current);
+  }, [value]);
+
+  const pointFromEvent = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const bounds = canvas.getBoundingClientRect();
+    return {
+      x: Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width)),
+      y: Math.max(0, Math.min(1, (event.clientY - bounds.top) / bounds.height)),
+    };
+  };
+
+  const start = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    drawingRef.current = true;
+    strokesRef.current = [...strokesRef.current, [pointFromEvent(event)]];
+    renderSignature(strokesRef.current);
+  };
+
+  const move = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (!drawingRef.current) return;
+    event.preventDefault();
+    const strokes = [...strokesRef.current];
+    strokes[strokes.length - 1] = [...strokes[strokes.length - 1], pointFromEvent(event)];
+    strokesRef.current = strokes;
+    renderSignature(strokes);
+  };
+
+  const finish = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (!drawingRef.current) return;
+    event.preventDefault();
+    drawingRef.current = false;
+    const strokes = strokesRef.current.filter((stroke) => stroke.length > 1);
+    strokesRef.current = strokes;
+    onChange(strokes.length ? { strokes } : null);
+  };
+
   return (
-    <button type="button" className="progress-arch" aria-label={`${name}: ${value}%. Open ${label} details`} onClick={onClick}>
+    <div className={`signature-pad${value?.strokes.length ? " has-signature" : ""}`}>
+      <div className="signature-pad-heading"><span>{label}</span><small>{value?.strokes.length ? "Signature captured" : "Write inside the box"}</small></div>
+      <canvas
+        ref={canvasRef}
+        width={900}
+        height={260}
+        aria-label={label}
+        onPointerDown={start}
+        onPointerMove={move}
+        onPointerUp={finish}
+        onPointerCancel={finish}
+      />
+      <div className="signature-pad-footer"><span aria-hidden="true">Sign above</span><button type="button" onClick={() => { strokesRef.current = []; renderSignature([]); onChange(null); }}>Clear</button></div>
+    </div>
+  );
+}
+
+function ProgressArch({ label, name, value, target, updated, onClick }: ProgressItem) {
+  const markerAngle = Math.PI - (Math.PI * Math.max(0, Math.min(100, target ?? 0))) / 100;
+  const markerX = 50 + 41 * Math.cos(markerAngle);
+  const markerY = 54 - 41 * Math.sin(markerAngle);
+  return (
+    <button type="button" className={`progress-arch${updated ? " is-updated" : ""}`} aria-label={`${name}: ${value}%. Open ${label} details`} onClick={onClick}>
       <svg viewBox="0 0 100 62" aria-hidden="true">
         <path className="arch-track" pathLength="100" d="M 9 54 A 41 41 0 0 1 91 54" />
         <path
@@ -715,6 +898,7 @@ function ProgressArch({ label, name, value, onClick }: ProgressItem) {
           d="M 9 54 A 41 41 0 0 1 91 54"
           style={{ strokeDasharray: `${value} 100` }}
         />
+        {target !== undefined && <path className="arch-target-marker" d={`M ${markerX - 3.2} ${markerY - 7} L ${markerX + 3.2} ${markerY - 7} L ${markerX} ${markerY - 1.2} Z`} />}
       </svg>
       <span className="arch-label" aria-hidden="true">{label}</span>
       <span className="arch-number">{value}%</span>
@@ -1426,8 +1610,16 @@ export default function Home() {
   const [otjError, setOtjError] = useState("");
   const [savingEvidence, setSavingEvidence] = useState(false);
   const [exporting, setExporting] = useState("");
-  const [witnessDraft, setWitnessDraft] = useState({ name: "", role: "", date: todayDateValue(), testimony: "" });
-  const [otjDraft, setOtjDraft] = useState({ date: todayDateValue(), title: "", hours: "" });
+  const [witnessDraft, setWitnessDraft] = useState<NonNullable<EvidenceRecord["witness"]>>({ name: "", role: "", date: todayDateValue(), testimony: "", signature: undefined, signedAt: undefined });
+  const [otjDraft, setOtjDraft] = useState({ date: todayDateValue(), title: "", hours: "", unitId: "" });
+  const [exportRequest, setExportRequest] = useState<ExportRequest | null>(null);
+  const [learnerSignature, setLearnerSignature] = useState<SignatureData | null>(null);
+  const [employerSignature, setEmployerSignature] = useState<SignatureData | null>(null);
+  const [employerSigner, setEmployerSigner] = useState("");
+  const [signatureError, setSignatureError] = useState("");
+  const [displayedProgress, setDisplayedProgress] = useState<ProgressSnapshot>({ toc: 0, ksb: 0, otj: 0, epa: 0 });
+  const [updatedProgress, setUpdatedProgress] = useState<Array<keyof ProgressSnapshot>>([]);
+  const [progressCelebration, setProgressCelebration] = useState("");
   const [adminCode, setAdminCode] = useState("");
   const [adminError, setAdminError] = useState("");
   const [placeholder, setPlaceholder] = useState({ title: "", back: "root" as View });
@@ -1441,6 +1633,10 @@ export default function Home() {
   });
   const transitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const progressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const progressRiseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const progressBaseline = useRef<ProgressSnapshot | null>(null);
+  const previousView = useRef<View>("root");
   const lastReadTap = useRef<{ time: number; element: HTMLElement | null }>({ time: 0, element: null });
 
   useEffect(() => {
@@ -1604,6 +1800,8 @@ export default function Home() {
   useEffect(() => () => {
     if (transitionTimer.current) clearTimeout(transitionTimer.current);
     if (noticeTimer.current) clearTimeout(noticeTimer.current);
+    if (progressTimer.current) clearTimeout(progressTimer.current);
+    if (progressRiseTimer.current) clearTimeout(progressRiseTimer.current);
   }, []);
 
   const firstName = fullName.trim().split(/\s+/)[0] || "there";
@@ -1637,6 +1835,74 @@ export default function Home() {
   const completedEpaAreas = (Object.keys(epaPracticeAreas) as EpaArea[])
     .filter((area) => epaChecks[area]?.length === epaPracticeAreas[area].steps.length && epaChecks[area].every(Boolean));
   const epaProgress = clampPercentage((completedEpaAreas.length / 3) * 100);
+  const evidenceProgressForCode = (code: string) => {
+    if (rplCodes.includes(code)) return 100;
+    return evidenceRecords
+      .filter((record) => record.ksbCode === code)
+      .reduce((best, record) => Math.max(best, evidenceRecordProgress(record)), 0);
+  };
+  const unitProgressDetails = (unit: CourseUnit) => {
+    const ksbs = [...new Map(unit.ksbs.map((ksb) => [ksb.code, ksb])).values()];
+    const progressValues = ksbs.map((ksb) => evidenceProgressForCode(ksb.code));
+    const complete = progressValues.filter((value) => value === 100).length;
+    const started = progressValues.filter((value) => value > 0).length;
+    const percentage = ksbs.length ? clampPercentage(progressValues.reduce((total, value) => total + value, 0) / ksbs.length) : 0;
+    return { total: ksbs.length, complete, started, percentage, isComplete: Boolean(ksbs.length) && complete === ksbs.length };
+  };
+  const unitOtjTarget = course?.units.length ? totalOtjHours / course.units.length : 0;
+  const unitOtjHours = (unitId: string) => otjEntries
+    .filter((entry) => entry.unitId === unitId)
+    .reduce((total, entry) => total + (Number(entry.hours) || 0), 0);
+
+  useEffect(() => {
+    if (!onboardingChecked) return;
+    const current = { toc: tocProgress, ksb: ksbProgress, otj: otjProgress, epa: epaProgress };
+    if (!progressBaseline.current) {
+      progressBaseline.current = current;
+      setDisplayedProgress(current);
+      previousView.current = view;
+      return;
+    }
+
+    const returnedHome = view === "root" && previousView.current !== "root";
+    if (returnedHome) {
+      const baseline = progressBaseline.current;
+      const changed = (Object.keys(current) as Array<keyof ProgressSnapshot>).filter((key) => current[key] !== baseline[key]);
+      if (changed.length) {
+        setDisplayedProgress(baseline);
+        setUpdatedProgress(changed);
+        const positive = changed.filter((key) => current[key] > baseline[key]);
+        const preferred = positive.find((key) => key === "ksb") ?? positive.find((key) => key === "otj") ?? positive.find((key) => key === "epa") ?? positive[0];
+        if (preferred) {
+          const change = current[preferred] - baseline[preferred];
+          const messages: Record<keyof ProgressSnapshot, string> = {
+            toc: `Your Time on Course is now ${current.toc}%.`,
+            ksb: `You’ve just added ${change}% to your KSB completion!`,
+            otj: `You improved your OTJ by ${change}%!`,
+            epa: `You improved your EPA readiness by ${change}%!`,
+          };
+          setProgressCelebration(messages[preferred]);
+        } else {
+          const key = changed[0];
+          setProgressCelebration(`Your ${key.toUpperCase()} progress is now ${current[key]}%.`);
+        }
+        if (progressRiseTimer.current) clearTimeout(progressRiseTimer.current);
+        progressRiseTimer.current = setTimeout(() => setDisplayedProgress(current), 120);
+        if (progressTimer.current) clearTimeout(progressTimer.current);
+        progressTimer.current = setTimeout(() => {
+          setUpdatedProgress([]);
+          setProgressCelebration("");
+        }, 4800);
+      } else setDisplayedProgress(current);
+      progressBaseline.current = current;
+    }
+    previousView.current = view;
+  }, [onboardingChecked, view, tocProgress, ksbProgress, otjProgress, epaProgress]);
+
+  useEffect(() => {
+    if (!course?.units.length || otjDraft.unitId) return;
+    setOtjDraft((current) => ({ ...current, unitId: course.units[0].id }));
+  }, [course, otjDraft.unitId]);
   const searchTerm = unitSearch.trim().toLowerCase();
   const filteredUnits = course?.units.filter((unit) => {
     if (!searchTerm) return true;
@@ -1660,6 +1926,22 @@ export default function Home() {
   const activeEvidenceRecord = activeEvidenceKsb
     ? evidenceRecords.find((record) => record.ksbCode === activeEvidenceKsb.code && record.method === activeEvidenceMethod)
     : undefined;
+  const homeGuidancePills = (() => {
+    const messages: string[] = [];
+    const partialPhoto = evidenceRecords.find((record) => record.method === "photo" && record.fileIds.length > 0 && record.fileIds.length < 3);
+    if (partialPhoto) messages.push(`${partialPhoto.ksbCode} · ${3 - partialPhoto.fileIds.length} photo${3 - partialPhoto.fileIds.length === 1 ? "" : "s"} still needed`);
+    const partialRecord = evidenceRecords.find((record) => !evidenceRecordComplete(record) && record.id !== partialPhoto?.id);
+    if (partialRecord) messages.push(`${partialRecord.ksbCode} · finish ${evidenceMethodNames[partialRecord.method].toLowerCase()}`);
+    if (!course) messages.push("Next · add your course");
+    else {
+      const nextKsb = courseKsbs.find((ksb) => !completedKsbCodes.has(ksb.code));
+      if (nextKsb && !messages.length) messages.push(`Next · add evidence for ${nextKsb.code}`);
+      if (requiredOtjHours > loggedOtjHours + 0.05) messages.push(`OTJ · ${(requiredOtjHours - loggedOtjHours).toFixed(1)}h to reach today’s target`);
+      const nextEpa = (Object.keys(epaPracticeAreas) as EpaArea[]).find((area) => !completedEpaAreas.includes(area));
+      if (nextEpa) messages.push(`EPA · continue ${epaPracticeAreas[nextEpa].title.toLowerCase()}`);
+    }
+    return messages.slice(0, 2);
+  })();
 
   const showNotice = (message: string) => {
     setNotice(message);
@@ -1714,7 +1996,7 @@ export default function Home() {
     setEvidenceStep(1);
     setEvidenceFiles([]);
     setEvidenceText(saved?.text ?? "");
-    setWitnessDraft(saved?.witness ?? { name: "", role: "", date: todayDateValue(), testimony: "" });
+    setWitnessDraft(saved?.witness ?? { name: "", role: "", date: todayDateValue(), testimony: "", signature: undefined, signedAt: undefined });
     setEvidenceError("");
     navigate("evidence");
   };
@@ -1799,6 +2081,9 @@ export default function Home() {
       if (countWords(witnessDraft.testimony) < 30) {
         return "The witness testimony needs at least 30 words describing what they personally observed.";
       }
+      if (!witnessDraft.signature?.strokes.length) {
+        return "The witness must sign the testimony before it can be saved.";
+      }
     }
     return "";
   };
@@ -1820,7 +2105,7 @@ export default function Home() {
         updatedAt: Date.now(),
         fileNames: [`${fileSafe(`${activeEvidenceKsb.code}-${conciseTitle(activeEvidenceKsb.description, 7)}-${evidenceMethodNames[activeEvidenceMethod]}`)}.txt`],
         ...(["written", "reflection"].includes(activeEvidenceMethod) ? { text: evidenceText.trim() } : {}),
-        ...(activeEvidenceMethod === "witness" ? { witness: { ...witnessDraft, name: witnessDraft.name.trim(), role: witnessDraft.role.trim(), testimony: witnessDraft.testimony.trim() } } : {}),
+        ...(activeEvidenceMethod === "witness" ? { witness: { ...witnessDraft, name: witnessDraft.name.trim(), role: witnessDraft.role.trim(), testimony: witnessDraft.testimony.trim(), signedAt: Date.now() } } : {}),
       };
       const nextRecords = existing ? evidenceRecords.map((record) => record.id === existing.id ? nextRecord : record) : [...evidenceRecords, nextRecord];
       persistEvidenceRecords(nextRecords);
@@ -1836,6 +2121,14 @@ export default function Home() {
   const addOtjEntry = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const hours = Number(otjDraft.hours);
+    if (!course?.units.length) {
+      setOtjError("Add your course before recording Unit-linked OTJ activity.");
+      return;
+    }
+    if (!otjDraft.unitId || !course.units.some((unit) => unit.id === otjDraft.unitId)) {
+      setOtjError("Choose the Unit this learning relates to.");
+      return;
+    }
     if (!otjDraft.date || !otjDraft.title.trim() || !Number.isFinite(hours) || hours <= 0 || hours > 24) {
       setOtjError("Add the activity, date and the number of off-the-job hours, up to 24 hours per entry.");
       return;
@@ -1845,9 +2138,11 @@ export default function Home() {
       date: otjDraft.date,
       title: otjDraft.title.trim(),
       hours,
+      unitId: otjDraft.unitId,
+      createdAt: Date.now(),
     }];
     setOtjEntries(nextEntries);
-    setOtjDraft({ date: todayDateValue(), title: "", hours: "" });
+    setOtjDraft({ date: todayDateValue(), title: "", hours: "", unitId: otjDraft.unitId });
     setOtjError("");
     try { window.localStorage.setItem("evia-otj-entries", JSON.stringify(nextEntries)); } catch { /* Keep session data. */ }
     showNotice(`${hours} OTJ hour${hours === 1 ? "" : "s"} added.`);
@@ -1956,9 +2251,20 @@ export default function Home() {
     try { window.localStorage.setItem("evia-study-answers", JSON.stringify(next)); } catch { /* Keep session data. */ }
   };
 
-  const unitPdf = (unit: CourseUnit) => {
+  const witnessSignatureBlocks = (codes: Set<string>): PdfSignatureBlock[] => evidenceRecords
+    .filter((record) => codes.has(record.ksbCode) && record.method === "witness" && record.witness?.signature?.strokes.length)
+    .map((record) => ({
+      label: `Witness declaration · ${record.ksbCode}`,
+      name: record.witness?.name ?? "Witness",
+      role: record.witness?.role ?? "Witness",
+      signedAt: record.witness?.signedAt ?? record.updatedAt ?? record.createdAt,
+      signature: record.witness?.signature as SignatureData,
+    }));
+
+  const unitPdf = (unit: CourseUnit, learnerApproval: SignatureApproval) => {
     const date = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
     const uniqueKsbs = [...new Map(unit.ksbs.map((ksb) => [ksb.code, ksb])).values()];
+    const unitCodes = new Set(uniqueKsbs.map((ksb) => ksb.code));
     const lines = [
       "UNIT EVIDENCE PACK", "", "LEARNER DETAILS", `Learner: ${fullName || "Not supplied"}`,
       `Employer: ${employer || "Not supplied"}`, `Course dates: ${timeline.startDate || "Not supplied"} to ${timeline.endDate || "Not supplied"}`,
@@ -1974,16 +2280,23 @@ export default function Home() {
         lines.push(`EVIDENCE: ${evidenceMethodNames[record.method]} - ${evidenceRecordComplete(record) ? "Complete" : `${evidenceRecordProgress(record)}% complete`}`);
         record.fileNames.forEach((name) => lines.push(`Attached media: ${name}`));
         if (record.text) lines.push(`Learner account: ${record.text}`);
-        if (record.witness) lines.push(`Witness: ${record.witness.name}, ${record.witness.role}, ${record.witness.date}. ${record.witness.testimony}`);
+        if (record.witness) {
+          lines.push(`Witness: ${record.witness.name}, ${record.witness.role}, observed ${record.witness.date}. ${record.witness.testimony}`);
+          if (record.witness.signedAt) lines.push(`Witness signature captured: ${new Date(record.witness.signedAt).toLocaleString("en-GB")}`);
+        }
       });
       lines.push("");
     });
-    return createEvidencePdf(`${unit.title} - Evidence Pack`, `${fullName || "Learner"} | Professionally mapped to the course KSBs`, lines);
+    const signatures: PdfSignatureBlock[] = [
+      { ...learnerApproval, label: "Learner declaration" },
+      ...witnessSignatureBlocks(unitCodes),
+    ];
+    return createEvidencePdf(`${unit.title} - Evidence Pack`, `${fullName || "Learner"} | Professionally mapped to the course KSBs`, lines, signatures);
   };
 
-  const unitPackEntries = async (unit: CourseUnit, prefix = "") => {
+  const unitPackEntries = async (unit: CourseUnit, learnerApproval: SignatureApproval, prefix = "") => {
     const unitName = fileSafe(unit.title);
-    const entries: { name: string; blob: Blob }[] = [{ name: `${prefix}${unitName}-Evidence-Pack.pdf`, blob: unitPdf(unit) }];
+    const entries: { name: string; blob: Blob }[] = [{ name: `${prefix}${unitName}-Evidence-Pack.pdf`, blob: unitPdf(unit, learnerApproval) }];
     const codes = new Set(unit.ksbs.map((ksb) => ksb.code));
     const records = evidenceRecords.filter((record) => codes.has(record.ksbCode));
     for (const record of records) {
@@ -1992,16 +2305,16 @@ export default function Home() {
         if (stored) entries.push({ name: `${prefix}${unitName}-${stored.name || record.fileNames[index]}`, blob: stored.blob });
       }
       if (record.text) entries.push({ name: `${prefix}${unitName}-${record.fileNames[0] ?? `${record.ksbCode}-${record.method}.txt`}`, blob: new Blob([record.text], { type: "text/plain;charset=utf-8" }) });
-      if (record.witness) entries.push({ name: `${prefix}${unitName}-${record.fileNames[0] ?? `${record.ksbCode}-Witness-Testimony.txt`}`, blob: new Blob([`Witness: ${record.witness.name}\nRole: ${record.witness.role}\nDate observed: ${record.witness.date}\nMapped KSB: ${record.ksbCode}\n\n${record.witness.testimony}`], { type: "text/plain;charset=utf-8" }) });
+      if (record.witness) entries.push({ name: `${prefix}${unitName}-${record.fileNames[0] ?? `${record.ksbCode}-Witness-Testimony.txt`}`, blob: new Blob([`Witness: ${record.witness.name}\nRole: ${record.witness.role}\nDate observed: ${record.witness.date}\nSigned in Evia: ${record.witness.signedAt ? new Date(record.witness.signedAt).toLocaleString("en-GB") : "Not recorded"}\nMapped KSB: ${record.ksbCode}\n\n${record.witness.testimony}`], { type: "text/plain;charset=utf-8" }) });
     }
     return entries;
   };
 
-  const downloadUnitPack = async (unit: CourseUnit) => {
+  const downloadUnitPack = async (unit: CourseUnit, learnerApproval: SignatureApproval) => {
     if (exporting) return;
     setExporting(unit.id);
     try {
-      const zip = await createZip(await unitPackEntries(unit));
+      const zip = await createZip(await unitPackEntries(unit, learnerApproval));
       triggerDownload(zip, `${fileSafe(unit.title)}-Evidence-Pack.zip`);
       showNotice(`${unit.title} evidence pack downloaded.`);
     } catch {
@@ -2011,7 +2324,7 @@ export default function Home() {
     }
   };
 
-  const downloadFullPortfolio = async () => {
+  const downloadFullPortfolio = async (learnerApproval: SignatureApproval) => {
     if (!course || exporting) return;
     setExporting("all");
     try {
@@ -2019,10 +2332,10 @@ export default function Home() {
         "PORTFOLIO SUMMARY", `Learner: ${fullName || "Not supplied"}`, `Employer: ${employer || "Not supplied"}`,
         `Course dates: ${timeline.startDate || "Not supplied"} to ${timeline.endDate || "Not supplied"}`,
         `KSB coverage: ${completedKsbCodes.size} of ${courseKsbs.length} (${ksbProgress}%)`, `Units: ${course.units.length}`, "",
-        ...course.units.map((unit) => `${unit.title}: ${unit.ksbs.filter((ksb) => completedKsbCodes.has(ksb.code)).length} of ${unit.ksbs.length} mapped KSB entries complete`),
-      ]);
+        ...course.units.map((unit) => `${unit.title}: ${unitProgressDetails(unit).complete} of ${unitProgressDetails(unit).total} mapped KSBs complete`),
+      ], [{ ...learnerApproval, label: "Learner portfolio declaration" }]);
       const entries: { name: string; blob: Blob }[] = [{ name: "Evia-Portfolio-Index.pdf", blob: indexPdf }];
-      for (const unit of course.units) entries.push(...await unitPackEntries(unit, `${fileSafe(unit.title)}-`));
+      for (const unit of course.units) entries.push(...await unitPackEntries(unit, learnerApproval, `${fileSafe(unit.title)}-`));
       triggerDownload(await createZip(entries), `${fileSafe(fullName || "Learner")}-Evia-Portfolio.zip`);
       showNotice("Your complete portfolio has been downloaded.");
     } catch {
@@ -2030,6 +2343,91 @@ export default function Home() {
     } finally {
       setExporting("");
     }
+  };
+
+  const downloadOtjPack = async (learnerApproval: SignatureApproval, employerApproval?: SignatureApproval) => {
+    if (exporting) return;
+    setExporting("otj");
+    try {
+      const lines = [
+        "OTJ EVIDENCE PACK", "", "LEARNER DETAILS", `Learner: ${fullName || "Not supplied"}`,
+        `Employer: ${employer || "Not supplied"}`, `Course dates: ${timeline.startDate || "Not supplied"} to ${timeline.endDate || "Not supplied"}`,
+        `Contracted hours: ${timeline.weeklyHours || 0} per week`, `OTJ course target: ${totalOtjHours.toFixed(1)} hours`,
+        `OTJ recorded to date: ${loggedOtjHours.toFixed(1)} hours`, `Pack generated: ${new Date().toLocaleString("en-GB")}`, "",
+        "UNIT OTJ SUMMARY",
+      ];
+      (course?.units ?? []).forEach((unit) => {
+        const logged = unitOtjHours(unit.id);
+        lines.push(`${unit.title}: ${logged.toFixed(1)}h recorded of ${unitOtjTarget.toFixed(1)}h unit allocation`);
+      });
+      const unassigned = otjEntries.filter((entry) => !entry.unitId || !course?.units.some((unit) => unit.id === entry.unitId));
+      if (unassigned.length) lines.push(`Unassigned legacy entries: ${unassigned.reduce((total, entry) => total + entry.hours, 0).toFixed(1)}h`);
+      lines.push("", "ACTIVITY RECORD");
+      (course?.units ?? []).forEach((unit) => {
+        lines.push(unit.title.toUpperCase());
+        const entries = otjEntries.filter((entry) => entry.unitId === unit.id).sort((left, right) => left.date.localeCompare(right.date));
+        if (!entries.length) lines.push("No OTJ entries recorded for this Unit.");
+        entries.forEach((entry) => {
+          const recorded = new Date(entry.createdAt ?? new Date(`${entry.date}T12:00:00`).getTime()).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
+          lines.push(`${entry.date} | ${entry.hours.toFixed(1)}h | ${entry.title}`);
+          lines.push(`Entry recorded in Evia: ${recorded}`);
+        });
+        lines.push("");
+      });
+      if (unassigned.length) {
+        lines.push("UNASSIGNED LEGACY ENTRIES");
+        unassigned.forEach((entry) => lines.push(`${entry.date} | ${entry.hours.toFixed(1)}h | ${entry.title}`));
+      }
+      lines.push("", "DECLARATION", "The learner confirms the OTJ activities in this pack are a true record of learning completed away from normal productive duties.");
+      if (employerApproval) lines.push(`Employer verification completed by ${employerApproval.name} on ${new Date(employerApproval.signedAt).toLocaleString("en-GB")}.`);
+      else lines.push("Employer verification was not added. Employer review is recommended.");
+      const signatures: PdfSignatureBlock[] = [{ ...learnerApproval, label: "Learner OTJ declaration" }];
+      if (employerApproval) signatures.push({ ...employerApproval, label: "Employer OTJ verification" });
+      const pdf = createEvidencePdf("Off-the-job Training Record", `${fullName || "Learner"} | Unit-mapped OTJ activity`, lines, signatures);
+      triggerDownload(pdf, `${fileSafe(fullName || "Learner")}-OTJ-Evidence-Pack.pdf`);
+      showNotice("Your signed OTJ evidence pack has been downloaded.");
+    } catch {
+      showNotice("Evia couldn’t build the OTJ pack. Check the saved entries and try again.");
+    } finally {
+      setExporting("");
+    }
+  };
+
+  const requestSignedExport = (request: ExportRequest) => {
+    if (exporting) return;
+    setExportRequest(request);
+    setLearnerSignature(null);
+    setEmployerSignature(null);
+    setEmployerSigner("");
+    setSignatureError("");
+  };
+
+  const completeSignedExport = async () => {
+    if (!exportRequest) return;
+    if (!fullName.trim()) {
+      setSignatureError("Add the learner’s full name in My Profile before downloading a signed pack.");
+      return;
+    }
+    if (!learnerSignature?.strokes.length) {
+      setSignatureError("The learner must sign before the pack can be downloaded.");
+      return;
+    }
+    if (exportRequest.kind === "otj" && ((employerSigner.trim() && !employerSignature?.strokes.length) || (!employerSigner.trim() && employerSignature?.strokes.length))) {
+      setSignatureError("Add both the employer representative’s name and signature, or leave both blank.");
+      return;
+    }
+    const signedAt = Date.now();
+    const learnerApproval: SignatureApproval = { name: fullName.trim(), role: "Learner", signedAt, signature: learnerSignature };
+    const employerApproval = exportRequest.kind === "otj" && employerSigner.trim() && employerSignature
+      ? { name: employerSigner.trim(), role: `Employer representative · ${employer || "Employer"}`, signedAt, signature: employerSignature }
+      : undefined;
+    const request = exportRequest;
+    setExportRequest(null);
+    if (request.kind === "unit") {
+      const unit = course?.units.find((item) => item.id === request.unitId);
+      if (unit) await downloadUnitPack(unit, learnerApproval);
+    } else if (request.kind === "portfolio") await downloadFullPortfolio(learnerApproval);
+    else await downloadOtjPack(learnerApproval, employerApproval);
   };
 
   const speakText = (text: string) => {
@@ -2091,10 +2489,10 @@ export default function Home() {
   };
 
   const progressItems: ProgressItem[] = [
-    { label: "TOC", name: "Time on course", value: tocProgress, onClick: () => openProgressView("toc-settings") },
-    { label: "KSB", name: "KSB evidence", value: ksbProgress, onClick: () => openProgressView("ksb-progress") },
-    { label: "OTJ", name: "Off-the-job training", value: otjProgress, onClick: () => openProgressView("otj-progress") },
-    { label: "EPA", name: "EPA practice", value: epaProgress, onClick: () => openProgressView("epa-practice") },
+    { label: "TOC", name: "Time on course", value: displayedProgress.toc, updated: updatedProgress.includes("toc"), onClick: () => openProgressView("toc-settings") },
+    { label: "KSB", name: "KSB evidence", value: displayedProgress.ksb, target: tocProgress, updated: updatedProgress.includes("ksb"), onClick: () => openProgressView("ksb-progress") },
+    { label: "OTJ", name: "Off-the-job training", value: displayedProgress.otj, target: tocProgress, updated: updatedProgress.includes("otj"), onClick: () => openProgressView("otj-progress") },
+    { label: "EPA", name: "EPA practice", value: displayedProgress.epa, target: tocProgress, updated: updatedProgress.includes("epa"), onClick: () => openProgressView("epa-practice") },
   ];
 
   const openPlaceholder = (title: string, back: View) => {
@@ -2355,11 +2753,11 @@ export default function Home() {
         <div className="progress-workspace">
           <div className="evia-guidance"><span className="guidance-mark" aria-hidden="true">E</span><div><strong>Your evidence pack is mapped for you.</strong><p>Each download contains a professional Unit PDF with the full KSB wording, evidence status and mapping, plus every attached photo, video or audio file.</p></div></div>
           <div className="progress-summary-grid"><div className="progress-summary-main"><span>Portfolio coverage</span><strong>{ksbProgress}%</strong><small>{completedKsbCodes.size} of {courseKsbs.length} KSBs complete or RPL</small></div><div className="progress-summary-stat"><span>Evidence packs</span><strong>{course.units.length}</strong><small>One per Unit</small></div></div>
-          <button className="make-course-button" type="button" disabled={Boolean(exporting)} onClick={downloadFullPortfolio}>{exporting === "all" ? "Building portfolio…" : "Download all evidence packs"}<span aria-hidden="true">↓</span></button>
+          <button className="make-course-button" type="button" disabled={Boolean(exporting)} onClick={() => requestSignedExport({ kind: "portfolio" })}>{exporting === "all" ? "Building portfolio…" : "Sign & download all evidence packs"}<span aria-hidden="true">↓</span></button>
           <div className="download-unit-list">{course.units.map((unit) => {
             const codes = new Set(unit.ksbs.map((ksb) => ksb.code));
             const covered = [...codes].filter((code) => completedKsbCodes.has(code)).length;
-            return <button type="button" key={unit.id} disabled={Boolean(exporting)} onClick={() => downloadUnitPack(unit)}><span><strong>{unit.title}</strong><small>{covered} of {codes.size} KSBs complete · PDF + attached media</small></span><em>{exporting === unit.id ? "Building…" : "Download"}</em></button>;
+            return <button type="button" key={unit.id} disabled={Boolean(exporting)} onClick={() => requestSignedExport({ kind: "unit", unitId: unit.id })}><span><strong>{unit.title}</strong><small>{covered} of {codes.size} KSBs complete · signed PDF + attached media</small></span><em>{exporting === unit.id ? "Building…" : "Sign & download"}</em></button>;
           })}</div>
         </div>
       );
@@ -2451,9 +2849,12 @@ export default function Home() {
           <div className="progress-summary-stat"><span>Course target</span><strong>{validTimeline ? `${totalOtjHours.toFixed(1)}h` : "—"}</strong><small>{weeklyOtjTarget.toFixed(1)} hours per week</small></div>
         </div>
         {!validTimeline && <button type="button" className="inline-action" onClick={() => navigate("toc-settings")}>Set course dates to calculate your target <span aria-hidden="true">→</span></button>}
+        {!course?.units.length && <button type="button" className="inline-action" onClick={() => openCourseManager("otj-progress")}>Add your course to allocate OTJ to Units <span aria-hidden="true">→</span></button>}
+        <button type="button" className="make-course-button otj-download" disabled={!otjEntries.length || Boolean(exporting)} onClick={() => requestSignedExport({ kind: "otj" })}>{exporting === "otj" ? "Building OTJ pack…" : "Review, sign & download OTJ pack"}<span aria-hidden="true">↓</span></button>
         <form className="otj-form" onSubmit={addOtjEntry}>
           <div className="section-heading"><span>Record an activity</span><small>Learning completed away from normal productive duties</small></div>
           <div className="field-grid">
+            <label className="clean-field is-wide is-required"><span>Related Unit</span><select required value={otjDraft.unitId} onChange={(event) => { setOtjDraft({ ...otjDraft, unitId: event.target.value }); setOtjError(""); }}><option value="">Choose a Unit</option>{course?.units.map((unit) => <option value={unit.id} key={unit.id}>{unit.title}</option>)}</select></label>
             <label className="clean-field is-required"><span>Date</span><input required type="date" value={otjDraft.date} onChange={(event) => { setOtjDraft({ ...otjDraft, date: event.target.value }); setOtjError(""); }} /></label>
             <label className="clean-field is-required"><span>Hours</span><input required type="number" min="0.1" max="24" step="0.1" inputMode="decimal" value={otjDraft.hours} onChange={(event) => { setOtjDraft({ ...otjDraft, hours: event.target.value }); setOtjError(""); }} placeholder="1.5" /></label>
             <label className="clean-field is-wide is-required"><span>What did you learn?</span><input required type="text" value={otjDraft.title} onChange={(event) => { setOtjDraft({ ...otjDraft, title: event.target.value }); setOtjError(""); }} placeholder="Example: cavity wall workshop" maxLength={120} /></label>
@@ -2461,9 +2862,17 @@ export default function Home() {
           {otjError && <p className="form-error" role="alert">{otjError}</p>}
           <button className="make-course-button" type="submit">Add OTJ activity<span aria-hidden="true">→</span></button>
         </form>
+        {course?.units.length ? <div className="unit-otj-list">
+          <div className="section-heading"><span>OTJ by Unit</span><small>{validTimeline ? `${unitOtjTarget.toFixed(1)}h allocated to each Unit` : "Set course dates for targets"}</small></div>
+          {course.units.map((unit) => {
+            const logged = unitOtjHours(unit.id);
+            const percentage = unitOtjTarget > 0 ? clampPercentage((logged / unitOtjTarget) * 100) : 0;
+            return <article className={`unit-otj-card${percentage >= 100 ? " is-complete" : logged > 0 ? " has-hours" : ""}`} key={unit.id}><span><strong>{unit.title}</strong><small>{logged.toFixed(1)}h recorded · {unitOtjTarget.toFixed(1)}h allocation</small></span><em>{percentage}%</em><span className="unit-progress-track"><span style={{ width: `${percentage}%` }} /></span></article>;
+          })}
+        </div> : null}
         <div className="record-list">
           <div className="section-heading"><span>Recent OTJ</span><small>{otjEntries.length} recorded activit{otjEntries.length === 1 ? "y" : "ies"}</small></div>
-          {[...otjEntries].sort((left, right) => right.date.localeCompare(left.date)).map((entry) => <div className="record-row" key={entry.id}><div><strong>{entry.title}</strong><small>{new Date(`${entry.date}T12:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</small></div><span>{entry.hours.toFixed(1)}h</span></div>)}
+          {[...otjEntries].sort((left, right) => (right.createdAt ?? 0) - (left.createdAt ?? 0) || right.date.localeCompare(left.date)).map((entry) => { const unit = course?.units.find((item) => item.id === entry.unitId); return <div className="record-row" key={entry.id}><div><strong>{entry.title}</strong><small>{unit?.title ?? "Unassigned legacy entry"} · Activity date {new Date(`${entry.date}T12:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</small><small>Saved {new Date(entry.createdAt ?? new Date(`${entry.date}T12:00:00`).getTime()).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}</small></div><span>{entry.hours.toFixed(1)}h</span></div>; })}
           {!otjEntries.length && <p className="empty-list-copy">No OTJ activities recorded yet.</p>}
         </div>
       </div>
@@ -2533,7 +2942,12 @@ export default function Home() {
           {activeEvidenceMethod === "video" && <div className="saved-media-list">{record?.fileNames[0] && <article className="saved-media is-complete"><span>✓</span><div><strong>Practical video saved</strong><small>{record.fileNames[0]}</small></div><button type="button" className="delete-evidence" onClick={() => removeMediaEvidence(0)} aria-label={`Delete ${record.fileNames[0]}`}>×</button></article>}<label className="capture-evidence"><input type="file" accept="video/*" capture="environment" onChange={saveMediaEvidence} disabled={savingEvidence} /><span>{record?.fileIds.length ? "↻" : "＋"}</span><div><strong>{savingEvidence ? "Saving…" : record?.fileIds.length ? "Replace video" : "Record or choose video"}</strong><small>Keep the task and your actions visible. You can replace the saved video if needed.</small></div></label></div>}
           {activeEvidenceMethod === "audio" && <div className="saved-media-list">{record?.fileNames[0] && <article className="saved-media is-complete"><span>✓</span><div><strong>Audio explanation saved</strong><small>{record.fileNames[0]}</small></div><button type="button" className="delete-evidence" onClick={() => removeMediaEvidence(0)} aria-label={`Delete ${record.fileNames[0]}`}>×</button></article>}<label className="capture-evidence"><input type="file" accept="audio/*" capture="user" onChange={saveMediaEvidence} disabled={savingEvidence} /><span>{record?.fileIds.length ? "↻" : "＋"}</span><div><strong>{savingEvidence ? "Saving…" : record?.fileIds.length ? "Replace audio" : "Record or choose audio"}</strong><small>State the KSB, explain the principles, give an example and say why the knowledge matters.</small></div></label></div>}
           {["written", "reflection"].includes(activeEvidenceMethod) && <label className="guided-textarea is-required"><span>{activeEvidenceMethod === "written" ? "Your knowledge statement" : "Your reflection"}</span><small>{activeEvidenceMethod === "written" ? "Use: what I know → how it applies → a real example → why it matters." : "Use: what happened → what I did → the result → what I learned → what I will improve."}</small><textarea required rows={10} value={evidenceText} onChange={(event) => { setEvidenceText(event.target.value); setEvidenceError(""); }} placeholder={activeEvidenceMethod === "written" ? "I understand that… In my work this applies when… For example… This matters because…" : "The situation was… I decided to… The result was… I learned… Next time I will…"} /><em className={countWords(evidenceText) >= 30 ? "is-ready" : ""}>{countWords(evidenceText)} / 30 minimum words</em></label>}
-          {activeEvidenceMethod === "witness" && <div className="witness-form"><div className="field-grid"><label className="clean-field is-required"><span>Witness name</span><input required type="text" value={witnessDraft.name} onChange={(event) => { setWitnessDraft({ ...witnessDraft, name: event.target.value }); setEvidenceError(""); }} placeholder="Full name" /></label><label className="clean-field is-required"><span>Witness role</span><input required type="text" value={witnessDraft.role} onChange={(event) => { setWitnessDraft({ ...witnessDraft, role: event.target.value }); setEvidenceError(""); }} placeholder="Supervisor" /></label><label className="clean-field is-wide is-required"><span>Date observed</span><input required type="date" value={witnessDraft.date} onChange={(event) => { setWitnessDraft({ ...witnessDraft, date: event.target.value }); setEvidenceError(""); }} /></label></div><label className="guided-textarea is-required"><span>What did the witness observe?</span><small>Use the witness’s own words. Include the task, learner actions, standard achieved and how this showed the Behaviour.</small><textarea required rows={9} value={witnessDraft.testimony} onChange={(event) => { setWitnessDraft({ ...witnessDraft, testimony: event.target.value }); setEvidenceError(""); }} placeholder="I personally observed the learner…" /><em className={countWords(witnessDraft.testimony) >= 30 ? "is-ready" : ""}>{countWords(witnessDraft.testimony)} / 30 minimum words</em></label></div>}
+          {activeEvidenceMethod === "witness" && <div className="witness-form">
+            <div className="field-grid"><label className="clean-field is-required"><span>Witness name</span><input required type="text" value={witnessDraft.name} onChange={(event) => { setWitnessDraft({ ...witnessDraft, name: event.target.value }); setEvidenceError(""); }} placeholder="Full name" /></label><label className="clean-field is-required"><span>Witness role</span><input required type="text" value={witnessDraft.role} onChange={(event) => { setWitnessDraft({ ...witnessDraft, role: event.target.value }); setEvidenceError(""); }} placeholder="Supervisor" /></label><label className="clean-field is-wide is-required"><span>Date observed</span><input required type="date" value={witnessDraft.date} onChange={(event) => { setWitnessDraft({ ...witnessDraft, date: event.target.value }); setEvidenceError(""); }} /></label></div>
+            <label className="guided-textarea is-required"><span>What did the witness observe?</span><small>Use the witness’s own words. Include the task, learner actions, standard achieved and how this showed the Behaviour.</small><textarea required rows={9} value={witnessDraft.testimony} onChange={(event) => { setWitnessDraft({ ...witnessDraft, testimony: event.target.value }); setEvidenceError(""); }} placeholder="I personally observed the learner…" /><em className={countWords(witnessDraft.testimony) >= 30 ? "is-ready" : ""}>{countWords(witnessDraft.testimony)} / 30 minimum words</em></label>
+            <SignaturePad label="Witness signature — required" value={witnessDraft.signature ?? null} onChange={(signature) => { setWitnessDraft({ ...witnessDraft, signature: signature ?? undefined, signedAt: signature ? Date.now() : undefined }); setEvidenceError(""); }} />
+            <p className="signature-declaration">By signing, the witness confirms this is their own account of what they personally observed.</p>
+          </div>}
           {evidenceError && <p className="form-error" role="alert">{evidenceError}</p>}
           {mediaMethod ? <button className="make-course-button" type="button" onClick={() => navigate("evidence-options")}>{progress === 100 ? "Done — evidence complete" : "Done for now"}<span aria-hidden="true">→</span></button> : <button className="make-course-button" type="button" disabled={savingEvidence} onClick={saveEvidence}>{savingEvidence ? "Saving…" : record ? "Update evidence" : "Save evidence"}<span aria-hidden="true">→</span></button>}
         </div>
@@ -2729,9 +3143,14 @@ export default function Home() {
               const knowledgeCount = unit.ksbs.filter((item) => item.type === "Knowledge").length;
               const skillCount = unit.ksbs.filter((item) => item.type === "Skill").length;
               const behaviourCount = unit.ksbs.filter((item) => item.type === "Behaviour").length;
+              const progress = unitProgressDetails(unit);
               return (
-              <button type="button" className="duty-row" key={unit.id} onClick={() => { setSelectedUnitId(unit.id); navigate("unit"); }}>
-                <span className="duty-row-copy"><strong>{unit.title}</strong><small>{knowledgeCount} Knowledge · {skillCount} Skill{skillCount === 1 ? "" : "s"} · {behaviourCount} Behaviour{behaviourCount === 1 ? "" : "s"}</small></span>
+              <button type="button" className={`duty-row${progress.isComplete ? " is-complete" : progress.started ? " has-evidence" : ""}`} key={unit.id} onClick={() => { setSelectedUnitId(unit.id); navigate("unit"); }}>
+                <span className="duty-row-copy">
+                  <span className="unit-title-line"><strong>{unit.title}</strong><em>{progress.isComplete ? "Complete" : progress.started ? `${progress.percentage}% evidence` : "Not started"}</em></span>
+                  <small>{progress.complete} of {progress.total} KSBs complete · {knowledgeCount} K · {skillCount} S · {behaviourCount} B</small>
+                  <span className="unit-progress-track" aria-label={`${progress.percentage}% evidence progress`}><span style={{ width: `${progress.percentage}%` }} /></span>
+                </span>
                 <span className="row-chevron" aria-hidden="true">›</span>
               </button>
             );})}
@@ -2743,7 +3162,12 @@ export default function Home() {
 
     if (view === "unit" && selectedUnit) return (
       <div className="duty-detail">
-        <header className="duty-summary"><span>Evidence collection</span><h3>{selectedUnit.title}</h3><p>{selectedUnit.summary}</p><button type="button" className="unit-download-button" disabled={Boolean(exporting)} onClick={() => downloadUnitPack(selectedUnit)}>{exporting === selectedUnit.id ? "Building evidence pack…" : "Download Unit evidence"}<span aria-hidden="true">↓</span></button></header>
+        <header className={`duty-summary${unitProgressDetails(selectedUnit).isComplete ? " is-complete" : unitProgressDetails(selectedUnit).started ? " has-evidence" : ""}`}>
+          <span>Evidence collection</span><h3>{selectedUnit.title}</h3><p>{selectedUnit.summary}</p>
+          <div className="unit-overview"><span><strong>{unitProgressDetails(selectedUnit).percentage}%</strong><small>{unitProgressDetails(selectedUnit).complete} of {unitProgressDetails(selectedUnit).total} KSBs complete</small></span><em>{unitProgressDetails(selectedUnit).isComplete ? "Unit complete ✓" : unitProgressDetails(selectedUnit).started ? "Evidence in progress" : "No evidence yet"}</em></div>
+          <span className="unit-progress-track is-large" aria-hidden="true"><span style={{ width: `${unitProgressDetails(selectedUnit).percentage}%` }} /></span>
+          <button type="button" className="unit-download-button" disabled={Boolean(exporting)} onClick={() => requestSignedExport({ kind: "unit", unitId: selectedUnit.id })}>{exporting === selectedUnit.id ? "Building evidence pack…" : "Sign & download Unit evidence"}<span aria-hidden="true">↓</span></button>
+        </header>
         {renderKsbGroup("Skill", "Skills")}
         {renderKsbGroup("Knowledge", "Knowledge")}
         {renderKsbGroup("Behaviour", "Behaviours")}
@@ -2805,8 +3229,31 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="progress-dock" aria-label="Your progress"><div className="progress-row">{progressItems.map((item) => <ProgressArch key={item.label} {...item} />)}</div></section>
+      <section className="progress-dock" aria-label="Your progress">
+        {view === "root" && !isOnboarding && <div className="home-guidance" aria-live="polite">
+          {progressCelebration && <span className="home-guidance-pill is-celebration"><strong>Evia</strong>{progressCelebration}</span>}
+          {!progressCelebration && homeGuidancePills.map((message) => <span className="home-guidance-pill" key={message}>{message}</span>)}
+        </div>}
+        <div className="progress-row">{progressItems.map((item) => <ProgressArch key={item.label} {...item} />)}</div>
+      </section>
       {notice && <div className="app-toast" role="status">{notice}</div>}
+
+      {exportRequest && <section className="signature-layer" role="dialog" aria-modal="true" aria-labelledby="signature-title">
+        <div className="signature-sheet">
+          <div className="signature-sheet-heading"><span className="guidance-mark" aria-hidden="true">E</span><div><small>Declaration</small><h2 id="signature-title">Sign before downloading</h2><p>The learner’s handwritten signature and the exact download time will be added to the professional PDF.</p></div></div>
+          <SignaturePad label={`Learner signature — ${fullName || "name required"}`} value={learnerSignature} onChange={(signature) => { setLearnerSignature(signature); setSignatureError(""); }} />
+          <p className="signature-declaration">I confirm this pack is a true record of my own work, learning and evidence.</p>
+          {exportRequest.kind === "otj" && <div className="employer-verification">
+            <div className="section-heading"><span>Employer verification</span><small>Optional but recommended</small></div>
+            <p>The employer representative should check the Unit allocations and every OTJ entry before signing.</p>
+            <label className="clean-field"><span>Employer representative’s full name</span><input type="text" value={employerSigner} onChange={(event) => { setEmployerSigner(event.target.value); setSignatureError(""); }} placeholder="Leave blank if not available" /></label>
+            <SignaturePad label="Employer representative signature — optional" value={employerSignature} onChange={(signature) => { setEmployerSignature(signature); setSignatureError(""); }} />
+          </div>}
+          <p className="signature-timestamp">Download timestamp: {new Date().toLocaleString("en-GB", { dateStyle: "long", timeStyle: "short" })}</p>
+          {signatureError && <p className="form-error" role="alert">{signatureError}</p>}
+          <div className="signature-actions"><button type="button" className="secondary-action" onClick={() => setExportRequest(null)}>Cancel</button><button type="button" className="primary-action" onClick={completeSignedExport}>Sign & download<span aria-hidden="true">↓</span></button></div>
+        </div>
+      </section>}
 
       {onboardingChecked && onboardingStep !== null && (
         <section className={`onboarding-layer onboarding-step-${onboardingStep}`} role="dialog" aria-modal="true" aria-labelledby="onboarding-title" aria-describedby="onboarding-description">
