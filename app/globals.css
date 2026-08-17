@@ -4423,11 +4423,10 @@ html {
   left: clamp(1rem, 3vw, 1.6rem);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   pointer-events: none;
 }
 
-.evia-plus-launch,
 .reminder-button {
   pointer-events: auto;
   border: 1px solid rgba(116, 104, 69, 0.12);
@@ -4437,15 +4436,6 @@ html {
   cursor: pointer;
   backdrop-filter: blur(18px) saturate(1.06);
   -webkit-backdrop-filter: blur(18px) saturate(1.06);
-}
-
-.evia-plus-launch {
-  min-height: 2.35rem;
-  padding: 0 0.82rem;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 550;
-  letter-spacing: -0.01em;
 }
 
 .reminder-control {
@@ -4500,27 +4490,24 @@ html {
   display: grid;
   width: min(18.5rem, calc(100vw - 2rem));
   gap: 0.42rem;
-  padding: 0.7rem;
-  border: 1px solid rgba(255, 255, 255, 0.88);
-  border-radius: 1.35rem;
-  background: rgba(249, 248, 244, 0.94);
-  box-shadow: 0 18px 48px rgba(47, 39, 17, 0.13);
-  backdrop-filter: blur(28px) saturate(1.08);
-  -webkit-backdrop-filter: blur(28px) saturate(1.08);
+  justify-items: end;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
   animation: reminder-menu-in 0.32s var(--ease-out) both;
 }
 
 .reminder-menu-heading {
   display: flex;
+  width: 100%;
   align-items: center;
-  justify-content: space-between;
-  padding: 0.08rem 0.35rem 0.18rem;
+  justify-content: flex-end;
+  padding: 0 0 0.08rem;
 }
 
 .reminder-menu-heading strong {
-  color: #5b5547;
-  font-size: 0.68rem;
-  font-weight: 560;
+  display: none;
 }
 
 .reminder-menu-heading button {
@@ -4531,7 +4518,7 @@ html {
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: #8b877d;
+  color: #747477;
   cursor: pointer;
   font-size: 1.05rem;
   line-height: 1;
@@ -4539,15 +4526,17 @@ html {
 
 .reminder-menu > button[role="menuitem"] {
   display: flex;
+  width: fit-content;
+  max-width: 100%;
   min-height: 2.65rem;
   align-items: center;
   justify-content: space-between;
   gap: 0.65rem;
   padding: 0.55rem 0.8rem;
-  border: 1px solid rgba(113, 103, 72, 0.1);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
-  color: #57534b;
+  border: 0;
+  border-radius: 0.85rem;
+  background: rgba(82, 82, 86, 0.5);
+  color: #fff;
   cursor: pointer;
   font-size: 0.7rem;
   font-weight: 410;
@@ -4556,21 +4545,23 @@ html {
 }
 
 .reminder-menu > button[role="menuitem"].is-progress {
-  border-color: rgba(213, 164, 29, 0.2);
-  background: rgba(255, 242, 190, 0.72);
-  color: #6b5312;
+  background: rgba(82, 82, 86, 0.5);
+  color: #fff;
 }
 
 .reminder-menu > button[role="menuitem"] span {
   flex: 0 0 auto;
-  color: #967416;
+  color: rgba(255, 255, 255, 0.9);
   font-size: 0.95rem;
 }
 
 .reminder-menu > p {
   margin: 0;
-  padding: 0.8rem;
-  color: #858178;
+  width: fit-content;
+  padding: 0.65rem 0.8rem;
+  border-radius: 0.85rem;
+  background: rgba(82, 82, 86, 0.5);
+  color: #fff;
   font-size: 0.7rem;
   text-align: center;
 }
@@ -4588,15 +4579,14 @@ html {
 
 .unit-completion-dots {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 0.55rem 1rem;
+  gap: 0.55rem;
 }
 
 .unit-dot-group {
   display: inline-flex;
   align-items: center;
-  gap: 0.38rem;
+  gap: 0.24rem;
 }
 
 .unit-dot-group b {
@@ -4606,23 +4596,27 @@ html {
 }
 
 .unit-dot-group > span {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 2px;
+  grid-template-rows: repeat(2, 2px);
+  gap: 2px;
+  min-height: 6px;
+  align-content: center;
 }
 
 .unit-dot-group i {
   display: block;
-  width: 0.48rem;
-  height: 0.48rem;
+  width: 2px;
+  height: 2px;
   border-radius: 50%;
-  background: rgba(80, 79, 75, 0.18);
-  box-shadow: inset 0 0 0 1px rgba(62, 61, 57, 0.03);
+  background: rgba(80, 79, 75, 0.42);
+  box-shadow: none;
 }
 
 .unit-dot-group i.is-complete {
   background: #efc33d;
-  box-shadow: 0 0 0 2px rgba(239, 195, 61, 0.1);
+  box-shadow: none;
 }
 
 .duty-row {
@@ -4797,6 +4791,13 @@ html {
 }
 
 .evia-plus-kicker span {
+  display: inline-flex;
+  min-height: 1.7rem;
+  align-items: center;
+  padding: 0 0.65rem;
+  border: 1px solid rgba(199, 151, 19, 0.16);
+  border-radius: 999px;
+  background: rgba(239, 195, 61, 0.13);
   color: #8a6810;
   font-size: 0.68rem;
   font-weight: 650;

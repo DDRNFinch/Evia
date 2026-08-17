@@ -2628,6 +2628,10 @@ export default function Home() {
   };
 
   const toggleEvia = () => {
+    if (open && view !== "root") {
+      openEviaGuide();
+      return;
+    }
     if (open) {
       if (transitionTimer.current) clearTimeout(transitionTimer.current);
       setPanelLeaving(false);
@@ -3567,7 +3571,6 @@ export default function Home() {
       <div className="ambient ambient-one" aria-hidden="true" /><div className="ambient ambient-two" aria-hidden="true" />
 
       {!isOnboarding && !eviaPlusOpen && <div className="app-top-controls">
-        <button type="button" className="evia-plus-launch" onClick={openEviaGuide}>Evia+</button>
         <div className="reminder-control">
           <button
             type="button"
@@ -3587,7 +3590,7 @@ export default function Home() {
         </div>
       </div>}
 
-      <button type="button" className="evia-anchor" aria-label={open ? "Close Evia menu" : "Open Evia menu"} aria-expanded={open} disabled={isOnboarding} onClick={toggleEvia}>
+      <button type="button" className="evia-anchor" aria-label={open && view !== "root" ? `Open Evia+ help for ${viewTitles[view]}` : open ? "Close Evia menu" : "Open Evia menu"} aria-expanded={open} disabled={isOnboarding} onClick={toggleEvia}>
         <span className="evia-float"><span className="evia-halo" aria-hidden="true" /><span className={`evia-face expression-${expression}`} aria-hidden="true"><span className="evia-eyes"><span className="evia-eye eye-left" /><span className="evia-eye eye-right" /></span></span></span>
       </button>
 
