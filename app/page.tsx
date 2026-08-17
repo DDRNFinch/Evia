@@ -1,8 +1,8 @@
 "use client";
 
-import { type ChangeEvent, type FormEvent, type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
+import { type ChangeEvent, type FormEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
 
-type EviaExpression = "idle" | "look-down" | "look-up-left" | "look-up-right" | "smile";
+type EviaExpression = "idle" | "look-down" | "look-up-left" | "look-up-right" | "smile" | "curious" | "sleepy" | "double-blink" | "happy-bounce";
 type View =
   | "root"
   | "course"
@@ -163,6 +163,19 @@ type ProgressItem = {
   target?: number;
   updated?: boolean;
   onClick: () => void;
+};
+
+type ReminderItem = {
+  id: string;
+  label: string;
+  onClick?: () => void;
+};
+
+type EviaGuideStep = {
+  title: string;
+  body: string;
+  prompt?: string;
+  placeholder?: string;
 };
 
 const evidenceOptions: Record<KsbType, { method: EvidenceMethod; label: string; rule: string }[]> = {
@@ -770,21 +783,39 @@ async function createZip(entries: { name: string; blob: Blob }[]) {
 const calmExpressionSequence: { pose: EviaExpression; duration: number }[] = [
   { pose: "idle", duration: 2800 },
   { pose: "look-up-left", duration: 1500 },
-  { pose: "idle", duration: 2100 },
   { pose: "look-up-right", duration: 1500 },
-  { pose: "idle", duration: 2400 },
   { pose: "smile", duration: 1800 },
+  { pose: "curious", duration: 1700 },
+  { pose: "sleepy", duration: 1100 },
+  { pose: "double-blink", duration: 900 },
+  { pose: "happy-bounce", duration: 1450 },
 ];
 
 const attentiveExpressionSequence: { pose: EviaExpression; duration: number }[] = [
   { pose: "look-down", duration: 2300 },
   { pose: "idle", duration: 1100 },
   { pose: "smile", duration: 1700 },
-  { pose: "idle", duration: 1400 },
   { pose: "look-up-left", duration: 1600 },
-  { pose: "idle", duration: 900 },
   { pose: "look-up-right", duration: 1600 },
+  { pose: "curious", duration: 1500 },
+  { pose: "double-blink", duration: 850 },
+  { pose: "happy-bounce", duration: 1350 },
 ];
+
+function correctLearnerText(value: string) {
+  const safeCorrections: Array<[RegExp, string]> = [
+    [/\bteh\b/gi, "the"], [/\bhte\b/gi, "the"], [/\bthier\b/gi, "their"],
+    [/\bbecuase\b/gi, "because"], [/\bsaftey\b/gi, "safety"], [/\brecieve\b/gi, "receive"],
+    [/\bwich\b/gi, "which"], [/\bworkign\b/gi, "working"], [/\blearneres\b/gi, "learners"],
+    [/\bdont\b/gi, "don’t"], [/\bcant\b/gi, "can’t"], [/\bwont\b/gi, "won’t"],
+    [/\bim\b/gi, "I’m"], [/\bive\b/gi, "I’ve"], [/\bi\b/g, "I"],
+  ];
+  let cleaned = value.trim().replace(/\s+/g, " ").replace(/\s+([,.!?;:])/g, "$1");
+  safeCorrections.forEach(([pattern, replacement]) => { cleaned = cleaned.replace(pattern, replacement); });
+  cleaned = cleaned.replace(/(^|[.!?]\s+)([a-z])/g, (_, prefix: string, letter: string) => `${prefix}${letter.toUpperCase()}`);
+  if (cleaned && !/[.!?]$/.test(cleaned)) cleaned += ".";
+  return cleaned;
+}
 
 const stopWords = new Set([
   "and", "the", "for", "with", "from", "into", "that", "this", "their", "they", "work",
@@ -1620,6 +1651,12 @@ export default function Home() {
   const [displayedProgress, setDisplayedProgress] = useState<ProgressSnapshot>({ toc: 0, ksb: 0, otj: 0, epa: 0 });
   const [updatedProgress, setUpdatedProgress] = useState<Array<keyof ProgressSnapshot>>([]);
   const [progressCelebration, setProgressCelebration] = useState("");
+  const [remindersOpen, setRemindersOpen] = useState(false);
+  const [eviaPlusOpen, setEviaPlusOpen] = useState(false);
+  const [eviaGuideStep, setEviaGuideStep] = useState(0);
+  const [guidedWritingAnswers, setGuidedWritingAnswers] = useState<string[]>([]);
+  const [guidedWritingDraft, setGuidedWritingDraft] = useState("");
+  const [guidedWritingError, setGuidedWritingError] = useState("");
   const [adminCode, setAdminCode] = useState("");
   const [adminError, setAdminError] = useState("");
   const [placeholder, setPlaceholder] = useState({ title: "", back: "root" as View });
@@ -1776,6 +1813,11 @@ export default function Home() {
       return;
     }
 
+    if (eviaPlusOpen) {
+      setExpression(eviaGuideStep % 3 === 2 ? "smile" : "look-down");
+      return;
+    }
+
     const reduceMotion = accessibility.reduceMotion || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduceMotion) {
       setExpression(open ? "look-down" : "idle");
@@ -1783,19 +1825,20 @@ export default function Home() {
     }
 
     const sequence = open ? attentiveExpressionSequence : calmExpressionSequence;
-    let index = 0;
+    let previousPose: EviaExpression | null = null;
     let timer: ReturnType<typeof setTimeout>;
-    setExpression(sequence[index].pose);
     const showNextExpression = () => {
+      const choices = sequence.filter((item) => item.pose !== previousPose);
+      const next = choices[Math.floor(Math.random() * choices.length)] ?? sequence[0];
+      previousPose = next.pose;
+      setExpression(next.pose);
       timer = setTimeout(() => {
-        index = (index + 1) % sequence.length;
-        setExpression(sequence[index].pose);
         showNextExpression();
-      }, sequence[index].duration);
+      }, next.duration + Math.round(Math.random() * 1050));
     };
     showNextExpression();
     return () => clearTimeout(timer);
-  }, [open, view, onboardingStep, accessibility.reduceMotion]);
+  }, [open, view, onboardingStep, accessibility.reduceMotion, eviaPlusOpen, eviaGuideStep]);
 
   useEffect(() => () => {
     if (transitionTimer.current) clearTimeout(transitionTimer.current);
@@ -1891,7 +1934,6 @@ export default function Home() {
         if (progressTimer.current) clearTimeout(progressTimer.current);
         progressTimer.current = setTimeout(() => {
           setUpdatedProgress([]);
-          setProgressCelebration("");
         }, 4800);
       } else setDisplayedProgress(current);
       progressBaseline.current = current;
@@ -1926,21 +1968,21 @@ export default function Home() {
   const activeEvidenceRecord = activeEvidenceKsb
     ? evidenceRecords.find((record) => record.ksbCode === activeEvidenceKsb.code && record.method === activeEvidenceMethod)
     : undefined;
-  const homeGuidancePills = (() => {
+  const homeGuidanceMessages = (() => {
     const messages: string[] = [];
     const partialPhoto = evidenceRecords.find((record) => record.method === "photo" && record.fileIds.length > 0 && record.fileIds.length < 3);
-    if (partialPhoto) messages.push(`${partialPhoto.ksbCode} · ${3 - partialPhoto.fileIds.length} photo${3 - partialPhoto.fileIds.length === 1 ? "" : "s"} still needed`);
+    if (partialPhoto) messages.push(`${partialPhoto.ksbCode} · add ${3 - partialPhoto.fileIds.length} more photo${3 - partialPhoto.fileIds.length === 1 ? "" : "s"}`);
     const partialRecord = evidenceRecords.find((record) => !evidenceRecordComplete(record) && record.id !== partialPhoto?.id);
     if (partialRecord) messages.push(`${partialRecord.ksbCode} · finish ${evidenceMethodNames[partialRecord.method].toLowerCase()}`);
-    if (!course) messages.push("Next · add your course");
+    if (!course) messages.push("Add your course");
     else {
       const nextKsb = courseKsbs.find((ksb) => !completedKsbCodes.has(ksb.code));
-      if (nextKsb && !messages.length) messages.push(`Next · add evidence for ${nextKsb.code}`);
-      if (requiredOtjHours > loggedOtjHours + 0.05) messages.push(`OTJ · ${(requiredOtjHours - loggedOtjHours).toFixed(1)}h to reach today’s target`);
+      if (nextKsb && !messages.length) messages.push(`${nextKsb.code} · add evidence`);
+      if (requiredOtjHours > loggedOtjHours + 0.05) messages.push(`OTJ · ${(requiredOtjHours - loggedOtjHours).toFixed(1)}h behind target`);
       const nextEpa = (Object.keys(epaPracticeAreas) as EpaArea[]).find((area) => !completedEpaAreas.includes(area));
-      if (nextEpa) messages.push(`EPA · continue ${epaPracticeAreas[nextEpa].title.toLowerCase()}`);
+      if (nextEpa) messages.push(`EPA · ${epaPracticeAreas[nextEpa].title.toLowerCase()}`);
     }
-    return messages.slice(0, 2);
+    return messages.slice(0, 4);
   })();
 
   const showNotice = (message: string) => {
@@ -2471,6 +2513,7 @@ export default function Home() {
 
   const navigate = (nextView: View) => {
     if (panelLeaving || nextView === view) return;
+    setRemindersOpen(false);
     setPanelLeaving(true);
     if (transitionTimer.current) clearTimeout(transitionTimer.current);
     transitionTimer.current = setTimeout(() => {
@@ -2522,6 +2565,66 @@ export default function Home() {
     };
     if (view === "placeholder") navigate(placeholder.back);
     else navigate(targets[view] ?? "root");
+  };
+
+  const returnToHome = () => {
+    if (isOnboarding || exportRequest) return;
+    setRemindersOpen(false);
+    setEviaPlusOpen(false);
+    setPanelLeaving(true);
+    if (transitionTimer.current) clearTimeout(transitionTimer.current);
+    transitionTimer.current = setTimeout(() => {
+      setView("root");
+      setOpen(false);
+      setPanelLeaving(false);
+      setSelectedUnitId("");
+      setUnitSearch("");
+    }, 160);
+  };
+
+  const handleBackgroundHome = (event: ReactMouseEvent<HTMLElement>) => {
+    if (isOnboarding || exportRequest || eviaPlusOpen || (!open && view === "root")) return;
+    const target = event.target as HTMLElement;
+    if (!target.classList.contains("evia-app")
+      && !target.classList.contains("ambient")
+      && !target.classList.contains("menu-stage")
+      && !target.classList.contains("menu-shell")
+      && !target.classList.contains("view-panel")
+      && !target.classList.contains("view-content")
+      && !target.classList.contains("detail-header")) return;
+    returnToHome();
+  };
+
+  const openReminder = (message: string) => {
+    setRemindersOpen(false);
+    if (message === "Add your course") {
+      setOpen(true);
+      openCourseManager("root");
+      return;
+    }
+    if (message.startsWith("OTJ")) {
+      openProgressView("otj-progress");
+      return;
+    }
+    if (message.startsWith("EPA")) {
+      openProgressView("epa-practice");
+      return;
+    }
+    const code = message.match(/^[KSB]\d+(?:\.\d+)?[A-Za-z]?/i)?.[0]?.toUpperCase();
+    const ksb = code ? courseKsbs.find((item) => item.code.toUpperCase() === code) : undefined;
+    if (ksb) {
+      setOpen(true);
+      openEvidenceOptions(ksb);
+    }
+  };
+
+  const openEviaGuide = () => {
+    setRemindersOpen(false);
+    setEviaGuideStep(0);
+    setGuidedWritingAnswers([]);
+    setGuidedWritingDraft("");
+    setGuidedWritingError("");
+    setEviaPlusOpen(true);
   };
 
   const toggleEvia = () => {
@@ -2643,6 +2746,251 @@ export default function Home() {
   ];
   const tallViews: View[] = ["root", "course", "study", "portfolio", "settings", "install-app", "profile", "admin"];
   const shellClasses = `menu-shell${workspaceViews.includes(view) ? " is-workspace" : ""}${tallViews.includes(view) ? " is-tall" : ""}`;
+
+  const writingGuidePrompts: EviaGuideStep[] | null = view === "evidence" && activeEvidenceKsb
+    ? activeEvidenceMethod === "written"
+      ? [
+          { title: "What do you understand?", body: `Use your own words for ${activeEvidenceKsb.code}. Do not worry about spelling yet.`, prompt: "Explain what you know", placeholder: "I understand…" },
+          { title: "How does it apply?", body: "Explain where or when this knowledge is used in your work.", prompt: "How it applies in your work", placeholder: "In my work, this applies when…" },
+          { title: "Give a real example", body: "Describe something you have seen, discussed or carried out that relates to this knowledge.", prompt: "Your example", placeholder: "For example…" },
+          { title: "Why does it matter?", body: "Finish with the reason this knowledge is important to the work, people or finished result.", prompt: "Why it matters", placeholder: "This matters because…" },
+        ]
+      : activeEvidenceMethod === "reflection"
+        ? [
+            { title: "Describe the situation", body: `Use a real situation that demonstrates ${activeEvidenceKsb.code}.`, prompt: "What was happening?", placeholder: "The situation was…" },
+            { title: "Explain your action", body: "Say what you personally did and the choice you made.", prompt: "What did you do?", placeholder: "I decided to…" },
+            { title: "Record the result", body: "Explain what happened because of your actions.", prompt: "What was the result?", placeholder: "As a result…" },
+            { title: "Reflect on the learning", body: "Say what you learned and what you would repeat or improve next time.", prompt: "What did you learn?", placeholder: "I learned that…" },
+          ]
+        : activeEvidenceMethod === "witness"
+          ? [
+              { title: "Set the scene", body: "The witness should use their own words and identify the task they personally observed.", prompt: "Task observed", placeholder: "I personally observed the learner…" },
+              { title: "Describe the learner’s actions", body: "Record exactly what the learner did. Avoid assumptions or second-hand information.", prompt: "Actions observed", placeholder: "The learner…" },
+              { title: "Describe the standard", body: "Explain the quality, consistency or safe standard that was achieved.", prompt: "Standard achieved", placeholder: "The work demonstrated…" },
+              { title: "Link the Behaviour", body: `Explain how the observation demonstrated ${activeEvidenceKsb.code}.`, prompt: "How the Behaviour was shown", placeholder: "This showed the Behaviour because…" },
+            ]
+          : null
+    : null;
+
+  const guideByView: Partial<Record<View, EviaGuideStep[]>> = {
+    root: [
+      { title: "Choose your next area", body: "Open My Course for Units, OTJ and EPA; Self Study for teaching packs; or My Portfolio for evidence health and downloads." },
+      { title: "Follow the next action", body: "The reminder icon shows the shortest useful action based on your current course progress." },
+      { title: "Watch the four arches", body: "TOC is your pace. KSB, OTJ and EPA show the progress you are building against it." },
+    ],
+    course: [
+      { title: "Start with a Unit", body: "Open Units and choose the activity with the fewest yellow dots." },
+      { title: "Keep OTJ current", body: "Record learning away from normal productive work and link it to the most relevant Unit." },
+      { title: "Practise for EPA", body: "Use practical, interview and MCQ practice regularly rather than leaving it until the end." },
+    ],
+    units: [
+      { title: "Read the dots", body: "Each grey dot is one KSB still needing evidence. A yellow dot is complete." },
+      { title: "Choose one Unit", body: "Start with a Unit that already has some yellow dots, or select the activity you are doing next at work or college." },
+      { title: "Complete one KSB at a time", body: "Open the Unit, choose a grey K, S or B, then follow one of its approved evidence routes." },
+    ],
+    unit: [
+      { title: selectedUnit?.title ?? "Complete this Unit", body: "The K, S and B dots show exactly which criteria are complete. Grey dots still need evidence." },
+      { title: "Choose a grey KSB", body: "Tap its full description. I will show only the evidence routes allowed for that Knowledge, Skill or Behaviour." },
+      { title: "Finish one approved route", body: "You only need one complete route for each KSB. When every dot is yellow, the whole Unit tile turns light yellow." },
+    ],
+    "evidence-options": [
+      { title: `Choose evidence for ${activeEvidenceKsb?.code ?? "this KSB"}`, body: "Pick the route that gives the clearest, most authentic evidence of the full criterion." },
+      { title: "Use one complete route", body: "You do not need to complete both options. Finish the route that best represents the learner’s work." },
+      { title: "Check before saving", body: "Make sure the evidence is clear, specific, relevant and safe to include in the portfolio." },
+    ],
+    "toc-settings": [
+      { title: "Add the course dates", body: "Enter the official apprenticeship start date and planned end date." },
+      { title: "Add normal weekly hours", body: "Use the learner’s contracted working hours, including normal paid training time." },
+      { title: "Save the timeline", body: "I will calculate TOC and use it as the target position for KSB, OTJ and EPA progress." },
+    ],
+    "ksb-progress": [
+      { title: "Find an uncovered KSB", body: "The incomplete criteria appear first. Choose one that matches the learner’s next activity." },
+      { title: "Read the full criterion", body: "Check every part of the wording before deciding what evidence will meet it." },
+      { title: "Add one approved route", body: "A KSB counts once a complete evidence route is saved or verified as RPL." },
+    ],
+    "otj-progress": [
+      { title: "Choose the related Unit", body: "Link the learning to the Unit it supports so the OTJ pack is organised correctly." },
+      { title: "Record the learning", body: "Add the activity date, time spent and a concise explanation of what was learned." },
+      { title: "Check the Unit allocation", body: "Compare recorded hours with the equal target shown for each Unit, then save and sign the pack when required." },
+    ],
+    "epa-practice": [
+      { title: "Choose an EPA method", body: "Use practical, interview or MCQ practice depending on the area you need to strengthen." },
+      { title: "Complete every step", body: "Treat the mock like the real assessment and answer without reading a model response first." },
+      { title: "Review the result", body: "Repeat weaker areas until you can explain or demonstrate them confidently and consistently." },
+    ],
+    "epa-session": [
+      { title: "Work through one prompt", body: "Read the current task carefully and respond as though this were the real EPA." },
+      { title: "Use specific examples", body: "Explain what you would do, why you would do it and how you would check the outcome." },
+      { title: "Complete the mock", body: "Finish every step before returning to the EPA overview so the arch can update." },
+    ],
+    study: [
+      { title: "Choose a subject", body: "Use Maths & English, Trade Subjects or EDI depending on the learning you need today." },
+      { title: "Open one teaching pack", body: "Read the short lesson in order rather than jumping straight to the questions." },
+      { title: "Complete the knowledge check", body: "Use the explanations to correct mistakes, then retry until the pack is complete." },
+    ],
+    "study-library": [
+      { title: "Choose one teaching pack", body: "Start with an unfinished pack that supports your current work or upcoming assessment." },
+      { title: "Read before answering", body: "Work through the lesson first so the MCQ checks learning rather than guessing." },
+      { title: "Return to weaker topics", body: "A pack is complete when every question is correct. Review explanations before retrying." },
+    ],
+    "study-module": [
+      { title: "Read one section at a time", body: "Pause after each short section and connect it to something you have seen or done." },
+      { title: "Answer every MCQ", body: "Choose the best answer without guessing. I will explain the reasoning immediately." },
+      { title: "Correct any mistakes", body: "Review the explanation and try again until every answer is correct." },
+    ],
+    portfolio: [
+      { title: "Check Portfolio Health", body: "Use it to find KSBs with no complete evidence route." },
+      { title: "Review saved evidence", body: "Open My Evidence to confirm the method, date and completion status of each record." },
+      { title: "Download a signed pack", body: "Use Download Portfolio when the learner is ready to sign and create professional mapped evidence packs." },
+    ],
+    "portfolio-download": [
+      { title: "Choose the download scope", body: "Download one Unit for a focused pack or all Units for the complete portfolio." },
+      { title: "Review the evidence", body: "Check the KSB mappings and attached media before signing the declaration." },
+      { title: "Sign and save", body: "The learner’s handwritten signature and exact date and time are added to the PDF." },
+    ],
+    "evidence-list": [
+      { title: "Check incomplete records first", body: "A partial record needs the remaining media, words or signature before it covers the KSB." },
+      { title: "Confirm the KSB", body: "Make sure every saved item is attached to the correct Knowledge, Skill or Behaviour." },
+      { title: "Return to the Unit", body: "Open the relevant Unit to add, replace or complete its evidence route." },
+    ],
+    settings: [
+      { title: "Keep your profile accurate", body: "Your name, employer, working hours and course dates appear throughout progress and evidence packs." },
+      { title: "Adjust accessibility", body: "Choose larger text, high contrast, reading focus, reduced motion or read aloud support." },
+      { title: "Use Admin only when authorised", body: "RPL and course controls affect completion records and should only be changed by authorised staff." },
+    ],
+    profile: [
+      { title: "Manage the course", body: "Import a tutor file, paste an existing course structure or let Evia organise a complete KSB list." },
+      { title: "Check learner details", body: "Keep the learner name, employer, working hours and dates current." },
+    ],
+    "profile-details": [
+      { title: "Enter the learner details", body: "Use the name and employer that should appear on formal evidence packs." },
+      { title: "Check working hours", body: "These determine the learner’s weekly and total OTJ target." },
+      { title: "Save the dates", body: "The start and end dates determine TOC and all paced target markers." },
+    ],
+    "manage-course": [
+      { title: "Choose the correct method", body: "Import a finished Evia file, paste a tutor-made layout, or give Evia an unorganised KSB list." },
+      { title: "Keep official wording", body: "Use the complete published KSB descriptions without shortening or rewriting them." },
+      { title: "Review before evidence starts", body: "Check Unit titles and mappings before learners begin adding evidence." },
+    ],
+    "import-course": [
+      { title: "Choose the tutor file", body: "Select the approved .evia or .json course file supplied by the tutor." },
+      { title: "Check the recognised totals", body: "Confirm the Unit, Knowledge, Skill and Behaviour counts look correct." },
+      { title: "Import the course", body: "The tutor’s titles, order and mappings will be preserved exactly." },
+    ],
+    "paste-layout": [
+      { title: "Add the Unit title", body: "Start each Unit with its intended activity-based title on a separate line." },
+      { title: "Paste full KSB wording", body: "Place the K, S and B codes with their complete descriptions underneath the correct title." },
+      { title: "Separate the next Unit", body: "Leave a blank line, add the next title and continue until the whole course is included." },
+    ],
+    "build-course": [
+      { title: "Paste the complete KSB list", body: "Include every official K, S and B code with its full description." },
+      { title: "Let Evia organise it", body: "Evia pairs the strongest related Skills, maps matching Knowledge and adds relevant Behaviours." },
+      { title: "Review the activity titles", body: "Check that each Unit title clearly describes the Skills inside it before evidence begins." },
+    ],
+    accessibility: [
+      { title: "Choose a comfortable text size", body: "Use Standard, Large or Extra Large and check it on a detailed KSB page." },
+      { title: "Add visual support", body: "High contrast and reading focus reduce distraction and make content easier to follow." },
+      { title: "Use read aloud", body: "Enable read aloud, then double-tap readable content anywhere in Evia." },
+    ],
+    "admin-lock": [{ title: "Authorised access only", body: "Enter the four-digit admin code to open settings that change formal course records." }],
+    admin: [{ title: "Choose one controlled setting", body: "Use RPL only for verified prior learning and review any course or data changes carefully." }],
+    "admin-rpl": [
+      { title: "Find the verified KSB", body: "Search by code or wording and check the full criterion before changing its status." },
+      { title: "Confirm the prior learning", body: "Only use RPL when suitable evidence has been reviewed by an authorised person." },
+      { title: "Mark or remove RPL", body: "Tap once to mark the KSB and again to remove it. The portfolio records the status clearly." },
+    ],
+    "install-app": [{ title: "Install Evia", body: "Use the install button when available, or choose Install app or Add to Home Screen from your browser menu." }],
+  };
+
+  const evidenceGuideSteps: EviaGuideStep[] = activeEvidenceMethod === "photo"
+    ? [
+        { title: "Read the full Skill", body: `Make sure every photo relates directly to ${activeEvidenceKsb?.code ?? "the selected Skill"}.` },
+        { title: "Photo one — preparation", body: "Capture the work area, setting out, materials or safe preparation clearly." },
+        { title: "Photo two — activity", body: "Capture the learner carrying out the Skill so their own practical work is visible." },
+        { title: "Photo three — completed standard", body: "Capture the finished result clearly enough for someone to judge its standard." },
+      ]
+    : activeEvidenceMethod === "video"
+      ? [
+          { title: "Plan one continuous video", body: `The recording must show the learner completing ${activeEvidenceKsb?.code ?? "the selected Skill"}, not only the finished work.` },
+          { title: "Show the process", body: "Include preparation, safe technique, key practical stages and checks without unnecessary footage." },
+          { title: "Show the result", body: "Finish by showing the completed work clearly and explaining any checks made." },
+        ]
+      : activeEvidenceMethod === "audio"
+        ? [
+            { title: "Plan the explanation", body: `Explain ${activeEvidenceKsb?.code ?? "the selected Knowledge"} in your own words.` },
+            { title: "Use a real example", body: "Say where the knowledge applies and describe something you have seen or done." },
+            { title: "Explain why it matters", body: "Finish with the impact on the work, people or finished result, then record in a quiet place." },
+          ]
+        : [];
+
+  const eviaGuideSteps = writingGuidePrompts ?? (view === "evidence" ? evidenceGuideSteps : guideByView[view]) ?? [
+    { title: viewTitles[view] || "Evia support", body: "Complete the visible section in order. Read each instruction, add only accurate information and check it before saving." },
+  ];
+  const activeGuideStep = eviaGuideSteps[Math.min(eviaGuideStep, Math.max(0, eviaGuideSteps.length - 1))];
+  const isWritingGuide = Boolean(writingGuidePrompts);
+
+  const closeEviaGuide = () => {
+    setEviaPlusOpen(false);
+    setGuidedWritingError("");
+  };
+
+  const moveGuideBack = () => {
+    if (eviaGuideStep <= 0) return;
+    const previous = eviaGuideStep - 1;
+    setEviaGuideStep(previous);
+    setGuidedWritingDraft(guidedWritingAnswers[previous] ?? "");
+    setGuidedWritingError("");
+  };
+
+  const moveGuideForward = () => {
+    let answers = guidedWritingAnswers;
+    if (activeGuideStep?.prompt) {
+      if (!guidedWritingDraft.trim()) {
+        setGuidedWritingError("Add your own words before moving to the next step.");
+        return;
+      }
+      answers = [...guidedWritingAnswers];
+      answers[eviaGuideStep] = correctLearnerText(guidedWritingDraft);
+      setGuidedWritingAnswers(answers);
+    }
+
+    if (eviaGuideStep < eviaGuideSteps.length - 1) {
+      const next = eviaGuideStep + 1;
+      setEviaGuideStep(next);
+      setGuidedWritingDraft(answers[next] ?? "");
+      setGuidedWritingError("");
+      return;
+    }
+
+    if (isWritingGuide) {
+      const compiled = answers.filter(Boolean).join("\n\n");
+      if (activeEvidenceMethod === "witness") setWitnessDraft((current) => ({ ...current, testimony: compiled }));
+      else setEvidenceText(compiled);
+      setEvidenceError("");
+      showNotice(activeEvidenceMethod === "witness" ? "Witness account compiled from their answers." : "Your statement has been compiled from your answers.");
+    }
+    closeEviaGuide();
+  };
+
+  const renderUnitCompletionDots = (unit: CourseUnit) => {
+    const groups: Array<{ type: KsbType; label: string }> = [
+      { type: "Knowledge", label: "K" }, { type: "Skill", label: "S" }, { type: "Behaviour", label: "B" },
+    ];
+    return (
+      <span className="unit-completion-dots">
+        {groups.map(({ type, label }) => {
+          const items = [...new Map(unit.ksbs.filter((ksb) => ksb.type === type).map((ksb) => [ksb.code, ksb])).values()];
+          const complete = items.filter((ksb) => completedKsbCodes.has(ksb.code)).length;
+          return (
+            <span className="unit-dot-group" key={type} aria-label={`${type}: ${complete} of ${items.length} complete`}>
+              <b>{label}:</b>
+              <span>{items.map((ksb) => <i className={completedKsbCodes.has(ksb.code) ? "is-complete" : ""} key={ksb.code} />)}</span>
+            </span>
+          );
+        })}
+      </span>
+    );
+  };
 
   const renderKsbGroup = (type: KsbType, title: string) => {
     const items = [...(selectedUnit?.ksbs.filter((ksb) => ksb.type === type) ?? [])]
@@ -3140,16 +3488,12 @@ export default function Home() {
             : "Every Knowledge and Skill is used once. Two relevant Behaviours support each Unit."}</p>
           <div className="duty-list">
             {filteredUnits.map((unit) => {
-              const knowledgeCount = unit.ksbs.filter((item) => item.type === "Knowledge").length;
-              const skillCount = unit.ksbs.filter((item) => item.type === "Skill").length;
-              const behaviourCount = unit.ksbs.filter((item) => item.type === "Behaviour").length;
               const progress = unitProgressDetails(unit);
               return (
-              <button type="button" className={`duty-row${progress.isComplete ? " is-complete" : progress.started ? " has-evidence" : ""}`} key={unit.id} onClick={() => { setSelectedUnitId(unit.id); navigate("unit"); }}>
+              <button type="button" className={`duty-row${progress.isComplete ? " is-complete" : ""}`} key={unit.id} onClick={() => { setSelectedUnitId(unit.id); navigate("unit"); }}>
                 <span className="duty-row-copy">
-                  <span className="unit-title-line"><strong>{unit.title}</strong><em>{progress.isComplete ? "Complete" : progress.started ? `${progress.percentage}% evidence` : "Not started"}</em></span>
-                  <small>{progress.complete} of {progress.total} KSBs complete · {knowledgeCount} K · {skillCount} S · {behaviourCount} B</small>
-                  <span className="unit-progress-track" aria-label={`${progress.percentage}% evidence progress`}><span style={{ width: `${progress.percentage}%` }} /></span>
+                  <span className="unit-title-line"><strong>{unit.title}</strong></span>
+                  {renderUnitCompletionDots(unit)}
                 </span>
                 <span className="row-chevron" aria-hidden="true">›</span>
               </button>
@@ -3162,10 +3506,9 @@ export default function Home() {
 
     if (view === "unit" && selectedUnit) return (
       <div className="duty-detail">
-        <header className={`duty-summary${unitProgressDetails(selectedUnit).isComplete ? " is-complete" : unitProgressDetails(selectedUnit).started ? " has-evidence" : ""}`}>
+        <header className={`duty-summary${unitProgressDetails(selectedUnit).isComplete ? " is-complete" : ""}`}>
           <span>Evidence collection</span><h3>{selectedUnit.title}</h3><p>{selectedUnit.summary}</p>
-          <div className="unit-overview"><span><strong>{unitProgressDetails(selectedUnit).percentage}%</strong><small>{unitProgressDetails(selectedUnit).complete} of {unitProgressDetails(selectedUnit).total} KSBs complete</small></span><em>{unitProgressDetails(selectedUnit).isComplete ? "Unit complete ✓" : unitProgressDetails(selectedUnit).started ? "Evidence in progress" : "No evidence yet"}</em></div>
-          <span className="unit-progress-track is-large" aria-hidden="true"><span style={{ width: `${unitProgressDetails(selectedUnit).percentage}%` }} /></span>
+          {renderUnitCompletionDots(selectedUnit)}
           <button type="button" className="unit-download-button" disabled={Boolean(exporting)} onClick={() => requestSignedExport({ kind: "unit", unitId: selectedUnit.id })}>{exporting === selectedUnit.id ? "Building evidence pack…" : "Sign & download Unit evidence"}<span aria-hidden="true">↓</span></button>
         </header>
         {renderKsbGroup("Skill", "Skills")}
@@ -3203,9 +3546,15 @@ export default function Home() {
     return <div className="placeholder-state"><span className="placeholder-line" aria-hidden="true" /><h3>{placeholder.title}</h3><p>This area is ready for the next part of Evia.</p></div>;
   };
 
+  const reminderItems: ReminderItem[] = [
+    ...(progressCelebration ? [{ id: "progress-change", label: progressCelebration, onClick: () => { setProgressCelebration(""); setRemindersOpen(false); } }] : []),
+    ...homeGuidanceMessages.map((label, index) => ({ id: `reminder-${index}-${label}`, label, onClick: () => openReminder(label) })),
+  ];
+
   return (
     <main
-      className={`evia-app${ready ? " is-ready" : ""}${open ? " is-open" : ""}${isOnboarding ? " is-onboarding" : ""} text-${accessibility.textSize}${accessibility.highContrast ? " is-high-contrast" : ""}${accessibility.readingFocus ? " is-reading-focus" : ""}${accessibility.reduceMotion ? " is-reduced-motion" : ""}`}
+      className={`evia-app${ready ? " is-ready" : ""}${open ? " is-open" : ""}${isOnboarding ? " is-onboarding" : ""}${eviaPlusOpen ? " is-guided" : ""} text-${accessibility.textSize}${accessibility.highContrast ? " is-high-contrast" : ""}${accessibility.readingFocus ? " is-reading-focus" : ""}${accessibility.reduceMotion ? " is-reduced-motion" : ""}`}
+      onClick={handleBackgroundHome}
       onDoubleClick={(event) => {
         if (!accessibility.readAloud) return;
         const target = event.target as HTMLElement;
@@ -3216,11 +3565,33 @@ export default function Home() {
       onPointerUp={handleTouchReadAloud}
     >
       <div className="ambient ambient-one" aria-hidden="true" /><div className="ambient ambient-two" aria-hidden="true" />
+
+      {!isOnboarding && !eviaPlusOpen && <div className="app-top-controls">
+        <button type="button" className="evia-plus-launch" onClick={openEviaGuide}>Evia+</button>
+        <div className="reminder-control">
+          <button
+            type="button"
+            className={`reminder-button${updatedProgress.length || progressCelebration ? " has-update" : ""}`}
+            aria-label={`Reminders${reminderItems.length ? `, ${reminderItems.length} available` : ""}`}
+            aria-expanded={remindersOpen}
+            onClick={() => setRemindersOpen((current) => !current)}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 10a4.5 4.5 0 0 1 9 0c0 5 2 5.4 2 6.5h-13c0-1.1 2-1.5 2-6.5Z" /><path d="M10 19h4" /></svg>
+            {reminderItems.length > 0 && <span>{Math.min(9, reminderItems.length)}</span>}
+          </button>
+          {remindersOpen && <div className="reminder-menu" role="menu" aria-label="Evia reminders">
+            <div className="reminder-menu-heading"><strong>What’s next</strong><button type="button" onClick={() => setRemindersOpen(false)} aria-label="Close reminders">×</button></div>
+            {reminderItems.map((item) => <button type="button" role="menuitem" className={item.id === "progress-change" ? "is-progress" : ""} key={item.id} onClick={() => { if (item.onClick) item.onClick(); else setRemindersOpen(false); }}>{item.label}<span aria-hidden="true">›</span></button>)}
+            {!reminderItems.length && <p>You’re up to date.</p>}
+          </div>}
+        </div>
+      </div>}
+
       <button type="button" className="evia-anchor" aria-label={open ? "Close Evia menu" : "Open Evia menu"} aria-expanded={open} disabled={isOnboarding} onClick={toggleEvia}>
         <span className="evia-float"><span className="evia-halo" aria-hidden="true" /><span className={`evia-face expression-${expression}`} aria-hidden="true"><span className="evia-eyes"><span className="evia-eye eye-left" /><span className="evia-eye eye-right" /></span></span></span>
       </button>
 
-      <section className="menu-stage" aria-hidden={!open} aria-label="Evia menu">
+      <section className="menu-stage" aria-hidden={!open || eviaPlusOpen} aria-label="Evia menu">
         <div className={shellClasses}>
           <div className={`view-panel${view === "root" ? " is-root-view" : ""}${panelLeaving ? " is-leaving" : ""}`} key={view}>
             {view !== "root" && <div className="detail-header"><button type="button" className="back-button" aria-label={`Back from ${viewTitles[view]}`} onClick={goBack}><span aria-hidden="true">‹</span></button><h2>{viewTitles[view]}</h2><span className="header-spacer" aria-hidden="true" /></div>}
@@ -3229,14 +3600,27 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="progress-dock" aria-label="Your progress">
-        {view === "root" && !isOnboarding && <div className="home-guidance" aria-live="polite">
-          {progressCelebration && <span className="home-guidance-pill is-celebration"><strong>Evia</strong>{progressCelebration}</span>}
-          {!progressCelebration && homeGuidancePills.map((message) => <span className="home-guidance-pill" key={message}>{message}</span>)}
-        </div>}
+      <section className="progress-dock" aria-label="Your progress" aria-hidden={eviaPlusOpen}>
         <div className="progress-row">{progressItems.map((item) => <ProgressArch key={item.label} {...item} />)}</div>
       </section>
       {notice && <div className="app-toast" role="status">{notice}</div>}
+
+      {eviaPlusOpen && activeGuideStep && <section className="evia-plus-layer" role="dialog" aria-modal="true" aria-labelledby="evia-plus-title" aria-describedby="evia-plus-copy">
+        <button type="button" className="evia-plus-close" onClick={closeEviaGuide} aria-label="Close Evia guided support">×</button>
+        <div className="evia-plus-step" key={`${view}-${eviaGuideStep}`}>
+          <div className="evia-plus-kicker"><span>Evia+</span><small>Step {eviaGuideStep + 1} of {eviaGuideSteps.length}</small></div>
+          <h2 id="evia-plus-title">{activeGuideStep.title}</h2>
+          <p id="evia-plus-copy">{activeGuideStep.body}</p>
+          {activeGuideStep.prompt && <label className="evia-plus-input"><span>{activeGuideStep.prompt}</span><textarea value={guidedWritingDraft} onChange={(event) => { setGuidedWritingDraft(event.target.value); setGuidedWritingError(""); }} placeholder={activeGuideStep.placeholder} rows={5} autoFocus /></label>}
+          {guidedWritingError && <p className="evia-plus-error" role="alert">{guidedWritingError}</p>}
+          <div className="evia-plus-progress" aria-hidden="true">{eviaGuideSteps.map((_, index) => <span className={index <= eviaGuideStep ? "is-active" : ""} key={index} />)}</div>
+          <div className="evia-plus-actions">
+            {eviaGuideStep > 0 ? <button type="button" className="evia-plus-back" onClick={moveGuideBack}>Back</button> : <span />}
+            <button type="button" className="evia-plus-next" onClick={moveGuideForward}>{eviaGuideStep === eviaGuideSteps.length - 1 ? isWritingGuide ? "Compile my statement" : "Done" : "Next step"}<span aria-hidden="true">→</span></button>
+          </div>
+          {isWritingGuide && <small className="evia-plus-assurance">Only your answers are used. Evia corrects spelling, grammar and punctuation without adding technical content.</small>}
+        </div>
+      </section>}
 
       {exportRequest && <section className="signature-layer" role="dialog" aria-modal="true" aria-labelledby="signature-title">
         <div className="signature-sheet">
