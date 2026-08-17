@@ -969,6 +969,11 @@ function conciseTitle(text: string, maxWords = 8) {
   return title.charAt(0).toUpperCase() + title.slice(1);
 }
 
+function formatOtjHours(value: number) {
+  const rounded = Math.round((Number(value) || 0) * 10) / 10;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+}
+
 const tokenAliases: Record<string, string> = {
   safe: "safety", safely: "safety", regulatory: "regulation", regulations: "regulation",
   environmental: "environment", sustainable: "sustainability", recycle: "recycling",
@@ -1642,6 +1647,7 @@ export default function Home() {
   const [exporting, setExporting] = useState("");
   const [witnessDraft, setWitnessDraft] = useState<NonNullable<EvidenceRecord["witness"]>>({ name: "", role: "", date: todayDateValue(), testimony: "", signature: undefined, signedAt: undefined });
   const [otjDraft, setOtjDraft] = useState({ date: todayDateValue(), title: "", hours: "", unitId: "" });
+  const [unitOtjOpen, setUnitOtjOpen] = useState(false);
   const [exportRequest, setExportRequest] = useState<ExportRequest | null>(null);
   const [learnerSignature, setLearnerSignature] = useState<SignatureData | null>(null);
   const [employerSignature, setEmployerSignature] = useState<SignatureData | null>(null);
@@ -2182,11 +2188,13 @@ export default function Home() {
       unitId: otjDraft.unitId,
       createdAt: Date.now(),
     }];
+    const unitTitle = course.units.find((unit) => unit.id === otjDraft.unitId)?.title;
     setOtjEntries(nextEntries);
     setOtjDraft({ date: todayDateValue(), title: "", hours: "", unitId: otjDraft.unitId });
     setOtjError("");
+    setUnitOtjOpen(false);
     try { window.localStorage.setItem("evia-otj-entries", JSON.stringify(nextEntries)); } catch { /* Keep session data. */ }
-    showNotice(`${hours} OTJ hour${hours === 1 ? "" : "s"} added.`);
+    showNotice(`${formatOtjHours(hours)} OTJ hour${hours === 1 ? "" : "s"} added${unitTitle ? ` to ${unitTitle}` : ""}.`);
   };
 
   const toggleEpaStep = (area: EpaArea, index: number) => {
@@ -2513,6 +2521,7 @@ export default function Home() {
   const navigate = (nextView: View) => {
     if (panelLeaving || nextView === view) return;
     setRemindersOpen(false);
+    setUnitOtjOpen(false);
     setPanelLeaving(true);
     if (transitionTimer.current) clearTimeout(transitionTimer.current);
     transitionTimer.current = setTimeout(() => {
@@ -2602,7 +2611,8 @@ export default function Home() {
       return;
     }
     if (message.startsWith("OTJ")) {
-      openProgressView("otj-progress");
+      setOpen(true);
+      navigate("units");
       return;
     }
     if (message.startsWith("EPA")) {
@@ -2783,8 +2793,8 @@ export default function Home() {
     ],
     course: [
       { title: "Start with a Unit", body: "Open Units and choose the activity with the fewest yellow dots." },
-      { title: "Keep OTJ current", body: "Record learning away from normal productive work and link it to the most relevant Unit." },
-      { title: "Practise for EPA", body: "Use practical, interview and MCQ practice regularly rather than leaving it until the end." },
+      { title: "Record OTJ inside the Unit", body: "The first tile in every Unit shows its equal share of the course OTJ target. Record the learning there so it is mapped automatically." },
+      { title: "Review OTJ when needed", body: "Use Off The Job for the saved activity list, Unit totals, employer check and signed download." },
     ],
     units: [
       { title: "Read the dots", body: "Each grey dot is one KSB still needing evidence. A yellow dot is complete." },
@@ -2792,8 +2802,8 @@ export default function Home() {
       { title: "Complete one KSB at a time", body: "Open the Unit, choose a grey K, S or B, then follow one of its approved evidence routes." },
     ],
     unit: [
-      { title: selectedUnit?.title ?? "Complete this Unit", body: "The K, S and B dots show exactly which criteria are complete. Grey dots still need evidence." },
-      { title: "Choose a grey KSB", body: "Tap its full description. I will show only the evidence routes allowed for that Knowledge, Skill or Behaviour." },
+      { title: selectedUnit?.title ?? "Complete this Unit", body: "Start with the OTJ tile when you have completed learning for this Unit. Its target is the course OTJ total divided equally across all Units." },
+      { title: "Choose a grey KSB", body: "Unit tiles use a concise description. Open one to read the full official wording and choose an approved evidence route." },
       { title: "Finish one approved route", body: "You only need one complete route for each KSB. When every dot is yellow, the whole Unit tile turns light yellow." },
     ],
     "evidence-options": [
@@ -2812,9 +2822,9 @@ export default function Home() {
       { title: "Add one approved route", body: "A KSB counts once a complete evidence route is saved or verified as RPL." },
     ],
     "otj-progress": [
-      { title: "Choose the related Unit", body: "Link the learning to the Unit it supports so the OTJ pack is organised correctly." },
-      { title: "Record the learning", body: "Add the activity date, time spent and a concise explanation of what was learned." },
-      { title: "Check the Unit allocation", body: "Compare recorded hours with the equal target shown for each Unit, then save and sign the pack when required." },
+      { title: "Review the saved learning", body: "OTJ is recorded from inside each Unit. This page keeps every completed activity together for review." },
+      { title: "Check the Unit allocations", body: "Each Unit receives an equal share of the course OTJ total, so you can see where recorded learning is ahead or behind." },
+      { title: "Employer check and download", body: "Use the signed OTJ download when the learner and employer representative are ready to review and verify the record." },
     ],
     "epa-practice": [
       { title: "Choose an EPA method", body: "Use practical, interview or MCQ practice depending on the area you need to strengthen." },
@@ -3011,7 +3021,7 @@ export default function Home() {
             <article className={`ksb-item${isComplete ? " is-complete" : ""}`} key={`${selectedUnit?.id}-${ksb.code}`}>
               <button type="button" className="ksb-description-button" onClick={() => openEvidenceOptions(ksb)} aria-label={`Open evidence options for ${ksb.code}`}>
                 <span className="ksb-code">{ksb.code}</span>
-                <span className="ksb-description-copy"><strong>{ksb.description}</strong><small>{isRpl ? "Recognised prior learning" : isComplete ? "Evidence route complete" : "Tap to add evidence"}</small></span>
+                <span className="ksb-description-copy"><strong>{ksb.title || conciseTitle(ksb.description, 8)}</strong><small>{isRpl ? "Recognised prior learning" : isComplete ? "Evidence route complete" : "Tap to open full description"}</small></span>
                 <span className="status-dot" aria-hidden="true">{isComplete ? "✓" : ""}</span>
               </button>
             </article>
@@ -3034,7 +3044,7 @@ export default function Home() {
     if (view === "course") return (
       <div className="option-list is-fill">
         <OptionRow title="Units" note={course ? `${course.units.length} ready` : "Course not added"} onClick={() => navigate("units")} />
-        <OptionRow title="Off The Job" note={`${loggedOtjHours.toFixed(1)} hours recorded`} onClick={() => navigate("otj-progress")} />
+        <OptionRow title="Off The Job" note={`${formatOtjHours(loggedOtjHours)} hours recorded · review & download`} onClick={() => navigate("otj-progress")} />
         <OptionRow title="EPA Practice" note={`${completedEpaAreas.length} of 3 mocks complete`} onClick={() => navigate("epa-practice")} />
       </div>
     );
@@ -3194,25 +3204,17 @@ export default function Home() {
 
     if (view === "otj-progress") return (
       <div className="progress-workspace">
-        <div className="evia-guidance"><span className="guidance-mark" aria-hidden="true">E</span><div><strong>I’ll keep your OTJ target clear.</strong><p>Your target is 20% of normal working hours, paced against the amount of your course that has elapsed.</p></div></div>
+        <div className="evia-guidance"><span className="guidance-mark" aria-hidden="true">E</span><div><strong>Your OTJ record stays together here.</strong><p>Record new OTJ from inside the relevant Unit. This page keeps the Unit totals, completed activity list, employer check and signed download in one place.</p></div></div>
         <div className="progress-summary-grid">
           <div className="progress-summary-main"><span>OTJ progress</span><strong>{otjProgress}%</strong><small>{loggedOtjHours.toFixed(1)}h logged · {requiredOtjHours.toFixed(1)}h expected by today</small></div>
           <div className="progress-summary-stat"><span>Course target</span><strong>{validTimeline ? `${totalOtjHours.toFixed(1)}h` : "—"}</strong><small>{weeklyOtjTarget.toFixed(1)} hours per week</small></div>
         </div>
         {!validTimeline && <button type="button" className="inline-action" onClick={() => navigate("toc-settings")}>Set course dates to calculate your target</button>}
         {!course?.units.length && <button type="button" className="inline-action" onClick={() => openCourseManager("otj-progress")}>Add your course to allocate OTJ to Units</button>}
-        <button type="button" className="make-course-button otj-download" disabled={!otjEntries.length || Boolean(exporting)} onClick={() => requestSignedExport({ kind: "otj" })}>{exporting === "otj" ? "Building OTJ pack…" : "Review, sign & download OTJ pack"}<span aria-hidden="true">↓</span></button>
-        <form className="otj-form" onSubmit={addOtjEntry}>
-          <div className="section-heading"><span>Record an activity</span><small>Learning completed away from normal productive duties</small></div>
-          <div className="field-grid">
-            <div className="clean-field is-wide is-required otj-unit-picker"><span>Related Unit</span><details><summary>{course?.units.find((unit) => unit.id === otjDraft.unitId)?.title ?? "Choose a Unit"}</summary><div className="otj-unit-options" role="listbox" aria-label="Choose related Unit">{course?.units.map((unit) => <button type="button" role="option" aria-selected={otjDraft.unitId === unit.id} className={otjDraft.unitId === unit.id ? "is-selected" : ""} key={unit.id} onClick={(event) => { setOtjDraft({ ...otjDraft, unitId: unit.id }); setOtjError(""); event.currentTarget.closest("details")?.removeAttribute("open"); }}>{unit.title}</button>)}</div></details></div>
-            <label className="clean-field is-required"><span>Date</span><input required type="date" value={otjDraft.date} onChange={(event) => { setOtjDraft({ ...otjDraft, date: event.target.value }); setOtjError(""); }} /></label>
-            <label className="clean-field is-required"><span>Hours</span><input required type="number" min="0.1" max="24" step="0.1" inputMode="decimal" value={otjDraft.hours} onChange={(event) => { setOtjDraft({ ...otjDraft, hours: event.target.value }); setOtjError(""); }} placeholder="1.5" /></label>
-            <label className="clean-field is-wide is-required"><span>What did you learn?</span><input required type="text" value={otjDraft.title} onChange={(event) => { setOtjDraft({ ...otjDraft, title: event.target.value }); setOtjError(""); }} placeholder="Example: cavity wall workshop" maxLength={120} /></label>
-          </div>
-          {otjError && <p className="form-error" role="alert">{otjError}</p>}
-          <button className="make-course-button" type="submit">Add OTJ activity</button>
-        </form>
+        <button type="button" className="make-course-button otj-download" disabled={!otjEntries.length || Boolean(exporting)} onClick={() => requestSignedExport({ kind: "otj" })}>{exporting === "otj" ? "Building OTJ pack…" : "Review, employer check & download OTJ"}<span aria-hidden="true">↓</span></button>
+        <div className="otj-employer-check">
+          <span><strong>Employer check</strong><small>Saved OTJ activities can be reviewed and verified in the signed download.</small></span>
+        </div>
         {course?.units.length ? <div className="unit-otj-list">
           <div className="section-heading"><span>OTJ by Unit</span><small>{validTimeline ? `${unitOtjTarget.toFixed(1)}h allocated to each Unit` : "Set course dates for targets"}</small></div>
           {course.units.map((unit) => {
@@ -3506,18 +3508,54 @@ export default function Home() {
       );
     }
 
-    if (view === "unit" && selectedUnit) return (
-      <div className="duty-detail">
-        <header className={`duty-summary${unitProgressDetails(selectedUnit).isComplete ? " is-complete" : ""}`}>
-          <span>Evidence collection</span><h3>{selectedUnit.title}</h3><p>{selectedUnit.summary}</p>
-          {renderUnitCompletionDots(selectedUnit)}
-          <button type="button" className="unit-download-button" disabled={Boolean(exporting)} onClick={() => requestSignedExport({ kind: "unit", unitId: selectedUnit.id })}>{exporting === selectedUnit.id ? "Building evidence pack…" : "Sign & download Unit evidence"}<span aria-hidden="true">↓</span></button>
-        </header>
-        {renderKsbGroup("Skill", "Skills")}
-        {renderKsbGroup("Knowledge", "Knowledge")}
-        {renderKsbGroup("Behaviour", "Behaviours")}
-      </div>
-    );
+    if (view === "unit" && selectedUnit) {
+      const unitLoggedOtj = unitOtjHours(selectedUnit.id);
+      const unitOtjComplete = unitOtjTarget > 0 && unitLoggedOtj >= unitOtjTarget;
+      return (
+        <div className="duty-detail">
+          <header className={`duty-summary${unitProgressDetails(selectedUnit).isComplete ? " is-complete" : ""}`}>
+            <span>Evidence collection</span><h3>{selectedUnit.title}</h3><p>{selectedUnit.summary}</p>
+            {renderUnitCompletionDots(selectedUnit)}
+            <button type="button" className="unit-download-button" disabled={Boolean(exporting)} onClick={() => requestSignedExport({ kind: "unit", unitId: selectedUnit.id })}>{exporting === selectedUnit.id ? "Building evidence pack…" : "Sign & download Unit evidence"}<span aria-hidden="true">↓</span></button>
+          </header>
+
+          <article className={`ksb-item unit-otj-item${unitOtjComplete ? " is-complete" : ""}`}>
+            <button
+              type="button"
+              className="ksb-description-button unit-otj-button"
+              aria-expanded={unitOtjOpen}
+              onClick={() => {
+                setOtjDraft((current) => ({ ...current, unitId: selectedUnit.id }));
+                setOtjError("");
+                setUnitOtjOpen((current) => !current);
+              }}
+            >
+              <span className="ksb-code">OTJ</span>
+              <span className="ksb-description-copy">
+                <strong>Record OTJ {formatOtjHours(unitLoggedOtj)}/{validTimeline ? formatOtjHours(unitOtjTarget) : "—"}hrs</strong>
+                <small>{validTimeline ? "Off-the-job learning allocated to this Unit" : "Set course dates to calculate this Unit target"}</small>
+              </span>
+              <span className="status-dot" aria-hidden="true">{unitOtjComplete ? "✓" : ""}</span>
+            </button>
+
+            {unitOtjOpen && <form className="unit-otj-form" onSubmit={addOtjEntry}>
+              <p>Saved here will also appear in Off The Job for employer review and download.</p>
+              <div className="field-grid">
+                <label className="clean-field is-required"><span>Date</span><input required type="date" value={otjDraft.date} onChange={(event) => { setOtjDraft({ ...otjDraft, date: event.target.value, unitId: selectedUnit.id }); setOtjError(""); }} /></label>
+                <label className="clean-field is-required"><span>Hours</span><input required type="number" min="0.1" max="24" step="0.1" inputMode="decimal" value={otjDraft.hours} onChange={(event) => { setOtjDraft({ ...otjDraft, hours: event.target.value, unitId: selectedUnit.id }); setOtjError(""); }} placeholder="1.5" /></label>
+                <label className="clean-field is-wide is-required"><span>What did you learn?</span><input required type="text" value={otjDraft.title} onChange={(event) => { setOtjDraft({ ...otjDraft, title: event.target.value, unitId: selectedUnit.id }); setOtjError(""); }} placeholder="Example: cavity wall workshop" maxLength={120} /></label>
+              </div>
+              {otjError && <p className="form-error" role="alert">{otjError}</p>}
+              <button className="make-course-button" type="submit">Save OTJ activity</button>
+            </form>}
+          </article>
+
+          {renderKsbGroup("Skill", "Skills")}
+          {renderKsbGroup("Knowledge", "Knowledge")}
+          {renderKsbGroup("Behaviour", "Behaviours")}
+        </div>
+      );
+    }
 
     if (view === "admin-lock") return (
       <form className="admin-lock" onSubmit={unlockAdmin}>
