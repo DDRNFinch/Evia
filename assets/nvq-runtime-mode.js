@@ -19,6 +19,12 @@
     const rounded = Math.round((Number(value) || 0) * 10) / 10;
     return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
   };
+  const setText = (element, value) => {
+    if (element && element.textContent !== String(value)) element.textContent = String(value);
+  };
+  const setAttr = (element, name, value) => {
+    if (element && element.getAttribute(name) !== String(value)) element.setAttribute(name, String(value));
+  };
 
   function recordComplete(record) {
     if (!record) return false;
@@ -92,45 +98,41 @@
         arch.hidden = false;
         const number = arch.querySelector('.arch-number');
         if (code === 'KSB' || code === 'AC') {
-          if (label) label.textContent = 'AC';
-          if (number) number.textContent = `${s.acProgress}%`;
-          arch.setAttribute('aria-label', `Assessment criteria evidence: ${s.acProgress}%. Open AC details`);
+          setText(label, 'AC');
+          setText(number, `${s.acProgress}%`);
+          setAttr(arch, 'aria-label', `Assessment criteria evidence: ${s.acProgress}%. Open AC details`);
         } else if (code === 'OTJ' || code === 'GLH') {
-          if (label) label.textContent = 'GLH';
-          if (number) number.textContent = `${s.glhProgress}%`;
-          arch.setAttribute('aria-label', `Guided learning hours: ${s.glhProgress}%. Open GLH details`);
+          setText(label, 'GLH');
+          setText(number, `${s.glhProgress}%`);
+          setAttr(arch, 'aria-label', `Guided learning hours: ${s.glhProgress}%. Open GLH details`);
         }
       });
     }
 
     textSwap(document.body);
 
-    // AC progress workspace: use official AC references, not synthetic evidence-cluster count.
     document.querySelectorAll('.progress-summary-main').forEach((main) => {
       const label = main.querySelector('span')?.textContent || '';
       const strong = main.querySelector('strong');
       const small = main.querySelector('small');
       if (/AC evidence|Portfolio coverage/i.test(label) && strong) {
-        strong.textContent = `${s.acProgress}%`;
-        if (small) small.textContent = `${s.acDone} of ${s.acTotal} ACs evidenced`;
+        setText(strong, `${s.acProgress}%`);
+        setText(small, `${s.acDone} of ${s.acTotal} ACs evidenced`);
       }
       if (/Guided Learning|GLH/i.test(label) && strong) {
-        strong.textContent = `${s.glhProgress}%`;
-        if (small) small.textContent = `${fmt(s.logged)} of ${fmt(s.glhTarget)} GLH recorded`;
+        setText(strong, `${s.glhProgress}%`);
+        setText(small, `${fmt(s.logged)} of ${fmt(s.glhTarget)} GLH recorded`);
       }
     });
 
-    // Course menu: NVQ has no EPA route.
     document.querySelectorAll('.option-row').forEach((button) => {
       const text = button.textContent || '';
       if (/EPA Practice/i.test(text)) button.hidden = true;
       if (/Guided Learning Hours/i.test(text)) {
-        const note = button.querySelector('small');
-        if (note) note.textContent = `${fmt(s.logged)} of ${fmt(s.glhTarget)} hours recorded`;
+        setText(button.querySelector('small'), `${fmt(s.logged)} of ${fmt(s.glhTarget)} hours recorded`);
       }
     });
 
-    // Unit GLH tiles use each official Unit GLH target.
     document.querySelectorAll('.unit-otj-item').forEach((item) => {
       const unitView = item.closest('.progress-workspace, .view-content, .menu-panel');
       const pageText = unitView?.textContent || document.body.textContent || '';
@@ -138,37 +140,33 @@
       if (!unit) return;
       const u = s.unitStats.get(unit.id);
       if (!u) return;
-      const strong = item.querySelector('.ksb-description-copy strong');
-      const small = item.querySelector('.ksb-description-copy small');
-      if (strong) strong.textContent = `Record GLH ${fmt(u.logged)}/${u.target ? fmt(u.target) : '—'}hrs`;
-      if (small) small.textContent = u.target ? 'Guided learning allocated to this Unit' : 'No Unit GLH target supplied';
-      const dot = item.querySelector('.status-dot');
-      if (dot) dot.textContent = u.progress >= 100 ? '✓' : '';
+      setText(item.querySelector('.ksb-description-copy strong'), `Record GLH ${fmt(u.logged)}/${u.target ? fmt(u.target) : '—'}hrs`);
+      setText(item.querySelector('.ksb-description-copy small'), u.target ? 'Guided learning allocated to this Unit' : 'No Unit GLH target supplied');
+      setText(item.querySelector('.status-dot'), u.progress >= 100 ? '✓' : '');
     });
 
-    // Unit-list mini pies: relabel and use official per-Unit GLH; 100% becomes a yellow tick.
     document.querySelectorAll('.unit-otj-mini').forEach((mini) => {
       const rowEl = mini.closest('button, article, li, .option-row');
       const rowText = rowEl?.textContent || '';
       const unit = (s.c.units || []).find((candidate) => rowText.includes(candidate.title));
-      const b = mini.querySelector('b');
-      if (b) b.textContent = 'GLH';
+      setText(mini.querySelector('b'), 'GLH');
       if (!unit) return;
       const u = s.unitStats.get(unit.id);
       if (!u) return;
-      mini.setAttribute('aria-label', `GLH: ${u.progress}% complete for this Unit`);
+      setAttr(mini, 'aria-label', `GLH: ${u.progress}% complete for this Unit`);
       const pie = mini.querySelector('i');
       if (pie) {
         pie.classList.toggle('nvq-glh-complete', u.progress >= 100);
-        pie.textContent = u.progress >= 100 ? '✓' : '';
-        if (u.progress < 100) pie.style.background = `conic-gradient(from -90deg, #efc33d 0deg ${u.progress * 3.6}deg, rgba(80,79,75,.2) ${u.progress * 3.6}deg 360deg)`;
-        else pie.style.background = 'transparent';
+        setText(pie, u.progress >= 100 ? '✓' : '');
+        const background = u.progress < 100
+          ? `conic-gradient(from -90deg, #efc33d 0deg ${u.progress * 3.6}deg, rgba(80,79,75,.2) ${u.progress * 3.6}deg 360deg)`
+          : 'transparent';
+        if (pie.style.background !== background) pie.style.background = background;
       }
     });
 
-    // Onboarding wording follows the active course type.
     document.querySelectorAll('.onboarding-panel h1').forEach((title) => {
-      if (/Four arches/i.test(title.textContent || '')) title.textContent = 'Three arches. One clear view.';
+      if (/Four arches/i.test(title.textContent || '')) setText(title, 'Three arches. One clear view.');
     });
   }
 
