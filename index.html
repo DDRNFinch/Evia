@@ -37,97 +37,95 @@
     <div id="root"></div>
     <script>
       (() => {
-        const storageKey = "evia-dismissed-reminders-v1";
-        const readDismissed = () => {
-          try { return new Set(JSON.parse(localStorage.getItem(storageKey) || "[]")); } catch { return new Set(); }
+        const storageKey = "evia-dismissed-reminders-v2";
+        const dismissed = new Set((() => {
+          try { return JSON.parse(localStorage.getItem(storageKey) || "[]"); }
+          catch { return []; }
+        })());
+        let gesture = null;
+        let suppressClick = false;
+
+        const labelFor = (button) => (button?.textContent || "").replace(/[›→]/g, "").trim();
+        const persist = () => {
+          try { localStorage.setItem(storageKey, JSON.stringify([...dismissed])); }
+          catch {}
         };
-        const dismissed = readDismissed();
-        const saveDismissed = () => { try { localStorage.setItem(storageKey, JSON.stringify([...dismissed])); } catch {} };
-        const reminderId = (button) => (button.textContent || "").replace(/[›→]/g, "").trim();
-        const updateReminderUi = (menu) => {
+        const applyDismissed = () => {
+          const menu = document.querySelector('.reminder-menu');
           if (!menu) return;
-          const items = [...menu.querySelectorAll('button[role="menuitem"]')];
-          const existingEmpty = menu.querySelector('p');
-          if (!items.length && !existingEmpty) {
+          const buttons = [...menu.querySelectorAll(':scope > button[role="menuitem"]')];
+          buttons.forEach((button) => {
+            if (dismissed.has(labelFor(button))) button.style.display = 'none';
+          });
+          const visible = buttons.filter((button) => button.style.display !== 'none');
+          const existingEmpty = menu.querySelector(':scope > p');
+          if (!visible.length && !existingEmpty) {
             const message = document.createElement('p');
             message.textContent = "You’re up to date.";
             menu.appendChild(message);
-          } else if (items.length && existingEmpty) existingEmpty.remove();
+          } else if (visible.length && existingEmpty) {
+            existingEmpty.style.display = 'none';
+          }
           const badge = document.querySelector('.reminder-button > span');
           if (badge) {
-            if (items.length) badge.textContent = String(Math.min(9, items.length));
-            else badge.remove();
+            if (visible.length) {
+              badge.textContent = String(Math.min(9, visible.length));
+              badge.style.display = '';
+            } else {
+              badge.style.display = 'none';
+            }
           }
         };
-        const dismissReminder = (button) => {
-          const id = reminderId(button);
-          if (id) { dismissed.add(id); saveDismissed(); }
-          const menu = button.closest('.reminder-menu');
-          button.remove();
-          updateReminderUi(menu);
-        };
-        const bindSwipe = (button) => {
-          if (button.dataset.swipeBound === '1') return;
-          button.dataset.swipeBound = '1';
-          let startX = 0, startY = 0, currentX = 0, tracking = false, moved = false;
-          const reset = () => {
-            button.classList.remove('is-swiping');
-            button.style.transform = '';
-            button.style.opacity = '';
-            tracking = false;
-            moved = false;
-          };
-          button.addEventListener('touchstart', (event) => {
-            const touch = event.touches[0];
-            startX = currentX = touch.clientX;
-            startY = touch.clientY;
-            tracking = true;
-            moved = false;
-            button.classList.add('is-swiping');
-          }, { passive: true });
-          button.addEventListener('touchmove', (event) => {
-            if (!tracking) return;
-            const touch = event.touches[0];
-            currentX = touch.clientX;
-            const dx = Math.max(0, Math.min(190, currentX - startX));
-            const dy = Math.abs(touch.clientY - startY);
-            if (dy > 30 && dx < 20) { reset(); return; }
-            moved = moved || dx > 8;
-            button.style.transform = `translateX(${dx}px)`;
-            button.style.opacity = String(Math.max(.3, 1 - dx / 220));
-          }, { passive: true });
-          button.addEventListener('touchend', () => {
-            if (!tracking) return;
-            const dx = Math.max(0, currentX - startX);
-            if (dx >= 72) dismissReminder(button); else reset();
-          }, { passive: true });
-          button.addEventListener('touchcancel', reset, { passive: true });
-          button.addEventListener('click', (event) => {
-            if (!moved) return;
+
+        document.addEventListener('click', (event) => {
+          const pill = event.target.closest?.('.reminder-menu > button[role="menuitem"]');
+          if (suppressClick && pill) {
             event.preventDefault();
             event.stopPropagation();
-            reset();
-          }, true);
+            suppressClick = false;
+            return;
+          }
+          if (event.target.closest?.('.reminder-button')) setTimeout(applyDismissed, 0);
+        }, true);
+
+        document.addEventListener('pointerdown', (event) => {
+          const button = event.target.closest?.('.reminder-menu > button[role="menuitem"]');
+          if (!button) return;
+          gesture = { button, startX: event.clientX, startY: event.clientY, currentX: event.clientX, pointerId: event.pointerId };
+          button.classList.add('is-swiping');
+          try { button.setPointerCapture(event.pointerId); } catch {}
+        });
+
+        document.addEventListener('pointermove', (event) => {
+          if (!gesture || event.pointerId !== gesture.pointerId) return;
+          gesture.currentX = event.clientX;
+          const dx = Math.max(0, Math.min(190, event.clientX - gesture.startX));
+          const dy = Math.abs(event.clientY - gesture.startY);
+          if (dy > 34 && dx < 20) return;
+          gesture.button.style.transform = `translateX(${dx}px)`;
+          gesture.button.style.opacity = String(Math.max(.35, 1 - dx / 220));
+        });
+
+        const finishGesture = (event) => {
+          if (!gesture || event.pointerId !== gesture.pointerId) return;
+          const { button, startX, currentX } = gesture;
+          const dx = Math.max(0, currentX - startX);
+          button.classList.remove('is-swiping');
+          if (dx >= 72) {
+            const label = labelFor(button);
+            if (label) { dismissed.add(label); persist(); }
+            button.style.transform = 'translateX(190px)';
+            button.style.opacity = '0';
+            setTimeout(() => { button.style.display = 'none'; applyDismissed(); }, 170);
+            suppressClick = true;
+          } else {
+            button.style.transform = '';
+            button.style.opacity = '';
+          }
+          gesture = null;
         };
-        const scan = () => {
-          document.querySelectorAll('.row-chevron').forEach((node) => node.remove());
-          document.querySelectorAll('.status-dot').forEach((node) => { if ((node.textContent || '').trim() === '›') node.textContent = ''; });
-          document.querySelectorAll('button span[aria-hidden="true"]').forEach((node) => {
-            if (['›', '→'].includes((node.textContent || '').trim())) node.remove();
-          });
-          document.querySelectorAll('.reminder-menu').forEach((menu) => {
-            menu.querySelectorAll('button[role="menuitem"]').forEach((button) => {
-              const id = reminderId(button);
-              if (dismissed.has(id)) button.remove(); else bindSwipe(button);
-            });
-            updateReminderUi(menu);
-          });
-        };
-        const start = () => {
-          scan();
-          new MutationObserver(scan).observe(document.documentElement, { childList: true, subtree: true });
-        };
-        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true }); else start();
+        document.addEventListener('pointerup', finishGesture);
+        document.addEventListener('pointercancel', finishGesture);
       })();
     </script>
   </body>
