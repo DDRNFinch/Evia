@@ -5168,3 +5168,102 @@ html {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
 }
 
+
+
+/* Evidence choice wording, yellow completion ticks and plain portfolio download status */
+.evidence-option-choice {
+  display: grid;
+  gap: 0.44rem;
+}
+
+.evidence-option-or {
+  display: block;
+  color: #8a8882;
+  font-size: 0.58rem;
+  font-weight: 560;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+.evidence-option-pill.is-complete {
+  border-color: rgba(60, 60, 67, 0.09);
+}
+
+.evidence-option-pill.is-complete em,
+.evidence-option-pill em.is-tick {
+  color: #d2a719 !important;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.unit-otj-mini i.unit-otj-complete {
+  display: grid;
+  width: 10px;
+  height: 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent !important;
+  color: #d2a719;
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 750;
+  line-height: 10px;
+  place-items: center;
+}
+
+.download-unit-list {
+  gap: 0;
+}
+
+.download-unit-text {
+  display: flex;
+  min-height: 3.65rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.7rem 0.1rem;
+  border-bottom: 1px solid rgba(60, 60, 67, 0.08);
+  background: transparent;
+}
+
+.download-unit-text > span {
+  display: grid;
+  min-width: 0;
+  gap: 0.18rem;
+}
+
+.download-unit-text strong {
+  color: #424245;
+  font-size: 0.7rem;
+  font-weight: 430;
+}
+
+.download-unit-text small {
+  color: #89898e;
+  font-size: 0.58rem;
+}
+
+.download-unit-text em,
+.download-unit-action {
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 0.61rem;
+  font-style: normal;
+  font-weight: 500;
+}
+
+.download-unit-text em {
+  color: #8c8a84;
+}
+
+.download-unit-action {
+  color: #806113;
+  cursor: pointer;
+}
+
+.download-unit-action:disabled {
+  opacity: 0.55;
+  cursor: default;
+}

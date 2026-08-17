@@ -180,12 +180,12 @@ type EviaGuideStep = {
 
 const evidenceOptions: Record<KsbType, { method: EvidenceMethod; label: string; rule: string }[]> = {
   Skill: [
-    { method: "photo", label: "3 photos", rule: "Three clear, specific photos" },
-    { method: "video", label: "1 video", rule: "One continuous practical video" },
+    { method: "photo", label: "Photo", rule: "Three clear, specific photos" },
+    { method: "video", label: "Video", rule: "One continuous practical video" },
   ],
   Knowledge: [
-    { method: "written", label: "Written statement", rule: "One written statement" },
-    { method: "audio", label: "Audio explanation", rule: "One audio explanation" },
+    { method: "written", label: "Statement", rule: "One written statement" },
+    { method: "audio", label: "Audio", rule: "One audio explanation" },
   ],
   Behaviour: [
     { method: "reflection", label: "Reflection", rule: "One reflective account" },
@@ -3118,7 +3118,14 @@ export default function Home() {
           <div className="download-unit-list">{course.units.map((unit) => {
             const codes = new Set(unit.ksbs.map((ksb) => ksb.code));
             const covered = [...codes].filter((code) => completedKsbCodes.has(code)).length;
-            return <button type="button" key={unit.id} disabled={Boolean(exporting)} onClick={() => requestSignedExport({ kind: "unit", unitId: unit.id })}><span><strong>{unit.title}</strong><small>{covered} of {codes.size} KSBs complete · signed PDF + attached media</small></span><em>{exporting === unit.id ? "Building…" : "Sign & download"}</em></button>;
+            const hasAnyEvidence = evidenceRecords.some((record) => codes.has(record.ksbCode));
+            const readyToDownload = covered === codes.size && codes.size > 0;
+            return <div className={`download-unit-text${readyToDownload ? " is-ready" : hasAnyEvidence ? " is-progress" : " is-not-started"}`} key={unit.id}>
+              <span><strong>{unit.title}</strong><small>{covered} of {codes.size} KSBs evidenced</small></span>
+              {readyToDownload
+                ? <button type="button" className="download-unit-action" disabled={Boolean(exporting)} onClick={() => requestSignedExport({ kind: "unit", unitId: unit.id })}>{exporting === unit.id ? "Building…" : "Sign & download"}</button>
+                : <em>{hasAnyEvidence ? "In progress" : "Not started"}</em>}
+            </div>;
           })}</div>
         </div>
       );
@@ -3266,11 +3273,14 @@ export default function Home() {
       <div className="evidence-wizard">
         <div className="evia-guidance"><span className="guidance-mark" aria-hidden="true">E</span><div><strong>Choose one evidence route.</strong><p>I’ll explain every step and save it directly against {activeEvidenceKsb.code}. A Skill needs three specific photos or one clear video; Knowledge and Behaviours use the two routes shown below.</p></div></div>
         <header className="evidence-criterion"><span>{activeEvidenceKsb.code} · {activeEvidenceKsb.type}</span><h3>{activeEvidenceKsb.description}</h3></header>
-        <div className="evidence-option-list">{evidenceOptions[activeEvidenceKsb.type].map((option) => {
+        <div className="evidence-option-list">{evidenceOptions[activeEvidenceKsb.type].map((option, index) => {
           const record = evidenceRecords.find((item) => item.ksbCode === activeEvidenceKsb.code && item.method === option.method);
           const progress = evidenceRecordProgress(record);
           const complete = record ? evidenceRecordComplete(record) : false;
-          return <button type="button" className={`evidence-option-pill${complete ? " is-complete" : ""}`} style={{ background: complete ? "rgba(221, 239, 216, .92)" : `linear-gradient(90deg, rgba(247, 210, 88, .32) ${progress}%, rgba(252, 250, 244, .9) ${progress}%)` }} key={option.method} onClick={() => startEvidence(activeEvidenceKsb, option.method)}><span><strong>{option.label}</strong><small>{option.rule}</small></span><em>{complete ? "Complete" : progress ? `${progress}%` : "Start"}</em></button>;
+          return <div className="evidence-option-choice" key={option.method}>
+            {index > 0 && <span className="evidence-option-or">OR</span>}
+            <button type="button" className={`evidence-option-pill${complete ? " is-complete" : ""}`} style={{ background: !complete && progress ? `linear-gradient(90deg, rgba(247, 210, 88, .32) ${progress}%, rgba(252, 250, 244, .9) ${progress}%)` : "rgba(252, 250, 244, .9)" }} onClick={() => startEvidence(activeEvidenceKsb, option.method)}><span><strong>{option.label}</strong><small>{option.rule}</small></span><em className={complete ? "is-tick" : ""}>{complete ? "✓" : progress ? `${progress}%` : "Start"}</em></button>
+          </div>;
         })}</div>
         {rplCodes.includes(activeEvidenceKsb.code) && <div className="rpl-note"><span>RPL</span><p>This KSB has been marked as recognised prior learning. New evidence can still be added.</p></div>}
       </div>
@@ -3506,12 +3516,14 @@ export default function Home() {
                     {renderUnitCompletionDots(unit)}
                     <span className="unit-otj-mini" aria-label={`OTJ: ${unitOtjPercentage}% complete for this Unit`}>
                       <b>OTJ</b>
-                      <i
-                        aria-hidden="true"
-                        style={{
-                          background: `conic-gradient(from -90deg, #efc33d 0deg ${unitOtjPercentage * 3.6}deg, rgba(80, 79, 75, 0.2) ${unitOtjPercentage * 3.6}deg 360deg)`,
-                        }}
-                      />
+                      {unitOtjPercentage >= 100
+                        ? <i className="unit-otj-complete" aria-hidden="true">✓</i>
+                        : <i
+                            aria-hidden="true"
+                            style={{
+                              background: `conic-gradient(from -90deg, #efc33d 0deg ${unitOtjPercentage * 3.6}deg, rgba(80, 79, 75, 0.2) ${unitOtjPercentage * 3.6}deg 360deg)`,
+                            }}
+                          />}
                     </span>
                   </span>
                 </span>
@@ -3531,7 +3543,7 @@ export default function Home() {
           <header className={`duty-summary${unitProgressDetails(selectedUnit).isComplete ? " is-complete" : ""}`}>
             <span>Evidence collection</span><h3>{selectedUnit.title}</h3><p>{selectedUnit.summary}</p>
             {renderUnitCompletionDots(selectedUnit)}
-            <button type="button" className="unit-download-button" disabled={Boolean(exporting)} onClick={() => requestSignedExport({ kind: "unit", unitId: selectedUnit.id })}>{exporting === selectedUnit.id ? "Building evidence pack…" : "Sign & download Unit evidence"}<span aria-hidden="true">↓</span></button>
+            
           </header>
 
           <article className={`ksb-item unit-otj-item${unitOtjComplete ? " is-complete" : ""}`}>
