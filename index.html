@@ -15,6 +15,7 @@
     <link rel="stylesheet" crossorigin href="/Evia/assets/index-D_kAPZ6L.css">
     <script defer src="/Evia/assets/nvq-course-builder.js"></script>
     <script defer src="/Evia/assets/nvq-match-differences.js"></script>
+    <script defer src="/Evia/assets/nvq-runtime-mode.js"></script>
     <link rel="stylesheet" href="/Evia/assets/nvq-course-builder.css">
     <style>
       .unit-dot-group { gap: 0.24rem; }
@@ -42,6 +43,26 @@
         box-shadow: 0 18px 42px rgba(38, 38, 42, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
         backdrop-filter: blur(24px) saturate(1.08) !important;
         -webkit-backdrop-filter: blur(24px) saturate(1.08) !important;
+      }
+      .evia-nvq-course .progress-row.nvq-progress-row {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: clamp(0.8rem, 4vw, 1.45rem) !important;
+      }
+      .evia-nvq-course .progress-row.nvq-progress-row .progress-arch[hidden],
+      .evia-nvq-course .option-row[hidden] { display: none !important; }
+      .evia-nvq-course .unit-otj-mini i.nvq-glh-complete {
+        display: grid !important;
+        width: 12px !important;
+        height: 12px !important;
+        place-items: center;
+        border: 0 !important;
+        border-radius: 0 !important;
+        color: #efc33d;
+        font-size: 0.78rem;
+        font-style: normal;
+        font-weight: 800;
+        line-height: 1;
+        box-shadow: none !important;
       }
     </style>
   </head>
