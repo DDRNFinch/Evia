@@ -1,0 +1,81 @@
+name: Unlimited OTJ learning text
+
+on:
+  push:
+    branches: [agent/otj-unlimited-text]
+    paths:
+      - .github/workflows/otj-unlimited-text.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/otj-unlimited-text
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Apply source change
+        run: |
+          python3 _agent/otj_unlimited_text.py
+          grep -q 'Describe what you did and what you learned' app/page.tsx
+          ! grep -q 'placeholder="Example: cavity wall workshop" maxLength={120}' app/page.tsx
+          grep -q 'Unlimited Unit OTJ learning notes' app/globals.css
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build GitHub Pages bundle
+        run: |
+          tail -n +2 app/globals.css > static.css
+          cat > static-entry.tsx <<'EOF'
+          import { createRoot } from 'react-dom/client';
+          import Home from './app/page';
+          import './static.css';
+          const root = document.getElementById('root');
+          if (!root) throw new Error('Missing #root');
+          createRoot(root).render(<Home />);
+          EOF
+          cat > static-vite.config.ts <<'EOF'
+          import { defineConfig } from 'vite';
+          import react from '@vitejs/plugin-react';
+          export default defineConfig({
+            base: '/Evia/',
+            plugins: [react()],
+            build: {
+              outDir: 'static-dist',
+              emptyOutDir: true,
+              cssCodeSplit: false,
+              rollupOptions: {
+                input: 'static-entry.tsx',
+                output: { entryFileNames: 'app.js', assetFileNames: 'app.[ext]' },
+              },
+            },
+          });
+          EOF
+          npx vite build --config static-vite.config.ts
+          test -f static-dist/app.js
+          CSS_FILE="$(find static-dist -maxdepth 1 -type f -name '*.css' | head -1)"
+          test -n "$CSS_FILE"
+          cp static-dist/app.js assets/index-Bv8ZljA6.js
+          cp "$CSS_FILE" assets/index-D_kAPZ6L.css
+          node --check assets/index-Bv8ZljA6.js
+          grep -q 'Describe what you did and what you learned' assets/index-Bv8ZljA6.js
+          grep -q 'unit-otj-form .clean-field textarea' assets/index-D_kAPZ6L.css
+          rm -rf static-dist static-entry.tsx static-vite.config.ts static.css
+
+      - name: Commit generated update
+        run: |
+          git config user.name "Evia Upload"
+          git config user.email "actions@users.noreply.github.com"
+          git add app/page.tsx app/globals.css assets/index-Bv8ZljA6.js assets/index-D_kAPZ6L.css
+          git commit -m "Allow unlimited Unit OTJ learning text"
+          git push origin HEAD:agent/otj-unlimited-text
