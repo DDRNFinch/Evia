@@ -16,6 +16,7 @@ type View =
   | "study"
   | "portfolio"
   | "settings"
+  | "install-app"
   | "profile"
   | "manage-course"
   | "import-course"
@@ -28,6 +29,11 @@ type View =
   | "placeholder";
 type KsbType = "Skill" | "Knowledge" | "Behaviour";
 type CourseSource = "auto" | "layout" | "file";
+
+type EviaInstallPrompt = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+};
 
 type CourseKsb = {
   code: string;
@@ -781,12 +787,45 @@ export default function Home() {
   const [adminError, setAdminError] = useState("");
   const [placeholder, setPlaceholder] = useState({ title: "", back: "root" as View });
   const [notice, setNotice] = useState("");
+  const [installPrompt, setInstallPrompt] = useState<EviaInstallPrompt | null>(null);
+  const [isInstalled, setIsInstalled] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const navigatorWithStandalone = navigator as Navigator & { standalone?: boolean };
+    return window.matchMedia("(display-mode: standalone)").matches
+      || navigatorWithStandalone.standalone === true;
+  });
   const transitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => setReady(true));
     return () => cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
+    const captureInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallPrompt(event as EviaInstallPrompt);
+    };
+    const markInstalled = () => {
+      setIsInstalled(true);
+      setInstallPrompt(null);
+    };
+
+    window.addEventListener("beforeinstallprompt", captureInstallPrompt);
+    window.addEventListener("appinstalled", markInstalled);
+
+    if ("serviceWorker" in navigator) {
+      const serviceWorkerUrl = new URL("./sw.js", window.location.href).toString();
+      navigator.serviceWorker.register(serviceWorkerUrl).catch(() => {
+        // Evia remains usable online when service-worker registration is unavailable.
+      });
+    }
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", captureInstallPrompt);
+      window.removeEventListener("appinstalled", markInstalled);
+    };
   }, []);
 
   useEffect(() => {
@@ -889,6 +928,23 @@ export default function Home() {
     noticeTimer.current = setTimeout(() => setNotice(""), 2800);
   };
 
+  const installEvia = async () => {
+    if (isInstalled) {
+      showNotice("Evia is already installed on this device.");
+      return;
+    }
+    if (!installPrompt) {
+      showNotice("Use your browser menu and choose Add to Home Screen.");
+      return;
+    }
+    await installPrompt.prompt();
+    const choice = await installPrompt.userChoice;
+    if (choice.outcome === "accepted") {
+      showNotice("Evia is being added to your device.");
+    }
+    setInstallPrompt(null);
+  };
+
   const navigate = (nextView: View) => {
     if (panelLeaving || nextView === view) return;
     setPanelLeaving(true);
@@ -916,7 +972,7 @@ export default function Home() {
 
   const goBack = () => {
     const targets: Partial<Record<View, View>> = {
-      course: "root", study: "root", portfolio: "root", settings: "root", profile: "settings",
+      course: "root", study: "root", portfolio: "root", settings: "root", "install-app": "settings", profile: "settings",
       "manage-course": courseManagerBack, "import-course": "manage-course", "paste-layout": "manage-course",
       "build-course": "manage-course", units: "course", unit: "units", "admin-lock": "settings", admin: "settings",
     };
@@ -1025,6 +1081,7 @@ export default function Home() {
 
   const viewTitles: Record<View, string> = {
     root: "", course: "My Course", study: "Self Study", portfolio: "My Portfolio", settings: "Settings",
+    "install-app": "Install Evia",
     profile: "My Profile", "manage-course": "Manage My Course", "import-course": "Import Course File",
     "paste-layout": "Paste Course Layout", "build-course": "Let Evia Build It", units: "Units",
     unit: "Course Unit", "admin-lock": "Admin Settings",
@@ -1032,7 +1089,7 @@ export default function Home() {
   };
 
   const workspaceViews: View[] = ["manage-course", "import-course", "paste-layout", "build-course", "units", "unit"];
-  const tallViews: View[] = ["root", "settings", "admin"];
+  const tallViews: View[] = ["root", "settings", "install-app", "admin"];
   const shellClasses = `menu-shell${workspaceViews.includes(view) ? " is-workspace" : ""}${tallViews.includes(view) ? " is-tall" : ""}`;
 
   const renderKsbGroup = (type: KsbType, title: string, methods: string[]) => {
@@ -1098,10 +1155,26 @@ export default function Home() {
 
     if (view === "settings") return (
       <div className="option-list four-options">
+        <OptionRow title="Install Evia" note={isInstalled ? "Installed on this device" : "Add Evia to this device"} onClick={() => navigate("install-app")} />
         <OptionRow title="My Profile" onClick={() => navigate("profile")} />
         <OptionRow title="General Settings" onClick={() => openPlaceholder("General Settings", "settings")} />
         <OptionRow title="Accessibility" onClick={() => openPlaceholder("Accessibility", "settings")} />
         <OptionRow title="Admin Settings" note="Locked" onClick={() => navigate("admin-lock")} />
+      </div>
+    );
+
+    if (view === "install-app") return (
+      <div className="install-app-panel">
+        <span className="install-app-icon" style={{ backgroundImage: 'url("./icon-192.png")' }} aria-hidden="true" />
+        <div className="install-app-copy">
+          <h3>{isInstalled ? "Evia is installed" : "Keep Evia on your phone"}</h3>
+          <p>Open Evia full screen from your home screen, with your course saved on this device.</p>
+        </div>
+        <button className="install-app-button" type="button" onClick={installEvia} disabled={isInstalled}>
+          {isInstalled ? "Installed" : installPrompt ? "Install Evia" : "Add to Home Screen"}
+          {!isInstalled && <span aria-hidden="true">→</span>}
+        </button>
+        <p className="install-app-help"><strong>Android:</strong> use Chrome’s menu and tap Install app. <strong>iPhone:</strong> use Safari’s Share menu and tap Add to Home Screen.</p>
       </div>
     );
 

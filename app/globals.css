@@ -2014,6 +2014,84 @@ body {
   background: rgba(187, 145, 23, 0.55);
 }
 
+.install-app-panel {
+  display: grid;
+  min-height: 100%;
+  align-content: center;
+  justify-items: center;
+  gap: 0.78rem;
+  padding: 0.8rem 1rem 1.45rem;
+  text-align: center;
+}
+
+.install-app-icon {
+  display: block;
+  width: 3.9rem;
+  height: 3.9rem;
+  border-radius: 1.15rem;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  box-shadow: 0 10px 28px rgba(134, 101, 8, 0.13);
+}
+
+.install-app-copy h3 {
+  margin: 0;
+  color: #333336;
+  font-size: 1.02rem;
+  font-weight: 430;
+  letter-spacing: -0.018em;
+}
+
+.install-app-copy p,
+.install-app-help {
+  max-width: 24rem;
+  margin: 0.4rem 0 0;
+  color: #7d7d82;
+  font-size: 0.69rem;
+  font-weight: 360;
+  line-height: 1.45;
+}
+
+.install-app-button {
+  display: flex;
+  min-height: 3.25rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0 1.45rem;
+  border: 1px solid rgba(238, 197, 71, 0.38);
+  border-radius: 999px;
+  background: rgba(239, 195, 61, 0.22);
+  color: #5e4910;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 420;
+  transition: background 0.2s ease, translate 0.24s var(--ease-out);
+}
+
+.install-app-button:hover,
+.install-app-button:focus-visible {
+  outline: none;
+  background: rgba(239, 195, 61, 0.32);
+  translate: 0 -1px;
+}
+
+.install-app-button:disabled {
+  cursor: default;
+  opacity: 0.58;
+  translate: none;
+}
+
+.install-app-help {
+  margin-top: 0.05rem;
+}
+
+.install-app-help strong {
+  color: #555559;
+  font-weight: 480;
+}
+
 .app-toast {
   position: absolute;
   z-index: 30;
