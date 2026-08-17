@@ -1,0 +1,48 @@
+name: OTJ popup background
+
+on:
+  push:
+    branches:
+      - agent/otj-popup-background
+    paths:
+      - .otj-popup-background/READY
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/otj-popup-background
+          fetch-depth: 0
+      - name: Add popup surface styling
+        run: |
+          cat >> app/globals.css <<'EOF'
+
+/* OTJ Unit picker popup surface */
+.otj-unit-options {
+  padding: 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 1.15rem;
+  background: rgba(248, 248, 250, 0.94);
+  box-shadow:
+    0 18px 42px rgba(38, 38, 42, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(24px) saturate(1.08);
+  -webkit-backdrop-filter: blur(24px) saturate(1.08);
+}
+EOF
+          cat >> assets/index-D_kAPZ6L.css <<'EOF'
+
+.otj-unit-options{padding:.55rem;border:1px solid rgba(255,255,255,.9);border-radius:1.15rem;background:rgba(248,248,250,.94);box-shadow:0 18px 42px rgba(38,38,42,.12),inset 0 1px 0 rgba(255,255,255,.92);backdrop-filter:blur(24px) saturate(1.08);-webkit-backdrop-filter:blur(24px) saturate(1.08)}
+EOF
+          rm -rf .otj-popup-background
+          rm -f .github/workflows/otj-popup-background.yml
+          git config user.name "Evia Upload"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "Add popup background to OTJ Unit picker"
+          git push origin HEAD:agent/otj-popup-background
