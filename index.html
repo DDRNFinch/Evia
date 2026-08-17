@@ -13,8 +13,122 @@
     <title>Evia — Apprentice Vocational Assistant</title>
     <script type="module" crossorigin src="/Evia/assets/index-Bv8ZljA6.js"></script>
     <link rel="stylesheet" crossorigin href="/Evia/assets/index-D_kAPZ6L.css">
+    <style>
+      .unit-dot-group { gap: 0.24rem; }
+      .unit-dot-group b { display: inline-block; width: 1ch; overflow: hidden; white-space: nowrap; flex: 0 0 auto; }
+      .unit-dot-group > span { display: grid !important; grid-auto-flow: column; grid-auto-columns: 3px; grid-template-rows: repeat(2, 3px); gap: 2px; min-height: 8px; align-content: center; }
+      .unit-dot-group i { width: 3px !important; height: 3px !important; box-shadow: none !important; }
+      .unit-dot-group i.is-complete { box-shadow: none !important; }
+      .row-chevron,
+      .make-course-button > span[aria-hidden="true"],
+      .inline-action > span[aria-hidden="true"],
+      .empty-course-state button span[aria-hidden="true"],
+      .empty-evidence button span[aria-hidden="true"],
+      .onboarding-action span[aria-hidden="true"],
+      .evia-plus-next span[aria-hidden="true"],
+      .name-pill button span[aria-hidden="true"],
+      .reminder-menu > button[role="menuitem"] > span[aria-hidden="true"] { display: none !important; }
+      .status-dot:empty { display: none !important; }
+      .reminder-menu > button[role="menuitem"] { touch-action: pan-y; transition: transform .18s ease, opacity .18s ease; }
+      .reminder-menu > button[role="menuitem"].is-swiping { transition: none; }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      (() => {
+        const storageKey = "evia-dismissed-reminders-v1";
+        const readDismissed = () => {
+          try { return new Set(JSON.parse(localStorage.getItem(storageKey) || "[]")); } catch { return new Set(); }
+        };
+        const dismissed = readDismissed();
+        const saveDismissed = () => { try { localStorage.setItem(storageKey, JSON.stringify([...dismissed])); } catch {} };
+        const reminderId = (button) => (button.textContent || "").replace(/[›→]/g, "").trim();
+        const updateReminderUi = (menu) => {
+          if (!menu) return;
+          const items = [...menu.querySelectorAll('button[role="menuitem"]')];
+          const existingEmpty = menu.querySelector('p');
+          if (!items.length && !existingEmpty) {
+            const message = document.createElement('p');
+            message.textContent = "You’re up to date.";
+            menu.appendChild(message);
+          } else if (items.length && existingEmpty) existingEmpty.remove();
+          const badge = document.querySelector('.reminder-button > span');
+          if (badge) {
+            if (items.length) badge.textContent = String(Math.min(9, items.length));
+            else badge.remove();
+          }
+        };
+        const dismissReminder = (button) => {
+          const id = reminderId(button);
+          if (id) { dismissed.add(id); saveDismissed(); }
+          const menu = button.closest('.reminder-menu');
+          button.remove();
+          updateReminderUi(menu);
+        };
+        const bindSwipe = (button) => {
+          if (button.dataset.swipeBound === '1') return;
+          button.dataset.swipeBound = '1';
+          let startX = 0, startY = 0, currentX = 0, tracking = false, moved = false;
+          const reset = () => {
+            button.classList.remove('is-swiping');
+            button.style.transform = '';
+            button.style.opacity = '';
+            tracking = false;
+            moved = false;
+          };
+          button.addEventListener('touchstart', (event) => {
+            const touch = event.touches[0];
+            startX = currentX = touch.clientX;
+            startY = touch.clientY;
+            tracking = true;
+            moved = false;
+            button.classList.add('is-swiping');
+          }, { passive: true });
+          button.addEventListener('touchmove', (event) => {
+            if (!tracking) return;
+            const touch = event.touches[0];
+            currentX = touch.clientX;
+            const dx = Math.max(0, Math.min(190, currentX - startX));
+            const dy = Math.abs(touch.clientY - startY);
+            if (dy > 30 && dx < 20) { reset(); return; }
+            moved = moved || dx > 8;
+            button.style.transform = `translateX(${dx}px)`;
+            button.style.opacity = String(Math.max(.3, 1 - dx / 220));
+          }, { passive: true });
+          button.addEventListener('touchend', () => {
+            if (!tracking) return;
+            const dx = Math.max(0, currentX - startX);
+            if (dx >= 72) dismissReminder(button); else reset();
+          }, { passive: true });
+          button.addEventListener('touchcancel', reset, { passive: true });
+          button.addEventListener('click', (event) => {
+            if (!moved) return;
+            event.preventDefault();
+            event.stopPropagation();
+            reset();
+          }, true);
+        };
+        const scan = () => {
+          document.querySelectorAll('.row-chevron').forEach((node) => node.remove());
+          document.querySelectorAll('.status-dot').forEach((node) => { if ((node.textContent || '').trim() === '›') node.textContent = ''; });
+          document.querySelectorAll('button span[aria-hidden="true"]').forEach((node) => {
+            if (['›', '→'].includes((node.textContent || '').trim())) node.remove();
+          });
+          document.querySelectorAll('.reminder-menu').forEach((menu) => {
+            menu.querySelectorAll('button[role="menuitem"]').forEach((button) => {
+              const id = reminderId(button);
+              if (dismissed.has(id)) button.remove(); else bindSwipe(button);
+            });
+            updateReminderUi(menu);
+          });
+        };
+        const start = () => {
+          scan();
+          new MutationObserver(scan).observe(document.documentElement, { childList: true, subtree: true });
+        };
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true }); else start();
+      })();
+    </script>
   </body>
 </html>
