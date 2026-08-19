@@ -1,9 +1,9 @@
 {
-  "version": "29",
+  "version": "30",
   "title": "A new Evia update is ready",
   "details": [
-    "Site Carpenter and Architectural Joiner now each have their own pathway-specific EPA practice",
-    "Carpentry EPA practice now includes a 40-question multiple-choice mock, a pathway-specific practical mock and a 10-question recorded interview mock",
-    "Bricklayer EPA practice has not been changed, and EPA content is selected from the learner's current course and pathway"
+    "Trowel Occupations Level 3 (6570-05) is now available with all eight mandatory units and the learner's selected optional unit",
+    "All official assessment criteria are mapped holistically into practical and theory evidence themes while the exact Unit, learning outcome and AC references stay underneath",
+    "Trowel Occupations uses TOC, AC, GLH and Units progress and does not use an EPA mock"
   ]
 }
