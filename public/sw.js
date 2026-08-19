@@ -1,4 +1,4 @@
-const CACHE_NAME = "evia-shell-v31";
+const CACHE_NAME = "evia-shell-v32";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -13,6 +13,7 @@ const APP_SHELL = [
   "./assets/evia-admin-epa.css",
   "./assets/evia-course-epa.css",
   "./assets/evia-rpl-evidence.css",
+  "./assets/evia-rpl-course.css",
   "./assets/evia-otj.css",
   "./assets/evia-toc.css",
   "./assets/evia-export-status.css",
@@ -21,6 +22,7 @@ const APP_SHELL = [
   "./assets/evia-nvq.css",
   "./assets/evia-trowel-meta.js",
   "./assets/evia-trowel-data.js",
+  "./assets/evia-trowel-ac-text.js",
   "./assets/evia-trowel-loader.js",
   "./assets/evia-trowel-fetch.js",
   "./assets/evia-course-context.js",
@@ -41,6 +43,7 @@ const APP_SHELL = [
   "./assets/evia-epa-shuffle.js",
   "./assets/evia-epa-interview-voice.js",
   "./assets/evia-rpl-evidence.js",
+  "./assets/evia-rpl-course.js",
   "./assets/evia-otj.js",
   "./assets/evia-otj-course.js",
   "./assets/evia-otj-arch.js",
