@@ -1,9 +1,9 @@
 {
-  "version": "8",
+  "version": "9",
   "title": "A new Evia update is ready",
   "details": [
-    "Reliable in-app update checking and installation",
-    "Take Photo and Record Video now use separate native camera actions",
-    "Latest evidence capture and PDF improvements"
+    "The first evidence capture now shows Take photo and Record video immediately",
+    "Take photo opens photo capture and Record video opens video capture",
+    "The old combined gallery-style picker has been removed"
   ]
 }
