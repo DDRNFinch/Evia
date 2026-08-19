@@ -1,10 +1,13 @@
-const CACHE_NAME = "evia-shell-v2";
+const CACHE_NAME = "evia-shell-v3";
 const APP_SHELL = [
   "./",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",
   "./apple-touch-icon.png",
+  "./assets/index-D_kAPZ6L.css",
+  "./assets/evia-selfobs-live.css",
+  "./assets/evia-selfobs-live.js",
 ];
 
 self.addEventListener("install", (event) => {
@@ -29,7 +32,7 @@ self.addEventListener("fetch", (event) => {
 
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request)
+      fetch(request, { cache: "no-store" })
         .then((response) => {
           const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put("./", copy));
@@ -41,15 +44,14 @@ self.addEventListener("fetch", (event) => {
   }
 
   event.respondWith(
-    caches.match(request).then((cached) => {
-      const fresh = fetch(request).then((response) => {
+    fetch(request)
+      .then((response) => {
         if (response.ok) {
           const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
         }
         return response;
-      });
-      return cached || fresh;
-    }),
+      })
+      .catch(() => caches.match(request)),
   );
 });
