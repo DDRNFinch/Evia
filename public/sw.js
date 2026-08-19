@@ -1,6 +1,7 @@
-const CACHE_NAME = "evia-shell-v12";
+const CACHE_NAME = "evia-shell-v13";
 const APP_SHELL = [
   "./",
+  "./index.html",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",
@@ -12,7 +13,11 @@ const APP_SHELL = [
   "./assets/evia-selfobs-live.js",
   "./assets/evia-selfobs-fixes.js",
   "./assets/evia-compact-export.js",
+  "./assets/evia-storage-guard.js",
   "./assets/evia-updater.js",
+  "./app/evia-site-data-1.ts",
+  "./app/evia-site-data-2.ts",
+  "./app/evia-site-data-3.ts",
 ];
 
 self.addEventListener("install", (event) => {
@@ -40,34 +45,42 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
 
-  const alwaysFresh = url.pathname.endsWith("/update.json") || url.pathname.endsWith("/index.html") || url.pathname.endsWith("/sw.js");
-  if (alwaysFresh) {
+  if (url.pathname.endsWith("/update.json") || url.pathname.endsWith("/sw.js")) {
     event.respondWith(fetch(request, { cache: "no-store" }));
     return;
   }
 
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request, { cache: "no-store" })
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put("./", copy));
-          return response;
-        })
-        .catch(() => caches.match("./")),
-    );
+  if (request.mode === "navigate" || url.pathname.endsWith("/index.html")) {
+    event.respondWith((async () => {
+      try {
+        const response = await fetch(request, { cache: "no-store" });
+        if (response.ok) {
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put("./index.html", response.clone());
+          await cache.put("./", response.clone());
+        }
+        return response;
+      } catch {
+        return (await caches.match("./index.html", { ignoreSearch: true })) ||
+          (await caches.match("./", { ignoreSearch: true })) ||
+          Response.error();
+      }
+    })());
     return;
   }
 
-  event.respondWith(
-    fetch(request, { cache: "no-cache" })
-      .then((response) => {
-        if (response.ok) {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-        }
-        return response;
-      })
-      .catch(() => caches.match(request)),
-  );
+  event.respondWith((async () => {
+    const cached = await caches.match(request, { ignoreSearch: true });
+    if (cached) return cached;
+    try {
+      const response = await fetch(request, { cache: "no-cache" });
+      if (response.ok) {
+        const cache = await caches.open(CACHE_NAME);
+        await cache.put(request, response.clone());
+      }
+      return response;
+    } catch {
+      return Response.error();
+    }
+  })());
 });
