@@ -1,9 +1,9 @@
 {
-  "version": "23",
+  "version": "24",
   "title": "A new Evia update is ready",
   "details": [
-    "The OTJ screen no longer crashes when the pace guide opens",
-    "Photo evidence now includes a small gallery icon for choosing one existing image",
-    "Take photo and Record video remain the main evidence capture actions"
+    "The OTJ section has been rebuilt without the background mutation observer that could lock up the app",
+    "Expected OTJ by now is calculated directly when the OTJ screen opens instead of being injected afterwards",
+    "Older or malformed local OTJ records are safely ignored rather than crashing the screen"
   ]
 }
