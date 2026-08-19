@@ -1,9 +1,9 @@
 {
-  "version": "37",
+  "version": "38",
   "title": "A new Evia update is ready",
   "details": [
-    "Converted Bricklayer ST0095 v1.2 into the first self-contained Nisi course pack with all 59 KSBs and the existing 72 learner evidence opportunities",
-    "Before an existing Bricklayer learner moves onto the pack, Evia compares the pack with the current built-in course map; any mismatch leaves the existing course untouched",
-    "Bricklayer keeps the same evidence, RPL, OTJ, EPA and target storage, and installed course packs can now be exported as .nisi files for induction or distribution"
+    "Bricklayer ST0095 v1.2 now requires its installed Nisi course pack in learner and Admin course selectors",
+    "Existing Bricklayer learners keep the verified migration and all existing evidence, RPL, OTJ, EPA and target data",
+    "The legacy Bricklayer definition remains only as a fail-safe migration rollback while the other current courses are converted to packs"
   ]
 }
