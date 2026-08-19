@@ -1,7 +1,7 @@
 (()=>{
 "use strict";
 const COURSE_ID="st0095-v1-2";
-const PACK_URL="./course-packs/Bricklayer_ST0095_v1.2.nisi?v=36";
+const PACK_URL="./course-packs/Bricklayer_ST0095_v1.2.nisi?v=37";
 const MARKER="nisi-brick-pack-migration-v1";
 const PACK_KEY="nisi-installed-course-packs-v1";
 const TIMELINE_KEY="evia-course-timeline";
@@ -11,7 +11,7 @@ function write(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
 function timeline(){const x=read(TIMELINE_KEY,{});return x&&typeof x==="object"?x:{}}
 function installed(){const x=read(PACK_KEY,{});return x&&typeof x==="object"?x[COURSE_ID]||null:null}
 function parsePart(text){const m=String(text||"").match(/export const SITE_DATA_\d+:SiteCategory\[\]=(.*);\s*$/s);if(!m)throw Error("Could not read the current Bricklayer course map.");return JSON.parse(m[1])}
-function mappedCodes(data){const out=new Set();(data||[]).forEach(c=>(c.jobs||[]).forEach(j=>(j.opps||[]).forEach(o=>(o.codes||[]).forEach(code=>out.add(String(code)))));return out}
+function mappedCodes(data){const out=new Set();(data||[]).forEach(c=>(c.jobs||[]).forEach(j=>(j.opps||[]).forEach(o=>(o.codes||[]).forEach(code=>out.add(String(code))))));return out}
 function compare(pack,builtin){
   const errors=[];
   if(pack.id!==COURSE_ID)errors.push("course ID");
@@ -30,7 +30,7 @@ async function fetchJson(url){const r=await fetch(url,{cache:"no-store"});if(!r.
 async function fetchText(url){const r=await fetch(url,{cache:"no-store"});if(!r.ok)throw Error(`Could not load ${url} (${r.status}).`);return r.text()}
 async function verifyStaticPack(){
   const raw=await fetchJson(PACK_URL),pack=window.EviaCoursePacks?.normalize?window.EviaCoursePacks.normalize(raw):raw;
-  const parts=await Promise.all([1,2,3].map(n=>fetchText(`./app/evia-site-data-${n}.ts?v=36`).then(parsePart)));
+  const parts=await Promise.all([1,2,3].map(n=>fetchText(`./app/evia-site-data-${n}.ts?v=37`).then(parsePart)));
   const result=compare(pack,parts.flat());
   return{pack,result}
 }
