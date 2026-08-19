@@ -1,8 +1,9 @@
 {
-  "version": "16",
+  "version": "17",
   "title": "A new Evia update is ready",
   "details": [
-    "RPL purple markers now appear on the individual evidence opportunities they relate to",
-    "Learners can still add normal evidence after a KSB has been marked as RPL"
+    "The OTJ arch now opens the full learner off-the-job section",
+    "College OTJ days and hours can be updated at reviews without double counting",
+    "Learners can record, review, edit and delete additional workplace and independent OTJ learning"
   ]
 }
