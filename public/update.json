@@ -1,9 +1,9 @@
 {
-  "version": "19",
+  "version": "20",
   "title": "A new Evia update is ready",
   "details": [
-    "Evidence downloads now show a live preparation timer instead of a static Preparing message",
-    "Evia explains when media is still being compressed so the learner knows the download is working",
-    "A clear confirmation appears after the evidence ZIP has been handed to the phone"
+    "Video evidence now records directly at about 11 MB per minute with microphone audio",
+    "Evidence downloads preserve the recorded video instead of re-encoding it, preventing jumpy playback and missing sound",
+    "Evidence ZIP preparation is faster because video and voice recordings are kept as recorded"
   ]
 }
