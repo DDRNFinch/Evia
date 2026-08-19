@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "./evia-selfobs.css";
 
 export const metadata: Metadata = {
   title: "Evia — Apprentice Vocational Assistant",
-  description: "Your course, study and portfolio in one beautifully simple place.",
+  description: "A simple self-observation apprenticeship assistant: one job, one photo and one short explanation at a time.",
   applicationName: "Evia",
   manifest: "./manifest.webmanifest",
   appleWebApp: {
