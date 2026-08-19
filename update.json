@@ -1,9 +1,9 @@
 {
-  "version": "31",
+  "version": "32",
   "title": "A new Evia update is ready",
   "details": [
-    "Fixed the Trowel Occupations Level 3 course map failing to open after course selection",
-    "All four 6570-05 optional-unit routes now load through a validated course-data loader with their full holistic AC mapping",
-    "Bricklayer and Carpentry course structures and EPA mocks have not been changed"
+    "RPL now follows the selected course instead of showing KSBs from a previous qualification",
+    "Trowel Occupations RPL is grouped by the same course activities and evidence points, with each mapped AC listed underneath using a concise reference description",
+    "Carpentry RPL now shows only the KSBs for the selected Site Carpenter or Architectural Joiner pathway"
   ]
 }
