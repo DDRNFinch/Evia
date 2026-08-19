@@ -1,9 +1,9 @@
 {
-  "version": "26",
+  "version": "27",
   "title": "A new Evia update is ready",
   "details": [
-    "Carpentry & Joinery ST0264 v1.4 is now available with Site Carpenter and Architectural Joiner pathways",
-    "Both carpentry pathways use the same Evia evidence flow as Bricklaying, with job-specific photo and video evidence points",
-    "Course evidence, KSB coverage and OTJ records are kept separate between qualifications and pathways"
+    "New learners choose their enrolled course and pathway once during course setup",
+    "After setup, learners can edit their name and course dates without seeing a course selector",
+    "For development testing, tapping the current course name seven times in My course reopens the course selector without deleting any course data"
   ]
 }
