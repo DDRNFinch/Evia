@@ -1,9 +1,9 @@
 {
-  "version": "27",
+  "version": "28",
   "title": "A new Evia update is ready",
   "details": [
-    "New learners choose their enrolled course and pathway once during course setup",
-    "After setup, learners can edit their name and course dates without seeing a course selector",
-    "For development testing, tapping the current course name seven times in My course reopens the course selector without deleting any course data"
+    "The editable course and pathway selector has moved into Admin mode",
+    "Learner-facing My course keeps the enrolled course fixed after initial setup",
+    "The current course name and standard number are now shown directly underneath Evia in the top-left corner"
   ]
 }
