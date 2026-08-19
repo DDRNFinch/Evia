@@ -1,9 +1,9 @@
 {
-  "version": "40",
+  "version": "41",
   "title": "A new Evia update is ready",
   "details": [
-    "Fixed course-pack export so every installed Nisi course pack has a working Export button",
-    "Carpentry & Joinery ST0264 can now be exported directly as a .nisi file from Course packs",
-    "The export control is now generic, so future installed courses will use the same export method"
+    "Carpentry & Joinery ST0264 is now selectable only when its Nisi course pack is installed",
+    "Site Carpenter and Architectural Joiner continue using their existing pathway-specific learner data after the cutover",
+    "The old built-in ST0264 definition remains hidden as a rollback safety net while the course-pack architecture is completed"
   ]
 }
