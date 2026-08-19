@@ -4,10 +4,16 @@
 const TIMELINE_KEY="evia-course-timeline";
 const NAME_KEY="evia-full-name";
 const COURSES=[
-  {id:"st0095-v1-2",title:"Bricklayer — ST0095 v1.2",shortTitle:"Bricklayer",standard:"ST0095 v1.2",pathways:[]},
-  {id:"st0264-v1-4",title:"Carpentry & Joinery — ST0264 v1.4",shortTitle:"Carpentry & Joinery",standard:"ST0264 v1.4",pathways:[
+  {id:"st0095-v1-2",title:"Bricklayer — ST0095 v1.2",shortTitle:"Bricklayer",standard:"ST0095 v1.2",choiceLabel:"",pathways:[]},
+  {id:"st0264-v1-4",title:"Carpentry & Joinery — ST0264 v1.4",shortTitle:"Carpentry & Joinery",standard:"ST0264 v1.4",choiceLabel:"Pathway",pathways:[
     {id:"site-carpenter",title:"Site Carpenter"},
     {id:"architectural-joiner",title:"Architectural Joiner"}
+  ]},
+  {id:"6570-05",title:"Trowel Occupations Level 3 — 6570-05",shortTitle:"Trowel Occupations",standard:"6570-05",choiceLabel:"Optional unit",pathways:[
+    {id:"thin",title:"238 · Thin joint masonry"},
+    {id:"repair",title:"690 · Repairing & maintaining masonry"},
+    {id:"specialist",title:"828 · Specialist masonry elements"},
+    {id:"drainage",title:"837 · Drainage"}
   ]}
 ];
 
@@ -33,6 +39,7 @@ function currentTimeline(){
 function courseHeader(t=currentTimeline()){
   if(!hasSelectedCourse())return "Choose your course";
   if(t.courseId==="st0264-v1-4")return `${t.pathwayTitle||"Carpentry & Joinery"} · ST0264 v1.4`;
+  if(t.courseId==="6570-05")return "Trowel Occupations · 6570-05";
   return "Bricklayer · ST0095 v1.2"
 }
 function fullCourseLine(t=currentTimeline()){return t.pathwayTitle?`${t.courseTitle} · ${t.pathwayTitle}`:t.courseTitle}
@@ -101,24 +108,35 @@ function summary(){
 }
 function courseSelectorMarkup(t){
   const courseOptions=COURSES.map(c=>`<option value="${esc(c.id)}" ${c.id===t.courseId?"selected":""}>${esc(c.title)}</option>`).join("");
-  const carp=COURSES.find(c=>c.id==="st0264-v1-4");
-  const pathwayOptions=carp.pathways.map(p=>`<option value="${esc(p.id)}" ${p.id===t.pathway?"selected":""}>${esc(p.title)}</option>`).join("");
   return{
-    courseOptions,pathwayOptions,
+    courseOptions,
     fields:`<label>Course<select data-toc-course>${courseOptions}</select></label>
-      <label data-toc-pathway-wrap>Pathway<select data-toc-pathway>${pathwayOptions}</select></label>`
+      <label data-toc-pathway-wrap hidden><span data-toc-pathway-label>Pathway</span><select data-toc-pathway></select></label>`
   }
 }
 function bindCourseFields(el){
-  const courseSelect=el.querySelector("[data-toc-course]"),pathwayWrap=el.querySelector("[data-toc-pathway-wrap]"),pathwaySelect=el.querySelector("[data-toc-pathway]");
-  function sync(){if(!courseSelect)return;const isCarp=courseSelect.value==="st0264-v1-4";if(pathwayWrap)pathwayWrap.hidden=!isCarp;if(isCarp&&pathwaySelect&&!pathwaySelect.value)pathwaySelect.value="site-carpenter"}
+  const courseSelect=el.querySelector("[data-toc-course]"),pathwayWrap=el.querySelector("[data-toc-pathway-wrap]"),pathwayLabel=el.querySelector("[data-toc-pathway-label]"),pathwaySelect=el.querySelector("[data-toc-pathway]");
+  let preferred=currentTimeline().pathway;
+  function sync(){
+    if(!courseSelect)return;
+    const course=COURSES.find(c=>c.id===courseSelect.value)||COURSES[0],hasChoices=course.pathways.length>0;
+    if(pathwayWrap)pathwayWrap.hidden=!hasChoices;
+    if(pathwayLabel)pathwayLabel.textContent=course.choiceLabel||"Pathway";
+    if(pathwaySelect){
+      const previous=course.pathways.some(p=>p.id===pathwaySelect.value)?pathwaySelect.value:preferred;
+      pathwaySelect.innerHTML=course.pathways.map(p=>`<option value="${esc(p.id)}">${esc(p.title)}</option>`).join("");
+      const chosen=course.pathways.find(p=>p.id===previous)||course.pathways[0]||null;
+      if(chosen)pathwaySelect.value=chosen.id
+    }
+    preferred=pathwaySelect?.value||""
+  }
   if(courseSelect){courseSelect.onchange=sync;sync()}
   return{courseSelect,pathwaySelect}
 }
 function edit(initialSetup=false){
   const t=currentTimeline(),name=currentName(),selector=courseSelectorMarkup(t);
   const courseFields=initialSetup?selector.fields:`<label>Course<input type="text" value="${esc(fullCourseLine(t))}" readonly tabindex="-1" aria-readonly="true"></label>`;
-  const copy=initialSetup?"Choose the course you are enrolled on. Evia will then stay on that course for your evidence, KSBs and OTJ.":"Update your learner details or planned course dates. Your enrolled course stays the same.";
+  const copy=initialSetup?"Choose the course you are enrolled on. Evia will then keep your evidence and progress on that course.":"Update your learner details or planned course dates. Your enrolled course stays the same.";
   const el=layer(`
     <h2>${initialSetup?"Set up your course":"Course details"}</h2>
     <p class="evia-tools-copy">${esc(copy)}</p>
@@ -158,7 +176,7 @@ function patchAdmin(){
     const before=body.querySelector("[data-admin-rpl]")||body.querySelector(".evia-tools-row");
     if(before)body.insertBefore(row,before);else body.appendChild(row)
   }
-  row.innerHTML=`<span><b>Course & pathway</b><small>${esc(courseHeader())}</small></span><i>›</i>`;
+  row.innerHTML=`<span><b>Course setup</b><small>${esc(courseHeader())}</small></span><i>›</i>`;
   row.onclick=()=>openAdminCourse(admin)
 }
 function openAdminCourse(admin){
@@ -167,10 +185,10 @@ function openAdminCourse(admin){
   admin.style.display="none";
   const layer=document.createElement("div");layer.className="evia-tools-layer evia-admin-course-layer";
   layer.innerHTML=`<section class="evia-tools-screen">
-    <div class="evia-tools-head"><button type="button" data-admin-course-back>‹ Back</button><b>Course & pathway</b><span></span></div>
+    <div class="evia-tools-head"><button type="button" data-admin-course-back>‹ Back</button><b>Course setup</b><span></span></div>
     <div class="evia-tools-body">
       <p class="evia-tools-kicker">Admin mode</p>
-      <h2>Course & pathway</h2>
+      <h2>Course setup</h2>
       <p class="evia-tools-copy">Change which course Evia loads on this device for setup or app testing. Existing data for each course is kept separately.</p>
       <div class="evia-toc-form">${selector.fields}</div>
       <button class="evia-tools-primary" data-admin-course-save>Save course</button>
