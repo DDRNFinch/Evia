@@ -1,9 +1,9 @@
 {
-  "version": "17",
+  "version": "18",
   "title": "A new Evia update is ready",
   "details": [
-    "The OTJ arch now opens the full learner off-the-job section",
-    "College OTJ days and hours can be updated at reviews without double counting",
-    "Learners can record, review, edit and delete additional workplace and independent OTJ learning"
+    "The TOC arch now opens the learner's course timeline and profile",
+    "Full name, course, start date and planned end date can be managed from TOC",
+    "Time on course, time remaining and TOC percentage are calculated automatically"
   ]
 }
