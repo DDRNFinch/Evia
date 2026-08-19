@@ -16,7 +16,7 @@ function begin(button){
   box.className="evia-export-status";
   box.setAttribute("role","status");
   box.setAttribute("aria-live","polite");
-  box.innerHTML=`<b>Preparing your evidence</b><span data-export-stage>Checking and compressing files</span><small data-export-time>Working · 0:00</small><em>Keep Evia open. Video compression can take about as long as the recording itself.</em>`;
+  box.innerHTML=`<b>Preparing your evidence</b><span data-export-stage>Checking files and building your evidence pack</span><small data-export-time>Working · 0:00</small><em>Keep Evia open until the download starts.</em>`;
   button.insertAdjacentElement("afterend",box);
   current=box;
   const tick=()=>{
@@ -30,8 +30,8 @@ function begin(button){
     }
     button.textContent=`Preparing · ${clock(elapsed)}`;
     time.textContent=`Working · ${clock(elapsed)}`;
-    if(elapsed>20000)stage.textContent="Still compressing your media — Evia is working";
-    else if(elapsed>7000)stage.textContent="Compressing media and building your evidence pack";
+    if(elapsed>20000)stage.textContent="Still building the evidence ZIP — Evia is working";
+    else if(elapsed>7000)stage.textContent="Adding your media and building the evidence pack";
   };
   tick();
   timer=setInterval(tick,1000);
