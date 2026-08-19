@@ -1,167 +1,19 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#f2c536" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="Evia" />
-    <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
-    <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
-    <title>Evia — Apprentice Vocational Assistant</title>
-    <script type="module" crossorigin src="/Evia/assets/index-Bv8ZljA6.js"></script>
-    <link rel="stylesheet" crossorigin href="/Evia/assets/index-D_kAPZ6L.css">
-    <script defer src="/Evia/assets/nvq-course-builder.js"></script>
-    <script defer src="/Evia/assets/nvq-match-differences.js"></script>
-    <script defer src="/Evia/assets/nvq-runtime-mode.js"></script>
-    <script defer src="/Evia/assets/nvq-holistic-groups.js"></script>
-    <script defer src="/Evia/assets/nvq-reduction-preview.js"></script>
-    <link rel="stylesheet" href="/Evia/assets/nvq-course-builder.css">
-    <style>
-      .unit-dot-group { gap: 0.24rem; }
-      .unit-dot-group b { display: inline-block; width: 1ch; overflow: hidden; white-space: nowrap; flex: 0 0 auto; }
-      .unit-dot-group > span { display: grid !important; grid-auto-flow: column; grid-auto-columns: 3px; grid-template-rows: repeat(2, 3px); gap: 2px; min-height: 8px; align-content: center; }
-      .unit-dot-group i { width: 3px !important; height: 3px !important; box-shadow: none !important; }
-      .unit-dot-group i.is-complete { box-shadow: none !important; }
-      .row-chevron,
-      .make-course-button > span[aria-hidden="true"],
-      .inline-action > span[aria-hidden="true"],
-      .empty-course-state button span[aria-hidden="true"],
-      .empty-evidence button span[aria-hidden="true"],
-      .onboarding-action span[aria-hidden="true"],
-      .evia-plus-next span[aria-hidden="true"],
-      .name-pill button span[aria-hidden="true"],
-      .reminder-menu > button[role="menuitem"] > span[aria-hidden="true"] { display: none !important; }
-      .status-dot:empty { display: none !important; }
-      .reminder-menu > button[role="menuitem"] { touch-action: pan-y; transition: transform .18s ease, opacity .18s ease; }
-      .reminder-menu > button[role="menuitem"].is-swiping { transition: none; }
-      .otj-unit-options {
-        padding: 0.55rem !important;
-        border: 1px solid rgba(255, 255, 255, 0.9) !important;
-        border-radius: 1.15rem !important;
-        background: rgba(248, 248, 250, 0.94) !important;
-        box-shadow: 0 18px 42px rgba(38, 38, 42, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
-        backdrop-filter: blur(24px) saturate(1.08) !important;
-        -webkit-backdrop-filter: blur(24px) saturate(1.08) !important;
-      }
-      .evia-nvq-course .progress-row.nvq-progress-row {
-        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-        gap: clamp(0.8rem, 4vw, 1.45rem) !important;
-      }
-      .evia-nvq-course .progress-row.nvq-progress-row .progress-arch[hidden],
-      .evia-nvq-course .option-row[hidden] { display: none !important; }
-      .evia-nvq-course .unit-otj-mini i.nvq-glh-complete {
-        display: grid !important;
-        width: 12px !important;
-        height: 12px !important;
-        place-items: center;
-        border: 0 !important;
-        border-radius: 0 !important;
-        color: #efc33d;
-        font-size: 0.78rem;
-        font-style: normal;
-        font-weight: 800;
-        line-height: 1;
-        box-shadow: none !important;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script>
-      (() => {
-        const storageKey = "evia-dismissed-reminders-v2";
-        const dismissed = new Set((() => {
-          try { return JSON.parse(localStorage.getItem(storageKey) || "[]"); }
-          catch { return []; }
-        })());
-        let gesture = null;
-        let suppressClick = false;
-
-        const labelFor = (button) => (button?.textContent || "").replace(/[›→]/g, "").trim();
-        const persist = () => {
-          try { localStorage.setItem(storageKey, JSON.stringify([...dismissed])); }
-          catch {}
-        };
-        const applyDismissed = () => {
-          const menu = document.querySelector('.reminder-menu');
-          if (!menu) return;
-          const buttons = [...menu.querySelectorAll(':scope > button[role="menuitem"]')];
-          buttons.forEach((button) => {
-            if (dismissed.has(labelFor(button))) button.style.display = 'none';
-          });
-          const visible = buttons.filter((button) => button.style.display !== 'none');
-          const existingEmpty = menu.querySelector(':scope > p');
-          if (!visible.length && !existingEmpty) {
-            const message = document.createElement('p');
-            message.textContent = "You’re up to date.";
-            menu.appendChild(message);
-          } else if (visible.length && existingEmpty) {
-            existingEmpty.style.display = 'none';
-          }
-          const badge = document.querySelector('.reminder-button > span');
-          if (badge) {
-            if (visible.length) {
-              badge.textContent = String(Math.min(9, visible.length));
-              badge.style.display = '';
-            } else {
-              badge.style.display = 'none';
-            }
-          }
-        };
-
-        document.addEventListener('click', (event) => {
-          const pill = event.target.closest?.('.reminder-menu > button[role="menuitem"]');
-          if (suppressClick && pill) {
-            event.preventDefault();
-            event.stopPropagation();
-            suppressClick = false;
-            return;
-          }
-          if (event.target.closest?.('.reminder-button')) setTimeout(applyDismissed, 0);
-        }, true);
-
-        document.addEventListener('pointerdown', (event) => {
-          const button = event.target.closest?.('.reminder-menu > button[role="menuitem"]');
-          if (!button) return;
-          gesture = { button, startX: event.clientX, startY: event.clientY, currentX: event.clientX, pointerId: event.pointerId };
-          button.classList.add('is-swiping');
-          try { button.setPointerCapture(event.pointerId); } catch {}
-        });
-
-        document.addEventListener('pointermove', (event) => {
-          if (!gesture || event.pointerId !== gesture.pointerId) return;
-          gesture.currentX = event.clientX;
-          const dx = Math.max(0, Math.min(190, event.clientX - gesture.startX));
-          const dy = Math.abs(event.clientY - gesture.startY);
-          if (dy > 34 && dx < 20) return;
-          gesture.button.style.transform = `translateX(${dx}px)`;
-          gesture.button.style.opacity = String(Math.max(.35, 1 - dx / 220));
-        });
-
-        const finishGesture = (event) => {
-          if (!gesture || event.pointerId !== gesture.pointerId) return;
-          const { button, startX, currentX } = gesture;
-          const dx = Math.max(0, currentX - startX);
-          button.classList.remove('is-swiping');
-          if (dx >= 72) {
-            const label = labelFor(button);
-            if (label) { dismissed.add(label); persist(); }
-            button.style.transform = 'translateX(190px)';
-            button.style.opacity = '0';
-            setTimeout(() => { button.style.display = 'none'; applyDismissed(); }, 170);
-            suppressClick = true;
-          } else {
-            button.style.transform = '';
-            button.style.opacity = '';
-          }
-          gesture = null;
-        };
-        document.addEventListener('pointerup', finishGesture);
-        document.addEventListener('pointercancel', finishGesture);
-      })();
-    </script>
-  </body>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="theme-color" content="#f2c536" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Evia" />
+<title>Evia — Apprentice Vocational Assistant</title>
+<link rel="manifest" href="./manifest.webmanifest" />
+<link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
+<link rel="stylesheet" href="/Evia/assets/index-D_kAPZ6L.css" />
+<link rel="stylesheet" href="/Evia/assets/evia-selfobs-live.css?v=3" />
+<script defer src="/Evia/assets/evia-selfobs-live.js?v=3"></script>
+</head>
+<body><div id="root"></div></body>
 </html>
