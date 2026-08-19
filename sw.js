@@ -1,4 +1,4 @@
-const CACHE_NAME = "evia-shell-v3";
+const CACHE_NAME = "evia-shell-v4";
 const APP_SHELL = [
   "./",
   "./manifest.webmanifest",
@@ -7,7 +7,9 @@ const APP_SHELL = [
   "./apple-touch-icon.png",
   "./assets/index-D_kAPZ6L.css",
   "./assets/evia-selfobs-live.css",
+  "./assets/evia-selfobs-fixes.css",
   "./assets/evia-selfobs-live.js",
+  "./assets/evia-selfobs-fixes.js",
 ];
 
 self.addEventListener("install", (event) => {
