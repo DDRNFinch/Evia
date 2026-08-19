@@ -120,7 +120,7 @@ function validateMap(cs,data,label){
     cat.jobs.forEach((job,ji)=>{
       if(!job?.id||!job?.title||!Array.isArray(job.opps))throw Error(`${label}: a job in ${cat.title} is incomplete.`);
       job.opps.forEach((op,oi)=>{
-        if(!op?.id||!op?.title||!op?.instruction||!op?.question)throw Error(`${label}: evidence point ${oi+1} in ${job.title} is incomplete.`);
+        if(!op?.id||!op?.title||!op?.question||(!op?.instruction&&op?.media!=="talk"))throw Error(`${label}: evidence point ${oi+1} in ${job.title} is incomplete.`);
         const unique=`${cat.id}/${job.id}/${op.id}`;if(ids.has(unique))throw Error(`${label}: duplicate evidence point ${op.id}.`);ids.add(unique);
         if(!Array.isArray(op.codes)||!op.codes.length)throw Error(`${label}: ${op.title} has no mapped KSB/AC.`);
         op.codes.forEach(code=>{code=String(code);if(!allowed.has(code))throw Error(`${label}: ${op.title} maps unknown code ${code}.`);mapped.add(code)})
