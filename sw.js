@@ -1,4 +1,4 @@
-const CACHE_NAME = "evia-shell-v8";
+const CACHE_NAME = "evia-shell-v9";
 const APP_SHELL = [
   "./",
   "./manifest.webmanifest",
@@ -30,8 +30,6 @@ self.addEventListener("activate", (event) => {
     await Promise.all(keys.filter((key) => key.startsWith("evia-shell-") && key !== CACHE_NAME).map((key) => caches.delete(key)));
     await self.clients.claim();
 
-    // One-time bridge from the old cached app into the new in-app updater.
-    // Future cache versions do not auto-refresh; they are installed through Evia's update panel.
     if (CACHE_NAME === "evia-shell-v8") {
       const clients = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
       await Promise.all(clients.map((client) => {
