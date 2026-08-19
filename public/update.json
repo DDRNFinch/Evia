@@ -1,9 +1,9 @@
 {
-  "version": "20",
+  "version": "21",
   "title": "A new Evia update is ready",
   "details": [
-    "Video evidence now records directly at about 11 MB per minute with microphone audio",
-    "Evidence downloads preserve the recorded video instead of re-encoding it, preventing jumpy playback and missing sound",
-    "Evidence ZIP preparation is faster because video and voice recordings are kept as recorded"
+    "Evidence counts now show o x 6 and above instead of filling the screen with repeated markers",
+    "EPA interview practice now records voice answers, keeps the points-to-cover visible while recording and lets learners listen back",
+    "OTJ now shows the expected pace for the learner's current time on course and recent OTJ is included as a PDF in the next evidence download"
   ]
 }
