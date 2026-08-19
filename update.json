@@ -1,9 +1,9 @@
 {
-  "version": "10",
+  "version": "11",
   "title": "A new Evia update is ready",
   "details": [
-    "Evidence capture now always shows Take photo and Record video",
-    "The old combined picker is blocked completely",
-    "Camera controls are restored automatically after every capture screen render"
+    "Rebuilt the evidence capture controls at page level for stability",
+    "Take photo and Record video are always shown on every photo/video evidence screen",
+    "Removed the separate camera patch that was causing missing controls"
   ]
 }
