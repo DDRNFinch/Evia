@@ -1,9 +1,9 @@
 {
-  "version": "32",
+  "version": "33",
   "title": "A new Evia update is ready",
   "details": [
-    "RPL now follows the selected course instead of showing KSBs from a previous qualification",
-    "Trowel Occupations RPL is grouped by the same course activities and evidence points, with each mapped AC listed underneath using a concise reference description",
-    "Carpentry RPL now shows only the KSBs for the selected Site Carpenter or Architectural Joiner pathway"
+    "Fixed the delay where Home and course buttons could take several seconds to respond after the v32 RPL update",
+    "Stopped the RPL interface from repeatedly rewriting the same progress and label elements in the background",
+    "RPL course filtering and the Trowel AC mapping remain unchanged"
   ]
 }
