@@ -1,9 +1,8 @@
 {
-  "version": "15",
+  "version": "16",
   "title": "A new Evia update is ready",
   "details": [
-    "Admin mode is available by tapping Evia's name 7 times",
-    "Individual KSBs can be marked as RPL with purple learner markers",
-    "EPA practice now includes MCQ, interview and practical readiness activities"
+    "RPL purple markers now appear on the individual evidence opportunities they relate to",
+    "Learners can still add normal evidence after a KSB has been marked as RPL"
   ]
 }
