@@ -1,9 +1,9 @@
 {
-  "version": "18",
+  "version": "19",
   "title": "A new Evia update is ready",
   "details": [
-    "The TOC arch now opens the learner's course timeline and profile",
-    "Full name, course, start date and planned end date can be managed from TOC",
-    "Time on course, time remaining and TOC percentage are calculated automatically"
+    "Evidence downloads now show a live preparation timer instead of a static Preparing message",
+    "Evia explains when media is still being compressed so the learner knows the download is working",
+    "A clear confirmation appears after the evidence ZIP has been handed to the phone"
   ]
 }
