@@ -41,9 +41,13 @@ function profile(pack,pathwayId=""){
   if(!pack)return null;
   const p=pathway(pack,pathwayId),cs=codes(pack,p);
   const family=String(pack.familyId||pack.standardId||pack.id||"course");
-  const suffix=pack.compatStorageSuffix!==undefined
-    ?String(pack.compatStorageSuffix||"")
-    :`pack-${slug(family)}${p?.id?`-${slug(p.id)}`:""}`;
+  const explicitSuffix=meta(pack,p,"compatStorageSuffix",undefined);
+  let suffix;
+  if(explicitSuffix!==undefined)suffix=String(explicitSuffix||"");
+  else if(pack.id==="st0095-v1-2")suffix="";
+  else if(pack.id==="st0264-v1-4")suffix=p?.id==="architectural-joiner"?"st0264-aj":"st0264-site";
+  else if(pack.id==="6570-05")suffix=`6570-05-${p?.id||"thin"}`;
+  else suffix=`pack-${slug(family)}${p?.id?`-${slug(p.id)}`:""}`;
   const type=String(meta(pack,p,"courseType","apprenticeship"));
   return{
     courseId:String(pack.id),
