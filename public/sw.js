@@ -1,4 +1,4 @@
-const CACHE_NAME = "evia-shell-v6";
+const CACHE_NAME = "evia-shell-v7";
 const APP_SHELL = [
   "./",
   "./manifest.webmanifest",
@@ -8,8 +8,10 @@ const APP_SHELL = [
   "./assets/index-D_kAPZ6L.css",
   "./assets/evia-selfobs-live.css",
   "./assets/evia-selfobs-fixes.css",
+  "./assets/evia-camera-split.css",
   "./assets/evia-selfobs-live.js",
   "./assets/evia-selfobs-fixes.js",
+  "./assets/evia-camera-split.js",
 ];
 
 self.addEventListener("install", (event) => {
