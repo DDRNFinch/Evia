@@ -1,9 +1,9 @@
 {
-  "version": "22",
+  "version": "23",
   "title": "A new Evia update is ready",
   "details": [
-    "Evidence counts now show o x 6 and above instead of filling the screen with repeated markers",
-    "EPA interview practice now records voice answers, keeps the points-to-cover visible while recording and lets learners listen back",
-    "OTJ now shows the expected pace for the learner's current time on course and recent OTJ is included as a PDF in the next evidence download"
+    "The OTJ screen no longer crashes when the pace guide opens",
+    "Photo evidence now includes a small gallery icon for choosing one existing image",
+    "Take photo and Record video remain the main evidence capture actions"
   ]
 }
