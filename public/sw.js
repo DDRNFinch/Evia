@@ -25,11 +25,28 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(keys.filter((key) => key.startsWith("evia-shell-") && key !== CACHE_NAME).map((key) => caches.delete(key))))
-      .then(() => self.clients.claim()),
-  );
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter((key) => key.startsWith("evia-shell-") && key !== CACHE_NAME).map((key) => caches.delete(key)));
+    await self.clients.claim();
+
+    // One-time bridge from the old cached app into the new in-app updater.
+    // Future cache versions do not auto-refresh; they are installed through Evia's update panel.
+    if (CACHE_NAME === "evia-shell-v8") {
+      const clients = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      await Promise.all(clients.map((client) => {
+        try {
+          const url = new URL(client.url);
+          if (url.searchParams.get("eviaUpdater") === "8") return undefined;
+          url.searchParams.set("eviaUpdater", "8");
+          url.searchParams.set("refresh", String(Date.now()));
+          return client.navigate(url.href);
+        } catch {
+          return undefined;
+        }
+      }));
+    }
+  })());
 });
 
 self.addEventListener("message", (event) => {
