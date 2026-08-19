@@ -1,9 +1,9 @@
 {
-  "version": "13",
+  "version": "14",
   "title": "A new Evia update is ready",
   "details": [
-    "Evia now keeps the full app shell and Bricklayer course map available offline",
-    "Learner work stays separate from app updates and is never cleared by the updater",
-    "Persistent storage and version-safe data migration safeguards have been added"
+    "Admin mode is available by tapping Evia's name 7 times",
+    "Individual KSBs can be marked as RPL with purple learner markers",
+    "EPA practice now includes MCQ, interview and practical readiness activities"
   ]
 }
