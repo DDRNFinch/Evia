@@ -43,7 +43,7 @@ const redirected=new Set([
   "evia-selfobs-live-v3","evia-selfobs-day-v3","evia-selfobs-recap-v3",
   "evia-rpl-ksbs-v1","evia-epa-practice-v1","evia-epa-checks",
   "evia-otj-entries","evia-otj-college-v1",
-  "evia-glh-entries"
+  "evia-glh-entries","evia-targets-v1"
 ]);
 function physical(key){
   const text=String(key),c=current();
