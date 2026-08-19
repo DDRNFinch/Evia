@@ -22,7 +22,7 @@ function clock(ms){const n=Math.max(0,Math.floor(ms/1000)),m=Math.floor(n/60),s=
 function mime(){if(typeof MediaRecorder==="undefined")return"";const xs=["audio/webm;codecs=opus","audio/mp4","audio/webm"];return xs.find(x=>!MediaRecorder.isTypeSupported||MediaRecorder.isTypeSupported(x))||""}
 function cleanupRecording(stop=true){
   clearInterval(timer);timer=null;
-  if(stop&&recorder&&recorder.state!=="inactive")try{recorder.stop()}catch{}
+  if(stop&&recorder&&recorder.state!=="inactive"){try{recorder.onstop=null;recorder.stop()}catch{}}
   recorder=null;chunks=[];
   try{stream?.getTracks?.().forEach(t=>t.stop())}catch{}
   stream=null;
@@ -81,16 +81,17 @@ async function startRecording(el,index){
   const start=el.querySelector("[data-rec-start]"),stop=el.querySelector("[data-rec-stop]"),status=el.querySelector("[data-rec-status]"),time=el.querySelector("[data-rec-time]");
   start.hidden=true;stop.hidden=false;status.textContent="Recording · microphone on";started=Date.now();time.textContent="0:00";
   timer=setInterval(()=>{time.textContent=clock(Date.now()-started)},250);
-  recorder.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data)};
-  recorder.onerror=()=>{clearInterval(timer);timer=null;status.textContent="Recording problem · try again";start.hidden=false;stop.hidden=true;try{stream?.getTracks().forEach(t=>t.stop())}catch{};stream=null};
-  recorder.onstop=()=>{
+  const activeRecorder=recorder;
+  activeRecorder.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data)};
+  activeRecorder.onerror=()=>{clearInterval(timer);timer=null;status.textContent="Recording problem · try again";start.hidden=false;stop.hidden=true;try{stream?.getTracks().forEach(t=>t.stop())}catch{};stream=null};
+  activeRecorder.onstop=()=>{
     clearInterval(timer);timer=null;
     try{stream?.getTracks().forEach(t=>t.stop())}catch{};stream=null;
-    const blob=new Blob(chunks,{type:recorder.mimeType||type||chunks[0]?.type||"audio/webm"});chunks=[];recorder=null;
+    const blob=new Blob(chunks,{type:activeRecorder.mimeType||type||chunks[0]?.type||"audio/webm"});chunks=[];if(recorder===activeRecorder)recorder=null;
     if(blob.size<500){status.textContent="Nothing was recorded · try again";start.hidden=false;stop.hidden=true;return}
     revokeRecording(index);const url=URL.createObjectURL(blob);state.recordings[index]={blob,url,type:blob.type,durationMs:Date.now()-started};renderQuestion();
   };
-  recorder.start(500);
+  activeRecorder.start(500);
 }
 function stopRecording(){if(recorder&&recorder.state!=="inactive")try{recorder.stop()}catch{}}
 function patchEPAArch(){
