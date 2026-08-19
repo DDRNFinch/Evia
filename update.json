@@ -1,9 +1,9 @@
 {
-  "version": "30",
+  "version": "31",
   "title": "A new Evia update is ready",
   "details": [
-    "Trowel Occupations Level 3 (6570-05) is now available with all eight mandatory units and the learner's selected optional unit",
-    "All official assessment criteria are mapped holistically into practical and theory evidence themes while the exact Unit, learning outcome and AC references stay underneath",
-    "Trowel Occupations uses TOC, AC, GLH and Units progress and does not use an EPA mock"
+    "Fixed the Trowel Occupations Level 3 course map failing to open after course selection",
+    "All four 6570-05 optional-unit routes now load through a validated course-data loader with their full holistic AC mapping",
+    "Bricklayer and Carpentry course structures and EPA mocks have not been changed"
   ]
 }
