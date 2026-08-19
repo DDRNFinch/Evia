@@ -15,8 +15,14 @@ function readJSON(key,fallback){try{const raw=localStorage.getItem(key);return r
 function writeJSON(key,value){try{localStorage.setItem(key,JSON.stringify(value))}catch{}}
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function currentName(){return String(localStorage.getItem(NAME_KEY)||"").trim()}
+function rawTimeline(){const x=readJSON(TIMELINE_KEY,{});return x&&typeof x==="object"?x:{}}
+function hasSelectedCourse(){
+  const x=rawTimeline(),course=COURSES.find(c=>c.id===x.courseId);if(!course)return false;
+  if(!course.pathways.length)return true;
+  return course.pathways.some(p=>p.id===x.pathway)
+}
 function currentTimeline(){
-  const x=readJSON(TIMELINE_KEY,{});
+  const x=rawTimeline();
   const course=COURSES.find(c=>c.id===x.courseId)||COURSES[0];
   const pathway=course.pathways.find(p=>p.id===x.pathway)||course.pathways[0]||null;
   return{
@@ -27,7 +33,7 @@ function currentTimeline(){
     startDate:String(x.startDate||""),
     endDate:String(x.endDate||""),
     updatedAt:Number(x.updatedAt)||0
-  };
+  }
 }
 function parseDay(value){
   const m=String(value||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m)return null;
@@ -73,12 +79,13 @@ function layer(body,title="My course",back=null){
   document.body.appendChild(el);el.querySelector("[data-toc-back]").onclick=back||closeLayer;return el
 }
 function summary(){
-  const t=currentTimeline(),pos=coursePosition(t),name=currentName()||"Name not set";if(!pos.valid)return edit();
+  if(!hasSelectedCourse())return edit(true,true);
+  const t=currentTimeline(),pos=coursePosition(t),name=currentName()||"Name not set";if(!pos.valid)return edit(false,false);
   const courseLine=t.pathwayTitle?`${t.courseTitle} · ${t.pathwayTitle}`:t.courseTitle;
   const el=layer(`
     <p class="evia-tools-kicker">Time on course</p>
     <div class="evia-toc-hero"><strong>${pos.pct}%</strong><span>through planned course time</span></div>
-    <div class="evia-toc-profile"><b>${esc(name)}</b><span>${esc(courseLine)}</span></div>
+    <div class="evia-toc-profile"><b>${esc(name)}</b><span data-course-dev>${esc(courseLine)}</span></div>
     <div class="evia-toc-details">
       <div><span>Start date</span><b>${esc(formatDate(t.startDate))}</b></div>
       <div><span>Planned end date</span><b>${esc(formatDate(t.endDate))}</b></div>
@@ -87,50 +94,65 @@ function summary(){
     </div>
     <button class="evia-tools-primary" data-edit-course>Edit course details</button>
   `,"My course",closeLayer);
-  el.querySelector("[data-edit-course]").onclick=edit
+  el.querySelector("[data-edit-course]").onclick=()=>edit(false,false);
+  const dev=el.querySelector("[data-course-dev]");let taps=0,started=0;
+  dev.onclick=()=>{const now=Date.now();if(!started||now-started>4500){started=now;taps=0}taps++;if(taps>=7){taps=0;started=0;edit(true,false)}}
 }
-function edit(){
-  const t=currentTimeline(),name=currentName();
+function edit(allowCourseChange=false,initialSetup=false){
+  const t=currentTimeline(),name=currentName(),courseLine=t.pathwayTitle?`${t.courseTitle} · ${t.pathwayTitle}`:t.courseTitle;
   const courseOptions=COURSES.map(c=>`<option value="${esc(c.id)}" ${c.id===t.courseId?"selected":""}>${esc(c.title)}</option>`).join("");
   const carp=COURSES.find(c=>c.id==="st0264-v1-4");
   const pathwayOptions=carp.pathways.map(p=>`<option value="${esc(p.id)}" ${p.id===t.pathway?"selected":""}>${esc(p.title)}</option>`).join("");
+  const courseFields=allowCourseChange?`
+      <label>Course<select data-toc-course>${courseOptions}</select></label>
+      <label data-toc-pathway-wrap>Pathway<select data-toc-pathway>${pathwayOptions}</select></label>`:`
+      <label>Course<input type="text" value="${esc(courseLine)}" readonly tabindex="-1" aria-readonly="true"></label>`;
+  const copy=initialSetup?"Choose the course you are enrolled on. Evia will then stay on that course for your evidence, KSBs and OTJ.":"Update your learner details or planned course dates. Your enrolled course stays the same.";
   const el=layer(`
-    <h2>Course details</h2>
-    <p class="evia-tools-copy">These details set your time-on-course progress and the course Evia loads. Your full name is the same name Evia uses throughout the app.</p>
+    <h2>${initialSetup?"Set up your course":"Course details"}</h2>
+    <p class="evia-tools-copy">${esc(copy)}</p>
     <div class="evia-toc-form">
       <label>Full name<input data-toc-name type="text" autocomplete="name" value="${esc(name)}" placeholder="Your full name"></label>
-      <label>Course<select data-toc-course>${courseOptions}</select></label>
-      <label data-toc-pathway-wrap>Pathway<select data-toc-pathway>${pathwayOptions}</select></label>
+      ${courseFields}
       <label>Start date<input data-toc-start type="date" value="${esc(t.startDate)}"></label>
       <label>Planned end date<input data-toc-end type="date" value="${esc(t.endDate)}"></label>
     </div>
     <div class="evia-toc-error" data-toc-error aria-live="polite"></div>
-    <button class="evia-tools-primary" data-save-course>Save course details</button>
-  `,"My course",t.startDate&&t.endDate?summary:closeLayer);
+    <button class="evia-tools-primary" data-save-course>${initialSetup?"Save my course":"Save course details"}</button>
+  `,initialSetup?"Choose your course":"My course",hasSelectedCourse()&&t.startDate&&t.endDate?summary:closeLayer);
   const courseSelect=el.querySelector("[data-toc-course]"),pathwayWrap=el.querySelector("[data-toc-pathway-wrap]"),pathwaySelect=el.querySelector("[data-toc-pathway]");
-  function syncPathway(){const isCarp=courseSelect.value==="st0264-v1-4";pathwayWrap.hidden=!isCarp;if(isCarp&&!pathwaySelect.value)pathwaySelect.value="site-carpenter"}
-  courseSelect.onchange=syncPathway;syncPathway();
+  function syncPathway(){if(!courseSelect)return;const isCarp=courseSelect.value==="st0264-v1-4";if(pathwayWrap)pathwayWrap.hidden=!isCarp;if(isCarp&&pathwaySelect&&!pathwaySelect.value)pathwaySelect.value="site-carpenter"}
+  if(courseSelect){courseSelect.onchange=syncPathway;syncPathway()}
   el.querySelector("[data-save-course]").onclick=()=>{
-    const fullName=el.querySelector("[data-toc-name]").value.trim(),courseId=courseSelect.value,startDate=el.querySelector("[data-toc-start]").value,endDate=el.querySelector("[data-toc-end]").value,error=el.querySelector("[data-toc-error]");
+    const fullName=el.querySelector("[data-toc-name]").value.trim(),courseId=allowCourseChange?courseSelect.value:t.courseId,startDate=el.querySelector("[data-toc-start]").value,endDate=el.querySelector("[data-toc-end]").value,error=el.querySelector("[data-toc-error]");
     const start=parseDay(startDate),end=parseDay(endDate);if(!fullName){error.textContent="Enter the learner's full name.";return}
     if(start===null||end===null){error.textContent="Enter both the start date and planned end date.";return}
     if(end<=start){error.textContent="The planned end date must be after the start date.";return}
-    const course=COURSES.find(c=>c.id===courseId)||COURSES[0],pathway=course.pathways.find(p=>p.id===pathwaySelect.value)||course.pathways[0]||null;
+    const course=COURSES.find(c=>c.id===courseId)||COURSES[0],selectedPathway=allowCourseChange?pathwaySelect?.value:t.pathway,pathway=course.pathways.find(p=>p.id===selectedPathway)||course.pathways[0]||null;
     const changed=course.id!==t.courseId||(pathway?.id||"")!==t.pathway;
     localStorage.setItem(NAME_KEY,fullName);
     writeJSON(TIMELINE_KEY,{courseId:course.id,courseTitle:course.title,pathway:pathway?.id||"",pathwayTitle:pathway?.title||"",startDate,endDate,updatedAt:Date.now()});
     patchName();patchArch();
-    if(changed){closeLayer();setTimeout(()=>location.reload(),120)}else summary()
+    if(changed||initialSetup){closeLayer();setTimeout(()=>location.reload(),120)}else summary()
   }
+}
+function maybeInitialSetup(){
+  if(hasSelectedCourse())return true;
+  if(!currentName())return false;
+  if(document.querySelector(".is-onboarding")||document.querySelector(".evia-toc-layer"))return false;
+  if(!document.querySelector(".selfobs.is-ready"))return false;
+  edit(true,true);return true
 }
 document.addEventListener("click",e=>{
   const toc=e.target.closest?.('[data-arch="TOC"]');if(!toc)return;
   e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();
-  const t=currentTimeline();if(parseDay(t.startDate)===null||parseDay(t.endDate)===null)edit();else summary()
+  if(!hasSelectedCourse()){edit(true,true);return}
+  const t=currentTimeline();if(parseDay(t.startDate)===null||parseDay(t.endDate)===null)edit(false,false);else summary()
 },true);
-window.addEventListener("load",()=>{patchArch();patchName()});
-window.addEventListener("pageshow",()=>{patchArch();patchName()});
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")patchArch()});
+window.addEventListener("load",()=>{patchArch();patchName();maybeInitialSetup()});
+window.addEventListener("pageshow",()=>{patchArch();patchName();maybeInitialSetup()});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){patchArch();maybeInitialSetup()}});
 window.addEventListener("storage",e=>{if(e.key===TIMELINE_KEY||e.key===NAME_KEY){patchArch();patchName()}});
 setTimeout(()=>{patchArch();patchName()},250);
+let setupChecks=0;const setupTimer=setInterval(()=>{setupChecks++;if(maybeInitialSetup()||setupChecks>=30)clearInterval(setupTimer)},1000);
 })();
