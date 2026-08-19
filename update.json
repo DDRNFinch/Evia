@@ -1,8 +1,9 @@
 {
-  "version": "12",
+  "version": "13",
   "title": "A new Evia update is ready",
   "details": [
-    "Removed the Excel/CSV file from evidence downloads",
-    "Photos, videos and voice recordings are compressed for smaller evidence downloads"
+    "Evia now keeps the full app shell and Bricklayer course map available offline",
+    "Learner work stays separate from app updates and is never cleared by the updater",
+    "Persistent storage and version-safe data migration safeguards have been added"
   ]
 }
