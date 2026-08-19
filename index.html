@@ -7,20 +7,110 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="Evia" />
-<meta name="evia-app-version" content="10" />
+<meta name="evia-app-version" content="11" />
 <title>Evia — Apprentice Vocational Assistant</title>
 <link rel="manifest" href="./manifest.webmanifest" />
 <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
 <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
 <link rel="stylesheet" href="/Evia/assets/index-D_kAPZ6L.css" />
-<link rel="stylesheet" href="/Evia/assets/evia-selfobs-live.css?v=10" />
-<link rel="stylesheet" href="/Evia/assets/evia-selfobs-fixes.css?v=10" />
-<link rel="stylesheet" href="/Evia/assets/evia-camera-split.css?v=10" />
-<link rel="stylesheet" href="/Evia/assets/evia-updater.css?v=10" />
-<script defer src="/Evia/assets/evia-selfobs-live.js?v=10"></script>
-<script defer src="/Evia/assets/evia-selfobs-fixes.js?v=10"></script>
-<script defer src="/Evia/assets/evia-camera-split.js?v=10"></script>
-<script defer src="/Evia/assets/evia-updater.js?v=10"></script>
+<link rel="stylesheet" href="/Evia/assets/evia-selfobs-live.css?v=11" />
+<link rel="stylesheet" href="/Evia/assets/evia-selfobs-fixes.css?v=11" />
+<link rel="stylesheet" href="/Evia/assets/evia-updater.css?v=11" />
+<style>
+.selfobs .evia-native-capture{display:grid!important;grid-template-columns:1fr 1fr!important;gap:.5rem!important;margin-top:.6rem!important;width:100%!important}
+.selfobs .evia-native-capture button{display:block!important;width:100%!important;min-height:2.8rem!important;border-radius:999px!important;border:0!important;background:var(--yellow,#efc33d)!important;color:#4c3b0b!important;font-size:.78rem!important;padding:.7rem .8rem!important;opacity:1!important;visibility:visible!important}
+@media(max-width:360px){.selfobs .evia-native-capture{grid-template-columns:1fr 1fr!important}}
+</style>
+<script defer src="/Evia/assets/evia-selfobs-live.js?v=11"></script>
+<script defer src="/Evia/assets/evia-selfobs-fixes.js?v=11"></script>
+<script defer src="/Evia/assets/evia-updater.js?v=11"></script>
 </head>
-<body><div id="root"></div></body>
+<body><div id="root"></div>
+<script>
+(function(){
+  'use strict';
+  var guardTimer=null;
+
+  function openNativeCapture(kind){
+    var input=document.getElementById('selfPhoto');
+    if(!input)return;
+    try{input.value='';}catch(e){}
+    input.setAttribute('type','file');
+    input.setAttribute('capture','environment');
+    input.setAttribute('accept',kind==='video'?'video/*':'image/*');
+    input.click();
+  }
+
+  function makeButton(label,kind){
+    var b=document.createElement('button');
+    b.type='button';
+    b.textContent=label;
+    b.setAttribute('data-evia-native-'+kind,'1');
+    b.addEventListener('click',function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      if(e.stopImmediatePropagation)e.stopImmediatePropagation();
+      openNativeCapture(kind);
+    },true);
+    return b;
+  }
+
+  function repairCaptureScreen(){
+    var card=document.querySelector('.self-card.photo');
+    if(!card)return;
+
+    var legacy=card.querySelectorAll('[data-pick]');
+    for(var i=0;i<legacy.length;i++)legacy[i].remove();
+
+    var controls=card.querySelector('.evia-native-capture');
+    if(!controls){
+      controls=document.createElement('div');
+      controls.className='evia-native-capture';
+      controls.appendChild(makeButton('Take photo','photo'));
+      controls.appendChild(makeButton('Record video','video'));
+
+      var label=card.querySelector('span');
+      if(label&&label.nextSibling)card.insertBefore(controls,label.nextSibling);
+      else if(label)card.appendChild(controls);
+      else card.insertBefore(controls,card.firstChild);
+    }
+
+    controls.style.display='grid';
+    var buttons=controls.querySelectorAll('button');
+    for(var j=0;j<buttons.length;j++){
+      buttons[j].style.display='block';
+      buttons[j].style.visibility='visible';
+      buttons[j].style.opacity='1';
+    }
+  }
+
+  document.addEventListener('click',function(e){
+    var target=e.target;
+    while(target&&target!==document){
+      if(target.getAttribute&&target.getAttribute('data-pick')!==null){
+        e.preventDefault();
+        e.stopPropagation();
+        if(e.stopImmediatePropagation)e.stopImmediatePropagation();
+        target.remove();
+        repairCaptureScreen();
+        return false;
+      }
+      target=target.parentNode;
+    }
+  },true);
+
+  function startGuard(){
+    repairCaptureScreen();
+    if(guardTimer)clearInterval(guardTimer);
+    guardTimer=setInterval(repairCaptureScreen,120);
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startGuard);
+  else startGuard();
+  window.addEventListener('pageshow',repairCaptureScreen);
+  window.addEventListener('focus',repairCaptureScreen);
+  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')repairCaptureScreen();});
+})();
+</script>
+</body>
 </html>
