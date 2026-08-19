@@ -1,4 +1,4 @@
-const CACHE_NAME = "evia-shell-v42";
+const CACHE_NAME = "evia-shell-v42-target-badge";
 const APP_SHELL = [
   "./",
   "./index.html",
