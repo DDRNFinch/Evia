@@ -1,4 +1,4 @@
-const CACHE_NAME = "evia-shell-v25";
+const CACHE_NAME = "evia-shell-v26";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -17,6 +17,7 @@ const APP_SHELL = [
   "./assets/evia-export-status.css",
   "./assets/evia-video-recorder.css",
   "./assets/evia-v21.css",
+  "./assets/evia-course-context.js",
   "./assets/evia-selfobs-live.js",
   "./assets/evia-count-display.js",
   "./assets/evia-selfobs-fixes.js",
@@ -26,17 +27,25 @@ const APP_SHELL = [
   "./assets/evia-otj-export.js",
   "./assets/evia-compact-export.js",
   "./assets/evia-storage-guard.js",
+  "./assets/evia-course-epa-guard.js",
   "./assets/evia-admin-epa.js",
   "./assets/evia-epa-shuffle.js",
   "./assets/evia-epa-interview-voice.js",
   "./assets/evia-rpl-evidence.js",
   "./assets/evia-otj.js",
+  "./assets/evia-otj-course.js",
   "./assets/evia-otj-arch.js",
   "./assets/evia-toc.js",
   "./assets/evia-updater.js",
   "./app/evia-site-data-1.ts",
   "./app/evia-site-data-2.ts",
   "./app/evia-site-data-3.ts",
+  "./app/evia-carpentry-site-data-1.ts",
+  "./app/evia-carpentry-site-data-2.ts",
+  "./app/evia-carpentry-site-data-3.ts",
+  "./app/evia-carpentry-joiner-data-1.ts",
+  "./app/evia-carpentry-joiner-data-2.ts",
+  "./app/evia-carpentry-joiner-data-3.ts",
 ];
 
 self.addEventListener("install", (event) => {
