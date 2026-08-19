@@ -1,9 +1,8 @@
 {
-  "version": "11",
+  "version": "12",
   "title": "A new Evia update is ready",
   "details": [
-    "Rebuilt the evidence capture controls at page level for stability",
-    "Take photo and Record video are always shown on every photo/video evidence screen",
-    "Removed the separate camera patch that was causing missing controls"
+    "Removed the Excel/CSV file from evidence downloads",
+    "Photos, videos and voice recordings are compressed for smaller evidence downloads"
   ]
 }
