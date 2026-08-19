@@ -1,9 +1,9 @@
 {
-  "version": "41",
+  "version": "42",
   "title": "A new Evia update is ready",
   "details": [
-    "Carpentry & Joinery ST0264 is now selectable only when its Nisi course pack is installed",
-    "Site Carpenter and Architectural Joiner continue using their existing pathway-specific learner data after the cutover",
-    "The old built-in ST0264 definition remains hidden as a rollback safety net while the course-pack architecture is completed"
+    "Replaced the large Home target mini-board with a simple yellow target icon",
+    "The number beside the target shows how many of the current five targets are still unfinished",
+    "Tapping the yellow target still opens the full SMART target board, with target calculations and learner progress unchanged"
   ]
 }
