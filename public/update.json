@@ -1,9 +1,9 @@
 {
-  "version": "39",
+  "version": "40",
   "title": "A new Evia update is ready",
   "details": [
-    "Carpentry & Joinery ST0264 v1.4 now migrates into one Nisi course pack containing both Site Carpenter and Architectural Joiner pathways",
-    "The migration verifies 6 categories, 42 jobs, 135 evidence points and 57 KSBs for Site Carpenter, plus 6 categories, 47 jobs, 148 evidence points and 57 KSBs for Architectural Joiner before installing",
-    "Existing ST0264 evidence, RPL, OTJ, EPA and target data keep their current pathway-specific storage, and the built-in course remains available as a fail-safe until the live pack test is confirmed"
+    "Fixed course-pack export so every installed Nisi course pack has a working Export button",
+    "Carpentry & Joinery ST0264 can now be exported directly as a .nisi file from Course packs",
+    "The export control is now generic, so future installed courses will use the same export method"
   ]
 }
