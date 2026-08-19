@@ -1,0 +1,1 @@
+window.EviaTrowelACText="+json.dumps(payload, ensure_ascii=False, separators=(
