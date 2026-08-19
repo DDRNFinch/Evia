@@ -1,4 +1,4 @@
-const CACHE_NAME = "evia-shell-v35";
+const CACHE_NAME = "evia-shell-v36";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -29,6 +29,7 @@ const APP_SHELL = [
   "./assets/evia-course-packs.js",
   "./assets/evia-trowel-fetch.js",
   "./assets/evia-course-context.js",
+  "./assets/evia-brick-pack-migration.js",
   "./assets/evia-selfobs-live.js",
   "./assets/evia-count-display.js",
   "./assets/evia-selfobs-fixes.js",
@@ -53,6 +54,7 @@ const APP_SHELL = [
   "./assets/evia-toc.js",
   "./assets/evia-targets.js",
   "./assets/evia-updater.js",
+  "./course-packs/Bricklayer_ST0095_v1.2.nisi",
   "./app/evia-site-data-1.ts",
   "./app/evia-site-data-2.ts",
   "./app/evia-site-data-3.ts",
