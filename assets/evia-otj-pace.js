@@ -1,6 +1,7 @@
 (()=>{
 "use strict";
 const ENTRY_KEY="evia-otj-entries",COLLEGE_KEY="evia-otj-college-v1",TIMELINE_KEY="evia-course-timeline",MINUTES=578*60;
+let patching=false;
 function read(key,fallback){try{const x=JSON.parse(localStorage.getItem(key)||"null");return x??fallback}catch{return fallback}}
 function fmt(total){const n=Math.max(0,Math.round(total||0)),h=Math.floor(n/60),m=n%60;return m?`${h}h ${m}m`:`${h}h`}
 function known(){
@@ -14,23 +15,45 @@ function position(){
   const fraction=Math.max(0,Math.min(1,(now-s)/(e-s)));
   return{fraction,expected:Math.round(MINUTES*fraction)};
 }
-function patch(){
-  const summary=document.querySelector(".evia-otj-summary");
-  if(!summary)return;
-  let card=summary.querySelector(".evia-otj-pace");
-  if(!card){card=document.createElement("div");card.className="evia-otj-pace";const metrics=summary.querySelector(".evia-otj-metrics");summary.insertBefore(card,metrics||summary.lastElementChild)}
+function desiredMarkup(){
   const p=position();
-  if(!p){card.innerHTML="<b>Expected by now</b><strong>Set your course dates</strong><span>Add your start and planned end date in TOC to see an OTJ pace guide.</span>";return}
+  if(!p)return "<b>Expected by now</b><strong>Set your course dates</strong><span>Add your start and planned end date in TOC to see an OTJ pace guide.</span>";
   const actual=known(),diff=actual-p.expected,abs=Math.abs(diff),pct=Math.round(p.fraction*100);
   let status="On track with the current pace guide";
   if(diff<-30)status=`${fmt(abs)} below the current pace guide`;
   else if(diff>30)status=`${fmt(abs)} ahead of the current pace guide`;
-  card.innerHTML=`<b>Expected by now</b><strong>${fmt(p.expected)}</strong><span>${pct}% through planned course time · ${status}. Based only on OTJ currently recorded in Evia.</span>`;
+  return `<b>Expected by now</b><strong>${fmt(p.expected)}</strong><span>${pct}% through planned course time · ${status}. Based only on OTJ currently recorded in Evia.</span>`;
 }
-const observer=new MutationObserver(patch);
+function patch(){
+  if(patching)return;
+  const summary=document.querySelector(".evia-otj-summary");
+  if(!summary)return;
+  patching=true;
+  try{
+    let card=summary.querySelector(".evia-otj-pace");
+    if(!card){
+      card=document.createElement("div");
+      card.className="evia-otj-pace";
+      const metrics=summary.querySelector(".evia-otj-metrics");
+      summary.insertBefore(card,metrics||summary.lastElementChild);
+    }
+    const next=desiredMarkup();
+    if(card.innerHTML!==next)card.innerHTML=next;
+  }finally{patching=false}
+}
+let queued=false;
+function queuePatch(){
+  if(queued)return;
+  queued=true;
+  requestAnimationFrame(()=>{queued=false;patch()});
+}
+const observer=new MutationObserver(mutations=>{
+  if(mutations.some(m=>Array.from(m.addedNodes||[]).some(n=>n.nodeType===1&&(n.matches?.(".evia-otj-summary")||n.querySelector?.(".evia-otj-summary")))))queuePatch();
+});
 observer.observe(document.documentElement,{subtree:true,childList:true});
-window.addEventListener("load",patch);
-window.addEventListener("pageshow",patch);
-window.addEventListener("storage",e=>{if([ENTRY_KEY,COLLEGE_KEY,TIMELINE_KEY].includes(e.key))patch()});
-setTimeout(patch,250);
+window.addEventListener("load",queuePatch);
+window.addEventListener("pageshow",queuePatch);
+window.addEventListener("storage",e=>{if([ENTRY_KEY,COLLEGE_KEY,TIMELINE_KEY].includes(e.key))queuePatch()});
+document.addEventListener("click",e=>{if(e.target.closest?.('[data-arch="OTJ"]'))setTimeout(queuePatch,0)},true);
+setTimeout(queuePatch,250);
 })();
