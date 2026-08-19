@@ -1,9 +1,9 @@
 {
-  "version": "34",
+  "version": "35",
   "title": "A new Evia update is ready",
   "details": [
-    "Added five rolling SMART targets that start from the learner's current progress and plan towards course completion",
-    "Targets use one review date, default to the first 10-week review period, and only recalculate when Refresh Targets is pressed",
-    "The Home target board shows progress, completed targets trigger a notification, and previous target periods are kept in local target history"
+    "Added local Nisi course packs so qualifications can be installed from a .nisi or JSON file instead of being permanently built into every device",
+    "Installed packs plug into the existing Evia course context and learner evidence flow, while current built-in courses remain as a safe fallback during migration",
+    "Replacing or removing a course pack does not delete learner evidence, RPL, OTJ/GLH or target history"
   ]
 }
