@@ -1,12 +1,14 @@
 (()=>{
 "use strict";
 const TIMELINE_KEY="evia-course-timeline";
+const PACK_KEY="nisi-installed-course-packs-v1";
 const proto=Storage.prototype;
 const original={getItem:proto.getItem,setItem:proto.setItem,removeItem:proto.removeItem};
 const brickCodes=[...Array.from({length:31},(_,i)=>`K${i+1}`),...Array.from({length:22},(_,i)=>`S${i+1}`),...Array.from({length:6},(_,i)=>`B${i+1}`)];
 const siteCodes=[...Array.from({length:29},(_,i)=>`K${i+1}`),"K40",...Array.from({length:22},(_,i)=>`S${i+1}`),...Array.from({length:5},(_,i)=>`B${i+1}`)];
 const joinerCodes=[...Array.from({length:20},(_,i)=>`K${i+1}`),...Array.from({length:11},(_,i)=>`K${i+30}`),...Array.from({length:13},(_,i)=>`S${i+1}`),...Array.from({length:8},(_,i)=>`S${i+23}`),...Array.from({length:5},(_,i)=>`B${i+1}`)];
 function timeline(){try{const x=JSON.parse(original.getItem.call(localStorage,TIMELINE_KEY)||"null");return x&&typeof x==="object"?x:{}}catch{return{}}}
+function installedPack(id){try{const all=JSON.parse(original.getItem.call(localStorage,PACK_KEY)||"{}");return all&&typeof all==="object"?all[String(id||"")]||null:null}catch{return null}}
 function trowelProfile(t){
   const m=window.EviaTrowelMeta;if(!m)return null;
   const option=m.routeUnits?.[t.pathway]?t.pathway:"thin";
@@ -20,7 +22,10 @@ function trowelProfile(t){
   };
 }
 function current(){
-  const t=timeline();
+  const t=timeline(),pack=installedPack(t.courseId);
+  if(pack&&window.EviaCoursePacks?.profile){
+    const p=window.EviaCoursePacks.profile(pack,t.pathway);if(p)return p
+  }
   if(t.courseId==="6570-05"){
     const p=trowelProfile(t);if(p)return p;
   }
