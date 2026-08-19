@@ -1,4 +1,4 @@
-const CACHE_NAME = "evia-shell-v11";
+const CACHE_NAME = "evia-shell-v12";
 const APP_SHELL = [
   "./",
   "./manifest.webmanifest",
@@ -11,6 +11,7 @@ const APP_SHELL = [
   "./assets/evia-updater.css",
   "./assets/evia-selfobs-live.js",
   "./assets/evia-selfobs-fixes.js",
+  "./assets/evia-compact-export.js",
   "./assets/evia-updater.js",
 ];
 
