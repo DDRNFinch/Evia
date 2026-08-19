@@ -25,15 +25,26 @@ function buildFrom(D,option){
   if(mapped.length!==expected.length||unique.size!==expected.length||expected.some(code=>!unique.has(code)))throw new Error(`Trowel AC mapping audit failed: ${unique.size}/${expected.length}`);
   return data
 }
-async function load(){
-  const response=await fetch(SOURCE,{cache:"no-store"});if(!response.ok)throw new Error(`Trowel source ${response.status}`);
-  const source=await response.text(),start=source.indexOf("const D=");
-  let end=source.indexOf("\nfunction build",start);if(end<0)end=source.indexOf("function build",start);
+function parseSource(source){
+  const start=source.indexOf("const D=");let end=source.indexOf("\nfunction build",start);if(end<0)end=source.indexOf("function build",start);
   if(start<0||end<0)throw new Error("Trowel source data could not be read");
   let raw=source.slice(start+8,end).trim();if(raw.endsWith(";"))raw=raw.slice(0,-1);
-  const D=JSON.parse(raw);
-  window.EviaTrowelData={build:option=>buildFrom(D,option)};
-  return window.EviaTrowelData
+  return JSON.parse(raw)
 }
-window.EviaTrowelDataReady=load().catch(error=>{console.error("Evia Trowel loader",error);throw error});
+function install(D){
+  const api={build:option=>buildFrom(D,option)};
+  for(const option of ["thin","repair","specialist","drainage"])api.build(option);
+  window.EviaTrowelData=api;return api
+}
+function syncLoad(){
+  const xhr=new XMLHttpRequest();xhr.open("GET",SOURCE,false);xhr.send(null);
+  if(!((xhr.status>=200&&xhr.status<300)||xhr.status===0)||!xhr.responseText)throw new Error(`Trowel source ${xhr.status}`);
+  return install(parseSource(xhr.responseText))
+}
+try{
+  const api=syncLoad();window.EviaTrowelDataReady=Promise.resolve(api)
+}catch(syncError){
+  console.warn("Evia Trowel synchronous loader fallback",syncError);
+  window.EviaTrowelDataReady=fetch(SOURCE,{cache:"no-store"}).then(response=>{if(!response.ok)throw new Error(`Trowel source ${response.status}`);return response.text()}).then(source=>install(parseSource(source))).catch(error=>{console.error("Evia Trowel loader",error);throw error})
+}
 })();
