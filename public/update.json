@@ -1,9 +1,9 @@
 {
-  "version": "24",
+  "version": "25",
   "title": "A new Evia update is ready",
   "details": [
-    "The OTJ section has been rebuilt without the background mutation observer that could lock up the app",
-    "Expected OTJ by now is calculated directly when the OTJ screen opens instead of being injected afterwards",
-    "Older or malformed local OTJ records are safely ignored rather than crashing the screen"
+    "The OTJ arch now uses the learner's full known OTJ total: college OTJ plus learner-recorded OTJ",
+    "The arch percentage is measured against the 578-hour overall minimum and no longer resets when Evia redraws the home screen",
+    "The Expected by now figure remains inside OTJ as a separate pace guide based on time on course"
   ]
 }
