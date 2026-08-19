@@ -1,9 +1,9 @@
 {
-  "version": "35",
+  "version": "36",
   "title": "A new Evia update is ready",
   "details": [
-    "Added local Nisi course packs so qualifications can be installed from a .nisi or JSON file instead of being permanently built into every device",
-    "Installed packs plug into the existing Evia course context and learner evidence flow, while current built-in courses remain as a safe fallback during migration",
-    "Replacing or removing a course pack does not delete learner evidence, RPL, OTJ/GLH or target history"
+    "Converted Bricklayer ST0095 v1.2 into the first self-contained Nisi course pack with all 59 KSBs and the existing 72 learner evidence opportunities",
+    "Existing Bricklayer learners are moved onto the pack only after Evia verifies it matches the current built-in course map; if verification fails, the old built-in course remains in use",
+    "Bricklayer evidence, RPL, OTJ, EPA and target data keep the same storage identity, and installed course packs can now be exported as .nisi files for distribution"
   ]
 }
