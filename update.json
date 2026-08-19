@@ -1,9 +1,9 @@
 {
-  "version": "28",
+  "version": "29",
   "title": "A new Evia update is ready",
   "details": [
-    "The editable course and pathway selector has moved into Admin mode",
-    "Learner-facing My course keeps the enrolled course fixed after initial setup",
-    "The current course name and standard number are now shown directly underneath Evia in the top-left corner"
+    "Site Carpenter and Architectural Joiner now each have their own pathway-specific EPA practice",
+    "Carpentry EPA practice now includes a 40-question multiple-choice mock, a pathway-specific practical mock and a 10-question recorded interview mock",
+    "Bricklayer EPA practice has not been changed, and EPA content is selected from the learner's current course and pathway"
   ]
 }
