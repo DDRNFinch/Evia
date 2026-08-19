@@ -1,4 +1,4 @@
-const CACHE_NAME = "evia-shell-v9";
+const CACHE_NAME = "evia-shell-v10";
 const APP_SHELL = [
   "./",
   "./manifest.webmanifest",
@@ -29,21 +29,6 @@ self.addEventListener("activate", (event) => {
     const keys = await caches.keys();
     await Promise.all(keys.filter((key) => key.startsWith("evia-shell-") && key !== CACHE_NAME).map((key) => caches.delete(key)));
     await self.clients.claim();
-
-    if (CACHE_NAME === "evia-shell-v8") {
-      const clients = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-      await Promise.all(clients.map((client) => {
-        try {
-          const url = new URL(client.url);
-          if (url.searchParams.get("eviaUpdater") === "8") return undefined;
-          url.searchParams.set("eviaUpdater", "8");
-          url.searchParams.set("refresh", String(Date.now()));
-          return client.navigate(url.href);
-        } catch {
-          return undefined;
-        }
-      }));
-    }
   })());
 });
 
@@ -76,7 +61,7 @@ self.addEventListener("fetch", (event) => {
   }
 
   event.respondWith(
-    fetch(request)
+    fetch(request, { cache: "no-cache" })
       .then((response) => {
         if (response.ok) {
           const copy = response.clone();
