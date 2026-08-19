@@ -74,7 +74,7 @@ function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&l
 function todayISO(){const d=new Date(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0");return `${d.getFullYear()}-${m}-${day}`}
 function formatDate(value){if(!value)return "Not checked yet";const d=new Date(`${value}T12:00:00`);return Number.isNaN(d.getTime())?value:d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}
 function formatMinutes(total){const n=Math.max(0,Math.round(Number(total)||0)),h=Math.floor(n/60),m=n%60;if(!h)return `${m}m`;return m?`${h}h ${m}m`:`${h}h`}
-function entryMinutes(e){if(Number.isFinite(Number(e?.durationMinutes)))return Math.max(0,Math.round(Number(e.durationMinutes)));if(Number.isFinite(Number(e?.hours)))return Math.max(0,Math.round(Number(e.hours)*60));return 0}
+function entryMinutes(e){if(e?.durationMinutes!==undefined&&e?.durationMinutes!==null&&Number.isFinite(Number(e.durationMinutes)))return Math.max(0,Math.round(Number(e.durationMinutes)));if(Number.isFinite(Number(e?.hours)))return Math.max(0,Math.round(Number(e.hours)*60));return 0}
 function entries(){const x=readJSON(ENTRY_KEY,[]);return Array.isArray(x)?x:[]}
 function college(){const x=readJSON(COLLEGE_KEY,{});return {days:Math.max(0,Math.round(Number(x.days)||0)),hours:Math.max(0,Math.round(Number(x.hours)||0)),minutes:Math.max(0,Math.min(59,Math.round(Number(x.minutes)||0))),checkedOn:String(x.checkedOn||""),updates:Array.isArray(x.updates)?x.updates:[]}}
 function collegeMinutes(){const x=college();return x.hours*60+x.minutes}
@@ -84,11 +84,11 @@ function otjPercent(){return Math.round(Math.min(1,knownMinutes()/MINIMUM_MINUTE
 function topicCodes(area,topic){const item=(AREAS[area]||[]).find(x=>x[0]===topic);return item?item[1].slice():[]}
 
 function patchArch(){
-  const pct=otjPercent();
+  const pct=otjPercent(),dash=`${pct} 100`,text=`${pct}%`;
   document.querySelectorAll('[data-arch="OTJ"]').forEach(button=>{
     const path=button.querySelector(".arch-value"),number=button.querySelector(".arch-number");
-    if(path)path.setAttribute("stroke-dasharray",`${pct} 100`);
-    if(number)number.textContent=`${pct}%`;
+    if(path&&path.getAttribute("stroke-dasharray")!==dash)path.setAttribute("stroke-dasharray",dash);
+    if(number&&number.textContent!==text)number.textContent=text;
   });
 }
 
@@ -256,7 +256,6 @@ function confirmDelete(e){
   el.querySelector("[data-confirm-delete]").onclick=()=>{writeJSON(ENTRY_KEY,entries().filter(x=>x.id!==e.id));patchArch();main()};
 }
 
-// Capture the OTJ arch before the base Evia handler can show its placeholder toast.
 document.addEventListener("click",e=>{
   const button=e.target.closest?.('[data-arch="OTJ"]');
   if(!button)return;
