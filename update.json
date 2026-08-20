@@ -1,9 +1,9 @@
 {
-  "version": "65",
-  "title": "Enable Naxos for carpentry",
+  "version": "66",
+  "title": "Add Trowel Occupations Q&A",
   "details": [
-    "Naxos now opens for Site Carpenter ST0264",
-    "Naxos now opens for Architectural Joiner ST0264",
-    "All other Evia v64 behaviour remains unchanged"
+    "Trowel Occupations Level 3 now uses AC · GLH · Q&A",
+    "Q&A is reserved for mock tests based on the selected route's assessment criteria",
+    "The NVQ remains EPA-free and all v64/v65 course behaviour is preserved"
   ]
 }
