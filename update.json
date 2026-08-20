@@ -1,9 +1,9 @@
 {
-  "version": "53",
-  "title": "Naxos EPA simulator restored",
+  "version": "55",
+  "title": "Evia and Naxos feel alive again",
   "details": [
-    "Restored Naxos as the EPA section inside Evia",
-    "Restored the demo-style Knowledge, Interview, Practical and Full Mock EPA structure",
-    "Kept the larger Naxos text and current assigned-course KSB support"
+    "Restored expressive eye and face movements for Evia and Naxos",
+    "Restored looking up, looking down, smiling, blinking, floating and subtle reactions",
+    "Kept the Naxos EPA simulator structure and larger readable text unchanged"
   ]
 }
