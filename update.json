@@ -1,9 +1,9 @@
 {
-  "version": "61",
-  "title": "Restore Evia controls",
+  "version": "62",
+  "title": "Restore TOC, OTJ, Targets and Admin",
   "details": [
-    "Restored access to Targets, Time on Course and Off the Job",
-    "Restored Admin mode access after returning from Naxos",
-    "Fixed the Naxos return cleanup so its overlay cannot remain over Evia"
+    "Restored direct access to Time on Course and Off the Job",
+    "Restored the Targets launcher",
+    "Restored Admin mode without bringing back the old EPA simulator"
   ]
 }
