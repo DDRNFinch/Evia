@@ -23,4 +23,45 @@ window.addEventListener("load",patch);
 window.addEventListener("pageshow",patch);
 document.addEventListener("click",()=>setTimeout(patch,0),true);
 setTimeout(patch,250);
+
+/* v44: true fade-out -> navigation -> fade-in for section-changing controls. */
+const NAV_SELECTOR=[
+  "button[data-cat]","button[data-job]","button[data-opp]","button[data-mode]","button[data-tab]","button[data-code]",
+  "button[data-arch]","button[data-quick]","button[data-evia]",".option-row",".self-back",".progress-arch",".self-evidence",
+  ".evia-target-mini",".evia-target-row",".evia-target-history-row","[data-view]","[data-nav]","[data-route]",
+  "[data-action='back']","[data-action='next']","[data-action='save']","[data-action='submit']","[data-action='finish']",
+  "[data-action='home']","[data-action='evidence']","[data-action='coverage']"
+].join(",");
+const SURFACE_SELECTOR=".self-panel,.view-panel,.selfobs-view,.evia-tools-screen,.evia-sign-card,.selfobs-help-card,.evia-target-layer,.evia-rpl-layer";
+let replaying=false,transitioning=false;
+function reducedMotion(){return !!(window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches||document.querySelector(".is-reduced-motion"))}
+function surfaceFor(control){return control.closest?.(SURFACE_SELECTOR)||document.querySelector(SURFACE_SELECTOR)}
+function fallbackSurface(){return document.querySelector(SURFACE_SELECTOR)}
+document.addEventListener("click",event=>{
+  if(replaying||transitioning||reducedMotion()||event.defaultPrevented)return;
+  const control=event.target instanceof Element?event.target.closest(NAV_SELECTOR):null;
+  if(!control||control.disabled||control.getAttribute?.("aria-disabled")==="true")return;
+  if(control.matches?.("[data-evia-native-photo],[data-evia-native-video],[data-evia-native-gallery],[data-pick],[data-action='record'],[data-action='stop'],[data-action='download'],[data-install-update],[data-later]"))return;
+  const surface=surfaceFor(control);
+  if(!surface)return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  transitioning=true;
+  surface.classList.remove("evia-nav-enter");
+  surface.classList.add("evia-nav-leave");
+  window.setTimeout(()=>{
+    replaying=true;
+    try{control.click()}finally{replaying=false}
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      const next=surface.isConnected?surface:fallbackSurface();
+      if(next){
+        next.classList.remove("evia-nav-leave");
+        next.classList.remove("evia-nav-enter");
+        void next.offsetWidth;
+        next.classList.add("evia-nav-enter");
+      }
+      transitioning=false;
+    }));
+  },125);
+},true);
 })();
