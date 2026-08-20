@@ -1,9 +1,9 @@
 {
-  "version": "73",
-  "title": "Fix assistant page handoff",
+  "version": "74",
+  "title": "Fix assistant header transition",
   "details": [
-    "The selected assistant no longer appears to jump from its side position into the centre",
-    "The assistant page now covers the Evia screen before the centred assistant intro appears",
-    "All v72 assistant positions, gaze behaviour and Google selection prevention remain unchanged"
+    "The centred assistant name now fades out fully before the top-left assistant header appears",
+    "Milos, Symi and Tinos no longer appear to jump left during the page handoff",
+    "All v73 assistant behaviour and Google selection prevention remain otherwise unchanged"
   ]
 }
