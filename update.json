@@ -1,9 +1,9 @@
 {
-  "version": "67",
-  "title": "Add learner assistant network",
+  "version": "68",
+  "title": "Refine learner assistant animation",
   "details": [
-    "Adds the round yellow Evia Assistants button between the four progress arches",
-    "Milos, Symi and Tinos now float up beneath Evia while she looks down at them",
-    "Each assistant opens on its own full page using the approved Naxos-style transition"
+    "Milos, Symi and Tinos now fade and float in at a much slower pace",
+    "Evia looks to Milos, then Tinos, then Symi before returning to centre",
+    "The yellow Assistants control is locked to a true circular shape"
   ]
 }
