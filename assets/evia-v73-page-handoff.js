@@ -4,11 +4,18 @@ const STYLE_ID="evia-v73-page-handoff-style";
 const PAGE_SELECTOR=".evia-assistant-network-page";
 const WAIT_CLASS="evia-v73-intro-wait";
 const INTRO_DELAY=720;
+const READY_DELAY=.58;
 function ensureStyle(){
   if(document.getElementById(STYLE_ID))return;
   const style=document.createElement("style");
   style.id=STYLE_ID;
-  style.textContent=`${PAGE_SELECTOR}.${WAIT_CLASS} .evia-team-page-intro{opacity:0!important;transform:translateY(6px)!important}`;
+  style.textContent=`
+${PAGE_SELECTOR}.${WAIT_CLASS} .evia-team-page-intro{opacity:0!important;transform:translateY(6px)!important}
+${PAGE_SELECTOR}.is-ready .evia-team-page-brand,
+${PAGE_SELECTOR}.is-ready .evia-team-page-avatar,
+${PAGE_SELECTOR}.is-ready .evia-team-page-greeting,
+${PAGE_SELECTOR}.is-ready .evia-team-page-back{transition-delay:${READY_DELAY}s!important}
+`;
   document.head.appendChild(style)
 }
 function arm(page){
