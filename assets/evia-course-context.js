@@ -58,6 +58,6 @@ function physical(key){
 }
 proto.getItem=function(key){return original.getItem.call(this,physical(key))};
 proto.setItem=function(key,value){return original.setItem.call(this,physical(key),value)};
-proto.removeItem=function(key){return original.removeItem.call(this,physical(key),value)};
+proto.removeItem=function(key){return original.removeItem.call(this,physical(key))};
 window.EviaCourseContext={current,physicalKey:physical,originalStorage:original};
 })();
