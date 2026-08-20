@@ -7,7 +7,7 @@ const originalFetch=window.fetch.bind(window);
 
 function read(k,d){try{const x=JSON.parse(localStorage.getItem(k)||"null");return x??d}catch{return d}}
 function write(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch{return false}}
-function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function slug(s){return String(s||"course").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,60)||"course"}
 function store(){const x=read(KEY,{});return x&&typeof x==="object"&&!Array.isArray(x)?x:{}}
 function saveStore(x){return write(KEY,x)}
