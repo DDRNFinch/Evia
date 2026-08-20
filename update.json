@@ -1,9 +1,9 @@
 {
-  "version": "56",
-  "title": "Naxos now teaches and tests properly",
+  "version": "57",
+  "title": "Naxos EPA reset",
   "details": [
-    "Rebuilt Naxos around the KSBs in the learner's currently loaded course",
-    "Learn is reading, Guide is teaching plus checking, and Test removes the help",
-    "Added real KSB-mapped knowledge questions, voice interview testing and practical task review"
+    "Removed the existing EPA tests, learning activities, scores and simulator screens",
+    "EPA now opens to a clean Naxos starting screen only",
+    "Kept the four arch bars visible so the EPA can be rebuilt step by step"
   ]
 }
