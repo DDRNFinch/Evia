@@ -1,4 +1,4 @@
-const CACHE_NAME = "evia-shell-v49";
+const CACHE_NAME = "evia-shell-v50";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -52,6 +52,10 @@ const APP_SHELL = [
   "./assets/evia-storage-guard.js",
   "./assets/evia-st0264-epa-data.js",
   "./assets/evia-course-epa-guard.js",
+  "./assets/naxos-epa-data.js",
+  "./assets/naxos-epa-core.js",
+  "./assets/naxos-epa-practical.js",
+  "./assets/naxos-epa-interview.js",
   "./assets/evia-admin-epa.js",
   "./assets/evia-epa-shuffle.js",
   "./assets/evia-epa-interview-voice.js",
@@ -103,6 +107,23 @@ self.addEventListener("fetch", (event) => {
 
   if (url.pathname.endsWith("/update.json") || url.pathname.endsWith("/sw.js")) {
     event.respondWith(fetch(request, { cache: "no-store" }));
+    return;
+  }
+
+  const isNaxosEPA = /\/assets\/(?:evia-course-epa(?:-guard)?|naxos-epa-(?:data|core|practical|interview))\.(?:js|css)$/.test(url.pathname);
+  if (isNaxosEPA) {
+    event.respondWith((async () => {
+      try {
+        const response = await fetch(request, { cache: "no-store" });
+        if (response.ok) {
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put(request, response.clone());
+        }
+        return response;
+      } catch {
+        return (await caches.match(request, { ignoreSearch: true })) || Response.error();
+      }
+    })());
     return;
   }
 
