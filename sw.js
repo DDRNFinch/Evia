@@ -1,4 +1,4 @@
-const CACHE_NAME = "evia-shell-v74";
+const CACHE_NAME = "evia-shell-v75";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -43,12 +43,12 @@ const APP_SHELL = [
   "./assets/evia-avatar-motion.js",
   "./assets/evia-avatar-life.js",
   "./assets/evia-count-display.js",
+  "./assets/evia-arp.js",
   "./assets/evia-assistant-network.js",
   "./assets/evia-v69-interaction-fixes.js",
   "./assets/evia-v73-page-handoff.js",
   "./assets/evia-selfobs-fixes.js",
   "./assets/evia-video-recorder.js",
-  "./assets/evia-6570-qa.js",
   "./assets/evia-nvq.js",
   "./assets/evia-nvq-learner-guard.js",
   "./assets/evia-export-status.js",
@@ -57,7 +57,6 @@ const APP_SHELL = [
   "./assets/evia-compact-export.js",
   "./assets/evia-storage-guard.js",
   "./assets/evia-admin.js",
-  "./assets/evia-course-epa-guard.js",
   "./assets/evia-rpl-evidence.js",
   "./assets/evia-rpl-course.js",
   "./assets/evia-otj.js",
