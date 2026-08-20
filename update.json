@@ -1,9 +1,9 @@
 {
-  "version": "58",
-  "title": "Naxos EPA assistant is ready",
+  "version": "59",
+  "title": "Back to Evia transition",
   "details": [
-    "Added the new Naxos EPA assistant entry sequence",
-    "Naxos now matches Evia's movement and expressions in an indigo theme",
-    "Added the four EPA mock options ready for the step-by-step rebuild"
+    "Added Back to Evia at the bottom of the Naxos EPA screen",
+    "Naxos now fades out into Evia · Apprentice assistant before returning",
+    "The existing Evia homepage and all other app behaviour remain unchanged"
   ]
 }
