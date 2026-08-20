@@ -28,17 +28,15 @@ setTimeout(patch,250);
 const NAV_SELECTOR=[
   "button[data-cat]","button[data-job]","button[data-opp]","button[data-mode]","button[data-tab]","button[data-code]",
   "button[data-arch]","button[data-quick]","button[data-evia]",".option-row",".self-back",".progress-arch",".self-evidence",
-  ".evia-target-mini",".evia-target-row",".evia-target-history-row",
+  ".evia-target-mini",".evia-target-row",".evia-target-history-row","[data-view]","[data-nav]","[data-route]",
   "[data-action='back']","[data-action='next']","[data-action='save']","[data-action='submit']","[data-action='finish']",
   "[data-action='home']","[data-action='evidence']","[data-action='coverage']"
 ].join(",");
+const SURFACE_SELECTOR=".self-panel,.view-panel,.selfobs-view,.evia-tools-screen,.evia-sign-card,.selfobs-help-card,.evia-target-layer,.evia-rpl-layer";
 let replaying=false,transitioning=false;
 function reducedMotion(){return !!(window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches||document.querySelector(".is-reduced-motion"))}
-function surfaceFor(control){
-  return control.closest?.(".self-panel,.view-panel,.selfobs-view,.evia-tools-screen,.evia-sign-card,.selfobs-help-card,.evia-target-layer,.evia-rpl-layer")||
-    document.querySelector(".self-panel,.view-panel,.selfobs-view,.evia-tools-screen,.evia-target-layer,.evia-rpl-layer");
-}
-function nextSurface(){return document.querySelector(".self-panel,.view-panel,.selfobs-view,.evia-tools-screen,.evia-sign-card,.selfobs-help-card,.evia-target-layer,.evia-rpl-layer")}
+function surfaceFor(control){return control.closest?.(SURFACE_SELECTOR)||document.querySelector(SURFACE_SELECTOR)}
+function fallbackSurface(){return document.querySelector(SURFACE_SELECTOR)}
 document.addEventListener("click",event=>{
   if(replaying||transitioning||reducedMotion()||event.defaultPrevented)return;
   const control=event.target instanceof Element?event.target.closest(NAV_SELECTOR):null;
@@ -55,7 +53,7 @@ document.addEventListener("click",event=>{
     replaying=true;
     try{control.click()}finally{replaying=false}
     requestAnimationFrame(()=>requestAnimationFrame(()=>{
-      const next=nextSurface();
+      const next=surface.isConnected?surface:fallbackSurface();
       if(next){
         next.classList.remove("evia-nav-leave");
         next.classList.remove("evia-nav-enter");
