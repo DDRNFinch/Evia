@@ -3,6 +3,7 @@
 const COURSE_ID="6570-05";
 const MARKER="nisi-6570-pack-migration-v1";
 const TIMELINE_KEY="evia-course-timeline";
+const MAPPING_REVISION=2;
 const ROUTES=["thin","repair","specialist","drainage"];
 const EXPECTED={
   thin:{acs:238,units:[102,234,235,303,300,313,502,701,238]},
@@ -23,21 +24,20 @@ function routeCodes(route,m=meta()){
 }
 function descriptions(codes){const out={};for(const code of codes)out[code]=window.EviaTrowelACText?.describe?.(code)||`Assessment criterion ${code}`;return out}
 function packedMap(route,m,d){
-  const live=d.build(route),siteData=clone(live),codes=routeCodes(route,m);let supportMappings=0;
+  const live=d.build(route),siteData=clone(live);let holisticPrompts=0;
   siteData.forEach(cat=>(cat.jobs||[]).forEach(job=>(job.opps||[]).forEach(op=>{
     if(Array.isArray(op.codes)&&op.codes.length)return;
-    const themes=Array.isArray(op.themes)?op.themes:[],support=codes.find(code=>themes.includes(m.codeTheme?.[code]));
-    if(!support)throw Error(`No supporting NVQ AC for evidence point ${op.id}.`);
-    op.codes=[support];supportMappings++
+    op.codes=[];op.holistic=true;holisticPrompts++
   })));
-  return{live,siteData,supportMappings}
+  return{live,siteData,holisticPrompts}
 }
-function stripCodes(data){const x=clone(data);x.forEach(cat=>(cat.jobs||[]).forEach(job=>(job.opps||[]).forEach(op=>{delete op.codes})));return x}
-function primaryMappingsPreserved(packed,live){
+function stripMapping(data){const x=clone(data);x.forEach(cat=>(cat.jobs||[]).forEach(job=>(job.opps||[]).forEach(op=>{delete op.codes;delete op.holistic})));return x}
+function mappingsPreserved(packed,live){
   for(let ci=0;ci<live.length;ci++)for(let ji=0;ji<(live[ci].jobs||[]).length;ji++)for(let oi=0;oi<(live[ci].jobs[ji].opps||[]).length;oi++){
-    const before=(live[ci].jobs[ji].opps[oi].codes||[]).map(String),after=(packed[ci]?.jobs?.[ji]?.opps?.[oi]?.codes||[]).map(String);
-    if(before.length&&JSON.stringify(before)!==JSON.stringify(after))return false;
-    if(!before.length&&!after.length)return false
+    const before=(live[ci].jobs[ji].opps[oi].codes||[]).map(String),after=(packed[ci]?.jobs?.[ji]?.opps?.[oi]?.codes||[]).map(String),holistic=packed[ci]?.jobs?.[ji]?.opps?.[oi]?.holistic===true;
+    if(JSON.stringify(before)!==JSON.stringify(after))return false;
+    if(!before.length&&!holistic)return false;
+    if(before.length&&holistic)return false
   }
   return true
 }
@@ -47,13 +47,13 @@ function path(route,m,d){
     id:route,title:String(m.optionTitles?.[route]||route),compatStorageSuffix:`6570-05-${route}`,
     codes,codeDescriptions:descriptions(codes),siteData,units,
     glhTargetHours:Number(m.glhTargetHours)||847,tqtHours:Number(m.tqtHours)||1470,epaConfigured:false,
-    expectedAcCount:expected.acs,supportMappings:maps.supportMappings
+    expectedAcCount:expected.acs,holisticPrompts:maps.holisticPrompts
   }
 }
 function makePack(){
   const m=meta(),d=dataApi();
   return{
-    nisiCoursePack:1,schemaVersion:1,id:COURSE_ID,familyId:COURSE_ID,version:"1",
+    nisiCoursePack:1,schemaVersion:1,id:COURSE_ID,familyId:COURSE_ID,version:"1",mappingRevision:MAPPING_REVISION,
     title:String(m.title||"Trowel Occupations Level 3 — 6570-05"),shortTitle:String(m.shortTitle||"Trowel Occupations"),
     standard:"6570-05",standardId:"6570-05",choiceLabel:"Optional unit",courseType:"nvq",
     coverageLabel:"AC",learningLabel:"GLH",fourthLabel:"Units",glhTargetHours:Number(m.glhTargetHours)||847,
@@ -62,17 +62,18 @@ function makePack(){
   }
 }
 function stats(data,codes){
-  const allowed=new Set(codes),mapped=new Set(),all=[],ids=new Set(),empty=[],unknown=[];let jobs=0,opportunities=0;
+  const allowed=new Set(codes),mapped=new Set(),all=[],ids=new Set(),empty=[],unknown=[];let jobs=0,opportunities=0,holistic=0;
   (data||[]).forEach(cat=>{jobs+=(cat.jobs||[]).length;(cat.jobs||[]).forEach(job=>(job.opps||[]).forEach(op=>{
     opportunities++;const id=`${cat.id}/${job.id}/${op.id}`;if(ids.has(id))throw Error(`Duplicate NVQ evidence point ${id}.`);ids.add(id);
-    const xs=(op.codes||[]).map(String);if(!xs.length)empty.push(id);xs.forEach(code=>{all.push(code);mapped.add(code);if(!allowed.has(code))unknown.push(code)})
+    const xs=(op.codes||[]).map(String);if(!xs.length){if(op.holistic===true)holistic++;else empty.push(id)}xs.forEach(code=>{all.push(code);mapped.add(code);if(!allowed.has(code))unknown.push(code)})
   }))});
-  return{categories:(data||[]).length,jobs,opportunities,mapped:mapped.size,assignments:all.length,empty,unknown:[...new Set(unknown)],missing:codes.filter(code=>!mapped.has(code)),duplicates:all.length-new Set(all).size}
+  return{categories:(data||[]).length,jobs,opportunities,mapped:mapped.size,assignments:all.length,holistic,empty,unknown:[...new Set(unknown)],missing:codes.filter(code=>!mapped.has(code)),duplicates:all.length-new Set(all).size}
 }
 function verifyPack(raw){
   const m=meta(),d=dataApi(),pack=window.EviaCoursePacks?.normalize?window.EviaCoursePacks.normalize(raw):raw,errors=[],routes={};
   if(pack.id!==COURSE_ID)errors.push("course ID");
   if(pack.courseType!=="nvq")errors.push("course type");
+  if(Number(pack.mappingRevision)!==MAPPING_REVISION)errors.push("mapping revision");
   if(Number(pack.glhTargetHours)!==847)errors.push("847 GLH target");
   if(Number(pack.tqtHours)!==1470)errors.push("1470 TQT");
   if(pack.coverageLabel!=="AC"||pack.learningLabel!=="GLH"||pack.fourthLabel!=="Units")errors.push("NVQ labels");
@@ -86,9 +87,9 @@ function verifyPack(raw){
     if(JSON.stringify((p.units||[]).map(Number))!==JSON.stringify(expected.units))errors.push(`${route} unit route`);
     if(codes.length!==expected.acs||new Set(codes).size!==expected.acs)errors.push(`${route} ${expected.acs} AC codes`);
     if(JSON.stringify(p.codes)!==JSON.stringify(codes))errors.push(`${route} AC order`);
-    if(JSON.stringify(stripCodes(p.siteData))!==JSON.stringify(stripCodes(live)))errors.push(`${route} learner route parity`);
-    if(!primaryMappingsPreserved(p.siteData,live))errors.push(`${route} primary AC mapping parity`);
-    if(s.mapped!==expected.acs||s.missing.length||s.unknown.length||s.empty.length)errors.push(`${route} AC mapping audit`);
+    if(JSON.stringify(stripMapping(p.siteData))!==JSON.stringify(stripMapping(live)))errors.push(`${route} learner route parity`);
+    if(!mappingsPreserved(p.siteData,live))errors.push(`${route} AC mapping parity`);
+    if(s.mapped!==expected.acs||s.assignments!==expected.acs||s.missing.length||s.unknown.length||s.empty.length||s.duplicates)errors.push(`${route} AC mapping audit`);
     if(Object.keys(p.codeDescriptions||{}).length!==expected.acs)errors.push(`${route} AC descriptions`)
   }
   if((pack.pathways||[]).length!==ROUTES.length)errors.push("four pathways");
@@ -101,11 +102,11 @@ function migrate(){
   if(busy)return false;busy=true;
   try{
     const t=timeline();if(t.courseId!==COURSE_ID)return false;
-    if(installed())return true;
+    const current=installed();if(current&&Number(current.mappingRevision)===MAPPING_REVISION)return true;
     if(!window.EviaCoursePacks?.install)throw Error("Course pack engine is not ready.");
     const {pack,result}=verify();if(!result.ok)throw Error(`6570-05 pack parity failed: ${result.errors.join(", ")}`);
     window.EviaCoursePacks.install(pack);
-    write(MARKER,{status:"verified-and-installed",verifiedAt:Date.now(),version:pack.version,glhTargetHours:847,tqtHours:1470,routes:result.routes});
+    write(MARKER,{status:"verified-and-installed",verifiedAt:Date.now(),version:pack.version,mappingRevision:MAPPING_REVISION,glhTargetHours:847,tqtHours:1470,routes:result.routes});
     setTimeout(()=>location.reload(),80);return true
   }catch(error){
     console.error("Evia 6570-05 course-pack migration",error);
