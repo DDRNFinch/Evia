@@ -1,10 +1,9 @@
 {
-  "version": "44",
+  "version": "45",
   "title": "A new Evia update is ready",
   "details": [
-    "Moved Trowel Occupations 6570-05 onto the Nisi course-pack engine",
-    "Added verified four-pathway NVQ migration with strict Unit and AC parity checks",
-    "Kept the existing NVQ learner routes, GLH, RPL and hidden assessor mapping intact",
-    "Added true fade-out and fade-in transitions when moving between Evia sections"
+    "Made Evia float and resize smoothly between her home and top positions instead of snapping or collapsing",
+    "Added a runtime smoke audit for all four Trowel Occupations 6570-05 pathways",
+    "Verified NVQ course selection, evidence mapping, AC and Unit coverage, GLH, RPL, pathway storage isolation and export integration"
   ]
 }
