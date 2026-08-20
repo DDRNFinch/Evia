@@ -1,9 +1,9 @@
 {
-  "version": "47",
+  "version": "48",
   "title": "A new Evia update is ready",
   "details": [
-    "Kept Evia's circle and eye line thickness visually consistent while she resizes",
-    "Matched the travelling avatar's stroke weight to the destination before the seamless handoff",
-    "Preserved the v46 smooth float, resize and landing behaviour"
+    "Made the smaller top Evia use the same proportional line weight as large Evia",
+    "Removed the stroke compensation that made the small avatar look thicker",
+    "Matched the destination stroke exactly to the naturally scaled travelling avatar"
   ]
 }
