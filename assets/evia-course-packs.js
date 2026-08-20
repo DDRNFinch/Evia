@@ -7,7 +7,7 @@ const originalFetch=window.fetch.bind(window);
 
 function read(k,d){try{const x=JSON.parse(localStorage.getItem(k)||"null");return x??d}catch{return d}}
 function write(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch{return false}}
-function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function slug(s){return String(s||"course").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,60)||"course"}
 function store(){const x=read(KEY,{});return x&&typeof x==="object"&&!Array.isArray(x)?x:{}}
 function saveStore(x){return write(KEY,x)}
@@ -122,7 +122,8 @@ function validateMap(cs,data,label){
       job.opps.forEach((op,oi)=>{
         if(!op?.id||!op?.title||!op?.question||(!op?.instruction&&op?.media!=="talk"))throw Error(`${label}: evidence point ${oi+1} in ${job.title} is incomplete.`);
         const unique=`${cat.id}/${job.id}/${op.id}`;if(ids.has(unique))throw Error(`${label}: duplicate evidence point ${op.id}.`);ids.add(unique);
-        if(!Array.isArray(op.codes)||!op.codes.length)throw Error(`${label}: ${op.title} has no mapped KSB/AC.`);
+        if(!Array.isArray(op.codes))throw Error(`${label}: ${op.title} has an invalid KSB/AC mapping.`);
+        if(!op.codes.length&&op.holistic!==true)throw Error(`${label}: ${op.title} has no mapped KSB/AC.`);
         op.codes.forEach(code=>{code=String(code);if(!allowed.has(code))throw Error(`${label}: ${op.title} maps unknown code ${code}.`);mapped.add(code)})
       })
     })
