@@ -1,18 +1,16 @@
 (()=>{
 "use strict";
-const DURATION=920,HANDOFF=140;
+const DURATION=920;
 let active=null;
 function reduced(){return !!(window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches||document.querySelector(".is-reduced-motion"))}
-function cleanup(proxy,dest,travel,destFade,proxyFade){
+function cleanup(proxy,dest,travel){
   try{travel?.cancel()}catch{}
-  try{destFade?.cancel()}catch{}
-  try{proxyFade?.cancel()}catch{}
   dest?.classList.remove("evia-avatar-motion-target","evia-avatar-motion-handoff");
   proxy?.remove();active=null
 }
 function clearActive(){
   if(!active)return;
-  cleanup(active.proxy,active.dest,active.travel,active.destFade,active.proxyFade)
+  cleanup(active.proxy,active.dest,active.travel)
 }
 function makeProxy(button,rect){
   const proxy=button.cloneNode(true),face=button.querySelector(".evia-face"),stroke=face?getComputedStyle(face).borderTopWidth:"3px";
@@ -22,18 +20,29 @@ function makeProxy(button,rect){
   Object.assign(proxy.style,{position:"fixed",left:`${rect.left}px`,top:`${rect.top}px`,width:`${rect.width}px`,height:`${rect.height}px`,margin:"0",transform:"translate3d(0,0,0) scale(1)",transformOrigin:"0 0",opacity:"0",zIndex:"10000",pointerEvents:"none"});
   document.body.appendChild(proxy);return proxy
 }
+function syncAnimationPhase(proxy,dest){
+  const selectors=[".evia-float",".evia-halo",".evia-eye"];
+  for(const selector of selectors){
+    const from=[...proxy.querySelectorAll(selector)],to=[...dest.querySelectorAll(selector)];
+    for(let i=0;i<Math.min(from.length,to.length);i++){
+      const a=from[i].getAnimations?.()||[],b=to[i].getAnimations?.()||[];
+      for(let j=0;j<Math.min(a.length,b.length);j++){
+        const t=a[j].currentTime;
+        if(typeof t==="number"&&Number.isFinite(t))try{b[j].currentTime=t}catch{}
+      }
+    }
+  }
+}
 function handoff(proxy,dest,travel){
   if(!proxy?.isConnected||!dest?.isConnected)return cleanup(proxy,dest,travel);
-  dest.classList.remove("evia-avatar-motion-target");
+  syncAnimationPhase(proxy,dest);
+  /* Keep the real avatar fully opaque before the travelling copy is removed.
+     This prevents Evia's normal 0.6s anchor opacity transition from flashing at touchdown. */
   dest.classList.add("evia-avatar-motion-handoff");
-  const options={duration:HANDOFF,easing:"cubic-bezier(.22,1,.36,1)",fill:"forwards"};
-  const destFade=dest.animate([{opacity:0},{opacity:1}],options);
-  const proxyFade=proxy.animate([{opacity:1},{opacity:0}],options);
-  active={proxy,dest,travel,destFade,proxyFade};
-  Promise.allSettled([destFade.finished,proxyFade.finished]).then(()=>{
-    if(active?.proxy!==proxy)return;
-    cleanup(proxy,dest,travel,destFade,proxyFade)
-  })
+  dest.classList.remove("evia-avatar-motion-target");
+  void dest.offsetWidth;
+  proxy.remove();active=null;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>dest.isConnected&&dest.classList.remove("evia-avatar-motion-handoff")))
 }
 document.addEventListener("click",event=>{
   if(active||reduced())return;
@@ -42,8 +51,8 @@ document.addEventListener("click",event=>{
   const from=button.getBoundingClientRect();if(!from.width||!from.height)return;
   const proxy=makeProxy(button,from);
   requestAnimationFrame(()=>{
-    /* v44 delays section-changing clicks for the page fade. The first user click therefore
-       leaves the original anchor connected; the replayed click performs the real shell swap. */
+    /* Page navigation replays this click after its short fade-out. Animate only after
+       that replay has replaced the original Evia anchor with the destination anchor. */
     if(button.isConnected){proxy.remove();return}
     const dest=document.querySelector(".selfobs .evia-anchor[data-evia]");
     if(!dest){proxy.remove();return}
@@ -54,7 +63,7 @@ document.addEventListener("click",event=>{
       {transform:"translate3d(0,0,0) scale(1,1)"},
       {transform:`translate3d(${dx}px,${dy}px,0) scale(${sx},${sy})`}
     ],{duration:DURATION,easing:"cubic-bezier(.16,1,.3,1)",fill:"forwards"});
-    active={proxy,dest,travel,destFade:null,proxyFade:null};
+    active={proxy,dest,travel};
     travel.finished.then(()=>handoff(proxy,dest,travel)).catch(()=>{
       if(active?.proxy===proxy)cleanup(proxy,dest,travel)
     })
