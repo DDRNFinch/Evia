@@ -1,9 +1,9 @@
 {
-  "version": "42",
+  "version": "43",
   "title": "A new Evia update is ready",
   "details": [
-    "Replaced the large Home target mini-board with a simple yellow target icon",
-    "The number beside the target shows how many of the current five targets are still unfinished",
-    "Tapping the yellow target still opens the full SMART target board, with target calculations and learner progress unchanged"
+    "Added smoother fade transitions between pages and views",
+    "Added subtle premium press feedback to buttons, pills, targets and progress controls",
+    "Improved overlay, tab and notification motion while keeping reduced-motion accessibility support"
   ]
 }
