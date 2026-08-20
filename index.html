@@ -177,6 +177,7 @@
     if(guardTimer)clearInterval(guardTimer);
     guardTimer=setInterval(repairCaptureScreen,120);
   }
+
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startGuard);
   else startGuard();
   window.addEventListener('pageshow',repairCaptureScreen);
