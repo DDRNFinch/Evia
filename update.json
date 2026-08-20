@@ -1,9 +1,9 @@
 {
-  "version": "52",
-  "title": "Naxos readability update is ready",
+  "version": "53",
+  "title": "Naxos EPA simulator restored",
   "details": [
-    "Made the smaller Naxos text easier to read throughout the EPA simulator",
-    "Increased guidance, descriptions, labels, tags and question-support text",
-    "Kept the existing Naxos layout, headings and Evia screens unchanged"
+    "Restored Naxos as the EPA section inside Evia",
+    "Restored the demo-style Knowledge, Interview, Practical and Full Mock EPA structure",
+    "Kept the larger Naxos text and current assigned-course KSB support"
   ]
 }
