@@ -1,4 +1,4 @@
-const CACHE_NAME = "evia-shell-v56";
+const CACHE_NAME = "evia-shell-v57";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -10,9 +10,6 @@ const APP_SHELL = [
   "./assets/evia-selfobs-live.css",
   "./assets/evia-selfobs-fixes.css",
   "./assets/evia-updater.css",
-  "./assets/evia-admin-epa.css",
-  "./assets/evia-course-epa.css",
-  "./assets/naxos-epa-readability.css",
   "./assets/evia-rpl-evidence.css",
   "./assets/evia-rpl-course.css",
   "./assets/evia-targets.css",
@@ -53,16 +50,7 @@ const APP_SHELL = [
   "./assets/evia-otj-export.js",
   "./assets/evia-compact-export.js",
   "./assets/evia-storage-guard.js",
-  "./assets/evia-st0264-epa-data.js",
   "./assets/evia-course-epa-guard.js",
-  "./assets/naxos-epa-data.js",
-  "./assets/naxos-epa-core.js",
-  "./assets/naxos-epa-practical.js",
-  "./assets/naxos-epa-interview.js",
-  "./assets/naxos-course-learning.js",
-  "./assets/evia-admin-epa.js",
-  "./assets/evia-epa-shuffle.js",
-  "./assets/evia-epa-interview-voice.js",
   "./assets/evia-rpl-evidence.js",
   "./assets/evia-rpl-course.js",
   "./assets/evia-otj.js",
@@ -114,8 +102,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  const isNaxosEPA = /\/assets\/(?:evia-course-epa(?:-guard)?|naxos-(?:course-learning|epa-(?:data|core|practical|interview|readability)))\.(?:js|css)$/.test(url.pathname);
-  if (isNaxosEPA) {
+  if (url.pathname.endsWith("/assets/evia-course-epa-guard.js")) {
     event.respondWith((async () => {
       try {
         const response = await fetch(request, { cache: "no-store" });
