@@ -243,10 +243,13 @@
                       },
                       "codes": {
                         "type": "array",
-                        "minItems": 1,
+                        "minItems": 0,
                         "items": {
                           "type": "string"
                         }
+                      },
+                      "holistic": {
+                        "type": "boolean"
                       },
                       "bundle": {
                         "type": "string"
