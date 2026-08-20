@@ -115,6 +115,7 @@ function ensureStyles(){
   transition:transform 1.65s var(--ease-out),opacity 1.2s ease;
 }
 .${SHELL_CLASS}.is-screen-visible{opacity:1}
+.${SHELL_CLASS}.is-returning{pointer-events:none!important}
 .${SHELL_CLASS}.is-menu-open:after{opacity:.13;transform:translate(-50%,-5vh) scale(.94)}
 .naxos-epa-intro{
   position:absolute;
@@ -382,6 +383,7 @@ function enter(){
 }
 
 function exit(animated=true){
+  if(returning&&animated)return;
   clearTimers();
   const shell=document.querySelector(`.${SHELL_CLASS}`);
   if(!shell){
@@ -395,7 +397,6 @@ function exit(animated=true){
     shell.remove();
     return
   }
-  if(returning)return;
   returning=true;
   shell.classList.add("is-returning");
   shell.classList.remove("is-menu-open","is-content-ready");
