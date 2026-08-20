@@ -1,9 +1,9 @@
 {
-  "version": "71",
-  "title": "Restore smooth assistant interactions",
+  "version": "72",
+  "title": "Fix assistant snap and text selection",
   "details": [
-    "Milos, Symi and Tinos open normally again without the v70 click-through fault",
-    "Assistant selection now fades in place with no sideways or reverse movement",
-    "Evia uses one smooth gaze sequence that starts immediately on the yellow button"
+    "Milos, Symi and Tinos now freeze at their exact on-screen position when tapped before fading into their page",
+    "The assistant tap no longer forces the float animation to its final position, removing the visible jump",
+    "Android and Google text selection popups are disabled on app controls while text fields remain selectable"
   ]
 }
