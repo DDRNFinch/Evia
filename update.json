@@ -1,9 +1,9 @@
 {
-  "version": "57",
-  "title": "Naxos EPA reset",
+  "version": "58",
+  "title": "Naxos EPA assistant is ready",
   "details": [
-    "Removed the existing EPA tests, learning activities, scores and simulator screens",
-    "EPA now opens to a clean Naxos starting screen only",
-    "Kept the four arch bars visible so the EPA can be rebuilt step by step"
+    "Added the new Naxos EPA assistant entry sequence",
+    "Naxos now matches Evia's movement and expressions in an indigo theme",
+    "Added the four EPA mock options ready for the step-by-step rebuild"
   ]
 }
