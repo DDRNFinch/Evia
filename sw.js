@@ -1,4 +1,4 @@
-const CACHE_NAME = "evia-shell-v61";
+const CACHE_NAME = "evia-shell-v62";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -50,6 +50,7 @@ const APP_SHELL = [
   "./assets/evia-otj-export.js",
   "./assets/evia-compact-export.js",
   "./assets/evia-storage-guard.js",
+  "./assets/evia-admin.js",
   "./assets/evia-course-epa-guard.js",
   "./assets/evia-rpl-evidence.js",
   "./assets/evia-rpl-course.js",
