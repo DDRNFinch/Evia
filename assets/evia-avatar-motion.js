@@ -36,8 +36,6 @@ function syncAnimationPhase(proxy,dest){
 function handoff(proxy,dest,travel){
   if(!proxy?.isConnected||!dest?.isConnected)return cleanup(proxy,dest,travel);
   syncAnimationPhase(proxy,dest);
-  /* Keep the real avatar fully opaque before the travelling copy is removed.
-     This prevents Evia's normal 0.6s anchor opacity transition from flashing at touchdown. */
   dest.classList.add("evia-avatar-motion-handoff");
   dest.classList.remove("evia-avatar-motion-target");
   void dest.offsetWidth;
@@ -51,8 +49,6 @@ document.addEventListener("click",event=>{
   const from=button.getBoundingClientRect();if(!from.width||!from.height)return;
   const proxy=makeProxy(button,from);
   requestAnimationFrame(()=>{
-    /* Page navigation replays this click after its short fade-out. Animate only after
-       that replay has replaced the original Evia anchor with the destination anchor. */
     if(button.isConnected){proxy.remove();return}
     const dest=document.querySelector(".selfobs .evia-anchor[data-evia]");
     if(!dest){proxy.remove();return}
