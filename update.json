@@ -1,9 +1,9 @@
 {
-  "version": "59",
-  "title": "Back to Evia transition",
+  "version": "60",
+  "title": "Naxos now knows your progress",
   "details": [
-    "Added Back to Evia at the bottom of the Naxos EPA screen",
-    "Naxos now fades out into Evia · Apprentice assistant before returning",
-    "The existing Evia homepage and all other app behaviour remain unchanged"
+    "Naxos now greets the learner by first name",
+    "Added Naxos · EPA assistant in the top left of the EPA screen",
+    "Added the learner's current EPA percentage with a 0% to current progress animation"
   ]
 }
