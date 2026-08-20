@@ -1,9 +1,9 @@
 {
-  "version": "72",
-  "title": "Fix assistant snap and text selection",
+  "version": "73",
+  "title": "Fix assistant page handoff",
   "details": [
-    "Milos, Symi and Tinos now freeze at their exact on-screen position when tapped before fading into their page",
-    "The assistant tap no longer forces the float animation to its final position, removing the visible jump",
-    "Android and Google text selection popups are disabled on app controls while text fields remain selectable"
+    "The selected assistant no longer appears to jump from its side position into the centre",
+    "The assistant page now covers the Evia screen before the centred assistant intro appears",
+    "All v72 assistant positions, gaze behaviour and Google selection prevention remain unchanged"
   ]
 }
