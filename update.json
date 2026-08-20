@@ -1,9 +1,9 @@
 {
-  "version": "68",
-  "title": "Refine learner assistant animation",
+  "version": "69",
+  "title": "Fix Evia and assistant presses",
   "details": [
-    "Milos, Symi and Tinos now fade and float in at a much slower pace",
-    "Evia looks to Milos, then Tinos, then Symi before returning to centre",
-    "The yellow Assistants control is locked to a true circular shape"
+    "Evia no longer becomes progressively fainter after repeated presses",
+    "Milos, Symi and Tinos no longer dip, shrink or slide when selected",
+    "The approved v68 assistant entrance, gaze sequence and pages remain unchanged"
   ]
 }
