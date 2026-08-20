@@ -1,4 +1,4 @@
-const CACHE_NAME = "evia-shell-v62";
+const CACHE_NAME = "evia-shell-v63";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -74,11 +74,15 @@ const APP_SHELL = [
 ];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(APP_SHELL))
-      .then(() => self.skipWaiting()),
-  );
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    await Promise.all(APP_SHELL.map(async (path) => {
+      const response = await fetch(path, { cache: "reload" });
+      if (!response.ok) throw new Error(`Evia precache failed: ${path} ${response.status}`);
+      await cache.put(path, response.clone());
+    }));
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener("activate", (event) => {
@@ -103,6 +107,11 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  if (url.pathname.endsWith("/index.html") && url.searchParams.has("version-check")) {
+    event.respondWith(fetch(request, { cache: "no-store" }));
+    return;
+  }
+
   if (url.pathname.endsWith("/assets/evia-course-epa-guard.js")) {
     event.respondWith((async () => {
       try {
@@ -121,6 +130,8 @@ self.addEventListener("fetch", (event) => {
 
   if (request.mode === "navigate" || url.pathname.endsWith("/index.html")) {
     event.respondWith((async () => {
+      const cached = (await caches.match("./index.html")) || (await caches.match("./"));
+      if (cached) return cached;
       try {
         const response = await fetch(request, { cache: "no-store" });
         if (response.ok) {
@@ -130,26 +141,25 @@ self.addEventListener("fetch", (event) => {
         }
         return response;
       } catch {
-        return (await caches.match("./index.html", { ignoreSearch: true })) ||
-          (await caches.match("./", { ignoreSearch: true })) ||
-          Response.error();
+        return Response.error();
       }
     })());
     return;
   }
 
   event.respondWith((async () => {
-    const cached = await caches.match(request, { ignoreSearch: true });
-    if (cached) return cached;
+    const exact = await caches.match(request);
+    if (exact) return exact;
     try {
       const response = await fetch(request, { cache: "no-cache" });
       if (response.ok) {
         const cache = await caches.open(CACHE_NAME);
         await cache.put(request, response.clone());
+        return response;
       }
-      return response;
+      return (await caches.match(request, { ignoreSearch: true })) || response;
     } catch {
-      return Response.error();
+      return (await caches.match(request, { ignoreSearch: true })) || Response.error();
     }
   })());
 });
