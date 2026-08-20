@@ -1,9 +1,9 @@
 {
-  "version": "51",
-  "title": "Naxos EPA simulator is ready",
+  "version": "52",
+  "title": "Naxos readability update is ready",
   "details": [
-    "Added the full Naxos EPA simulator inside Evia",
-    "Naxos uses the KSBs from the learner's currently assigned course",
-    "Removed the Evia page flash between Naxos screens"
+    "Made the smaller Naxos text easier to read throughout the EPA simulator",
+    "Increased guidance, descriptions, labels, tags and question-support text",
+    "Kept the existing Naxos layout, headings and Evia screens unchanged"
   ]
 }
