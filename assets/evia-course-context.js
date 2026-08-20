@@ -9,25 +9,10 @@ const siteCodes=[...Array.from({length:29},(_,i)=>`K${i+1}`),"K40",...Array.from
 const joinerCodes=[...Array.from({length:20},(_,i)=>`K${i+1}`),...Array.from({length:11},(_,i)=>`K${i+30}`),...Array.from({length:13},(_,i)=>`S${i+1}`),...Array.from({length:8},(_,i)=>`S${i+23}`),...Array.from({length:5},(_,i)=>`B${i+1}`)];
 function timeline(){try{const x=JSON.parse(original.getItem.call(localStorage,TIMELINE_KEY)||"null");return x&&typeof x==="object"?x:{}}catch{return{}}}
 function installedPack(id){try{const all=JSON.parse(original.getItem.call(localStorage,PACK_KEY)||"{}");return all&&typeof all==="object"?all[String(id||"")]||null:null}catch{return null}}
-function trowelProfile(t){
-  const m=window.EviaTrowelMeta;if(!m)return null;
-  const option=m.routeUnits?.[t.pathway]?t.pathway:"thin";
-  const units=m.routeUnits[option]||m.routeUnits.thin||[];
-  const codes=units.flatMap(u=>m.unitCodes?.[String(u)]||[]);
-  return{
-    courseId:"6570-05",courseTitle:"Trowel Occupations Level 3 — 6570-05",pathway:option,pathwayTitle:m.optionTitles?.[option]||"",
-    storageSuffix:`6570-05-${option}`,dataPrefix:`evia-trowel-${option}-data`,codes,totalKsb:codes.length,
-    courseType:"nvq",coverageLabel:"AC",learningLabel:"GLH",fourthLabel:"Units",glhTargetHours:Number(m.glhTargetHours)||847,
-    tqtHours:Number(m.tqtHours)||1470,units,epaConfigured:false
-  };
-}
 function current(){
   const t=timeline(),pack=installedPack(t.courseId);
   if(pack&&window.EviaCoursePacks?.profile){
     const p=window.EviaCoursePacks.profile(pack,t.pathway);if(p)return p
-  }
-  if(t.courseId==="6570-05"){
-    const p=trowelProfile(t);if(p)return p;
   }
   if(t.courseId==="st0264-v1-4"){
     if(t.pathway==="architectural-joiner")return{
