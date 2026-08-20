@@ -3,6 +3,7 @@
 const SHELL_CLASS="naxos-epa-shell";
 const INDIGO="#30345e";
 let active=false;
+let returning=false;
 let timers=[];
 
 function eligible(){
@@ -99,6 +100,8 @@ function ensureStyles(){
   font-size:clamp(.72rem,2.4vw,.9rem);
   font-weight:430;
 }
+.${SHELL_CLASS}.is-returning .naxos-epa-intro strong{color:#202022}
+.${SHELL_CLASS}.is-returning .naxos-epa-intro span{color:#747477}
 .${SHELL_CLASS} .naxos-epa-avatar{
   --evia-size:clamp(9.75rem,17vw,11.75rem);
   --evia-stroke:clamp(2.5px,.26vw,3px);
@@ -129,6 +132,7 @@ function ensureStyles(){
   --evia-stroke:clamp(1.5px,.15vw,1.75px);
   top:clamp(5rem,11vh,6.35rem);
 }
+.${SHELL_CLASS}.is-returning .naxos-epa-avatar{opacity:0!important;pointer-events:none!important}
 .${SHELL_CLASS} .naxos-epa-avatar .evia-halo{
   background:radial-gradient(circle,rgba(48,52,94,.24) 0%,rgba(48,52,94,.075) 43%,transparent 72%);
 }
@@ -149,6 +153,7 @@ function ensureStyles(){
   transition:opacity .36s ease .14s,transform .58s var(--ease-out) .14s;
 }
 .${SHELL_CLASS}.is-menu-open .naxos-epa-menu{opacity:1;pointer-events:auto;transform:translateY(0)}
+.${SHELL_CLASS}.is-returning .naxos-epa-menu{opacity:0!important;pointer-events:none!important;transform:translateY(8px)!important}
 .naxos-epa-options{
   width:min(29rem,100%);
   display:grid;
@@ -164,6 +169,29 @@ function ensureStyles(){
 .${SHELL_CLASS} .naxos-epa-option:hover,
 .${SHELL_CLASS} .naxos-epa-option:focus-visible{border-color:rgba(48,52,94,.24);background:rgba(255,255,255,.79)}
 .${SHELL_CLASS} .naxos-epa-option .option-row-copy>span{color:#363849}
+.naxos-back-evia{
+  position:absolute;
+  z-index:40;
+  left:50%;
+  bottom:max(.85rem,env(safe-area-inset-bottom));
+  opacity:0;
+  pointer-events:none;
+  transform:translateX(-50%);
+  border:0;
+  background:transparent;
+  color:rgba(48,52,94,.68);
+  cursor:pointer;
+  padding:.45rem .7rem;
+  font-size:.66rem;
+  font-weight:420;
+  letter-spacing:.01em;
+  transition:opacity .36s ease,color .2s ease,transform .28s var(--ease-out);
+  -webkit-tap-highlight-color:transparent;
+}
+.${SHELL_CLASS}.is-content-ready .naxos-back-evia{opacity:1;pointer-events:auto}
+.${SHELL_CLASS}.is-returning .naxos-back-evia{opacity:0!important;pointer-events:none!important}
+.naxos-back-evia:hover,.naxos-back-evia:focus-visible{color:${INDIGO};outline:none;transform:translate(-50%,-1px)}
+.naxos-back-evia:active{transform:translate(-50%,0) scale(.98)}
 @media(max-width:560px){
   .${SHELL_CLASS} .naxos-epa-avatar{top:40.5%}
   .${SHELL_CLASS}.is-menu-open .naxos-epa-avatar{--evia-size:5.9rem;top:max(4.45rem,calc(env(safe-area-inset-top) + 3.45rem))}
@@ -179,7 +207,7 @@ function ensureStyles(){
   .naxos-epa-menu{top:6.3rem}
 }
 @media(prefers-reduced-motion:reduce){
-  .${SHELL_CLASS},.naxos-epa-intro,.${SHELL_CLASS} .naxos-epa-avatar,.naxos-epa-menu{transition-duration:.01ms!important;transition-delay:0s!important}
+  .${SHELL_CLASS},.naxos-epa-intro,.${SHELL_CLASS} .naxos-epa-avatar,.naxos-epa-menu,.naxos-back-evia{transition-duration:.01ms!important;transition-delay:0s!important}
 }
 `;
   document.head.appendChild(s)
@@ -210,7 +238,8 @@ function makeShell(host){
         <button type="button" class="option-row naxos-epa-option" data-naxos-option="practical"><span class="option-row-copy"><span>Practical Mock</span></span></button>
         <button type="button" class="option-row naxos-epa-option" data-naxos-option="full"><span class="option-row-copy"><span>Full EPA Mock</span></span></button>
       </div>
-    </section>`;
+    </section>
+    <button type="button" class="naxos-back-evia" data-back-to-evia>Back to Evia</button>`;
   host.appendChild(shell);
   const avatar=shell.querySelector("[data-naxos]");
   const menu=shell.querySelector(".naxos-epa-menu");
@@ -221,6 +250,11 @@ function makeShell(host){
     shell.classList.toggle("is-menu-open",open);
     avatar.setAttribute("aria-expanded",String(open));
     menu?.setAttribute("aria-hidden",String(!open))
+  });
+  shell.querySelector("[data-back-to-evia]")?.addEventListener("click",e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    exit(true)
   });
   shell.querySelectorAll("[data-naxos-option]").forEach(button=>button.addEventListener("click",e=>{
     e.preventDefault();
@@ -235,6 +269,7 @@ function enter(){
   if(!host)return false;
   ensureStyles();
   clearTimers();
+  returning=false;
   active=true;
   const shell=makeShell(host);
   const intro=shell.querySelector(".naxos-epa-intro");
@@ -245,10 +280,37 @@ function enter(){
   return true
 }
 
-function exit(){
+function exit(animated=true){
   clearTimers();
-  active=false;
-  document.querySelectorAll(`.${SHELL_CLASS}`).forEach(x=>x.remove())
+  const shell=document.querySelector(`.${SHELL_CLASS}`);
+  if(!shell){
+    active=false;
+    returning=false;
+    return
+  }
+  if(!animated){
+    active=false;
+    returning=false;
+    shell.remove();
+    return
+  }
+  if(returning)return;
+  returning=true;
+  shell.classList.add("is-returning");
+  shell.classList.remove("is-menu-open","is-content-ready");
+  const intro=shell.querySelector(".naxos-epa-intro");
+  later(()=>{
+    if(!intro)return;
+    intro.innerHTML="<strong>Evia</strong><span>Apprentice assistant</span>";
+    intro.classList.add("is-visible")
+  },680);
+  later(()=>intro?.classList.remove("is-visible"),1580);
+  later(()=>shell.classList.remove("is-screen-visible"),2160);
+  later(()=>{
+    active=false;
+    returning=false;
+    shell.remove()
+  },2920)
 }
 
 document.addEventListener("click",e=>{
@@ -262,9 +324,9 @@ document.addEventListener("click",e=>{
     enter();
     return
   }
-  if(active)exit()
+  if(active)exit(true)
 },true);
 
-window.addEventListener("pagehide",exit);
+window.addEventListener("pagehide",()=>exit(false));
 window.EviaNaxosLanding={enter,exit,isActive:()=>active};
 })();
