@@ -1,9 +1,9 @@
 {
-  "version": "45",
+  "version": "46",
   "title": "A new Evia update is ready",
   "details": [
-    "Made Evia float and resize smoothly between her home and top positions instead of snapping or collapsing",
-    "Added a runtime smoke audit for all four Trowel Occupations 6570-05 pathways",
-    "Verified NVQ course selection, evidence mapping, AC and Unit coverage, GLH, RPL, pathway storage isolation and export integration"
+    "Removed the landing blip from Evia's premium float-and-resize animation",
+    "Kept Evia fully opaque at touchdown instead of briefly fading between avatar copies",
+    "Synchronised Evia's idle float and blink animation phase before the final handoff"
   ]
 }
