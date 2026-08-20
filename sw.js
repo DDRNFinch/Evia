@@ -1,4 +1,4 @@
-const CACHE_NAME = "evia-shell-v42-target-badge";
+const CACHE_NAME = "evia-shell-v42-premium-motion";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -22,6 +22,7 @@ const APP_SHELL = [
   "./assets/evia-video-recorder.css",
   "./assets/evia-v21.css",
   "./assets/evia-nvq.css",
+  "./assets/evia-premium-motion.css",
   "./assets/evia-trowel-meta.js",
   "./assets/evia-trowel-data.js",
   "./assets/evia-trowel-ac-text.js",
@@ -58,6 +59,7 @@ const APP_SHELL = [
   "./assets/evia-toc.js",
   "./assets/evia-targets.js",
   "./assets/evia-updater.js",
+  "./assets/evia-premium-motion.js",
   "./course-packs/Bricklayer_ST0095_v1.2.nisi",
   "./app/evia-site-data-1.ts",
   "./app/evia-site-data-2.ts",
