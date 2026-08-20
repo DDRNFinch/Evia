@@ -1,6 +1,5 @@
 (()=>{
 "use strict";
-let pending=false,loading=true;
 const BACKDROP_CLASS="naxos-section-backdrop";
 function eligible(){try{const c=window.EviaCourseContext?.current?.();return !!c&&c.epaConfigured!==false&&String(c.courseType||"apprenticeship")!=="nvq"}catch{return false}}
 function ensureStyles(){
@@ -23,12 +22,17 @@ function hideBackdrop(delay=0){
     window.setTimeout(()=>b.remove(),450)
   },delay)
 }
+function openNaxos(){
+  const n=window.NaxosDemoEPA;
+  if(!n?.enter){hideBackdrop();console.error("Naxos EPA modules were not available");return}
+  n.enter()
+}
 window.addEventListener("click",e=>{
   const b=e.target.closest?.('[data-arch="EPA"]');
   if(!b||!eligible())return;
   e.preventDefault();e.stopPropagation();e.stopImmediatePropagation?.();
   showBackdrop();
-  if(window.NaxosDemoEPA?.enter)window.NaxosDemoEPA.enter();else pending=true;
+  openNaxos();
 },true);
 const observer=new MutationObserver(mutations=>{
   for(const mutation of mutations){
@@ -42,14 +46,6 @@ const observer=new MutationObserver(mutations=>{
   }
 });
 observer.observe(document.documentElement,{childList:true,subtree:true});
-const files=["naxos-epa-data.js","naxos-epa-core.js","naxos-epa-practical.js","naxos-epa-interview.js"];
-function load(i){
-  if(i>=files.length){loading=false;if(pending&&window.NaxosDemoEPA?.enter){pending=false;showBackdrop();window.NaxosDemoEPA.enter()}return}
-  const s=document.createElement("script");s.src=`/Evia/assets/${files[i]}?v=51`;s.defer=true;
-  s.onload=()=>load(i+1);
-  s.onerror=()=>{loading=false;pending=false;hideBackdrop();console.error(`Naxos EPA could not load ${files[i]}`)};
-  document.head.appendChild(s)
-}
-load(0);
-window.EviaNaxosLoader={get loading(){return loading}};
+window.addEventListener("load",()=>window.NaxosDemoEPA?.patchArch?.());
+window.EviaNaxosLoader={loading:false,open:openNaxos};
 })();
