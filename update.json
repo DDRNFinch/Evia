@@ -1,9 +1,9 @@
 {
-  "version": "69",
-  "title": "Fix Evia and assistant presses",
+  "version": "70",
+  "title": "Smooth Evia and assistant transitions",
   "details": [
-    "Evia no longer becomes progressively fainter after repeated presses",
-    "Milos, Symi and Tinos no longer dip, shrink or slide when selected",
-    "The approved v68 assistant entrance, gaze sequence and pages remain unchanged"
+    "Milos, Symi and Tinos now fade out in place when selected with no side flick",
+    "Evia starts looking at the assistants immediately when the yellow button is pressed",
+    "Evia movement is smoother while preserving the approved assistant entrance and pages"
   ]
 }
