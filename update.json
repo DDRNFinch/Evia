@@ -1,9 +1,9 @@
 {
-  "version": "66",
-  "title": "Add Trowel Occupations Q&A",
+  "version": "67",
+  "title": "Add learner assistant network",
   "details": [
-    "Trowel Occupations Level 3 now uses AC · GLH · Q&A",
-    "Q&A is reserved for mock tests based on the selected route's assessment criteria",
-    "The NVQ remains EPA-free and all v64/v65 course behaviour is preserved"
+    "Adds the round yellow Evia Assistants button between the four progress arches",
+    "Milos, Symi and Tinos now float up beneath Evia while she looks down at them",
+    "Each assistant opens on its own full page using the approved Naxos-style transition"
   ]
 }
