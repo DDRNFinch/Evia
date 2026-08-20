@@ -2,4 +2,5 @@
 .evia-motion-proxy{transition:none!important;will-change:transform,opacity;contain:layout style paint;-webkit-tap-highlight-color:transparent}
 .evia-motion-proxy .evia-face{transition:none!important}
 .evia-avatar-motion-target{opacity:0!important;transition:none!important}
-@media(prefers-reduced-motion:reduce){.evia-motion-proxy{display:none!important}.evia-avatar-motion-target{opacity:1!important}}
+.evia-avatar-motion-handoff{transition:none!important;will-change:opacity}
+@media(prefers-reduced-motion:reduce){.evia-motion-proxy{display:none!important}.evia-avatar-motion-target{opacity:1!important}.evia-avatar-motion-handoff{transition:none!important}}
