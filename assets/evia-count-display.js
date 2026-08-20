@@ -24,11 +24,13 @@ window.addEventListener("pageshow",patch);
 document.addEventListener("click",()=>setTimeout(patch,0),true);
 setTimeout(patch,250);
 
-/* v44: true fade-out -> navigation -> fade-in for section-changing controls. */
+/* Keep the fade transition on ordinary Evia navigation only. TOC, OTJ, EPA and
+   the Targets launcher have their own document-level handlers and must receive
+   the original physical click rather than a replayed synthetic click. */
 const NAV_SELECTOR=[
   "button[data-cat]","button[data-job]","button[data-opp]","button[data-mode]","button[data-tab]","button[data-code]",
-  "button[data-arch]","button[data-quick]","button[data-evia]",".option-row",".self-back",".progress-arch",".self-evidence",
-  ".evia-target-mini",".evia-target-row",".evia-target-history-row","[data-view]","[data-nav]","[data-route]",
+  "button[data-arch='KSB']","button[data-quick]","button[data-evia]",".option-row",".self-back",".self-evidence",
+  ".evia-target-row",".evia-target-history-row","[data-view]","[data-nav]","[data-route]",
   "[data-action='back']","[data-action='next']","[data-action='save']","[data-action='submit']","[data-action='finish']",
   "[data-action='home']","[data-action='evidence']","[data-action='coverage']"
 ].join(",");
