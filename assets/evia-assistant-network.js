@@ -25,7 +25,7 @@ function ensureStyles(){
 .evia-team-launch-eye{width:20%;aspect-ratio:1;border:2px solid #fff;border-radius:50%;box-sizing:border-box}
 .evia-team-cluster{position:absolute;z-index:11;left:50%;top:calc(42% + 4.6rem);width:min(18.5rem,78vw);transform:translateX(-50%);display:grid;grid-template-columns:repeat(3,1fr);gap:.65rem;pointer-events:none}
 .evia-team-choice{border:0;background:transparent;padding:0;opacity:0;pointer-events:none;cursor:pointer;transform:translateY(5.7rem) scale(.78);transition:opacity .30s ease,transform .52s cubic-bezier(.22,1,.36,1);transition-delay:0s;-webkit-tap-highlight-color:transparent}
-.selfobs.evia-team-open .evia-team-choice{opacity:1;pointer-events:auto;transform:translateY(0) scale(1);transition-property:opacity,transform;transition-duration:1.68s,2.88s;transition-timing-function:ease,cubic-bezier(.22,1,.36,1)}
+.selfobs.evia-team-open .evia-team-choice{opacity:1;pointer-events:auto;transform:translateY(0) scale(1);transition-property:opacity,transform;transition-duration:1.68s,2.88s;transition-timing-function:linear,cubic-bezier(.22,1,.36,1)}
 .selfobs.evia-team-open .evia-team-choice:nth-child(1){transition-delay:0s}.selfobs.evia-team-open .evia-team-choice:nth-child(2){transition-delay:.16s}.selfobs.evia-team-open .evia-team-choice:nth-child(3){transition-delay:.32s}
 .evia-team-avatar{--team-color:#777;width:clamp(3.8rem,16vw,4.75rem);height:clamp(3.8rem,16vw,4.75rem);margin:0 auto;position:relative;display:grid;place-items:center}
 .evia-team-avatar:before{content:"";position:absolute;inset:-28%;border-radius:50%;filter:blur(14px);background:radial-gradient(circle,color-mix(in srgb,var(--team-color) 23%,transparent),transparent 70%);opacity:.9}
