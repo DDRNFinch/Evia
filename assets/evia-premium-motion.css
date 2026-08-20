@@ -6,13 +6,13 @@ body{-webkit-tap-highlight-color:transparent}
 /* Page/content changes. The companion observer restarts this class whenever a view is rendered. */
 .evia-motion-enter{animation:evia-premium-page-in var(--evia-motion-page) var(--evia-motion-ease) both}
 .evia-motion-layer-enter{animation:evia-premium-layer-in var(--evia-motion-layer) var(--evia-motion-ease) both}
-@keyframes evia-premium-page-in{0%{opacity:0;transform:translate3d(0,6px,0);filter:blur(.35px)}55%{opacity:1}100%{opacity:1;transform:translate3d(0,0,0);filter:blur(0)}}
+@keyframes evia-premium-page-in{0%{opacity:0;transform:translate3d(0,6px,0)}55%{opacity:1}100%{opacity:1;transform:translate3d(0,0,0)}}
 @keyframes evia-premium-layer-in{0%{opacity:0;transform:translate3d(0,7px,0) scale(.992)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}}
 
 /* Main Evia workspace opening/closing. */
-.selfobs .menu-stage,.selfobs-app .menu-stage{transform-origin:50% 22%;transition:opacity .25s var(--evia-motion-soft),transform .32s var(--evia-motion-ease),filter .28s var(--evia-motion-ease)}
-.selfobs:not(.is-open) .menu-stage,.selfobs-app:not(.is-open) .menu-stage{transform:translate3d(0,7px,0) scale(.995);filter:blur(.3px)}
-.selfobs.is-open .menu-stage,.selfobs-app.is-open .menu-stage{transform:translate3d(0,0,0) scale(1);filter:blur(0)}
+.selfobs .menu-stage,.selfobs-app .menu-stage{transform-origin:50% 22%;transition:opacity .25s var(--evia-motion-soft),transform .32s var(--evia-motion-ease)}
+.selfobs:not(.is-open) .menu-stage,.selfobs-app:not(.is-open) .menu-stage{transform:translate3d(0,7px,0) scale(.995)}
+.selfobs.is-open .menu-stage,.selfobs-app.is-open .menu-stage{transform:translate3d(0,0,0) scale(1)}
 .selfobs .self-invite,.selfobs-app .self-invite{transition:opacity .32s var(--evia-motion-soft),transform .32s var(--evia-motion-ease)}
 .selfobs.is-open .self-invite,.selfobs-app.is-open .self-invite{transform:translate(-50%,3px)}
 
