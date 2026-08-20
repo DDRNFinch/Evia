@@ -1,9 +1,9 @@
 {
-  "version": "74",
-  "title": "Fix assistant header transition",
+  "version": "75",
+  "title": "Add Assessment Readiness & Practice",
   "details": [
-    "The centred assistant name now fades out fully before the top-left assistant header appears",
-    "Milos, Symi and Tinos no longer appear to jump left during the page handoff",
-    "All v73 assistant behaviour and Google selection prevention remain otherwise unchanged"
+    "The fourth progress arch is now ARP for apprenticeship and NVQ learners",
+    "ARP opens Assessment Readiness & Practice with Multiple Choice, Discussion and Practical",
+    "The Naxos EPA landing and old NVQ Q&A placeholder are no longer loaded; all v74 behaviour remains otherwise unchanged"
   ]
 }
