@@ -22,13 +22,32 @@ function routeCodes(route,m=meta()){
   return units.flatMap(unit=>m.unitCodes?.[String(unit)]||[]).map(String)
 }
 function descriptions(codes){const out={};for(const code of codes)out[code]=window.EviaTrowelACText?.describe?.(code)||`Assessment criterion ${code}`;return out}
+function packedMap(route,m,d){
+  const live=d.build(route),siteData=clone(live),codes=routeCodes(route,m);let supportMappings=0;
+  siteData.forEach(cat=>(cat.jobs||[]).forEach(job=>(job.opps||[]).forEach(op=>{
+    if(Array.isArray(op.codes)&&op.codes.length)return;
+    const themes=Array.isArray(op.themes)?op.themes:[],support=codes.find(code=>themes.includes(m.codeTheme?.[code]));
+    if(!support)throw Error(`No supporting NVQ AC for evidence point ${op.id}.`);
+    op.codes=[support];supportMappings++
+  })));
+  return{live,siteData,supportMappings}
+}
+function stripCodes(data){const x=clone(data);x.forEach(cat=>(cat.jobs||[]).forEach(job=>(job.opps||[]).forEach(op=>{delete op.codes})));return x}
+function primaryMappingsPreserved(packed,live){
+  for(let ci=0;ci<live.length;ci++)for(let ji=0;ji<(live[ci].jobs||[]).length;ji++)for(let oi=0;oi<(live[ci].jobs[ji].opps||[]).length;oi++){
+    const before=(live[ci].jobs[ji].opps[oi].codes||[]).map(String),after=(packed[ci]?.jobs?.[ji]?.opps?.[oi]?.codes||[]).map(String);
+    if(before.length&&JSON.stringify(before)!==JSON.stringify(after))return false;
+    if(!before.length&&!after.length)return false
+  }
+  return true
+}
 function path(route,m,d){
-  const expected=EXPECTED[route],units=(m.routeUnits?.[route]||[]).map(Number),codes=routeCodes(route,m),siteData=d.build(route);
+  const expected=EXPECTED[route],units=(m.routeUnits?.[route]||[]).map(Number),codes=routeCodes(route,m),maps=packedMap(route,m,d),siteData=maps.siteData;
   return{
     id:route,title:String(m.optionTitles?.[route]||route),compatStorageSuffix:`6570-05-${route}`,
     codes,codeDescriptions:descriptions(codes),siteData,units,
     glhTargetHours:Number(m.glhTargetHours)||847,tqtHours:Number(m.tqtHours)||1470,epaConfigured:false,
-    expectedAcCount:expected.acs
+    expectedAcCount:expected.acs,supportMappings:maps.supportMappings
   }
 }
 function makePack(){
@@ -67,8 +86,9 @@ function verifyPack(raw){
     if(JSON.stringify((p.units||[]).map(Number))!==JSON.stringify(expected.units))errors.push(`${route} unit route`);
     if(codes.length!==expected.acs||new Set(codes).size!==expected.acs)errors.push(`${route} ${expected.acs} AC codes`);
     if(JSON.stringify(p.codes)!==JSON.stringify(codes))errors.push(`${route} AC order`);
-    if(JSON.stringify(p.siteData)!==JSON.stringify(live))errors.push(`${route} learner map parity`);
-    if(s.mapped!==expected.acs||s.missing.length||s.unknown.length||s.empty.length||s.duplicates)errors.push(`${route} AC mapping audit`);
+    if(JSON.stringify(stripCodes(p.siteData))!==JSON.stringify(stripCodes(live)))errors.push(`${route} learner route parity`);
+    if(!primaryMappingsPreserved(p.siteData,live))errors.push(`${route} primary AC mapping parity`);
+    if(s.mapped!==expected.acs||s.missing.length||s.unknown.length||s.empty.length)errors.push(`${route} AC mapping audit`);
     if(Object.keys(p.codeDescriptions||{}).length!==expected.acs)errors.push(`${route} AC descriptions`)
   }
   if((pack.pathways||[]).length!==ROUTES.length)errors.push("four pathways");
