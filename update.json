@@ -1,9 +1,9 @@
 {
-  "version": "63",
-  "title": "Fix update delivery",
+  "version": "64",
+  "title": "Restore Evia course screens",
   "details": [
-    "Installs a completely fresh Evia offline shell instead of mixing old and new files",
-    "Delivers the restored TOC, OTJ, Targets and Admin controls from v62",
-    "Keeps future Evia versions on their installed version until the update is explicitly installed"
+    "Restored the shared screen layout used by Time on Course, Off the Job, Targets and Admin mode",
+    "Keeps the new Naxos EPA assistant and does not restore the old EPA simulator",
+    "No learner evidence, course progress or stored data is changed"
   ]
 }
