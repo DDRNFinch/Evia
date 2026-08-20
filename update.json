@@ -1,9 +1,9 @@
 {
-  "version": "55",
-  "title": "Evia and Naxos feel alive again",
+  "version": "56",
+  "title": "Naxos now teaches and tests properly",
   "details": [
-    "Restored expressive eye and face movements for Evia and Naxos",
-    "Restored looking up, looking down, smiling, blinking, floating and subtle reactions",
-    "Kept the Naxos EPA simulator structure and larger readable text unchanged"
+    "Rebuilt Naxos around the KSBs in the learner's currently loaded course",
+    "Learn is reading, Guide is teaching plus checking, and Test removes the help",
+    "Added real KSB-mapped knowledge questions, voice interview testing and practical task review"
   ]
 }
