@@ -1,9 +1,10 @@
 {
-  "version": "43",
+  "version": "44",
   "title": "A new Evia update is ready",
   "details": [
-    "Added smoother fade transitions between pages and views",
-    "Added subtle premium press feedback to buttons, pills, targets and progress controls",
-    "Improved overlay, tab and notification motion while keeping reduced-motion accessibility support"
+    "Moved Trowel Occupations 6570-05 onto the Nisi course-pack engine",
+    "Added verified four-pathway NVQ migration with strict Unit and AC parity checks",
+    "Kept the existing NVQ learner routes, GLH, RPL and hidden assessor mapping intact",
+    "Added true fade-out and fade-in transitions when moving between Evia sections"
   ]
 }
