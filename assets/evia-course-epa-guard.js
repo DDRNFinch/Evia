@@ -126,6 +126,7 @@ function ensureStyles(){
 }
 .${SHELL_CLASS}.is-menu-open .naxos-epa-avatar{
   --evia-size:clamp(6.25rem,9vw,6.8rem);
+  --evia-stroke:clamp(1.5px,.15vw,1.75px);
   top:clamp(5rem,11vh,6.35rem);
 }
 .${SHELL_CLASS} .naxos-epa-avatar .evia-halo{
