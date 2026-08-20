@@ -1,9 +1,9 @@
 {
-  "version": "62",
-  "title": "Restore TOC, OTJ, Targets and Admin",
+  "version": "63",
+  "title": "Fix update delivery",
   "details": [
-    "Restored direct access to Time on Course and Off the Job",
-    "Restored the Targets launcher",
-    "Restored Admin mode without bringing back the old EPA simulator"
+    "Installs a completely fresh Evia offline shell instead of mixing old and new files",
+    "Delivers the restored TOC, OTJ, Targets and Admin controls from v62",
+    "Keeps future Evia versions on their installed version until the update is explicitly installed"
   ]
 }
