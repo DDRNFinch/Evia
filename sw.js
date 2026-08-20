@@ -1,4 +1,4 @@
-const CACHE_NAME = "evia-shell-v52";
+const CACHE_NAME = "evia-shell-v53";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -111,7 +111,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  const isNaxosEPA = /\/assets\/(?:evia-course-epa(?:-guard)?|naxos-epa-(?:data|core|practical|interview))\.(?:js|css)$/.test(url.pathname);
+  const isNaxosEPA = /\/assets\/(?:evia-course-epa(?:-guard)?|naxos-epa-(?:data|core|practical|interview|readability))\.(?:js|css)$/.test(url.pathname);
   if (isNaxosEPA) {
     event.respondWith((async () => {
       try {
