@@ -5,12 +5,33 @@ const INDIGO="#30345e";
 let active=false;
 let returning=false;
 let timers=[];
+let percentFrame=null;
 
 function eligible(){
   try{
     const c=window.EviaCourseContext?.current?.();
     return !!c&&c.epaConfigured!==false&&String(c.courseType||"apprenticeship")!=="nvq"
   }catch{return false}
+}
+
+function learnerFirstName(){
+  try{
+    const raw=window.localStorage.getItem("evia-full-name")||"";
+    return raw.trim().split(/\s+/)[0]||"there"
+  }catch{return "there"}
+}
+
+function currentEpaPercent(){
+  try{
+    const arch=[...document.querySelectorAll(".progress-arch")].find(x=>String(x.querySelector(".arch-label")?.textContent||"").trim().toUpperCase()==="EPA");
+    const text=arch?.querySelector(".arch-number")?.textContent||arch?.getAttribute("aria-label")||"";
+    const n=Number.parseFloat(String(text).replace(/[^0-9.]/g,""));
+    return Number.isFinite(n)?Math.max(0,Math.min(100,Math.round(n))):0
+  }catch{return 0}
+}
+
+function escapeHtml(value){
+  return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))
 }
 
 function later(fn,ms){
@@ -24,7 +45,31 @@ function later(fn,ms){
 
 function clearTimers(){
   timers.forEach(id=>window.clearTimeout(id));
-  timers=[]
+  timers=[];
+  if(percentFrame!==null){
+    cancelAnimationFrame(percentFrame);
+    percentFrame=null
+  }
+}
+
+function animateEpaPercent(shell,target){
+  const el=shell.querySelector("[data-naxos-percent]");
+  if(!el)return;
+  const reduced=window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches||document.querySelector(".is-reduced-motion");
+  if(reduced){
+    el.textContent=`${target}%`;
+    el.setAttribute("aria-label",`EPA progress ${target}%`);
+    return
+  }
+  const start=performance.now(),duration=1050;
+  const tick=now=>{
+    const p=Math.min(1,(now-start)/duration),eased=1-Math.pow(1-p,3),value=Math.round(target*eased);
+    el.textContent=`${value}%`;
+    el.setAttribute("aria-label",`EPA progress ${value}%`);
+    if(p<1)percentFrame=requestAnimationFrame(tick);
+    else percentFrame=null
+  };
+  percentFrame=requestAnimationFrame(tick)
 }
 
 function ensureStyles(){
@@ -102,6 +147,32 @@ function ensureStyles(){
 }
 .${SHELL_CLASS}.is-returning .naxos-epa-intro strong{color:#202022}
 .${SHELL_CLASS}.is-returning .naxos-epa-intro span{color:#747477}
+.naxos-epa-brand,
+.naxos-epa-percent{
+  position:absolute;
+  z-index:25;
+  top:max(.8rem,env(safe-area-inset-top));
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .45s ease;
+}
+.naxos-epa-brand{left:1rem}
+.naxos-epa-brand b,
+.naxos-epa-brand small{display:block}
+.naxos-epa-brand b{color:${INDIGO};font-size:.83rem;font-weight:440}
+.naxos-epa-brand small{margin-top:.04rem;color:rgba(48,52,94,.62);font-size:.55rem;font-weight:390}
+.naxos-epa-percent{
+  right:1rem;
+  color:${INDIGO};
+  text-align:right;
+  font-size:1rem;
+  font-weight:470;
+  letter-spacing:-.025em;
+}
+.${SHELL_CLASS}.is-content-ready .naxos-epa-brand,
+.${SHELL_CLASS}.is-content-ready .naxos-epa-percent{opacity:1}
+.${SHELL_CLASS}.is-returning .naxos-epa-brand,
+.${SHELL_CLASS}.is-returning .naxos-epa-percent{opacity:0!important}
 .${SHELL_CLASS} .naxos-epa-avatar{
   --evia-size:clamp(9.75rem,17vw,11.75rem);
   --evia-stroke:clamp(2.5px,.26vw,3px);
@@ -139,6 +210,27 @@ function ensureStyles(){
 .${SHELL_CLASS} .naxos-epa-avatar .evia-face,
 .${SHELL_CLASS} .naxos-epa-avatar .evia-eye{border-color:${INDIGO}}
 .${SHELL_CLASS} .naxos-epa-avatar:hover .evia-face{filter:drop-shadow(0 8px 14px rgba(48,52,94,.13))}
+.naxos-epa-greeting{
+  position:absolute;
+  z-index:18;
+  top:calc(42% + 6.25rem);
+  left:50%;
+  width:max-content;
+  max-width:calc(100% - 2rem);
+  margin:0;
+  opacity:0;
+  pointer-events:none;
+  transform:translate(-50%,6px);
+  color:rgba(48,52,94,.68);
+  white-space:nowrap;
+  text-align:center;
+  font-size:.62rem;
+  font-weight:400;
+  transition:opacity .4s ease,transform .4s var(--ease-out);
+}
+.${SHELL_CLASS}.is-content-ready:not(.is-menu-open) .naxos-epa-greeting{opacity:1;transform:translate(-50%,0)}
+.${SHELL_CLASS}.is-menu-open .naxos-epa-greeting,
+.${SHELL_CLASS}.is-returning .naxos-epa-greeting{opacity:0!important;transform:translate(-50%,-5px)!important}
 .naxos-epa-menu{
   position:absolute;
   z-index:15;
@@ -195,6 +287,7 @@ function ensureStyles(){
 @media(max-width:560px){
   .${SHELL_CLASS} .naxos-epa-avatar{top:40.5%}
   .${SHELL_CLASS}.is-menu-open .naxos-epa-avatar{--evia-size:5.9rem;top:max(4.45rem,calc(env(safe-area-inset-top) + 3.45rem))}
+  .naxos-epa-greeting{top:calc(40.5% + 5.75rem);font-size:.59rem}
   .naxos-epa-options{grid-template-rows:repeat(4,3.42rem);gap:.64rem}
   .naxos-epa-menu{inset:max(7.65rem,calc(env(safe-area-inset-top) + 6.9rem)) 1rem calc(1rem + env(safe-area-inset-bottom));padding-top:.55rem}
 }
@@ -207,7 +300,7 @@ function ensureStyles(){
   .naxos-epa-menu{top:6.3rem}
 }
 @media(prefers-reduced-motion:reduce){
-  .${SHELL_CLASS},.naxos-epa-intro,.${SHELL_CLASS} .naxos-epa-avatar,.naxos-epa-menu,.naxos-back-evia{transition-duration:.01ms!important;transition-delay:0s!important}
+  .${SHELL_CLASS},.naxos-epa-intro,.naxos-epa-brand,.naxos-epa-percent,.${SHELL_CLASS} .naxos-epa-avatar,.naxos-epa-greeting,.naxos-epa-menu,.naxos-back-evia{transition-duration:.01ms!important;transition-delay:0s!important}
 }
 `;
   document.head.appendChild(s)
@@ -218,8 +311,11 @@ function makeShell(host){
   const shell=document.createElement("section");
   shell.className=SHELL_CLASS;
   shell.setAttribute("aria-label","Naxos EPA assistant");
+  const first=learnerFirstName();
   shell.innerHTML=`
     <div class="naxos-epa-intro" aria-hidden="true"><strong>Naxos</strong><span>EPA assistant</span></div>
+    <div class="naxos-epa-brand"><b>Naxos</b><small>EPA assistant</small></div>
+    <div class="naxos-epa-percent" data-naxos-percent aria-label="EPA progress 0%">0%</div>
     <button type="button" class="evia-anchor naxos-epa-avatar" data-naxos aria-label="Naxos EPA assistant" aria-expanded="false">
       <span class="evia-float">
         <span class="evia-halo"></span>
@@ -231,6 +327,7 @@ function makeShell(host){
         </span>
       </span>
     </button>
+    <p class="naxos-epa-greeting">Hi ${escapeHtml(first)}, tap me to get started</p>
     <section class="naxos-epa-menu" aria-hidden="true">
       <div class="naxos-epa-options">
         <button type="button" class="option-row naxos-epa-option" data-naxos-option="multiple-choice"><span class="option-row-copy"><span>Multiple choice Mock</span></span></button>
@@ -271,12 +368,16 @@ function enter(){
   clearTimers();
   returning=false;
   active=true;
+  const epaTarget=currentEpaPercent();
   const shell=makeShell(host);
   const intro=shell.querySelector(".naxos-epa-intro");
   requestAnimationFrame(()=>requestAnimationFrame(()=>shell.classList.add("is-screen-visible")));
   later(()=>intro?.classList.add("is-visible"),720);
   later(()=>intro?.classList.remove("is-visible"),1600);
-  later(()=>shell.classList.add("is-content-ready"),2200);
+  later(()=>{
+    shell.classList.add("is-content-ready");
+    animateEpaPercent(shell,epaTarget)
+  },2200);
   return true
 }
 
