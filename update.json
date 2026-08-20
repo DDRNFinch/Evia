@@ -1,9 +1,9 @@
 {
-  "version": "46",
+  "version": "47",
   "title": "A new Evia update is ready",
   "details": [
-    "Removed the landing blip from Evia's premium float-and-resize animation",
-    "Kept Evia fully opaque at touchdown instead of briefly fading between avatar copies",
-    "Synchronised Evia's idle float and blink animation phase before the final handoff"
+    "Kept Evia's circle and eye line thickness visually consistent while she resizes",
+    "Matched the travelling avatar's stroke weight to the destination before the seamless handoff",
+    "Preserved the v46 smooth float, resize and landing behaviour"
   ]
 }
