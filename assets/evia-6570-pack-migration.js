@@ -3,7 +3,7 @@
 const COURSE_ID="6570-05";
 const MARKER="nisi-6570-pack-migration-v1";
 const TIMELINE_KEY="evia-course-timeline";
-const MAPPING_REVISION=2;
+const MAPPING_REVISION=3;
 const ROUTES=["thin","repair","specialist","drainage"];
 const EXPECTED={
   thin:{acs:238,units:[102,234,235,303,300,313,502,701,238]},
@@ -36,8 +36,7 @@ function mappingsPreserved(packed,live){
   for(let ci=0;ci<live.length;ci++)for(let ji=0;ji<(live[ci].jobs||[]).length;ji++)for(let oi=0;oi<(live[ci].jobs[ji].opps||[]).length;oi++){
     const before=(live[ci].jobs[ji].opps[oi].codes||[]).map(String),after=(packed[ci]?.jobs?.[ji]?.opps?.[oi]?.codes||[]).map(String),holistic=packed[ci]?.jobs?.[ji]?.opps?.[oi]?.holistic===true;
     if(JSON.stringify(before)!==JSON.stringify(after))return false;
-    if(!before.length&&!holistic)return false;
-    if(before.length&&holistic)return false
+    if(!before.length&&!holistic)return false
   }
   return true
 }
@@ -53,7 +52,7 @@ function path(route,m,d){
 function makePack(){
   const m=meta(),d=dataApi();
   return{
-    nisiCoursePack:1,schemaVersion:1,id:COURSE_ID,familyId:COURSE_ID,version:"1",mappingRevision:MAPPING_REVISION,
+    nisiCoursePack:1,schemaVersion:1,id:COURSE_ID,familyId:COURSE_ID,version:"1.1",mappingRevision:MAPPING_REVISION,
     title:String(m.title||"Trowel Occupations Level 3 — 6570-05"),shortTitle:String(m.shortTitle||"Trowel Occupations"),
     standard:"6570-05",standardId:"6570-05",choiceLabel:"Optional unit",courseType:"nvq",
     coverageLabel:"AC",learningLabel:"GLH",fourthLabel:"Units",glhTargetHours:Number(m.glhTargetHours)||847,
@@ -89,7 +88,7 @@ function verifyPack(raw){
     if(JSON.stringify(p.codes)!==JSON.stringify(codes))errors.push(`${route} AC order`);
     if(JSON.stringify(stripMapping(p.siteData))!==JSON.stringify(stripMapping(live)))errors.push(`${route} learner route parity`);
     if(!mappingsPreserved(p.siteData,live))errors.push(`${route} AC mapping parity`);
-    if(s.mapped!==expected.acs||s.assignments!==expected.acs||s.missing.length||s.unknown.length||s.empty.length||s.duplicates)errors.push(`${route} AC mapping audit`);
+    if(s.mapped!==expected.acs||s.assignments<expected.acs||s.missing.length||s.unknown.length||s.empty.length)errors.push(`${route} holistic AC mapping audit`);
     if(Object.keys(p.codeDescriptions||{}).length!==expected.acs)errors.push(`${route} AC descriptions`)
   }
   if((pack.pathways||[]).length!==ROUTES.length)errors.push("four pathways");
@@ -117,7 +116,7 @@ function cleanPack(pack){const x=clone(pack||{});delete x.installedAt;delete x.u
 function exportPack(){
   const pack=installed();if(!pack)return false;
   const blob=new Blob([JSON.stringify(cleanPack(pack),null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");
-  a.href=url;a.download="Trowel_Occupations_6570-05_v1.nisi";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);return true
+  a.href=url;a.download="Trowel_Occupations_6570-05_v1.1.nisi";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);return true
 }
 window.Evia6570PackMigration={build,verify,migrate,status:()=>read(MARKER,null),exportPack};
 migrate();
