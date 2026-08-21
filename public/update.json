@@ -1,10 +1,10 @@
 {
-  "version": "90",
-  "title": "Full NVQ AC browser",
+  "version": "91",
+  "title": "Complete holistic NVQ mapping",
   "details": [
-    "The AC arch bar now has By P / T and By unit views",
-    "Each P and T theme shows every linked official AC grouped by unit",
-    "Each required unit opens into LO and the complete handbook AC list",
-    "Full handbook wording, evidence status and purple RPL markers are visible throughout"
+    "Every selectable Level 3 NVQ evidence area now maps to at least one relevant AC",
+    "Empty holistic areas are repaired from their P/T themes and official handbook wording",
+    "Existing Level 3 course packs are remapped once so old empty areas are removed",
+    "The qualification audit still requires every official AC to remain reachable"
   ]
 }
