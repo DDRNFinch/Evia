@@ -1,10 +1,10 @@
 {
-  "version": "91",
-  "title": "Complete holistic NVQ mapping",
+  "version": "92",
+  "title": "Milos observation results in Evia",
   "details": [
-    "Every selectable Level 3 NVQ evidence area now maps to at least one relevant AC",
-    "Empty holistic areas are repaired from their P/T themes and official handbook wording",
-    "Existing Level 3 course packs are remapped once so old empty areas are removed",
-    "The qualification audit still requires every official AC to remain reachable"
+    "ACs and KSBs returned from a Milos observation now show as blue assessor-observed items in the arch section",
+    "NVQ ACs observed as competent in Milos now count as covered in AC coverage totals",
+    "Observed ACs are visible by P/T theme and by unit",
+    "The Milos observed-code display is cached for offline use"
   ]
 }
