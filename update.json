@@ -1,9 +1,10 @@
 {
-  "version": "75",
-  "title": "Add Assessment Readiness & Practice",
+  "version": "85",
+  "title": "Mini Milos assessor exchange is live",
   "details": [
-    "The fourth progress arch is now ARP for apprenticeship and NVQ learners",
-    "ARP opens Assessment Readiness & Practice with Multiple Choice, Discussion and Practical",
-    "The Naxos EPA landing and old NVQ Q&A placeholder are no longer loaded; all v74 behaviour remains otherwise unchanged"
+    "Visit Feedback now stores assessor reviews and observations newest first",
+    "Share with Assessor now creates real QR codes and accepts rear-camera or saved-image scans",
+    "Learner reference and course must match exactly, with blue o markers for assessor-observed criteria",
+    "Names, contacts, locations, media and signatures are excluded from QR transfers"
   ]
 }
