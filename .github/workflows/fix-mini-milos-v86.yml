@@ -71,7 +71,7 @@ jobs:
           for name in ('update.json', 'public/update.json'):
               Path(name).write_text(json.dumps(update, indent=2) + '\n')
           PY
-      - name: Verify repair
+      - name: Verify repair files
         shell: bash
         run: |
           set -euo pipefail
@@ -82,7 +82,6 @@ jobs:
           ! grep -q 'evia-beta-isolation.js' index.html
           grep -q '"./assets/qrcode.js"' sw.js
           grep -q 'evia-shell-v86' sw.js
-          npm test
       - name: Commit repaired app
         shell: bash
         run: |
@@ -92,3 +91,6 @@ jobs:
           git add -A
           git commit -m 'Repair Mini Milos QR sharing in Evia v86'
           git push origin HEAD:fix/mini-milos-qr-v86
+      - name: Run repository tests
+        shell: bash
+        run: npm test
