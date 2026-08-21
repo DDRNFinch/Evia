@@ -1,10 +1,10 @@
 {
-  "version": "87",
-  "title": "Mini Milos opening freeze repaired",
+  "version": "88",
+  "title": "RPL arranged by unit and AC",
   "details": [
-    "Mini Milos no longer performs full-page rescans when its screen opens",
-    "Observed markers are applied only to newly rendered content",
-    "The QR generator is loaded only when Share with Assessor is opened",
-    "The offline shell refreshes the repaired Mini Milos runtime while preserving cached course assets"
+    "NVQ RPL now opens in qualification unit order",
+    "Each unit shows its official ACs in numerical order",
+    "RPL marking and existing evidence coverage are unchanged",
+    "The unit-first layout makes large NVQ routes easier to navigate"
   ]
 }
