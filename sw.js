@@ -1,3 +1,4 @@
+// v88 updater repeat-prompt hotfix
 const CACHE_NAME = 'evia-shell-v88';
 const LEGACY_READY_CACHE = 'evia-beta-shell-v88';
 const CACHE_PREFIXES = ['evia-shell-', 'evia-beta-shell-'];
