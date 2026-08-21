@@ -39,4 +39,5 @@ function intercept(e){const c=ctx();if(!c)return;const target=e.target?.closest?
 window.addEventListener("click",intercept,true);
 window.addEventListener("evia:rpl-changed",()=>{if(document.querySelector(".evia-nvq-ac-browser-layer"))openThemes()});
 window.EviaNvqAcBrowser=Object.freeze({version:VERSION,open:openThemes,openThemes,openUnits});
+if(!document.querySelector('script[data-evia-milos-observed-arch]')){const s=document.createElement('script');s.defer=true;s.dataset.eviaMilosObservedArch='1';s.src='/Evia/assets/evia-milos-observed-arch-v91.js?v=91';document.head.appendChild(s)}
 })();
