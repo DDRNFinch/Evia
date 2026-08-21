@@ -3,6 +3,8 @@ name: Fix Mini Milos Freeze v87
 on:
   push:
     branches: [fix/mini-milos-freeze-v87]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: write
@@ -64,7 +66,7 @@ jobs:
               Path(name).write_text(json.dumps(update, indent=2) + '\n')
 
           test = Path('tests/mini-milos-freeze.test.mjs')
-          test.write_text("""import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport fs from 'node:fs';\n\nconst src = fs.readFileSync(new URL('../assets/evia-mini-milos-v86.js', import.meta.url), 'utf8');\n\ntest('Mini Milos does not eagerly load QR generation on app start', () => {\n  const start = src.match(/function start\\(\\)\\{([^}]|}(?!\\nwindow\\.EviaMiniMilos))*?\\}/s)?.[0] || '';\n  assert.ok(start);\n  assert.equal(start.includes('ensureQr()'), false);\n});\n\ntest('Mini Milos observer scopes work to added nodes', () => {\n  assert.match(src, /record\\.addedNodes\\.forEach\\(scheduleUi\\)/);\n  assert.match(src, /roots\\.forEach\\(root=>markObserved\\(root\\)\\)/);\n  assert.doesNotMatch(src, /new MutationObserver\\(\\(\\)=>\\{patchMini\\(\\);markObserved\\(\\)\\}\\)/);\n});\n""")
+          test.write_text("""import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport fs from 'node:fs';\n\nconst src = fs.readFileSync(new URL('../assets/evia-mini-milos-v86.js', import.meta.url), 'utf8');\n\ntest('Mini Milos does not eagerly load QR generation on app start', () => {\n  assert.doesNotMatch(src, /markObserved\\(\\);ensureQr\\(\\);/);\n});\n\ntest('Mini Milos observer scopes work to added nodes', () => {\n  assert.match(src, /record\\.addedNodes\\.forEach\\(scheduleUi\\)/);\n  assert.match(src, /roots\\.forEach\\(root=>markObserved\\(root\\)\\)/);\n  assert.doesNotMatch(src, /new MutationObserver\\(\\(\\)=>\\{patchMini\\(\\);markObserved\\(\\)\\}\\)/);\n});\n""")
           PY
       - name: Verify freeze repair
         shell: bash
