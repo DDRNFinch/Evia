@@ -16,81 +16,50 @@ jobs:
         with:
           ref: fix/mini-milos-qr-v86
           fetch-depth: 0
-      - name: Vendor QR generator and repair main paths
-        shell: bash
-        run: |
-          set -euo pipefail
-          curl -fsSL https://raw.githubusercontent.com/DDRNFinch/Milos/main/assets/qrcode.js -o assets/qrcode.js
-          python - <<'PY'
-          from pathlib import Path
-          import json
-
-          p = Path('index.html')
-          s = p.read_text()
-          s = s.replace('<meta name="apple-mobile-web-app-title" content="Evia Beta" />', '<meta name="apple-mobile-web-app-title" content="Evia" />')
-          s = s.replace('<meta name="evia-app-version" content="85" />', '<meta name="evia-app-version" content="86" />')
-          s = s.replace('<title>Evia Beta — Apprentice Vocational Assistant</title>', '<title>Evia — Apprentice Vocational Assistant</title>')
-          s = s.replace('<script src="./assets/evia-beta-isolation.js?v=76"></script>\n', '')
-          s = s.replace('/Evia_beta/', '/Evia/')
-          s = s.replace('evia-mini-milos-v85.js?v=85', 'evia-mini-milos-v86.js?v=86')
-          p.write_text(s)
-
-          src = Path('assets/evia-mini-milos-v85.js')
-          s = src.read_text()
-          s = s.replace('const VERSION=85;', 'const VERSION=86;')
-          s = s.replace("const QRLIB='/Milos/assets/qrcode.js?v=1.2';", "const QRLIB='./assets/qrcode.js?v=86';")
-          dst = Path('assets/evia-mini-milos-v86.js')
-          dst.write_text(s)
-          src.unlink()
-
-          p = Path('sw.js')
-          s = p.read_text()
-          s = s.replace('const CACHE_NAME = "evia-beta-shell-v85";', 'const CACHE_NAME = "evia-shell-v86";')
-          s = s.replace('  "./assets/evia-beta-isolation.js",\n', '')
-          s = s.replace('  "./assets/jsQR-1.4.0.js",', '  "./assets/jsQR-1.4.0.js",\n  "./assets/qrcode.js",')
-          s = s.replace('  "./assets/evia-mini-milos-v85.js",', '  "./assets/evia-mini-milos-v86.js",')
-          p.write_text(s)
-
-          for name in ('manifest.webmanifest', 'public/manifest.webmanifest'):
-              p = Path(name)
-              data = json.loads(p.read_text())
-              data['name'] = 'Evia — Apprentice Vocational Assistant'
-              data['short_name'] = 'Evia'
-              p.write_text(json.dumps(data, indent=2) + '\n')
-
-          update = {
-              'version': '86',
-              'title': 'Mini Milos QR sharing repaired',
-              'details': [
-                  'Share with Assessor now generates its QR entirely inside Evia',
-                  'The QR generator is stored and cached with Evia for offline use',
-                  'Evia main now loads its own /Evia assets instead of /Evia_beta assets',
-                  'Main Evia storage is no longer redirected through Beta isolation'
-              ]
-          }
-          for name in ('update.json', 'public/update.json'):
-              Path(name).write_text(json.dumps(update, indent=2) + '\n')
-          PY
-      - name: Verify repair files
+      - name: Finalise Mini Milos QR repair
         shell: bash
         run: |
           set -euo pipefail
           test -s assets/qrcode.js
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('assets/evia-mini-milos-v86.js')
+          s = p.read_text()
+          old = "function targetList(){const s=read('evia-targets-v1',{}),xs=Array.isArray(s?.targets)?s.targets:[];return xs.filter(t=>!t.completedAt).slice(0,12).map(t=>({id:String(t.id||''),title:String(t.title||'').slice(0,220),code:String(t.code||'').slice(0,32),dueDate:String(t.dueDate||s.dueDate||'').slice(0,10),status:t.completedAt?'Done':'Active'})).filter(t=>t.title)}"
+          new = "function targetList(){const s=read('evia-targets-v1',{}),xs=Array.isArray(s?.targets)?s.targets:[];return xs.filter(t=>!t.completedAt).slice(0,6).map(t=>({title:String(t.title||'').replace(/\\s+/g,' ').trim().slice(0,96),code:String(t.code||'').slice(0,32),dueDate:String(t.dueDate||s.dueDate||'').slice(0,10)})).filter(t=>t.title)}"
+          if old in s:
+              s = s.replace(old, new)
+          s = s.replace("const t=timeline(),done=codes(),base=read(BASELINE_KEY,{}),previous=new Set(Array.isArray(base[route])?base[route]:[]),changed=done.filter(x=>!previous.has(x)),l=learning(c);", "const t=timeline(),done=codes(),base=read(BASELINE_KEY,{}),previousList=Array.isArray(base[route])?base[route]:[],previous=new Set(previousList),changed=previousList.length?done.filter(x=>!previous.has(x)):[],l=learning(c);")
+          old_render = "function renderQr(el,text){if(typeof window.qrcode!=='function')throw Error('QR generator is not ready. Connect once and try again.');const qr=window.qrcode(0,'M');qr.addData(text,'Byte');qr.make();el.innerHTML=qr.createSvgTag({cellSize:5,margin:16,scalable:true,alt:'Evia progress QR for Milos'});const svg=el.querySelector('svg');if(svg){svg.style.width='100%';svg.style.maxWidth='310px';svg.style.height='auto';svg.style.display='block';svg.style.margin='0 auto'}}"
+          new_render = "function renderQr(el,text){if(typeof window.qrcode!=='function')throw Error('QR generator is not ready.');let qr;try{qr=window.qrcode(0,'M');qr.addData(text,'Byte');qr.make()}catch(first){qr=window.qrcode(0,'L');qr.addData(text,'Byte');qr.make()}el.innerHTML=qr.createSvgTag({cellSize:5,margin:16,scalable:true,alt:'Evia progress QR for Milos'});const svg=el.querySelector('svg');if(svg){svg.style.width='100%';svg.style.maxWidth='310px';svg.style.height='auto';svg.style.display='block';svg.style.margin='0 auto'}}"
+          if old_render in s:
+              s = s.replace(old_render, new_render)
+          p.write_text(s)
+          PY
+      - name: Verify QR safeguards
+        shell: bash
+        run: |
+          set -euo pipefail
           grep -q "const QRLIB='./assets/qrcode.js?v=86';" assets/evia-mini-milos-v86.js
-          grep -q 'evia-mini-milos-v86.js?v=86' index.html
+          grep -q "slice(0,6)" assets/evia-mini-milos-v86.js
+          grep -q "previousList.length?done.filter" assets/evia-mini-milos-v86.js
+          grep -q "window.qrcode(0,'L')" assets/evia-mini-milos-v86.js
           ! grep -q '/Evia_beta/' index.html
           ! grep -q 'evia-beta-isolation.js' index.html
           grep -q '"./assets/qrcode.js"' sw.js
           grep -q 'evia-shell-v86' sw.js
-      - name: Commit repaired app
+      - name: Commit safeguards
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
-          git commit -m 'Repair Mini Milos QR sharing in Evia v86'
-          git push origin HEAD:fix/mini-milos-qr-v86
+          git add assets/evia-mini-milos-v86.js
+          if ! git diff --cached --quiet; then
+            git commit -m 'Keep Mini Milos progress QR within reliable capacity'
+            git push origin HEAD:fix/mini-milos-qr-v86
+          fi
       - name: Run repository tests
         shell: bash
         run: npm test
