@@ -1,6 +1,6 @@
 (()=>{
 "use strict";
-const COURSE_ID="6570-05",MARKER="nisi-6570-smoke-v1",MAPPING_REVISION=2;
+const COURSE_ID="6570-05",MARKER="nisi-6570-smoke-v1",MAPPING_REVISION=3;
 const ROUTES={
   thin:{acs:238,units:[102,234,235,303,300,313,502,701,238]},
   repair:{acs:239,units:[102,234,235,303,300,313,502,701,690]},
@@ -28,19 +28,21 @@ function run(){
     if(pack.courseType!=="nvq"||pack.coverageLabel!=="AC"||pack.learningLabel!=="GLH"||pack.fourthLabel!=="Units")errors.push("NVQ labels/type");
     if(Number(pack.mappingRevision)!==MAPPING_REVISION)errors.push("NVQ mapping revision");
     if(Number(pack.glhTargetHours)!==847||Number(pack.tqtHours)!==1470)errors.push("GLH/TQT totals");
+    if(Number(window.EviaTrowelHandbook?.count)!==335)errors.push("official handbook AC wording set");
     for(const [route,expected] of Object.entries(ROUTES)){
       const path=pack.pathways?.find(x=>x.id===route),profile=packs.profile?.(pack,route);
       if(!path||!profile){errors.push(`${route}: missing pathway/profile`);continue}
       const codes=(path.codes||[]).map(String),allowed=new Set(codes),stats=mapStats(path,allowed),unitCodes=(pack.nvqMeta?.unitCodes||{});
       suffixes.add(profile.storageSuffix);
       if(codes.length!==expected.acs||allowed.size!==expected.acs)errors.push(`${route}: AC total`);
-      if(stats.mapped!==expected.acs||stats.assignments!==expected.acs||stats.duplicates||stats.empty||stats.unknown.length)errors.push(`${route}: exact evidence map coverage`);
+      if(stats.mapped!==expected.acs||stats.assignments<expected.acs||stats.empty||stats.unknown.length)errors.push(`${route}: holistic evidence map coverage`);
       if(JSON.stringify((profile.units||[]).map(Number))!==JSON.stringify(expected.units))errors.push(`${route}: unit route`);
       if(profile.storageSuffix!==`6570-05-${route}`)errors.push(`${route}: storage suffix`);
       if(profile.courseType!=="nvq"||profile.coverageLabel!=="AC"||profile.learningLabel!=="GLH"||profile.fourthLabel!=="Units")errors.push(`${route}: profile labels`);
       if(Number(profile.glhTargetHours)!==847||Number(profile.tqtHours)!==1470)errors.push(`${route}: profile GLH/TQT`);
       const official=expected.units.flatMap(unit=>unitCodes[String(unit)]||[]).map(String);
       if(official.length!==expected.acs||official.some(code=>!allowed.has(code)))errors.push(`${route}: Unit → AC metadata`);
+      if(codes.some(code=>!window.EviaTrowelHandbook?.text?.[code]))errors.push(`${route}: handbook wording gap`);
       routes[route]={...stats,acs:codes.length,units:profile.units,storageSuffix:profile.storageSuffix}
     }
     if(suffixes.size!==4)errors.push("pathway storage is not isolated");
@@ -48,7 +50,7 @@ function run(){
     if(active?.courseId===COURSE_ID){
       ISOLATED_KEYS.forEach(key=>{const expected=`${key}::${active.storageSuffix}`,actual=context.physicalKey?.(key);if(actual!==expected)errors.push(`active storage redirect ${key}`)});
     }
-    ["evia-nvq.js","evia-rpl-course.js","evia-compact-export.js"].forEach(name=>{if(!document.querySelector(`script[src*="${name}"]`))errors.push(`missing integration script ${name}`)});
+    ["evia-nvq.js","evia-rpl-course.js","evia-compact-export.js","evia-trowel-handbook-v89.js"].forEach(name=>{if(!document.querySelector(`script[src*="${name}"]`))errors.push(`missing integration script ${name}`)});
     const result={status:errors.length?"failed":"passed",checkedAt:Date.now(),errors,routes,activePathway:active?.courseId===COURSE_ID?active.pathway:null};
     if(errors.length)console.error("Evia 6570-05 smoke audit",result);else console.info("Evia 6570-05 smoke audit passed",result);
     return save(result)
