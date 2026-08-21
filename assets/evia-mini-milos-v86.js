@@ -1,13 +1,13 @@
 (()=>{
 'use strict';
-const VERSION=85;
+const VERSION=86;
 const VISITS_KEY='evia-mini-milos-visits-v2';
 const REF_KEY='evia-mini-milos-learner-ref-v1';
 const BASELINE_KEY='evia-mini-milos-share-baseline-v1';
 const PARTS_KEY='evia-mini-milos-parts-v2';
 const OBS_KEY='evia-mini-milos-observed-v1';
 const LIB_CACHE='evia-mini-milos-libs-v1';
-const QRLIB='/Milos/assets/qrcode.js?v=1.2';
+const QRLIB='./assets/qrcode.js?v=86';
 let stream=null,scanTimer=null,detector=null,decodeCanvas=null;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const read=(k,d)=>{try{const x=JSON.parse(localStorage.getItem(k)||'null');return x??d}catch{return d}};

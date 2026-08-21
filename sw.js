@@ -1,4 +1,4 @@
-const CACHE_NAME = "evia-beta-shell-v85";
+const CACHE_NAME = "evia-shell-v86";
 const CACHE_PREFIXES = ["evia-beta-shell-", "evia-shell-"];
 const APP_SHELL = [
   "./",
@@ -7,7 +7,6 @@ const APP_SHELL = [
   "./icon-192.png",
   "./icon-512.png",
   "./apple-touch-icon.png",
-  "./assets/evia-beta-isolation.js",
   "./assets/index-D_kAPZ6L.css",
   "./assets/evia-selfobs-live.css",
   "./assets/evia-selfobs-fixes.css",
@@ -67,6 +66,7 @@ const APP_SHELL = [
   "./course-delivery/practical-banks/6570-05-SPECIALIST-v1.json",
   "./course-delivery/practical-banks/6570-05-DRAINAGE-v1.json",
   "./assets/jsQR-1.4.0.js",
+  "./assets/qrcode.js",
   "./assets/evia-course-enrolment.js",
   "./assets/evia-st0264-epa-enable.js",
   "./assets/evia-6570-pack-cutover.js",
@@ -82,7 +82,7 @@ const APP_SHELL = [
   "./assets/evia-arp-v80.js",
   "./assets/evia-arp-discussion-v82.js",
   "./assets/evia-arp-practical-v83.js",
-  "./assets/evia-mini-milos-v85.js",
+  "./assets/evia-mini-milos-v86.js",
   "./assets/evia-assistant-network.js",
   "./assets/evia-v69-interaction-fixes.js",
   "./assets/evia-v73-page-handoff.js",

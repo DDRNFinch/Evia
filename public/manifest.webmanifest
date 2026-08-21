@@ -1,16 +1,23 @@
 {
-  "name": "Evia Beta — Apprentice Vocational Assistant",
-  "short_name": "Evia Beta",
+  "name": "Evia \u2014 Apprentice Vocational Assistant",
+  "short_name": "Evia",
   "description": "Your apprenticeship course, study and portfolio in one beautifully simple place.",
   "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui"
+  ],
   "orientation": "portrait-primary",
   "background_color": "#f6f6f8",
   "theme_color": "#f6f6f8",
-  "categories": ["education", "productivity"],
+  "categories": [
+    "education",
+    "productivity"
+  ],
   "icons": [
     {
       "src": "icon-192.png",
