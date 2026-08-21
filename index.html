@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="Evia" />
-<meta name="evia-app-version" content="93" />
+<meta name="evia-app-version" content="94" />
 <title>Evia — Apprentice Vocational Assistant</title>
 <link rel="manifest" href="./manifest.webmanifest" />
 <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
@@ -61,20 +61,20 @@
 <script defer src="/Evia/assets/evia-course-enrolment.js?v=80"></script>
 <script defer src="/Evia/assets/evia-avatar-motion.js?v=48"></script>
 <script defer src="/Evia/assets/evia-avatar-life.js?v=55"></script>
-<script defer src="/Evia/assets/evia-count-display.js?v=63"></script>
-<script defer src="/Evia/assets/evia-arp-v80.js?v=93"></script>
-<script defer src="/Evia/assets/evia-arp-discussion-v82.js?v=93"></script>
-<script defer src="/Evia/assets/evia-arp-practical-v83.js?v=93"></script>
-<script defer src="/Evia/assets/evia-arp-home-score-v93.js?v=93"></script>
-<script defer src="/Evia/assets/evia-mini-milos-v86.js?v=93"></script>
+<script defer src="/Evia/assets/evia-count-display-v94.js?v=94"></script>
+<script defer src="/Evia/assets/evia-arp-v80.js?v=94"></script>
+<script defer src="/Evia/assets/evia-arp-discussion-v82.js?v=94"></script>
+<script defer src="/Evia/assets/evia-arp-practical-v83.js?v=94"></script>
+<script defer src="/Evia/assets/evia-arp-home-score-v94.js?v=94"></script>
+<script defer src="/Evia/assets/evia-mini-milos-v86.js?v=94"></script>
 <script defer src="/Evia/assets/evia-assistant-network.js?v=84"></script>
 <script defer src="/Evia/assets/evia-v69-interaction-fixes.js?v=72"></script>
 <script defer src="/Evia/assets/evia-v73-page-handoff.js?v=74"></script>
 <script defer src="/Evia/assets/evia-selfobs-fixes.js?v=43"></script>
 <script defer src="/Evia/assets/evia-video-recorder.js?v=43"></script>
-<script defer src="/Evia/assets/evia-nvq-ac-browser-v90.js?v=93"></script>
-<script defer src="/Evia/assets/evia-milos-observed-arch-v92.js?v=93"></script>
-<script defer src="/Evia/assets/evia-nvq.js?v=89"></script>
+<script defer src="/Evia/assets/evia-nvq-ac-browser-v90.js?v=94"></script>
+<script defer src="/Evia/assets/evia-milos-observed-arch-v94.js?v=94"></script>
+<script defer src="/Evia/assets/evia-nvq-v94.js?v=94"></script>
 <script defer src="/Evia/assets/evia-nvq-learner-guard.js?v=43"></script>
 <script defer src="/Evia/assets/evia-export-status.js?v=43"></script>
 <script defer src="/Evia/assets/evia-export-preserve-media.js?v=43"></script>
@@ -91,119 +91,46 @@
 <script defer src="/Evia/assets/evia-toc.js?v=81"></script>
 <script defer src="/Evia/assets/evia-targets.js?v=43"></script>
 <script defer src="/Evia/assets/evia-6570-smoke.js?v=89"></script>
-<script defer src="/Evia/assets/evia-updater.js?v=93"></script>
+<script defer src="/Evia/assets/evia-updater.js?v=94"></script>
 </head>
 <body><div id="root"></div>
 <script>
 (function(){
   'use strict';
-  var guardTimer=null;
+  var repairQueued=false;
 
   function openNativeCapture(kind){
-    var input=document.getElementById('selfPhoto');
-    if(!input)return;
-    if(kind==='video'&&window.EviaVideoCapture&&typeof window.EviaVideoCapture.open==='function'){
-      window.EviaVideoCapture.open(input);
-      return;
-    }
-    try{input.value='';}catch(e){}
+    var input=document.getElementById('selfPhoto');if(!input)return;
+    if(kind==='video'&&window.EviaVideoCapture&&typeof window.EviaVideoCapture.open==='function'){window.EviaVideoCapture.open(input);return}
+    try{input.value=''}catch(e){}
     input.setAttribute('type','file');
-    if(kind==='gallery'){
-      input.removeAttribute('capture');
-      input.setAttribute('accept','image/*');
-      input.click();
-      return;
-    }
-    input.setAttribute('capture','environment');
-    input.setAttribute('accept',kind==='video'?'video/*':'image/*');
-    input.click();
+    if(kind==='gallery'){input.removeAttribute('capture');input.setAttribute('accept','image/*');input.click();return}
+    input.setAttribute('capture','environment');input.setAttribute('accept',kind==='video'?'video/*':'image/*');input.click();
   }
-
   function makeButton(label,kind){
-    var b=document.createElement('button');
-    b.type='button';
-    b.textContent=label;
-    b.setAttribute('data-evia-native-'+kind,'1');
-    b.addEventListener('click',function(e){
-      e.preventDefault();
-      e.stopPropagation();
-      if(e.stopImmediatePropagation)e.stopImmediatePropagation();
-      openNativeCapture(kind);
-    },true);
-    return b;
+    var b=document.createElement('button');b.type='button';b.textContent=label;b.setAttribute('data-evia-native-'+kind,'1');
+    b.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();openNativeCapture(kind)},true);return b
   }
-
   function makeGalleryButton(){
-    var b=document.createElement('button');
-    b.type='button';
-    b.className='evia-gallery-upload';
-    b.setAttribute('data-evia-native-gallery','1');
-    b.setAttribute('aria-label','Choose one image from gallery');
-    b.setAttribute('title','Choose image from gallery');
+    var b=document.createElement('button');b.type='button';b.className='evia-gallery-upload';b.setAttribute('data-evia-native-gallery','1');b.setAttribute('aria-label','Choose one image from gallery');b.setAttribute('title','Choose image from gallery');
     b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2"></rect><circle cx="9" cy="10" r="1.5"></circle><path d="M5.5 17l4.2-4.1 3.2 3 2.3-2.2 3.3 3.3"></path></svg>';
-    b.addEventListener('click',function(e){
-      e.preventDefault();
-      e.stopPropagation();
-      if(e.stopImmediatePropagation)e.stopImmediatePropagation();
-      openNativeCapture('gallery');
-    },true);
-    return b;
+    b.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();openNativeCapture('gallery')},true);return b
   }
-
   function repairCaptureScreen(){
-    var card=document.querySelector('.self-card.photo');
-    if(!card)return;
-    var legacy=card.querySelectorAll('[data-pick]');
-    for(var i=0;i<legacy.length;i++)legacy[i].remove();
+    repairQueued=false;var card=document.querySelector('.self-card.photo');if(!card)return;
+    var legacy=card.querySelectorAll('[data-pick]');for(var i=0;i<legacy.length;i++)legacy[i].remove();
     var controls=card.querySelector('.evia-native-capture');
-    if(!controls){
-      controls=document.createElement('div');
-      controls.className='evia-native-capture';
-      controls.appendChild(makeButton('Take photo','photo'));
-      controls.appendChild(makeButton('Record video','video'));
-      controls.appendChild(makeGalleryButton());
-      var label=card.querySelector('span');
-      if(label&&label.nextSibling)card.insertBefore(controls,label.nextSibling);
-      else if(label)card.appendChild(controls);
-      else card.insertBefore(controls,card.firstChild);
-    }else if(!controls.querySelector('[data-evia-native-gallery]')){
-      controls.appendChild(makeGalleryButton());
-    }
-    controls.style.display='grid';
-    var buttons=controls.querySelectorAll('button');
-    for(var j=0;j<buttons.length;j++){
-      buttons[j].style.display='block';
-      buttons[j].style.visibility='visible';
-      buttons[j].style.opacity='1';
-    }
+    if(!controls){controls=document.createElement('div');controls.className='evia-native-capture';controls.appendChild(makeButton('Take photo','photo'));controls.appendChild(makeButton('Record video','video'));controls.appendChild(makeGalleryButton());var label=card.querySelector('span');if(label&&label.nextSibling)card.insertBefore(controls,label.nextSibling);else if(label)card.appendChild(controls);else card.insertBefore(controls,card.firstChild)}
+    else if(!controls.querySelector('[data-evia-native-gallery]'))controls.appendChild(makeGalleryButton());
   }
-
-  document.addEventListener('click',function(e){
-    var target=e.target;
-    while(target&&target!==document){
-      if(target.getAttribute&&target.getAttribute('data-pick')!==null){
-        e.preventDefault();
-        e.stopPropagation();
-        if(e.stopImmediatePropagation)e.stopImmediatePropagation();
-        target.remove();
-        repairCaptureScreen();
-        return false;
-      }
-      target=target.parentNode;
-    }
-  },true);
-
+  function queueRepair(){if(repairQueued)return;repairQueued=true;requestAnimationFrame(repairCaptureScreen)}
+  function relevant(node){return node&&node.nodeType===1&&(node.matches&&node.matches('.self-card.photo,[data-pick],.evia-native-capture')||node.querySelector&&node.querySelector('.self-card.photo,[data-pick],.evia-native-capture'))}
+  document.addEventListener('click',function(e){var target=e.target;while(target&&target!==document){if(target.getAttribute&&target.getAttribute('data-pick')!==null){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();target.remove();queueRepair();return false}target=target.parentNode}},true);
   function startGuard(){
-    repairCaptureScreen();
-    if(guardTimer)clearInterval(guardTimer);
-    guardTimer=setInterval(repairCaptureScreen,120);
+    repairCaptureScreen();var root=document.getElementById('root')||document.body;if(root&&!root.__eviaCaptureV94Observer){root.__eviaCaptureV94Observer=true;new MutationObserver(function(records){for(var i=0;i<records.length;i++){for(var j=0;j<records[i].addedNodes.length;j++){if(relevant(records[i].addedNodes[j])){queueRepair();return}}}}).observe(root,{childList:true,subtree:true})}
   }
-
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startGuard);
-  else startGuard();
-  window.addEventListener('pageshow',repairCaptureScreen);
-  window.addEventListener('focus',repairCaptureScreen);
-  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')repairCaptureScreen();});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startGuard);else startGuard();
+  window.addEventListener('pageshow',queueRepair);window.addEventListener('focus',queueRepair);document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')queueRepair()});
 })();
 </script>
 </body>
