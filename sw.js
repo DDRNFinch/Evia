@@ -1,4 +1,4 @@
-const CACHE_NAME = 'evia-shell-v87';
+const CACHE_NAME = 'evia-shell-v88';
 const CACHE_PREFIXES = ['evia-shell-', 'evia-beta-shell-'];
 const CRITICAL = [
   './',
@@ -8,6 +8,7 @@ const CRITICAL = [
   './icon-512.png',
   './apple-touch-icon.png',
   './assets/evia-mini-milos-v86.js',
+  './assets/evia-rpl-unit-order-v88.js',
   './assets/qrcode.js',
   './assets/jsQR-1.4.0.js'
 ];
@@ -15,6 +16,7 @@ const REPLACE_PATHS = new Set([
   '/Evia/',
   '/Evia/index.html',
   '/Evia/assets/evia-mini-milos-v86.js',
+  '/Evia/assets/evia-rpl-unit-order-v88.js',
   '/Evia/assets/qrcode.js',
   '/Evia/assets/jsQR-1.4.0.js'
 ]);
