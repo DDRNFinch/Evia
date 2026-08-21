@@ -1,4 +1,5 @@
-const CACHE_NAME = "evia-shell-v75";
+const CACHE_NAME = "evia-beta-shell-v85";
+const CACHE_PREFIXES = ["evia-beta-shell-", "evia-shell-"];
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -6,11 +7,14 @@ const APP_SHELL = [
   "./icon-192.png",
   "./icon-512.png",
   "./apple-touch-icon.png",
+  "./assets/evia-beta-isolation.js",
   "./assets/index-D_kAPZ6L.css",
   "./assets/evia-selfobs-live.css",
   "./assets/evia-selfobs-fixes.css",
   "./assets/evia-updater.css",
   "./assets/evia-tools.css",
+  "./assets/evia-arp-v82.css",
+  "./assets/evia-arp-practical-v83.css",
   "./assets/evia-rpl-evidence.css",
   "./assets/evia-rpl-course.css",
   "./assets/evia-targets.css",
@@ -32,6 +36,38 @@ const APP_SHELL = [
   "./assets/evia-course-pack-export.js",
   "./assets/evia-6570-pack-migration.js",
   "./assets/evia-course-context.js",
+  "./course-delivery/course-registry.js",
+  "./course-delivery/registry-v1.json",
+  "./course-packs/Bricklayer_ST0095_v1.2.nisi",
+  "./course-packs/Carpentry_Joinery_ST0264_v1.4.nisi",
+  "./course-packs/Trowel_Occupations_6570-05_v1.nisi",
+  "./course-delivery/qr/ST0095.png",
+  "./course-delivery/qr/ST0264-SITE.png",
+  "./course-delivery/qr/ST0264-AJ.png",
+  "./course-delivery/qr/6570-05-THIN.png",
+  "./course-delivery/qr/6570-05-REPAIR.png",
+  "./course-delivery/qr/6570-05-SPECIALIST.png",
+  "./course-delivery/qr/6570-05-DRAINAGE.png",
+  "./course-delivery/qr/manifest-v1.json",
+  "./course-delivery/qr/all-courses.html",
+  "./course-delivery/question-banks/index-v1.json",
+  "./course-delivery/question-banks/ST0095-v1.json",
+  "./course-delivery/question-banks/ST0264-SITE-v1.json",
+  "./course-delivery/question-banks/ST0264-AJ-v1.json",
+  "./course-delivery/question-banks/6570-05-THIN-v1.json",
+  "./course-delivery/question-banks/6570-05-REPAIR-v1.json",
+  "./course-delivery/question-banks/6570-05-SPECIALIST-v1.json",
+  "./course-delivery/question-banks/6570-05-DRAINAGE-v1.json",
+  "./course-delivery/practical-banks/index-v1.json",
+  "./course-delivery/practical-banks/ST0095-v1.json",
+  "./course-delivery/practical-banks/ST0264-SITE-v1.json",
+  "./course-delivery/practical-banks/ST0264-AJ-v1.json",
+  "./course-delivery/practical-banks/6570-05-THIN-v1.json",
+  "./course-delivery/practical-banks/6570-05-REPAIR-v1.json",
+  "./course-delivery/practical-banks/6570-05-SPECIALIST-v1.json",
+  "./course-delivery/practical-banks/6570-05-DRAINAGE-v1.json",
+  "./assets/jsQR-1.4.0.js",
+  "./assets/evia-course-enrolment.js",
   "./assets/evia-st0264-epa-enable.js",
   "./assets/evia-6570-pack-cutover.js",
   "./assets/evia-trowel-fetch.js",
@@ -43,7 +79,10 @@ const APP_SHELL = [
   "./assets/evia-avatar-motion.js",
   "./assets/evia-avatar-life.js",
   "./assets/evia-count-display.js",
-  "./assets/evia-arp.js",
+  "./assets/evia-arp-v80.js",
+  "./assets/evia-arp-discussion-v82.js",
+  "./assets/evia-arp-practical-v83.js",
+  "./assets/evia-mini-milos-v85.js",
   "./assets/evia-assistant-network.js",
   "./assets/evia-v69-interaction-fixes.js",
   "./assets/evia-v73-page-handoff.js",
@@ -66,16 +105,9 @@ const APP_SHELL = [
   "./assets/evia-targets.js",
   "./assets/evia-6570-smoke.js",
   "./assets/evia-updater.js",
-  "./course-packs/Bricklayer_ST0095_v1.2.nisi",
-  "./app/evia-site-data-1.ts",
-  "./app/evia-site-data-2.ts",
-  "./app/evia-site-data-3.ts",
-  "./app/evia-carpentry-site-data-1.ts",
-  "./app/evia-carpentry-site-data-2.ts",
-  "./app/evia-carpentry-site-data-3.ts",
-  "./app/evia-carpentry-joiner-data-1.ts",
-  "./app/evia-carpentry-joiner-data-2.ts",
-  "./app/evia-carpentry-joiner-data-3.ts",
+  "./app/evia-no-course-data-1.ts",
+  "./app/evia-no-course-data-2.ts",
+  "./app/evia-no-course-data-3.ts",
 ];
 
 self.addEventListener("install", (event) => {
@@ -93,7 +125,7 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter((key) => key.startsWith("evia-shell-") && key !== CACHE_NAME).map((key) => caches.delete(key)));
+    await Promise.all(keys.filter((key) => CACHE_PREFIXES.some((prefix) => key.startsWith(prefix)) && key !== CACHE_NAME).map((key) => caches.delete(key)));
     await self.clients.claim();
   })());
 });
@@ -133,14 +165,16 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (request.mode === "navigate" || url.pathname.endsWith("/index.html")) {
+  const lastSegment = url.pathname.split("/").pop() || "";
+  const isFileNavigation = request.mode === "navigate" && /\.[a-z0-9]{1,10}$/i.test(lastSegment) && !url.pathname.endsWith("/index.html");
+  if ((request.mode === "navigate" && !isFileNavigation) || url.pathname.endsWith("/index.html")) {
     event.respondWith((async () => {
-      const cached = (await caches.match("./index.html")) || (await caches.match("./"));
+      const cache = await caches.open(CACHE_NAME);
+      const cached = (await cache.match("./index.html")) || (await cache.match("./"));
       if (cached) return cached;
       try {
         const response = await fetch(request, { cache: "no-store" });
         if (response.ok) {
-          const cache = await caches.open(CACHE_NAME);
           await cache.put("./index.html", response.clone());
           await cache.put("./", response.clone());
         }
@@ -153,18 +187,18 @@ self.addEventListener("fetch", (event) => {
   }
 
   event.respondWith((async () => {
-    const exact = await caches.match(request);
+    const cache = await caches.open(CACHE_NAME);
+    const exact = await cache.match(request);
     if (exact) return exact;
     try {
       const response = await fetch(request, { cache: "no-cache" });
       if (response.ok) {
-        const cache = await caches.open(CACHE_NAME);
         await cache.put(request, response.clone());
         return response;
       }
-      return (await caches.match(request, { ignoreSearch: true })) || response;
+      return (await cache.match(request, { ignoreSearch: true })) || response;
     } catch {
-      return (await caches.match(request, { ignoreSearch: true })) || Response.error();
+      return (await cache.match(request, { ignoreSearch: true })) || Response.error();
     }
   })());
 });
