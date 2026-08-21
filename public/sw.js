@@ -1,6 +1,6 @@
-// v89 NVQ handbook, holistic mapping and RPL coverage
-const CACHE_NAME = 'evia-shell-v89';
-const LEGACY_READY_CACHE = 'evia-beta-shell-v89';
+// v90 full NVQ AC browser by P/T and unit
+const CACHE_NAME = 'evia-shell-v90';
+const LEGACY_READY_CACHE = 'evia-beta-shell-v90';
 const CACHE_PREFIXES = ['evia-shell-', 'evia-beta-shell-'];
 const CRITICAL = [
   './',
@@ -18,6 +18,8 @@ const CRITICAL = [
   './assets/evia-6570-pack-migration.js',
   './assets/evia-6570-smoke.js',
   './assets/evia-nvq.js',
+  './assets/evia-nvq-ac-browser-v90.js',
+  './assets/evia-nvq-ac-browser-v90.css',
   './assets/qrcode.js',
   './assets/jsQR-1.4.0.js'
 ];
@@ -33,6 +35,8 @@ const REPLACE_PATHS = new Set([
   '/Evia/assets/evia-6570-pack-migration.js',
   '/Evia/assets/evia-6570-smoke.js',
   '/Evia/assets/evia-nvq.js',
+  '/Evia/assets/evia-nvq-ac-browser-v90.js',
+  '/Evia/assets/evia-nvq-ac-browser-v90.css',
   '/Evia/assets/qrcode.js',
   '/Evia/assets/jsQR-1.4.0.js'
 ]);
