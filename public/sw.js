@@ -1,6 +1,6 @@
-// v88 updater repeat-prompt hotfix
-const CACHE_NAME = 'evia-shell-v88';
-const LEGACY_READY_CACHE = 'evia-beta-shell-v88';
+// v89 NVQ handbook, holistic mapping and RPL coverage
+const CACHE_NAME = 'evia-shell-v89';
+const LEGACY_READY_CACHE = 'evia-beta-shell-v89';
 const CACHE_PREFIXES = ['evia-shell-', 'evia-beta-shell-'];
 const CRITICAL = [
   './',
@@ -12,6 +12,12 @@ const CRITICAL = [
   './assets/evia-updater.js',
   './assets/evia-mini-milos-v86.js',
   './assets/evia-rpl-unit-order-v88.js',
+  './assets/evia-rpl-course.css',
+  './assets/evia-trowel-handbook-v89.js',
+  './assets/evia-trowel-loader.js',
+  './assets/evia-6570-pack-migration.js',
+  './assets/evia-6570-smoke.js',
+  './assets/evia-nvq.js',
   './assets/qrcode.js',
   './assets/jsQR-1.4.0.js'
 ];
@@ -21,6 +27,12 @@ const REPLACE_PATHS = new Set([
   '/Evia/assets/evia-updater.js',
   '/Evia/assets/evia-mini-milos-v86.js',
   '/Evia/assets/evia-rpl-unit-order-v88.js',
+  '/Evia/assets/evia-rpl-course.css',
+  '/Evia/assets/evia-trowel-handbook-v89.js',
+  '/Evia/assets/evia-trowel-loader.js',
+  '/Evia/assets/evia-6570-pack-migration.js',
+  '/Evia/assets/evia-6570-smoke.js',
+  '/Evia/assets/evia-nvq.js',
   '/Evia/assets/qrcode.js',
   '/Evia/assets/jsQR-1.4.0.js'
 ]);
