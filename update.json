@@ -1,10 +1,10 @@
 {
-  "version": "86",
-  "title": "Mini Milos QR sharing repaired",
+  "version": "87",
+  "title": "Mini Milos opening freeze repaired",
   "details": [
-    "Share with Assessor now generates its QR entirely inside Evia",
-    "The QR generator is stored and cached with Evia for offline use",
-    "Evia main now loads its own /Evia assets instead of /Evia_beta assets",
-    "Main Evia storage is no longer redirected through Beta isolation"
+    "Mini Milos no longer performs full-page rescans when its screen opens",
+    "Observed markers are applied only to newly rendered content",
+    "The QR generator is loaded only when Share with Assessor is opened",
+    "The offline shell refreshes the repaired Mini Milos runtime while preserving cached course assets"
   ]
 }
