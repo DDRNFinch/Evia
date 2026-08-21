@@ -86,9 +86,14 @@ jobs:
             assert.ok(qr.getModuleCount() > 0);
           });
           EOF
-      - name: Run tests
+      - name: Verify static repair
         shell: bash
-        run: npm test
+        run: |
+          set -euo pipefail
+          grep -q 'data-evia-mm-qrcode' assets/evia-mini-milos-v86.js
+          ! grep -q '(0,eval)' assets/evia-mini-milos-v86.js
+          test -s assets/qrcode.js
+          ! grep -q '/Evia_beta/' index.html
       - name: Commit verified repair and remove one-use workflow
         shell: bash
         run: |
@@ -99,3 +104,6 @@ jobs:
           git add assets/evia-mini-milos-v86.js tests/mini-milos-qr.test.mjs
           git commit -m 'Verify Mini Milos QR sharing repair'
           git push origin HEAD:fix/mini-milos-qr-v86
+      - name: Run repository tests
+        shell: bash
+        run: npm test
