@@ -2,8 +2,6 @@ name: Fix Mini Milos Freeze v87
 
 on:
   push:
-    branches: [fix/mini-milos-freeze-v87]
-  pull_request:
     branches: [main]
 
 permissions:
@@ -16,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: fix/mini-milos-freeze-v87
+          ref: main
           fetch-depth: 0
       - name: Repair Mini Milos UI observer
         shell: bash
@@ -65,8 +63,7 @@ jobs:
           for name in ('update.json', 'public/update.json'):
               Path(name).write_text(json.dumps(update, indent=2) + '\n')
 
-          test = Path('tests/mini-milos-freeze.test.mjs')
-          test.write_text("""import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport fs from 'node:fs';\n\nconst src = fs.readFileSync(new URL('../assets/evia-mini-milos-v86.js', import.meta.url), 'utf8');\n\ntest('Mini Milos does not eagerly load QR generation on app start', () => {\n  assert.doesNotMatch(src, /markObserved\\(\\);ensureQr\\(\\);/);\n});\n\ntest('Mini Milos observer scopes work to added nodes', () => {\n  assert.match(src, /record\\.addedNodes\\.forEach\\(scheduleUi\\)/);\n  assert.match(src, /roots\\.forEach\\(root=>markObserved\\(root\\)\\)/);\n  assert.doesNotMatch(src, /new MutationObserver\\(\\(\\)=>\\{patchMini\\(\\);markObserved\\(\\)\\}\\)/);\n});\n""")
+          Path('tests/mini-milos-freeze.test.mjs').write_text("""import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport fs from 'node:fs';\n\nconst src = fs.readFileSync(new URL('../assets/evia-mini-milos-v86.js', import.meta.url), 'utf8');\n\ntest('Mini Milos does not eagerly load QR generation on app start', () => {\n  assert.doesNotMatch(src, /markObserved\\(\\);ensureQr\\(\\);/);\n});\n\ntest('Mini Milos observer scopes work to added nodes', () => {\n  assert.match(src, /record\\.addedNodes\\.forEach\\(scheduleUi\\)/);\n  assert.match(src, /roots\\.forEach\\(root=>markObserved\\(root\\)\\)/);\n  assert.doesNotMatch(src, /new MutationObserver\\(\\(\\)=>\\{patchMini\\(\\);markObserved\\(\\)\\}\\)/);\n});\n""")
           PY
       - name: Verify freeze repair
         shell: bash
@@ -80,12 +77,13 @@ jobs:
           grep -q 'evia-mini-milos-v86.js?v=87' index.html
           grep -q 'evia-shell-v87' sw.js
           npm test
-      - name: Commit repair
+      - name: Commit repaired main
         shell: bash
         run: |
           set -euo pipefail
+          git rm -f .github/workflows/fix-mini-milos-freeze-v87.yml .v87-trigger
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -- assets/evia-mini-milos-v86.js index.html sw.js update.json public/update.json tests/mini-milos-freeze.test.mjs
           git commit -m 'Repair Mini Milos opening freeze in Evia v87'
-          git push origin HEAD:fix/mini-milos-freeze-v87
+          git push origin HEAD:main
