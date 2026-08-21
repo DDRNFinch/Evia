@@ -1,6 +1,6 @@
-// v90 full NVQ AC browser by P/T and unit
-const CACHE_NAME = 'evia-shell-v90';
-const LEGACY_READY_CACHE = 'evia-beta-shell-v90';
+// v91 every selectable NVQ area maps to at least one AC
+const CACHE_NAME = 'evia-shell-v91';
+const LEGACY_READY_CACHE = 'evia-beta-shell-v91';
 const CACHE_PREFIXES = ['evia-shell-', 'evia-beta-shell-'];
 const CRITICAL = [
   './',
@@ -16,6 +16,7 @@ const CRITICAL = [
   './assets/evia-trowel-handbook-v89.js',
   './assets/evia-trowel-loader.js',
   './assets/evia-6570-pack-migration.js',
+  './assets/evia-6570-v91-remap.js',
   './assets/evia-6570-smoke.js',
   './assets/evia-nvq.js',
   './assets/evia-nvq-ac-browser-v90.js',
@@ -33,6 +34,7 @@ const REPLACE_PATHS = new Set([
   '/Evia/assets/evia-trowel-handbook-v89.js',
   '/Evia/assets/evia-trowel-loader.js',
   '/Evia/assets/evia-6570-pack-migration.js',
+  '/Evia/assets/evia-6570-v91-remap.js',
   '/Evia/assets/evia-6570-smoke.js',
   '/Evia/assets/evia-nvq.js',
   '/Evia/assets/evia-nvq-ac-browser-v90.js',
