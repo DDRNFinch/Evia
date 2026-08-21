@@ -1,1 +1,0 @@
-Local syntax smoke check performed 2026-08-21: evia-milos-observed-arch-v91.js passed node --check.
