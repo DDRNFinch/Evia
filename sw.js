@@ -1,6 +1,6 @@
-// v91 every selectable NVQ area maps to at least one AC
-const CACHE_NAME = 'evia-shell-v91';
-const LEGACY_READY_CACHE = 'evia-beta-shell-v91';
+// v92 Milos observation return data is visible in AC/KSB arches and observed NVQ ACs count as covered
+const CACHE_NAME = 'evia-shell-v92';
+const LEGACY_READY_CACHE = 'evia-beta-shell-v92';
 const CACHE_PREFIXES = ['evia-shell-', 'evia-beta-shell-'];
 const CRITICAL = [
   './',
@@ -11,6 +11,7 @@ const CRITICAL = [
   './apple-touch-icon.png',
   './assets/evia-updater.js',
   './assets/evia-mini-milos-v86.js',
+  './assets/evia-milos-observed-arch-v92.js',
   './assets/evia-rpl-unit-order-v88.js',
   './assets/evia-rpl-course.css',
   './assets/evia-trowel-handbook-v89.js',
@@ -29,6 +30,8 @@ const REPLACE_PATHS = new Set([
   '/Evia/index.html',
   '/Evia/assets/evia-updater.js',
   '/Evia/assets/evia-mini-milos-v86.js',
+  '/Evia/assets/evia-milos-observed-arch-v91.js',
+  '/Evia/assets/evia-milos-observed-arch-v92.js',
   '/Evia/assets/evia-rpl-unit-order-v88.js',
   '/Evia/assets/evia-rpl-course.css',
   '/Evia/assets/evia-trowel-handbook-v89.js',
