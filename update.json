@@ -1,11 +1,11 @@
 {
-  "version": "93",
-  "title": "Cleaner Home progress and accurate ARP",
+  "version": "94",
+  "title": "Faster Evia and consistent AC coverage",
   "details": [
-    "Milos-observed ACs and KSBs are no longer shown as an observed summary on the Evia Home screen",
-    "Assessor-observed ACs and KSBs remain visible inside the AC/KSB arch coverage menus",
-    "ARP now starts at 0% when no Assessment Readiness & Practice activity has been attempted",
-    "The ARP Home percentage is calculated only from actual Multiple Choice, Discussion and Practical practice history",
-    "Existing Milos observed coverage, NVQ P/T themes and unit views are preserved"
+    "Removed continuous Home, ARP, camera and assessor-observation polling that was slowing Evia down",
+    "Home AC now uses the same total coverage as the AC menu: learner evidence, RPL and Milos-observed ACs all count as covered",
+    "The Milos observed count and blue observed markers remain inside the AC/KSB coverage menus rather than on the Home screen",
+    "ARP remains at 0% until an Assessment Readiness & Practice attempt has actually been made",
+    "Screen updates now run only when the relevant part of Evia changes"
   ]
 }
