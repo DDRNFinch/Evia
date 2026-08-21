@@ -1,10 +1,11 @@
 {
   "version": "91",
-  "title": "Complete holistic NVQ mapping",
+  "title": "Complete holistic NVQ mapping and assessor observation coverage",
   "details": [
     "Every selectable Level 3 NVQ evidence area now maps to at least one relevant AC",
     "Empty holistic areas are repaired from their P/T themes and official handbook wording",
     "Existing Level 3 course packs are remapped once so old empty areas are removed",
-    "The qualification audit still requires every official AC to remain reachable"
+    "ACs observed as competent in Milos now show a blue o in Evia and count as covered",
+    "Apprenticeship KSB arches also show a blue Milos observed badge and observed KSB summary"
   ]
 }
