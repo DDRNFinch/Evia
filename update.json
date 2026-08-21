@@ -1,11 +1,11 @@
 {
-  "version": "92",
-  "title": "Milos observation results in Evia",
+  "version": "93",
+  "title": "Cleaner Home progress and accurate ARP",
   "details": [
-    "ACs and KSBs returned from a Milos observation now show as blue assessor-observed items in the arch section",
-    "NVQ ACs observed as competent in Milos count as covered in AC coverage totals",
-    "Observed ACs are visible by P/T theme and by unit",
-    "Existing Level 3 holistic NVQ mapping and course-pack remapping are preserved",
-    "The Milos observed-code display is cached for offline use"
+    "Milos-observed ACs and KSBs are no longer shown as an observed summary on the Evia Home screen",
+    "Assessor-observed ACs and KSBs remain visible inside the AC/KSB arch coverage menus",
+    "ARP now starts at 0% when no Assessment Readiness & Practice activity has been attempted",
+    "The ARP Home percentage is calculated only from actual Multiple Choice, Discussion and Practical practice history",
+    "Existing Milos observed coverage, NVQ P/T themes and unit views are preserved"
   ]
 }
