@@ -1,10 +1,10 @@
 {
-  "version": "85",
-  "title": "Mini Milos assessor exchange is live",
+  "version": "86",
+  "title": "Mini Milos QR sharing repaired",
   "details": [
-    "Visit Feedback now stores assessor reviews and observations newest first",
-    "Share with Assessor now creates real QR codes and accepts rear-camera or saved-image scans",
-    "Learner reference and course must match exactly, with blue o markers for assessor-observed criteria",
-    "Names, contacts, locations, media and signatures are excluded from QR transfers"
+    "Share with Assessor now generates its QR entirely inside Evia",
+    "The QR generator is stored and cached with Evia for offline use",
+    "Evia main now loads its own /Evia assets instead of /Evia_beta assets",
+    "Main Evia storage is no longer redirected through Beta isolation"
   ]
 }
