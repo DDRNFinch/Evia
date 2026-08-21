@@ -1,0 +1,89 @@
+name: Fix Mini Milos Freeze v87
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Repair Mini Milos UI observer
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import json
+
+          p = Path('assets/evia-mini-milos-v86.js')
+          s = p.read_text()
+          s = s.replace('const VERSION=86;', 'const VERSION=87;')
+
+          old_mark = "function markObserved(){const set=observedCodes();if(!set.size)return;const selectors='button,li,label,article,div,span,p';document.querySelectorAll(selectors).forEach(el=>{if(el.closest('.evia-mm-layer')||el.querySelector(':scope > .evia-milos-observed-marker'))return;const own=Array.from(el.childNodes).filter(n=>n.nodeType===3).map(n=>n.textContent).join(' ').trim();const m=own.match(/^(K\\d+|S\\d+|B\\d+|AC\\d+(?:\\.\\d+)?)(?:\\b|\\s|·|:)/i);if(!m||!set.has(m[1].toUpperCase()))return;const o=document.createElement('span');o.className='evia-milos-observed-marker';o.textContent='o';o.title='Observed as competent by assessor in Milos';el.appendChild(o)})}"
+          new_mark = "function markObserved(scope=document){const set=observedCodes();if(!set.size)return;const selectors='button,li,label,article,div,span,p',nodes=[];if(scope?.nodeType===1&&scope.matches?.(selectors))nodes.push(scope);if(scope?.querySelectorAll)nodes.push(...scope.querySelectorAll(selectors));nodes.forEach(el=>{if(el.closest('.evia-mm-layer')||el.querySelector(':scope > .evia-milos-observed-marker'))return;const own=Array.from(el.childNodes).filter(n=>n.nodeType===3).map(n=>n.textContent).join(' ').trim();const m=own.match(/^(K\\d+|S\\d+|B\\d+|AC\\d+(?:\\.\\d+)?)(?:\\b|\\s|·|:)/i);if(!m||!set.has(m[1].toUpperCase()))return;const o=document.createElement('span');o.className='evia-milos-observed-marker';o.textContent='o';o.title='Observed as competent by assessor in Milos';el.appendChild(o)})}"
+          if old_mark not in s:
+              raise SystemExit('markObserved source not found')
+          s = s.replace(old_mark, new_mark)
+
+          old_start = "function start(){style();patchMini();markObserved();ensureQr();const root=document.getElementById('root')||document.body;new MutationObserver(()=>{patchMini();markObserved()}).observe(root,{childList:true,subtree:true});document.addEventListener('click',intercept,true);document.addEventListener('click',onClick);document.addEventListener('change',onChange);window.addEventListener('pagehide',stopCamera)}"
+          new_start = "let uiTimer=null,pendingRoots=new Set();function scheduleUi(node){if(!node||node.nodeType!==1||node.classList?.contains('evia-milos-observed-marker'))return;pendingRoots.add(node);if(uiTimer!==null)return;uiTimer=setTimeout(()=>{uiTimer=null;const roots=[...pendingRoots];pendingRoots.clear();patchMini();roots.forEach(root=>markObserved(root))},40)}\nfunction start(){style();patchMini();markObserved();const root=document.getElementById('root')||document.body;new MutationObserver(records=>{records.forEach(record=>record.addedNodes.forEach(scheduleUi))}).observe(root,{childList:true,subtree:true});document.addEventListener('click',intercept,true);document.addEventListener('click',onClick);document.addEventListener('change',onChange);window.addEventListener('pagehide',stopCamera)}"
+          if old_start not in s:
+              raise SystemExit('start source not found')
+          s = s.replace(old_start, new_start)
+          p.write_text(s)
+
+          p = Path('index.html')
+          s = p.read_text().replace('evia-app-version\" content=\"86', 'evia-app-version\" content=\"87')
+          s = s.replace('evia-mini-milos-v86.js?v=86', 'evia-mini-milos-v86.js?v=87')
+          p.write_text(s)
+
+          p = Path('sw.js')
+          s = p.read_text().replace('const CACHE_NAME = \"evia-shell-v86\";', 'const CACHE_NAME = \"evia-shell-v87\";')
+          p.write_text(s)
+
+          update = {
+              'version': '87',
+              'title': 'Mini Milos opening freeze repaired',
+              'details': [
+                  'Mini Milos no longer scans the entire Evia interface after every DOM change',
+                  'Observed markers are applied only to newly rendered content',
+                  'The QR generator is now loaded only when Share with Assessor is opened',
+                  'Opening Mini Milos stays lightweight while QR sharing remains available'
+              ]
+          }
+          for name in ('update.json', 'public/update.json'):
+              Path(name).write_text(json.dumps(update, indent=2) + '\n')
+
+          Path('tests/mini-milos-freeze.test.mjs').write_text("""import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport fs from 'node:fs';\n\nconst src = fs.readFileSync(new URL('../assets/evia-mini-milos-v86.js', import.meta.url), 'utf8');\n\ntest('Mini Milos does not eagerly load QR generation on app start', () => {\n  assert.doesNotMatch(src, /markObserved\\(\\);ensureQr\\(\\);/);\n});\n\ntest('Mini Milos observer scopes work to added nodes', () => {\n  assert.match(src, /record\\.addedNodes\\.forEach\\(scheduleUi\\)/);\n  assert.match(src, /roots\\.forEach\\(root=>markObserved\\(root\\)\\)/);\n  assert.doesNotMatch(src, /new MutationObserver\\(\\(\\)=>\\{patchMini\\(\\);markObserved\\(\\)\\}\\)/);\n});\n""")
+          PY
+      - name: Verify freeze repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check assets/evia-mini-milos-v86.js
+          grep -q 'const VERSION=87' assets/evia-mini-milos-v86.js
+          grep -q 'record.addedNodes.forEach(scheduleUi)' assets/evia-mini-milos-v86.js
+          ! grep -q 'markObserved();ensureQr();' assets/evia-mini-milos-v86.js
+          grep -q 'evia-app-version" content="87' index.html
+          grep -q 'evia-mini-milos-v86.js?v=87' index.html
+          grep -q 'evia-shell-v87' sw.js
+          npm test
+      - name: Commit repaired main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm -f .github/workflows/fix-mini-milos-freeze-v87.yml .v87-trigger
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- assets/evia-mini-milos-v86.js index.html sw.js update.json public/update.json tests/mini-milos-freeze.test.mjs
+          git commit -m 'Repair Mini Milos opening freeze in Evia v87'
+          git push origin HEAD:main
