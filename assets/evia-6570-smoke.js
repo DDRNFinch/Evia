@@ -14,7 +14,7 @@ function mapStats(path,allowed){
   (path.siteData||[]).forEach(cat=>{(cat.jobs||[]).forEach(job=>{jobs++;(job.opps||[]).forEach(op=>{
     opportunities++;const id=`${cat.id}/${job.id}/${op.id}`;if(ids.has(id))throw Error(`duplicate evidence point ${id}`);ids.add(id);
     const codes=(op.codes||[]).map(String);
-    if(!codes.length){if(op.holistic===true)holistic++;else empty++}
+    if(!codes.length){empty++;if(op.holistic===true)holistic++}
     codes.forEach(code=>{assignments.push(code);mapped.add(code);if(!allowed.has(code))unknown.add(code)})
   })})});
   return{categories:(path.siteData||[]).length,jobs,opportunities,mapped:mapped.size,assignments:assignments.length,duplicates:assignments.length-new Set(assignments).size,holistic,empty,unknown:[...unknown]}
@@ -50,7 +50,7 @@ function run(){
     if(active?.courseId===COURSE_ID){
       ISOLATED_KEYS.forEach(key=>{const expected=`${key}::${active.storageSuffix}`,actual=context.physicalKey?.(key);if(actual!==expected)errors.push(`active storage redirect ${key}`)});
     }
-    ["evia-nvq.js","evia-rpl-course.js","evia-compact-export.js","evia-trowel-handbook-v89.js"].forEach(name=>{if(!document.querySelector(`script[src*="${name}"]`))errors.push(`missing integration script ${name}`)});
+    ["evia-nvq.js","evia-rpl-course.js","evia-compact-export.js","evia-trowel-handbook-v89.js","evia-6570-v91-remap.js"].forEach(name=>{if(!document.querySelector(`script[src*="${name}"]`))errors.push(`missing integration script ${name}`)});
     const result={status:errors.length?"failed":"passed",checkedAt:Date.now(),errors,routes,activePathway:active?.courseId===COURSE_ID?active.pathway:null};
     if(errors.length)console.error("Evia 6570-05 smoke audit",result);else console.info("Evia 6570-05 smoke audit passed",result);
     return save(result)
