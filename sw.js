@@ -1,4 +1,5 @@
 const CACHE_NAME = 'evia-shell-v88';
+const LEGACY_READY_CACHE = 'evia-beta-shell-v88';
 const CACHE_PREFIXES = ['evia-shell-', 'evia-beta-shell-'];
 const CRITICAL = [
   './',
@@ -7,6 +8,7 @@ const CRITICAL = [
   './icon-192.png',
   './icon-512.png',
   './apple-touch-icon.png',
+  './assets/evia-updater.js',
   './assets/evia-mini-milos-v86.js',
   './assets/evia-rpl-unit-order-v88.js',
   './assets/qrcode.js',
@@ -15,6 +17,7 @@ const CRITICAL = [
 const REPLACE_PATHS = new Set([
   '/Evia/',
   '/Evia/index.html',
+  '/Evia/assets/evia-updater.js',
   '/Evia/assets/evia-mini-milos-v86.js',
   '/Evia/assets/evia-rpl-unit-order-v88.js',
   '/Evia/assets/qrcode.js',
@@ -24,7 +27,7 @@ const REPLACE_PATHS = new Set([
 async function migrateOldShell(cache) {
   const names = await caches.keys();
   for (const name of names) {
-    if (name === CACHE_NAME || !CACHE_PREFIXES.some(prefix => name.startsWith(prefix))) continue;
+    if (name === CACHE_NAME || name === LEGACY_READY_CACHE || !CACHE_PREFIXES.some(prefix => name.startsWith(prefix))) continue;
     const old = await caches.open(name);
     const requests = await old.keys();
     for (const request of requests) {
@@ -48,6 +51,7 @@ self.addEventListener('install', event => {
     const cache = await caches.open(CACHE_NAME);
     await migrateOldShell(cache);
     await refreshCritical(cache);
+    await caches.open(LEGACY_READY_CACHE);
     await self.skipWaiting();
   })());
 });
@@ -55,7 +59,7 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     const names = await caches.keys();
-    await Promise.all(names.filter(name => name !== CACHE_NAME && CACHE_PREFIXES.some(prefix => name.startsWith(prefix))).map(name => caches.delete(name)));
+    await Promise.all(names.filter(name => name !== CACHE_NAME && name !== LEGACY_READY_CACHE && CACHE_PREFIXES.some(prefix => name.startsWith(prefix))).map(name => caches.delete(name)));
     await self.clients.claim();
   })());
 });
