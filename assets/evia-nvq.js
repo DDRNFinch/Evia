@@ -1,6 +1,6 @@
 (()=>{
 "use strict";
-const GLH_KEY="evia-glh-entries";
+const GLH_KEY="evia-glh-entries",RPL_KEY="evia-rpl-ksbs-v1";
 function ctx(){const c=window.EviaCourseContext?.current?.();return c?.courseType==="nvq"?c:null}
 function meta(){return window.EviaTrowelMeta||null}
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
@@ -8,6 +8,7 @@ function read(k,d){try{const x=JSON.parse(localStorage.getItem(k)||"null");retur
 function write(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
 function entries(){const x=read("evia-selfobs-live-v3",[]);return Array.isArray(x)?x:[]}
 function glhEntries(){const x=read(GLH_KEY,[]);return Array.isArray(x)?x:[]}
+function rplSet(){const c=ctx(),allowed=new Set(c?.codes||[]),x=read(RPL_KEY,[]);return new Set((Array.isArray(x)?x:[]).filter(code=>allowed.has(code)))}
 function mins(x){return Math.max(0,Math.round(Number(x?.durationMinutes)||0))}
 function glhMinutes(){return glhEntries().reduce((n,x)=>n+mins(x),0)}
 function countMap(){
@@ -15,15 +16,16 @@ function countMap(){
   entries().forEach(e=>(Array.isArray(e?.codes)?e.codes:[]).forEach(code=>{if(code in out)out[code]++}));
   return out
 }
+function coveredSet(){const c=ctx(),x=countMap(),out=rplSet();if(!c)return out;c.codes.forEach(code=>{if((x[code]||0)>0)out.add(code)});return out}
 function dots(n){n=Math.max(0,Math.round(Number(n)||0));return !n?"":n>5?`o x ${n}`:"o".repeat(n)}
-function acPercent(){const c=ctx();if(!c?.codes?.length)return 0;const x=countMap();return Math.round(c.codes.filter(code=>(x[code]||0)>0).length/c.codes.length*100)}
+function acPercent(){const c=ctx();if(!c?.codes?.length)return 0;const covered=coveredSet();return Math.round(c.codes.filter(code=>covered.has(code)).length/c.codes.length*100)}
 function glhPercent(){const c=ctx();if(!c)return 0;return Math.round(Math.min(1,glhMinutes()/(Math.max(1,Number(c.glhTargetHours)||847)*60))*100)}
 function unitStats(){
-  const c=ctx(),m=meta(),x=countMap();if(!c||!m)return[];
+  const c=ctx(),m=meta(),covered=coveredSet(),rpl=rplSet();if(!c||!m)return[];
   return(c.units||[]).map(unit=>{
     const codes=(m.unitCodes?.[String(unit)]||[]).filter(code=>c.codes.includes(code));
-    const touched=codes.filter(code=>(x[code]||0)>0).length;
-    return{unit,title:m.unitTitles?.[String(unit)]||`Unit ${unit}`,codes,touched,pct:codes.length?Math.round(touched/codes.length*100):0}
+    const touched=codes.filter(code=>covered.has(code)).length,rplCount=codes.filter(code=>rpl.has(code)).length;
+    return{unit,title:m.unitTitles?.[String(unit)]||`Unit ${unit}`,codes,touched,rplCount,pct:codes.length?Math.round(touched/codes.length*100):0}
   })
 }
 function unitsPercent(){const xs=unitStats();return xs.length?Math.round(xs.reduce((n,x)=>n+x.pct,0)/xs.length):0}
@@ -64,13 +66,13 @@ function layer(body,title,back=null){
   document.body.appendChild(el);el.querySelector("[data-nvq-back]").onclick=back||close;return el
 }
 function themeGroups(){
-  const c=ctx(),m=meta(),x=countMap(),by={};
+  const c=ctx(),m=meta(),x=countMap(),covered=coveredSet(),rpl=rplSet(),by={};
   if(!c||!m)return[];
   c.codes.forEach(code=>{
     const theme=m.codeTheme?.[code]||"";
     if(!theme)return;
-    const g=by[theme]||(by[theme]={id:theme,title:m.themeNames?.[theme]||theme,codes:[],touched:0,evidence:0});
-    g.codes.push(code);if((x[code]||0)>0)g.touched++
+    const g=by[theme]||(by[theme]={id:theme,title:m.themeNames?.[theme]||theme,codes:[],touched:0,evidence:0,rpl:0});
+    g.codes.push(code);if(covered.has(code))g.touched++;if(rpl.has(code))g.rpl++
   });
   const es=entries();
   Object.values(by).forEach(g=>{g.evidence=es.filter(e=>(e.codes||[]).some(code=>g.codes.includes(code))).length});
@@ -78,29 +80,30 @@ function themeGroups(){
 }
 function themeRows(xs){
   if(!xs.length)return'<div class="evia-nvq-empty">No themes in this section.</div>';
-  return xs.map(g=>`<button class="evia-tools-row evia-nvq-theme" data-nvq-theme="${esc(g.id)}"><span><b>${esc(g.id)} · ${esc(g.title)}</b><small>${g.touched} of ${g.codes.length} ACs evidenced</small></span><em>${esc(dots(g.evidence))}</em></button>`).join("")
+  return xs.map(g=>`<button class="evia-tools-row evia-nvq-theme" data-nvq-theme="${esc(g.id)}"><span><b>${esc(g.id)} · ${esc(g.title)}</b><small>${g.touched} of ${g.codes.length} ACs covered${g.rpl?` · ${g.rpl} RPL`:""}</small></span><em>${g.rpl?`<i class="evia-nvq-rpl-mark" title="${g.rpl} ACs recognised through RPL">o</i>`:""}${esc(dots(g.evidence))}</em></button>`).join("")
 }
 function openCoverage(){
   const c=ctx(),m=meta();if(!c||!m)return;
-  const groups=themeGroups(),practical=groups.filter(g=>g.id.startsWith("P")),theory=groups.filter(g=>g.id.startsWith("T")),x=countMap(),touched=c.codes.filter(code=>(x[code]||0)>0).length;
+  const groups=themeGroups(),practical=groups.filter(g=>g.id.startsWith("P")),theory=groups.filter(g=>g.id.startsWith("T")),covered=coveredSet(),rpl=rplSet(),touched=c.codes.filter(code=>covered.has(code)).length;
   const el=layer(`
     <p class="evia-tools-kicker">Course coverage</p>
-    <div class="evia-nvq-overall"><strong>${acPercent()}%</strong><span>${touched} of ${c.codes.length} official ACs evidenced</span></div>
-    <p class="evia-tools-copy">The learner does not need to manage hundreds of criteria. Evia groups them into practical and theory themes while keeping every official Unit → LO → AC underneath.</p>
+    <div class="evia-nvq-overall"><strong>${acPercent()}%</strong><span>${touched} of ${c.codes.length} official ACs covered</span></div>
+    <p class="evia-tools-copy">Evidence and recognised prior learning both count towards AC coverage. Evia keeps every official Unit → LO → AC underneath and maps real work holistically across relevant criteria.</p>
+    ${rpl.size?`<p class="evia-nvq-rpl-summary"><i class="evia-nvq-rpl-mark">o</i>${rpl.size} ACs recognised through RPL</p>`:""}
     <h3 class="evia-nvq-heading">Practical</h3>${themeRows(practical)}
     <h3 class="evia-nvq-heading">Theory</h3>${themeRows(theory)}
-    <p class="evia-nvq-note">Yellow marks show evidence frequency, not assessor sign-off or completion.</p>
+    <p class="evia-nvq-note">Yellow marks show evidence frequency. Purple o marks show recognised prior learning.</p>
   `,"Course coverage",close);
   el.querySelectorAll("[data-nvq-theme]").forEach(b=>b.onclick=()=>openTheme(b.dataset.nvqTheme,openCoverage))
 }
 function openTheme(theme,back=openCoverage){
-  const c=ctx(),m=meta(),x=countMap(),g=themeGroups().find(v=>v.id===theme);if(!c||!m||!g)return;
+  const c=ctx(),m=meta(),x=countMap(),covered=coveredSet(),rpl=rplSet(),g=themeGroups().find(v=>v.id===theme);if(!c||!m||!g)return;
   const codes=g.codes.slice().sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
   layer(`
     <p class="evia-tools-kicker">${esc(theme.startsWith("P")?"Practical theme":"Theory theme")}</p>
     <h2>${esc(g.title)}</h2>
-    <p class="evia-tools-copy">${g.touched} of ${g.codes.length} linked official ACs currently have evidence. The ACs stay underneath so the assessor can judge the evidence holistically.</p>
-    <div class="evia-nvq-ac-grid">${codes.map(code=>`<span class="${(x[code]||0)>0?"on":""}"><b>${esc(code)}</b><i>${esc(dots(x[code]||0))}</i></span>`).join("")}</div>
+    <p class="evia-tools-copy">${g.touched} of ${g.codes.length} linked official ACs are covered by evidence or RPL. The ACs stay underneath so the assessor can judge evidence holistically.</p>
+    <div class="evia-nvq-ac-grid">${codes.map(code=>`<span class="${covered.has(code)?"on":""}${rpl.has(code)?" rpl":""}"><b>${esc(code)}</b><i>${rpl.has(code)?'<em class="evia-nvq-rpl-mark" title="Recognised prior learning">o</em>':""}${esc(dots(x[code]||0))}</i></span>`).join("")}</div>
   `,`${theme} coverage`,back)
 }
 function pace(){
@@ -151,10 +154,10 @@ function openUnits(){
   const xs=unitStats(),m=meta(),c=ctx();if(!c||!m)return;
   layer(`
     <p class="evia-tools-kicker">Unit portfolio coverage</p>
-    <div class="evia-nvq-overall"><strong>${unitsPercent()}%</strong><span>average AC evidence coverage across ${xs.length} required units</span></div>
-    <p class="evia-tools-copy">All eight mandatory units and the selected optional unit are tracked underneath the same evidence you collect from real jobs.</p>
-    ${xs.map(x=>`<div class="evia-tools-row evia-nvq-unit"><span><b>Unit ${x.unit}</b><small>${esc(x.title)} · ${x.touched}/${x.codes.length} ACs evidenced</small></span><em>${x.pct}%</em></div>`).join("")}
-    <p class="evia-nvq-note">This is portfolio evidence coverage only. It does not mark a unit as assessed or signed off.</p>
+    <div class="evia-nvq-overall"><strong>${unitsPercent()}%</strong><span>average AC coverage across ${xs.length} required units</span></div>
+    <p class="evia-tools-copy">Evidence and RPL both count towards unit AC coverage. Purple o marks show units containing recognised prior learning.</p>
+    ${xs.map(x=>`<div class="evia-tools-row evia-nvq-unit${x.rplCount?" has-rpl":""}"><span><b>Unit ${x.unit}${x.rplCount?' <i class="evia-nvq-rpl-mark" title="Recognised prior learning">o</i>':""}</b><small>${esc(x.title)} · ${x.touched}/${x.codes.length} ACs covered${x.rplCount?` · ${x.rplCount} RPL`:""}</small></span><em>${x.pct}%</em></div>`).join("")}
+    <p class="evia-nvq-note">Coverage shows portfolio evidence plus recognised prior learning. It does not mark a unit as assessor signed-off.</p>
   `,"Units",close)
 }
 document.addEventListener("click",e=>{
@@ -168,5 +171,5 @@ document.addEventListener("click",e=>{
   if(u){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation?.();openUnits();return}
 },true);
 function ready(){if(!ctx())return;patchShell();const root=document.getElementById("root");if(root&&!root.__eviaNvqObserver){root.__eviaNvqObserver=true;new MutationObserver(()=>requestAnimationFrame(patchShell)).observe(root,{childList:true,subtree:true})}}
-window.addEventListener("load",ready);window.addEventListener("pageshow",ready);document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")ready()});setTimeout(ready,80);
+window.addEventListener("load",ready);window.addEventListener("pageshow",ready);window.addEventListener("evia:rpl-changed",()=>{patchShell();document.querySelector(".evia-nvq-layer")&&requestAnimationFrame(()=>{const title=document.querySelector(".evia-nvq-layer .evia-tools-head b")?.textContent;if(title==="Units")openUnits();else if(title==="Course coverage")openCoverage()})});window.addEventListener("storage",e=>{if(e.key===RPL_KEY)ready()});document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")ready()});setTimeout(ready,80);
 })();

@@ -1,6 +1,6 @@
 (()=>{
 "use strict";
-const VERSION=88;
+const VERSION=89;
 const RPL_KEY="evia-rpl-ksbs-v1";
 function ctx(){const c=window.EviaCourseContext?.current?.();return c?.courseType==="nvq"?c:null}
 function meta(){return window.EviaTrowelMeta||null}
@@ -45,13 +45,13 @@ function bindAcRows(el,unit){
 function openUnit(unit){
   const r=rplSet(),codes=codesFor(unit);if(!codes.length)return openIndex();
   const rows=codes.map(code=>`<button type="button" class="evia-rpl-row evia-rpl-ac ${r.has(code)?"on":""}" data-rpl-unit-code="${esc(code)}"><span><b>${esc(acLabel(code))}</b><small>${esc(desc(code))}</small></span><em>${r.has(code)?"RPL":""}</em></button>`).join("");
-  const el=layer(`<p class="evia-tools-kicker">Unit ${unit}</p><h2>${esc(unitTitle(unit))}</h2><p class="evia-tools-copy">Assessment criteria are shown in official numerical order. Tap an AC to mark or unmark it as recognised prior learning.</p><div class="evia-rpl-summary"><strong data-rpl-summary-count>${codes.filter(code=>r.has(code)).length}</strong><span data-rpl-summary-line>of ${codes.length} ACs marked RPL in Unit ${unit}</span></div><div class="evia-rpl-group">${rows}</div>`,`Unit ${unit}`,openIndex);
+  const el=layer(`<p class="evia-tools-kicker">Unit ${unit}</p><h2>${esc(unitTitle(unit))}</h2><p class="evia-tools-copy">Assessment criteria are shown in official numerical order using the qualification handbook wording. Tap an AC to mark or unmark it as recognised prior learning.</p><div class="evia-rpl-summary"><strong data-rpl-summary-count>${codes.filter(code=>r.has(code)).length}</strong><span data-rpl-summary-line>of ${codes.length} ACs marked RPL in Unit ${unit}</span></div><div class="evia-rpl-group">${rows}</div>`,`Unit ${unit}`,openIndex);
   el.dataset.rplUnit=String(unit);bindAcRows(el,unit)
 }
 function openIndex(){
   const c=ctx(),m=meta();if(!c||!m)return;const r=rplSet(),ordered=units(),all=c.codes||[];
-  const rows=ordered.map(unit=>{const codes=codesFor(unit),done=codes.filter(code=>r.has(code)).length;return `<button type="button" class="evia-tools-row" data-rpl-unit="${unit}"><span><b>Unit ${unit}</b><small>${esc(unitTitle(unit))} · ${done?`${done} RPL · `:""}${codes.length} ACs</small></span><i>›</i></button>`}).join("");
-  const el=layer(`<p class="evia-tools-kicker">Recognised prior learning</p><h2>RPL by unit</h2><p class="evia-tools-copy">Units are listed in qualification order. Open a unit to see every required AC in numerical order.</p><div class="evia-rpl-summary"><strong data-rpl-summary-count>${all.filter(code=>r.has(code)).length}</strong><span data-rpl-summary-line>of ${all.length} ACs marked RPL</span></div>${rows}`,"RPL");
+  const rows=ordered.map(unit=>{const codes=codesFor(unit),done=codes.filter(code=>r.has(code)).length;return `<button type="button" class="evia-tools-row${done?" has-rpl":""}" data-rpl-unit="${unit}"><span><b>Unit ${unit}${done?' <i class="evia-nvq-rpl-mark" title="Recognised prior learning">o</i>':""}</b><small>${esc(unitTitle(unit))} · ${done?`${done} RPL · `:""}${codes.length} ACs</small></span><i>›</i></button>`}).join("");
+  const el=layer(`<p class="evia-tools-kicker">Recognised prior learning</p><h2>RPL by unit</h2><p class="evia-tools-copy">Units are listed in qualification order. Open a unit to see every required AC in numerical order with the official handbook wording.</p><div class="evia-rpl-summary"><strong data-rpl-summary-count>${all.filter(code=>r.has(code)).length}</strong><span data-rpl-summary-line>of ${all.length} ACs marked RPL</span></div>${rows}`,"RPL");
   el.querySelectorAll("[data-rpl-unit]").forEach(btn=>btn.onclick=()=>openUnit(Number(btn.dataset.rplUnit)))
 }
 function intercept(e){

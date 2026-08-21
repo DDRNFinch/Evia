@@ -1,10 +1,10 @@
 {
-  "version": "88",
-  "title": "RPL arranged by unit and AC",
+  "version": "89",
+  "title": "NVQ handbook ACs, holistic mapping and RPL coverage",
   "details": [
-    "NVQ RPL now opens in qualification unit order",
-    "Each unit shows its official ACs in numerical order",
-    "RPL marking and existing evidence coverage are unchanged",
-    "The unit-first layout makes large NVQ routes easier to navigate"
+    "Level 3 Trowel NVQ AC wording now follows the City & Guilds 6570-05 qualification handbook",
+    "Evidence is mapped holistically across relevant ACs and units instead of one narrow criterion route",
+    "RPL now counts towards AC and unit percentage coverage",
+    "Purple o markers identify ACs, themes and units containing recognised prior learning"
   ]
 }
