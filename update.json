@@ -1,10 +1,10 @@
 {
-  "version": "98",
-  "title": "Smoother Evia movement",
+  "version": "99",
+  "title": "Evia performance cleanup",
   "details": [
-    "Evia now moves between the home position and the open menu with the same timing and easing as Milos",
-    "The menu fades and settles while Evia moves instead of appearing or disappearing abruptly",
-    "Returning home now keeps the menu fade, avatar travel and home prompt synchronised",
-    "The updated motion files are forced into the new offline cache so installed Evia does not keep the older clunky animation"
+    "Evia now opens and closes without rebuilding the whole app shell",
+    "Duplicate avatar, menu and delayed handoff animation layers have been removed",
+    "Obsolete transfer chunks and superseded version markers have been removed",
+    "The v99 offline shell forces the cleaned runtime onto installed Evia"
   ]
 }
