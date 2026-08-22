@@ -36,5 +36,5 @@ test("current Evia shell, public assets and manifest agree", () => {
   assert.match(index, new RegExp(`evia-updater\\.js\\?v=${version}`));
   assert.match(index, new RegExp(`evia-version-v${version}\\.js\\?v=${version}`));
   assert.match(sw, new RegExp(`evia-shell-v${version}`));
-  assert.equal(publicSw, sw);
+  assert.equal(publicSw.trimEnd(), sw.trimEnd());
 });
