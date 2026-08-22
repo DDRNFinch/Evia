@@ -1,6 +1,6 @@
-// v91 every selectable NVQ area maps to at least one AC
-const CACHE_NAME = 'evia-shell-v91';
-const LEGACY_READY_CACHE = 'evia-beta-shell-v91';
+// v96 adds a persistent update-available notification and keeps v95 Milos next-visit behaviour
+const CACHE_NAME = 'evia-shell-v96';
+const LEGACY_READY_CACHE = 'evia-beta-shell-v96';
 const CACHE_PREFIXES = ['evia-shell-', 'evia-beta-shell-'];
 const CRITICAL = [
   './',
@@ -11,7 +11,12 @@ const CRITICAL = [
   './apple-touch-icon.png',
   './assets/evia-updater.js',
   './assets/evia-mini-milos-v86.js',
-  './assets/evia-milos-observed-arch-v91.js',
+  './assets/evia-version-v96.js',
+  './assets/evia-next-visit-v95.js',
+  './assets/evia-count-display-v94.js',
+  './assets/evia-milos-observed-arch-v94.js',
+  './assets/evia-arp-v80.js',
+  './assets/evia-arp-home-score-v94.js',
   './assets/evia-rpl-unit-order-v88.js',
   './assets/evia-rpl-course.css',
   './assets/evia-trowel-handbook-v89.js',
@@ -19,7 +24,7 @@ const CRITICAL = [
   './assets/evia-6570-pack-migration.js',
   './assets/evia-6570-v91-remap.js',
   './assets/evia-6570-smoke.js',
-  './assets/evia-nvq.js',
+  './assets/evia-nvq-v94.js',
   './assets/evia-nvq-ac-browser-v90.js',
   './assets/evia-nvq-ac-browser-v90.css',
   './assets/qrcode.js',
@@ -30,7 +35,17 @@ const REPLACE_PATHS = new Set([
   '/Evia/index.html',
   '/Evia/assets/evia-updater.js',
   '/Evia/assets/evia-mini-milos-v86.js',
+  '/Evia/assets/evia-version-v94.js',
+  '/Evia/assets/evia-version-v96.js',
+  '/Evia/assets/evia-next-visit-v95.js',
+  '/Evia/assets/evia-count-display.js',
+  '/Evia/assets/evia-count-display-v94.js',
   '/Evia/assets/evia-milos-observed-arch-v91.js',
+  '/Evia/assets/evia-milos-observed-arch-v92.js',
+  '/Evia/assets/evia-milos-observed-arch-v94.js',
+  '/Evia/assets/evia-arp-v80.js',
+  '/Evia/assets/evia-arp-home-score-v93.js',
+  '/Evia/assets/evia-arp-home-score-v94.js',
   '/Evia/assets/evia-rpl-unit-order-v88.js',
   '/Evia/assets/evia-rpl-course.css',
   '/Evia/assets/evia-trowel-handbook-v89.js',
@@ -39,6 +54,7 @@ const REPLACE_PATHS = new Set([
   '/Evia/assets/evia-6570-v91-remap.js',
   '/Evia/assets/evia-6570-smoke.js',
   '/Evia/assets/evia-nvq.js',
+  '/Evia/assets/evia-nvq-v94.js',
   '/Evia/assets/evia-nvq-ac-browser-v90.js',
   '/Evia/assets/evia-nvq-ac-browser-v90.css',
   '/Evia/assets/qrcode.js',
