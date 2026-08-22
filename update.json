@@ -1,10 +1,10 @@
 {
-  "version": "97",
-  "title": "Milos review sync",
+  "version": "98",
+  "title": "Smoother Evia movement",
   "details": [
-    "Progress reviews now show once with a clear Progress review heading and completed date",
-    "Review, target and next-review dates are displayed as UK dd/mm/yyyy dates",
-    "Scanning a new Milos review replaces Evia's active targets with the targets agreed in that review",
-    "All imported Milos targets use the next review date as their due date and the previous target period is kept in target history"
+    "Evia now moves between the home position and the open menu with the same timing and easing as Milos",
+    "The menu fades and settles while Evia moves instead of appearing or disappearing abruptly",
+    "Returning home now keeps the menu fade, avatar travel and home prompt synchronised",
+    "The updated motion files are forced into the new offline cache so installed Evia does not keep the older clunky animation"
   ]
 }
