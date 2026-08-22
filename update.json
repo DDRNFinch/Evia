@@ -1,10 +1,10 @@
 {
-  "version": "101",
-  "title": "Evia motion parity",
+  "version": "102",
+  "title": "Evia smooth motion",
   "details": [
-    "Evia now uses the same 0.92 second avatar glide as Milos",
-    "Menu content now uses the same eased entrance timing and mobile geometry as Milos",
-    "Category, job and evidence screens float into place instead of snapping between views",
-    "Installed copies receive a fresh v101 cache so the old motion rules are removed"
+    "Avatar movement now uses compositor-only translate and scale instead of layout-heavy top, width and height animation",
+    "The menu now enters as one layer instead of animating each item separately",
+    "The visual path and timing remain matched to Milos while avoiding the frame stalls seen in the recording",
+    "Installed copies receive a fresh v102 cache so the older motion code is replaced"
   ]
 }
