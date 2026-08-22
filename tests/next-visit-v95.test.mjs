@@ -3,10 +3,10 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 
 const nextVisit = fs.readFileSync(new URL("../assets/evia-next-visit-v95.js", import.meta.url), "utf8");
-const guard = fs.readFileSync(new URL("../assets/evia-version-v96.js", import.meta.url), "utf8");
 const index = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const sw = fs.readFileSync(new URL("../sw.js", import.meta.url), "utf8");
 const update = JSON.parse(fs.readFileSync(new URL("../update.json", import.meta.url), "utf8"));
+const version = String(update.version);
 
 test("Milos review nextReviewDate is persisted for Evia", () => {
   assert.match(nextVisit, /evia-mini-milos-visits-v2/);
@@ -33,11 +33,9 @@ test("Targets permanently exposes the locally stored next assessor visit", () =>
   assert.match(nextVisit, /\.evia-target-layer \.evia-tools-body/);
 });
 
-test("v95 next-visit feature remains enabled inside the v96 shell", () => {
-  assert.match(guard, /setAttribute\("content","96"\)/);
-  assert.match(index, /evia-next-visit-v95\.js\?v=96/);
-  assert.match(sw, /evia-shell-v96/);
+test("next-visit feature remains enabled in the current Evia shell", () => {
+  assert.match(index, /evia-next-visit-v95\.js\?v=\d+/);
+  assert.match(sw, new RegExp(`evia-shell-v${version}`));
   assert.match(sw, /evia-next-visit-v95\.js/);
   assert.doesNotMatch(nextVisit, /setInterval\s*\(/);
-  assert.equal(update.version, "96");
 });

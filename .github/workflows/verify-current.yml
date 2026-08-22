@@ -1,0 +1,50 @@
+name: Verify Evia
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Read current Evia version
+        shell: bash
+        run: |
+          VERSION=$(node -e "const fs=require('fs');process.stdout.write(String(JSON.parse(fs.readFileSync('update.json','utf8')).version))")
+          echo "EVIA_VERSION=$VERSION" >> "$GITHUB_ENV"
+      - name: Check active JavaScript syntax
+        shell: bash
+        run: |
+          node --check assets/evia-updater.js
+          node --check assets/evia-avatar-motion.js
+          node --check assets/evia-next-visit-v95.js
+          node --check assets/evia-milos-review-sync-v97.js
+          node --check assets/evia-targets.js
+          node --check "assets/evia-version-v${EVIA_VERSION}.js"
+          node --check sw.js
+          node --check public/sw.js
+      - name: Run current regression checks
+        run: node --test tests/next-visit-v95.test.mjs tests/update-notice-v96.test.mjs tests/milos-review-sync-v97.test.mjs tests/motion-v98.test.mjs
+      - name: Verify one current update source
+        shell: bash
+        run: |
+          node -e "const fs=require('fs'); const a=fs.readFileSync('sw.js','utf8').trimEnd(); const b=fs.readFileSync('public/sw.js','utf8').trimEnd(); if(a!==b) process.exit(1)"
+          node -e "const fs=require('fs'); const a=JSON.parse(fs.readFileSync('update.json','utf8')); const b=JSON.parse(fs.readFileSync('public/update.json','utf8')); if(JSON.stringify(a)!==JSON.stringify(b)) process.exit(1)"
+          grep -q "evia-app-version\" content=\"${EVIA_VERSION}" index.html
+          grep -q "evia-version-v${EVIA_VERSION}.js" index.html
+          grep -q "evia-shell-v${EVIA_VERSION}" sw.js
+      - name: Validate manifests
+        run: |
+          python -m json.tool update.json >/dev/null
+          python -m json.tool public/update.json >/dev/null

@@ -1,10 +1,10 @@
 {
-  "version": "96",
-  "title": "Clear update notifications",
+  "version": "98",
+  "title": "Smoother Evia movement",
   "details": [
-    "Evia now shows a persistent Update available notification when a newer version is ready to install",
-    "Updates no longer silently refresh as soon as the new offline cache appears",
-    "Tap the notification to review the update and choose Install update or Later",
-    "The Milos next-visit greeting and permanent Targets date from Evia 95 remain enabled"
+    "Evia now moves between the home position and the open menu with the same timing and easing as Milos",
+    "The menu fades and settles while Evia moves instead of appearing or disappearing abruptly",
+    "Returning home now keeps the menu fade, avatar travel and home prompt synchronised",
+    "The updated motion files are forced into the new offline cache so installed Evia does not keep the older clunky animation"
   ]
 }
