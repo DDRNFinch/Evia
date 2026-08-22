@@ -4,6 +4,7 @@ import fs from "node:fs";
 
 const index=fs.readFileSync("index.html","utf8");
 const live=fs.readFileSync("assets/evia-selfobs-live.js","utf8");
+const motionCss=fs.readFileSync("assets/evia-selfobs-live.css","utf8");
 const updater=fs.readFileSync("assets/evia-updater.js","utf8");
 const sw=fs.readFileSync("sw.js","utf8");
 const publicSw=fs.readFileSync("public/sw.js","utf8");
@@ -16,6 +17,17 @@ test("Evia keeps one mounted interaction shell",()=>{
   assert.match(live,/\$\("\[data-evia\]"\)\.onclick=.*syncShell\(\)/);
   assert.doesNotMatch(live,/\$\("\[data-evia\]"\)\.onclick=.*mount\(\)/);
   assert.doesNotMatch(live,/panel\.innerHTML=""/);
+});
+
+test("Evia motion matches the Milos interaction timing",()=>{
+  assert.match(motionCss,/top \.92s var\(--ease-out\)/);
+  assert.match(motionCss,/width \.92s var\(--ease-out\)/);
+  assert.match(motionCss,/height \.92s var\(--ease-out\)/);
+  assert.match(motionCss,/evia-milos-view-in \.46s var\(--ease-out\)/);
+  assert.match(motionCss,/opacity \.36s ease \.14s/);
+  assert.match(motionCss,/transform \.58s var\(--ease-out\) \.14s/);
+  assert.match(motionCss,/top:40\.5%/);
+  assert.match(motionCss,/--evia-size:5\.9rem/);
 });
 
 test("Evia has one service-worker owner and one current cache",()=>{
