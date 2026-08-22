@@ -5,6 +5,8 @@ import { readFileSync } from 'node:fs';
 const sync = readFileSync(new URL('../assets/evia-milos-review-sync-v97.js', import.meta.url), 'utf8');
 const index = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
+const update = JSON.parse(readFileSync(new URL('../update.json', import.meta.url), 'utf8'));
+const version = String(update.version);
 
 test('progress review display removes the duplicate heading and uses UK dates', () => {
   assert.match(sync, /head\.textContent=\"Progress review\"/);
@@ -21,9 +23,8 @@ test('new Milos review replaces active targets and archives the old period', () 
   assert.match(sync, /sourceReviewId/);
 });
 
-test('Evia 97 loads and caches the review sync module', () => {
-  assert.match(index, /evia-app-version\" content=\"97\"/);
-  assert.match(index, /evia-milos-review-sync-v97\.js\?v=97/);
-  assert.match(sw, /evia-shell-v97/);
+test('Milos review sync remains loaded and cached in the current shell', () => {
+  assert.match(index, /evia-milos-review-sync-v97\.js\?v=\d+/);
+  assert.match(sw, new RegExp(`evia-shell-v${version}`));
   assert.match(sw, /evia-milos-review-sync-v97\.js/);
 });
