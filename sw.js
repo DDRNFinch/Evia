@@ -1,4 +1,4 @@
-// v99 keeps one direct Evia shell and refreshes the current runtime
+// v99 final shell refresh: direct transitions, no remount path
 const CACHE_NAME = 'evia-shell-v99';
 const LEGACY_READY_CACHE = 'evia-beta-shell-v99';
 const CACHE_PREFIXES = ['evia-shell-', 'evia-beta-shell-'];
