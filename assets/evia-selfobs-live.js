@@ -157,7 +157,7 @@ async function loadData(){
   try{
     const prefix=COURSE.dataPrefix||"evia-site-data";
     const parts=await Promise.all([1,2,3].map(async n=>{
-      const t=await fetch(`./app/${prefix}-${n}.ts?v=26`,{cache:"no-store"}).then(r=>{if(!r.ok)throw Error(r.status);return r.text()});
+      const t=await fetch(`./app/${prefix}-${n}.ts?v=99`,{cache:"no-store"}).then(r=>{if(!r.ok)throw Error(r.status);return r.text()});
       const m=t.match(/export const SITE_DATA_\d+:SiteCategory\[\]=(.*);\s*$/s);if(!m)throw Error("data parse");return JSON.parse(m[1])
     }));
     DATA=parts.flat();
@@ -166,6 +166,5 @@ async function loadData(){
     mount()
   }catch(e){console.error(e);document.getElementById("root").innerHTML='<main class="evia-app selfobs is-ready"><div class="self-load-error">Evia could not load the course map. Refresh once and try again.</div></main>'}
 }
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js?v=26").catch(()=>{}));
 loadData();
 })();
