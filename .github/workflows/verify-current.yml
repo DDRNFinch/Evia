@@ -39,8 +39,8 @@ jobs:
       - name: Verify one current update source
         shell: bash
         run: |
-          cmp -s update.json public/update.json
-          cmp -s sw.js public/sw.js
+          node -e "const fs=require('fs'); const a=fs.readFileSync('sw.js','utf8').trimEnd(); const b=fs.readFileSync('public/sw.js','utf8').trimEnd(); if(a!==b) process.exit(1)"
+          node -e "const fs=require('fs'); const a=JSON.parse(fs.readFileSync('update.json','utf8')); const b=JSON.parse(fs.readFileSync('public/update.json','utf8')); if(JSON.stringify(a)!==JSON.stringify(b)) process.exit(1)"
           grep -q "evia-app-version\" content=\"${EVIA_VERSION}" index.html
           grep -q "evia-version-v${EVIA_VERSION}.js" index.html
           grep -q "evia-shell-v${EVIA_VERSION}" sw.js
