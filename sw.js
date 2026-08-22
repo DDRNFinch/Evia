@@ -1,4 +1,4 @@
-// v99 final shell refresh: direct transitions, no remount path
+// v99 final refresh: one mounted shell and one service-worker owner
 const CACHE_NAME = 'evia-shell-v99';
 const LEGACY_READY_CACHE = 'evia-beta-shell-v99';
 const CACHE_PREFIXES = ['evia-shell-', 'evia-beta-shell-'];
