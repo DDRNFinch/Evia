@@ -1,11 +1,11 @@
 {
-  "version": "91",
-  "title": "Complete holistic NVQ mapping and assessor observation coverage",
+  "version": "95",
+  "title": "Your next assessor visit in Evia",
   "details": [
-    "Every selectable Level 3 NVQ evidence area now maps to at least one relevant AC",
-    "Empty holistic areas are repaired from their P/T themes and official handbook wording",
-    "Existing Level 3 course packs are remapped once so old empty areas are removed",
-    "ACs observed as competent in Milos now show a blue o in Evia and count as covered",
-    "Apprenticeship KSB arches also show a blue Milos observed badge and observed KSB summary"
+    "Milos review feedback now supplies Evia with the assessor-booked next review date already contained in the review QR",
+    "When Evia opens after a Milos review has been scanned, a five-second welcome message shows the learner's first name, current on/off-track status and next visit date",
+    "The next assessor visit date is stored locally and remains visible in the Targets section",
+    "Review status is taken from the latest Milos assessor review and displayed simply as on track or off track",
+    "No learner personal data is added to the Milos QR transfer"
   ]
 }
