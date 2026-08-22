@@ -1,10 +1,10 @@
 {
-  "version": "100",
-  "title": "Evia runtime cleanup",
+  "version": "101",
+  "title": "Evia motion parity",
   "details": [
-    "Evia now uses one mounted interaction shell with no duplicate motion system",
-    "Installed copies now replace legacy Evia caches instead of carrying old files forward",
-    "Production smoke-audit and orphaned runtime files have been removed",
-    "The update path now has one service-worker owner and one current offline cache"
+    "Evia now uses the same 0.92 second avatar glide as Milos",
+    "Menu content now uses the same eased entrance timing and mobile geometry as Milos",
+    "Category, job and evidence screens float into place instead of snapping between views",
+    "Installed copies receive a fresh v101 cache so the old motion rules are removed"
   ]
 }
