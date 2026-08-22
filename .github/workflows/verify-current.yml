@@ -34,7 +34,7 @@ jobs:
           node --check sw.js
           node --check public/sw.js
       - name: Run current regression checks
-        run: node --test tests/next-visit-v95.test.mjs tests/update-notice-v96.test.mjs tests/milos-review-sync-v97.test.mjs tests/performance-v99.test.mjs
+        run: node --test tests/next-visit-v95.test.mjs tests/update-notice-v96.test.mjs tests/milos-review-sync-v97.test.mjs tests/performance-current.test.mjs
       - name: Verify clean runtime and update source
         shell: bash
         run: |
@@ -54,6 +54,7 @@ jobs:
             assets/evia-version-v96.js \
             assets/evia-version-v97.js \
             assets/evia-version-v98.js \
+            assets/evia-version-v99.js \
             assets/evia-count-display.js \
             assets/evia-milos-observed-arch-v91.js \
             assets/evia-milos-observed-arch-v92.js \
@@ -61,6 +62,7 @@ jobs:
             assets/evia-nvq.js \
             assets/evia-arp.js \
             assets/evia-6570-qa.js \
+            assets/evia-6570-smoke.js \
             assets/evia-beta-isolation.js \
             assets/evia-camera-split.css \
             assets/evia-camera-split.js \
@@ -69,10 +71,57 @@ jobs:
             assets/index-Bv8ZljA6.js; do
               test ! -e "$path"
           done
-          ! grep -q 'evia-avatar-motion\|evia-premium-motion\|evia-avatar-life\|evia-v73-page-handoff' index.html
+          ! grep -q 'evia-avatar-motion\|evia-premium-motion\|evia-avatar-life\|evia-v73-page-handoff\|evia-6570-smoke' index.html
           ! grep -q 'open=!open.*mount()' assets/evia-selfobs-live.js
           ! grep -q 'serviceWorker.register' assets/evia-selfobs-live.js
           grep -q 'serviceWorker.register' assets/evia-updater.js
+          ! grep -q 'evia-beta-shell-v' assets/evia-updater.js
+          ! grep -q 'LEGACY_READY_CACHE\|migrateOldShell' sw.js
+      - name: Verify production asset references
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re, sys
+
+          index = Path('index.html').read_text(encoding='utf-8')
+          missing=[]
+          for raw in re.findall(r'(?:src|href)=["\']([^"\']+)["\']', index):
+              path=raw.split('?',1)[0]
+              if path.startswith('/Evia/'):
+                  local=Path(path[len('/Evia/'):])
+              elif path.startswith('./'):
+                  local=Path(path[2:])
+              else:
+                  continue
+              if not local.exists():
+                  missing.append(str(local))
+          if missing:
+              print('Missing production references:')
+              print('\n'.join(sorted(set(missing))))
+              sys.exit(1)
+
+          surfaces=[Path('index.html'),Path('sw.js')]
+          for root in (Path('assets'),Path('app'),Path('course-delivery')):
+              if root.exists():
+                  surfaces.extend(p for p in root.rglob('*') if p.is_file() and p.suffix.lower() in {'.js','.css','.ts','.tsx','.html'})
+          text={}
+          for p in surfaces:
+              try:text[p]=p.read_text(encoding='utf-8',errors='ignore')
+              except Exception:text[p]=''
+
+          orphaned=[]
+          for asset in sorted(Path('assets').iterdir()):
+              if not asset.is_file() or asset.suffix.lower() not in {'.js','.css'}:
+                  continue
+              name=asset.name
+              if not any(p!=asset and name in body for p,body in text.items()):
+                  orphaned.append(str(asset))
+          if orphaned:
+              print('Unreferenced production assets:')
+              print('\n'.join(orphaned))
+              sys.exit(1)
+          PY
       - name: Validate manifests
         run: |
           python -m json.tool update.json >/dev/null
