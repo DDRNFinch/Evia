@@ -1,11 +1,11 @@
 {
-  "version": "94",
-  "title": "Faster Evia and consistent AC coverage",
+  "version": "95",
+  "title": "Your next assessor visit in Evia",
   "details": [
-    "Removed continuous Home, ARP, camera and assessor-observation polling that was slowing Evia down",
-    "Home AC now uses the same total coverage as the AC menu: learner evidence, RPL and Milos-observed ACs all count as covered",
-    "The Milos observed count and blue observed markers remain inside the AC/KSB coverage menus rather than on the Home screen",
-    "ARP remains at 0% until an Assessment Readiness & Practice attempt has actually been made",
-    "Screen updates now run only when the relevant part of Evia changes"
+    "Milos review feedback now supplies Evia with the assessor-booked next review date already contained in the review QR",
+    "When Evia opens after a Milos review has been scanned, a five-second welcome message shows the learner's first name, current on/off-track status and next visit date",
+    "The next assessor visit date is stored locally and remains visible in the Targets section",
+    "Review status is taken from the latest Milos assessor review and displayed simply as on track or off track",
+    "No learner personal data is added to the Milos QR transfer"
   ]
 }
