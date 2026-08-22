@@ -1,10 +1,10 @@
 {
-  "version": "99",
-  "title": "Evia performance cleanup",
+  "version": "100",
+  "title": "Evia runtime cleanup",
   "details": [
-    "Evia now opens and closes without rebuilding the whole app shell",
-    "Duplicate avatar, menu and delayed handoff animation layers have been removed",
-    "Obsolete transfer chunks and superseded version markers have been removed",
-    "The v99 offline shell forces the cleaned runtime onto installed Evia"
+    "Evia now uses one mounted interaction shell with no duplicate motion system",
+    "Installed copies now replace legacy Evia caches instead of carrying old files forward",
+    "Production smoke-audit and orphaned runtime files have been removed",
+    "The update path now has one service-worker owner and one current offline cache"
   ]
 }
