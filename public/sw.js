@@ -1,6 +1,6 @@
-// v98 matches Evia home/menu motion to Milos and keeps the motion shell fresh
-const CACHE_NAME = 'evia-shell-v98';
-const LEGACY_READY_CACHE = 'evia-beta-shell-v98';
+// v99 keeps one direct Evia shell and refreshes the current runtime
+const CACHE_NAME = 'evia-shell-v99';
+const LEGACY_READY_CACHE = 'evia-beta-shell-v99';
 const CACHE_PREFIXES = ['evia-shell-', 'evia-beta-shell-'];
 const CRITICAL = [
   './',
@@ -9,11 +9,13 @@ const CRITICAL = [
   './icon-192.png',
   './icon-512.png',
   './apple-touch-icon.png',
+  './assets/index-D_kAPZ6L.css',
+  './assets/evia-selfobs-live.css',
+  './assets/evia-selfobs-fixes.css',
+  './assets/evia-selfobs-live.js',
   './assets/evia-updater.js',
+  './assets/evia-version-v99.js',
   './assets/evia-mini-milos-v86.js',
-  './assets/evia-version-v98.js',
-  './assets/evia-avatar-motion.js',
-  './assets/evia-avatar-motion.css',
   './assets/evia-next-visit-v95.js',
   './assets/evia-milos-review-sync-v97.js',
   './assets/evia-targets.js',
@@ -37,24 +39,19 @@ const CRITICAL = [
 const REPLACE_PATHS = new Set([
   '/Evia/',
   '/Evia/index.html',
+  '/Evia/assets/index-D_kAPZ6L.css',
+  '/Evia/assets/evia-selfobs-live.css',
+  '/Evia/assets/evia-selfobs-fixes.css',
+  '/Evia/assets/evia-selfobs-live.js',
   '/Evia/assets/evia-updater.js',
+  '/Evia/assets/evia-version-v99.js',
   '/Evia/assets/evia-mini-milos-v86.js',
-  '/Evia/assets/evia-version-v94.js',
-  '/Evia/assets/evia-version-v96.js',
-  '/Evia/assets/evia-version-v97.js',
-  '/Evia/assets/evia-version-v98.js',
-  '/Evia/assets/evia-avatar-motion.js',
-  '/Evia/assets/evia-avatar-motion.css',
   '/Evia/assets/evia-next-visit-v95.js',
   '/Evia/assets/evia-milos-review-sync-v97.js',
   '/Evia/assets/evia-targets.js',
-  '/Evia/assets/evia-count-display.js',
   '/Evia/assets/evia-count-display-v94.js',
-  '/Evia/assets/evia-milos-observed-arch-v91.js',
-  '/Evia/assets/evia-milos-observed-arch-v92.js',
   '/Evia/assets/evia-milos-observed-arch-v94.js',
   '/Evia/assets/evia-arp-v80.js',
-  '/Evia/assets/evia-arp-home-score-v93.js',
   '/Evia/assets/evia-arp-home-score-v94.js',
   '/Evia/assets/evia-rpl-unit-order-v88.js',
   '/Evia/assets/evia-rpl-course.css',
@@ -63,7 +60,6 @@ const REPLACE_PATHS = new Set([
   '/Evia/assets/evia-6570-pack-migration.js',
   '/Evia/assets/evia-6570-v91-remap.js',
   '/Evia/assets/evia-6570-smoke.js',
-  '/Evia/assets/evia-nvq.js',
   '/Evia/assets/evia-nvq-v94.js',
   '/Evia/assets/evia-nvq-ac-browser-v90.js',
   '/Evia/assets/evia-nvq-ac-browser-v90.css',
