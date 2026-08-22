@@ -11,6 +11,8 @@ on:
       - 'public/update.json'
       - 'tests/next-visit-v95.test.mjs'
       - '.github/workflows/verify-v95.yml'
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
