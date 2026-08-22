@@ -45,13 +45,19 @@ function recapText(){
   return COURSE.pathway==="architectural-joiner"?"Tell me what you’re doing in the workshop. I’ll show you the evidence you could get from that job.":"Tell me what you’re doing on site. I’ll show you the evidence you could get from that job."
 }
 function mount(){document.getElementById("root").innerHTML=shell();bindShell();render()}
+function refreshShellMeta(){
+  const quick=$("[data-quick]");if(quick)quick.textContent=`Evidence · ${fresh().length} new`;
+  const values={TOC:timeline(),KSB:Math.round(touched()/CODES.length*100),OTJ:otj(),EPA:epa()};
+  document.querySelectorAll("[data-arch]").forEach(button=>{const pct=values[button.dataset.arch];if(pct==null)return;const path=button.querySelector(".arch-value"),number=button.querySelector(".arch-number");if(path)path.setAttribute("stroke-dasharray",`${pct} 100`);if(number)number.textContent=`${pct}%`})
+}
 function syncShell(){
-  const app=$(".evia-app"),panel=$(".self-panel"),stage=$(".menu-stage"),avatar=$("[data-evia]");
+  const app=$(".evia-app"),stage=$(".menu-stage"),avatar=$("[data-evia]");
   if(!app)return;
   app.classList.toggle("is-open",open);
   if(avatar)avatar.setAttribute("aria-expanded",open?"true":"false");
   if(stage)stage.setAttribute("aria-hidden",open?"false":"true");
-  if(open)render();else if(panel)panel.innerHTML=""
+  refreshShellMeta();
+  if(open)render()
 }
 function bindShell(){
   $("[data-evia]").onclick=()=>{open=!open;if(!open){view="home";cat=job=opp=null}syncShell()};
