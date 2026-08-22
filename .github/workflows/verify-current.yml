@@ -28,27 +28,29 @@ jobs:
           fi
           python - <<'PY'
           from pathlib import Path
-          import json, shutil
+          import json, shutil, textwrap
 
-          p = Path('index.html')
-          s = p.read_text()
-          s = s.replace('<meta name="evia-app-version" content="98" />','<meta name="evia-app-version" content="99" />',1)
+          p=Path('index.html')
+          s=p.read_text()
+          assert '<meta name="evia-app-version" content="98" />' in s
+          s=s.replace('<meta name="evia-app-version" content="98" />','<meta name="evia-app-version" content="99" />',1)
           for line in [
             '<link rel="stylesheet" href="/Evia/assets/evia-premium-motion.css?v=43" />\n',
             '<link rel="stylesheet" href="/Evia/assets/evia-avatar-motion.css?v=98" />\n',
             '<script defer src="/Evia/assets/evia-avatar-motion.js?v=98"></script>\n',
             '<script defer src="/Evia/assets/evia-avatar-life.js?v=55"></script>\n',
-            '<script defer src="/Evia/assets/evia-v73-page-handoff.js?v=74"></script>\n',
-          ]:
-            s = s.replace(line,'')
-          s = s.replace('evia-version-v98.js?v=98','evia-version-v99.js?v=99')
-          s = s.replace('evia-updater.js?v=98','evia-updater.js?v=99')
+            '<script defer src="/Evia/assets/evia-v73-page-handoff.js?v=74"></script>\n']:
+            assert line in s
+            s=s.replace(line,'')
+          s=s.replace('evia-version-v98.js?v=98','evia-version-v99.js?v=99')
+          s=s.replace('evia-updater.js?v=98','evia-updater.js?v=99')
           p.write_text(s)
 
-          p = Path('assets/evia-selfobs-live.js')
-          s = p.read_text()
-          marker = 'function bindShell(){'
-          sync = '''function syncShell(){
+          p=Path('assets/evia-selfobs-live.js')
+          s=p.read_text()
+          if 'function syncShell(){' not in s:
+            assert 'function bindShell(){' in s
+            sync='''function syncShell(){
             const app=$(".evia-app"),panel=$(".self-panel"),stage=$(".menu-stage"),avatar=$("[data-evia]");
             if(!app)return;
             app.classList.toggle("is-open",open);
@@ -57,64 +59,53 @@ jobs:
             if(open)render();else if(panel)panel.innerHTML=""
           }
           function bindShell(){'''
-          if 'function syncShell(){' not in s:
-            assert marker in s
-            s = s.replace(marker,sync,1)
-          replacements = {
-            '$('["'"'[data-evia]'"'"']).onclick=()=>{open=!open;if(!open){view="home";cat=job=opp=null}mount()};': '$('["'"'[data-evia]'"'"']).onclick=()=>{open=!open;if(!open){view="home";cat=job=opp=null}syncShell()};',
-            '$('["'"'[data-quick]'"'"']).onclick=()=>{open=true;view="evidence";mount()};': '$('["'"'[data-quick]'"'"']).onclick=()=>{open=true;view="evidence";syncShell()};',
-            'if(b.dataset.arch==="KSB"){open=true;view="coverage";mount()}': 'if(b.dataset.arch==="KSB"){open=true;view="coverage";syncShell()}',
-            'else if(a==="submit"){cat=job=opp=null;view="home";open=false;mount();toast("Job submitted. Start another job whenever you’re ready.")}': 'else if(a==="submit"){cat=job=opp=null;view="home";open=false;syncShell();toast("Job submitted. Start another job whenever you’re ready.")}',
-            'entries.unshift(e);dayIds.push(e.id);write(STORE,entries);write(DAY,dayIds);clearCapture();view="opps";mount();open=true;$(".evia-app").classList.add("is-open");render();toast("Evidence saved. About one minute, done.")': 'entries.unshift(e);dayIds.push(e.id);write(STORE,entries);write(DAY,dayIds);clearCapture();view="opps";open=true;syncShell();toast("Evidence saved. About one minute, done.")',
-            'const now=Date.now();entries=entries.map(e=>!e.downloadedAt?{...e,downloadedAt:now}:e);write(STORE,entries);tab="downloaded";view="evidence";mount();open=true;$(".evia-app").classList.add("is-open");render();toast(`${list.length} evidence item${list.length===1?"":"s"} moved to Downloaded.`)': 'const now=Date.now();entries=entries.map(e=>!e.downloadedAt?{...e,downloadedAt:now}:e);write(STORE,entries);tab="downloaded";view="evidence";open=true;syncShell();toast(`${list.length} evidence item${list.length===1?"":"s"} moved to Downloaded.`)',
-          }
-          for old,new in replacements.items():
-            assert old in s, old[:90]
-            s = s.replace(old,new,1)
+            s=s.replace('function bindShell(){',sync,1)
+          pairs=[
+            ('''$("[data-evia]").onclick=()=>{open=!open;if(!open){view="home";cat=job=opp=null}mount()};''','''$("[data-evia]").onclick=()=>{open=!open;if(!open){view="home";cat=job=opp=null}syncShell()};'''),
+            ('''$("[data-quick]").onclick=()=>{open=true;view="evidence";mount()};''','''$("[data-quick]").onclick=()=>{open=true;view="evidence";syncShell()};'''),
+            ('''if(b.dataset.arch==="KSB"){open=true;view="coverage";mount()}''','''if(b.dataset.arch==="KSB"){open=true;view="coverage";syncShell()}'''),
+            ('''else if(a==="submit"){cat=job=opp=null;view="home";open=false;mount();toast("Job submitted. Start another job whenever you’re ready.")}''','''else if(a==="submit"){cat=job=opp=null;view="home";open=false;syncShell();toast("Job submitted. Start another job whenever you’re ready.")}'''),
+            ('''entries.unshift(e);dayIds.push(e.id);write(STORE,entries);write(DAY,dayIds);clearCapture();view="opps";mount();open=true;$(".evia-app").classList.add("is-open");render();toast("Evidence saved. About one minute, done.")''','''entries.unshift(e);dayIds.push(e.id);write(STORE,entries);write(DAY,dayIds);clearCapture();view="opps";open=true;syncShell();toast("Evidence saved. About one minute, done.")'''),
+            ('''const now=Date.now();entries=entries.map(e=>!e.downloadedAt?{...e,downloadedAt:now}:e);write(STORE,entries);tab="downloaded";view="evidence";mount();open=true;$(".evia-app").classList.add("is-open");render();toast(`${list.length} evidence item${list.length===1?"":"s"} moved to Downloaded.`)''','''const now=Date.now();entries=entries.map(e=>!e.downloadedAt?{...e,downloadedAt:now}:e);write(STORE,entries);tab="downloaded";view="evidence";open=true;syncShell();toast(`${list.length} evidence item${list.length===1?"":"s"} moved to Downloaded.`)''')]
+          for old,new in pairs:
+            assert old in s, old[:100]
+            s=s.replace(old,new,1)
           p.write_text(s)
 
           Path('assets/evia-version-v99.js').write_text('(()=>{"use strict";const meta=document.querySelector(\'meta[name="evia-app-version"]\');if(meta)meta.setAttribute("content","99");window.EviaAppVersion=99})();\n')
-
-          p = Path('assets/evia-updater.js')
-          s = p.read_text().replace('window.EviaUpdater=Object.freeze({version:96,check:checkForUpdate});','window.EviaUpdater=Object.freeze({version:99,check:checkForUpdate});')
-          p.write_text(s)
+          p=Path('assets/evia-updater.js')
+          s=p.read_text()
+          assert 'window.EviaUpdater=Object.freeze({version:96,check:checkForUpdate});' in s
+          p.write_text(s.replace('window.EviaUpdater=Object.freeze({version:96,check:checkForUpdate});','window.EviaUpdater=Object.freeze({version:99,check:checkForUpdate});'))
 
           for sw_name in ['sw.js','public/sw.js']:
-            p = Path(sw_name)
-            s = p.read_text()
-            s = s.replace('evia-shell-v98','evia-shell-v99').replace('evia-beta-shell-v98','evia-beta-shell-v99')
-            s = s.replace("  './assets/evia-avatar-motion.js',\n",'').replace("  './assets/evia-avatar-motion.css',\n",'')
-            s = s.replace("  '/Evia/assets/evia-avatar-motion.js',\n",'').replace("  '/Evia/assets/evia-avatar-motion.css',\n",'')
-            for old in ['v94','v96','v97','v98']:
-              s = s.replace(f"  './assets/evia-version-{old}.js',\n",'').replace(f"  '/Evia/assets/evia-version-{old}.js',\n",'')
-            anchor = "  './assets/evia-updater.js',\n"
-            if "./assets/evia-version-v99.js" not in s:
-              s = s.replace(anchor,anchor+"  './assets/evia-version-v99.js',\n")
-            anchor2 = "  '/Evia/assets/evia-updater.js',\n"
-            if "/Evia/assets/evia-version-v99.js" not in s:
-              s = s.replace(anchor2,anchor2+"  '/Evia/assets/evia-version-v99.js',\n")
+            p=Path(sw_name);s=p.read_text()
+            s=s.replace('evia-shell-v98','evia-shell-v99').replace('evia-beta-shell-v98','evia-beta-shell-v99')
+            for item in ['evia-avatar-motion.js','evia-avatar-motion.css','evia-version-v94.js','evia-version-v96.js','evia-version-v97.js','evia-version-v98.js']:
+              s=s.replace(f"  './assets/{item}',\n",'').replace(f"  '/Evia/assets/{item}',\n",'')
+            if "'./assets/evia-version-v99.js'" not in s:
+              s=s.replace("  './assets/evia-updater.js',\n","  './assets/evia-updater.js',\n  './assets/evia-version-v99.js',\n")
+            if "'/Evia/assets/evia-version-v99.js'" not in s:
+              s=s.replace("  '/Evia/assets/evia-updater.js',\n","  '/Evia/assets/evia-updater.js',\n  '/Evia/assets/evia-version-v99.js',\n")
             p.write_text(s)
 
-          manifest = {'version':'99','title':'Evia performance cleanup','details':[
-            'Evia now opens and closes without rebuilding the whole app shell',
-            'Duplicate avatar, menu and delayed handoff animation layers have been removed',
-            'Obsolete transfer chunks and superseded version markers have been removed',
-            'The v99 offline shell forces the cleaned runtime onto installed Evia'
-          ]}
-          text = json.dumps(manifest,indent=2,ensure_ascii=False)+'\n'
-          Path('update.json').write_text(text)
-          Path('public/update.json').write_text(text)
+          manifest={'version':'99','title':'Evia performance cleanup','details':['Evia now opens and closes without rebuilding the whole app shell','Duplicate avatar, menu and delayed handoff animation layers have been removed','Obsolete transfer chunks and superseded version markers have been removed','The v99 offline shell forces the cleaned runtime onto installed Evia']}
+          t=json.dumps(manifest,indent=2,ensure_ascii=False)+'\n'
+          Path('update.json').write_text(t);Path('public/update.json').write_text(t)
 
-          Path('tests/performance-v99.test.mjs').write_text('''import test from "node:test";
+          test=textwrap.dedent('''\
+          import test from "node:test";
           import assert from "node:assert/strict";
           import fs from "node:fs";
           const index=fs.readFileSync("index.html","utf8");
           const live=fs.readFileSync("assets/evia-selfobs-live.js","utf8");
-          test("shell remains mounted when Evia opens",()=>{assert.match(live,/function syncShell\(\)/);assert.match(live,/open=!open;.*syncShell\(\)/);assert.doesNotMatch(live,/open=!open;.*mount\(\)/)});
+          test("shell remains mounted when Evia opens",()=>{assert.match(live,/function syncShell\\(\\)/);assert.match(live,/open=!open;.*syncShell\\(\\)/);assert.doesNotMatch(live,/open=!open;.*mount\\(\\)/)});
           test("obsolete motion and transfer layers are gone",()=>{for(const x of ["evia-avatar-motion","evia-premium-motion","evia-avatar-life","evia-v73-page-handoff"])assert.equal(index.includes(x),false);assert.equal(fs.existsSync(".v42-transfer"),false)});
           ''')
+          Path('tests/performance-v99.test.mjs').write_text(test)
 
-          final_verify = '''name: Verify Evia
+          final_verify=textwrap.dedent('''\
+          name: Verify Evia
           on:
             push:
               branches: [main]
@@ -162,15 +153,10 @@ jobs:
                   run: |
                     python -m json.tool update.json >/dev/null
                     python -m json.tool public/update.json >/dev/null
-          '''
+          ''')
           Path('.github/workflows/verify-current.yml').write_text(final_verify)
 
-          for f in [
-            '.github/workflows/one-time-v99-cleanup.yml',
-            'assets/evia-premium-motion.css','assets/evia-avatar-motion.css','assets/evia-avatar-motion.js','assets/evia-avatar-life.js','assets/evia-v73-page-handoff.js',
-            'assets/evia-version-v94.js','assets/evia-version-v96.js','assets/evia-version-v97.js','assets/evia-version-v98.js',
-            'tests/motion-v98.test.mjs'
-          ]:
+          for f in ['.github/workflows/one-time-v99-cleanup.yml','assets/evia-premium-motion.css','assets/evia-avatar-motion.css','assets/evia-avatar-motion.js','assets/evia-avatar-life.js','assets/evia-v73-page-handoff.js','assets/evia-version-v94.js','assets/evia-version-v96.js','assets/evia-version-v97.js','assets/evia-version-v98.js','tests/motion-v98.test.mjs']:
             Path(f).unlink(missing_ok=True)
           shutil.rmtree('.v42-transfer',ignore_errors=True)
           PY
