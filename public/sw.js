@@ -1,6 +1,6 @@
-// v96 adds a persistent update-available notification and keeps v95 Milos next-visit behaviour
-const CACHE_NAME = 'evia-shell-v96';
-const LEGACY_READY_CACHE = 'evia-beta-shell-v96';
+// v98 matches Evia home/menu motion to Milos and keeps the motion shell fresh
+const CACHE_NAME = 'evia-shell-v98';
+const LEGACY_READY_CACHE = 'evia-beta-shell-v98';
 const CACHE_PREFIXES = ['evia-shell-', 'evia-beta-shell-'];
 const CRITICAL = [
   './',
@@ -11,8 +11,12 @@ const CRITICAL = [
   './apple-touch-icon.png',
   './assets/evia-updater.js',
   './assets/evia-mini-milos-v86.js',
-  './assets/evia-version-v96.js',
+  './assets/evia-version-v98.js',
+  './assets/evia-avatar-motion.js',
+  './assets/evia-avatar-motion.css',
   './assets/evia-next-visit-v95.js',
+  './assets/evia-milos-review-sync-v97.js',
+  './assets/evia-targets.js',
   './assets/evia-count-display-v94.js',
   './assets/evia-milos-observed-arch-v94.js',
   './assets/evia-arp-v80.js',
@@ -37,7 +41,13 @@ const REPLACE_PATHS = new Set([
   '/Evia/assets/evia-mini-milos-v86.js',
   '/Evia/assets/evia-version-v94.js',
   '/Evia/assets/evia-version-v96.js',
+  '/Evia/assets/evia-version-v97.js',
+  '/Evia/assets/evia-version-v98.js',
+  '/Evia/assets/evia-avatar-motion.js',
+  '/Evia/assets/evia-avatar-motion.css',
   '/Evia/assets/evia-next-visit-v95.js',
+  '/Evia/assets/evia-milos-review-sync-v97.js',
+  '/Evia/assets/evia-targets.js',
   '/Evia/assets/evia-count-display.js',
   '/Evia/assets/evia-count-display-v94.js',
   '/Evia/assets/evia-milos-observed-arch-v91.js',
