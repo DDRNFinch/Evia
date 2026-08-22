@@ -1,10 +1,10 @@
 {
-  "version": "96",
-  "title": "Clear update notifications",
+  "version": "97",
+  "title": "Milos review sync",
   "details": [
-    "Evia now shows a persistent Update available notification when a newer version is ready to install",
-    "Updates no longer silently refresh as soon as the new offline cache appears",
-    "Tap the notification to review the update and choose Install update or Later",
-    "The Milos next-visit greeting and permanent Targets date from Evia 95 remain enabled"
+    "Progress reviews now show once with a clear Progress review heading and completed date",
+    "Review, target and next-review dates are displayed as UK dd/mm/yyyy dates",
+    "Scanning a new Milos review replaces Evia's active targets with the targets agreed in that review",
+    "All imported Milos targets use the next review date as their due date and the previous target period is kept in target history"
   ]
 }
