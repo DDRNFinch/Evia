@@ -58,11 +58,21 @@ jobs:
             assets/evia-milos-observed-arch-v91.js \
             assets/evia-milos-observed-arch-v92.js \
             assets/evia-arp-home-score-v93.js \
-            assets/evia-nvq.js; do
+            assets/evia-nvq.js \
+            assets/evia-arp.js \
+            assets/evia-6570-qa.js \
+            assets/evia-beta-isolation.js \
+            assets/evia-camera-split.css \
+            assets/evia-camera-split.js \
+            assets/evia-course-epa-guard.js \
+            assets/evia-otj-pace.js \
+            assets/index-Bv8ZljA6.js; do
               test ! -e "$path"
           done
           ! grep -q 'evia-avatar-motion\|evia-premium-motion\|evia-avatar-life\|evia-v73-page-handoff' index.html
           ! grep -q 'open=!open.*mount()' assets/evia-selfobs-live.js
+          ! grep -q 'serviceWorker.register' assets/evia-selfobs-live.js
+          grep -q 'serviceWorker.register' assets/evia-updater.js
       - name: Validate manifests
         run: |
           python -m json.tool update.json >/dev/null
