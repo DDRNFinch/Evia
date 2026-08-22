@@ -33,7 +33,7 @@ function epa(){if(COURSE.epaConfigured===false)return 0;try{const x=JSON.parse(l
 function arch(label,pct){return `<button class="progress-arch" data-arch="${label}"><svg viewBox="0 0 100 68"><path class="arch-track" d="M14 54 A36 36 0 0 1 86 54"/><path class="arch-value" d="M14 54 A36 36 0 0 1 86 54" pathLength="100" stroke-dasharray="${pct} 100"/></svg><span class="arch-label">${label}</span><span class="arch-number">${pct}%</span></button>`}
 function shell(){
   const name=(localStorage.getItem("evia-full-name")||"").trim();
-  return `<main class="evia-app selfobs is-ready${open?" is-open":""}"><div class="ambient ambient-one"></div><div class="ambient ambient-two"></div><div class="self-top"><b>Evia</b><small>${esc(name||"Apprentice assistant")}</small></div><button class="self-evidence" data-quick>Evidence · ${fresh().length} new</button><button class="evia-anchor" data-evia><span class="evia-float"><span class="evia-halo"></span><span class="evia-face expression-idle"><span class="evia-eyes"><span class="evia-eye eye-left"></span><span class="evia-eye eye-right"></span></span></span></span></button><div class="self-invite">Tap me to get started</div><section class="menu-stage"><div class="self-panel"></div></section><section class="progress-dock"><div class="progress-row">${arch("TOC",timeline())}${arch("KSB",Math.round(touched()/CODES.length*100))}${arch("OTJ",otj())}${arch("EPA",epa())}</div></section><div class="app-toast"></div><input id="selfPhoto" type="file" accept="image/*" capture="environment" hidden></main>`
+  return `<main class="evia-app selfobs is-ready${open?" is-open":""}"><div class="ambient ambient-one"></div><div class="ambient ambient-two"></div><div class="self-top"><b>Evia</b><small>${esc(name||"Apprentice assistant")}</small></div><button class="self-evidence" data-quick>Evidence · ${fresh().length} new</button><button class="evia-anchor" data-evia aria-expanded="${open}"><span class="evia-float"><span class="evia-halo"></span><span class="evia-face expression-idle"><span class="evia-eyes"><span class="evia-eye eye-left"></span><span class="evia-eye eye-right"></span></span></span></span></button><div class="self-invite">Tap me to get started</div><section class="menu-stage" aria-hidden="${!open}"><div class="self-panel"></div></section><section class="progress-dock"><div class="progress-row">${arch("TOC",timeline())}${arch("KSB",Math.round(touched()/CODES.length*100))}${arch("OTJ",otj())}${arch("EPA",epa())}</div></section><div class="app-toast"></div><input id="selfPhoto" type="file" accept="image/*" capture="environment" hidden></main>`
 }
 function title(a,b=""){return `<h2 class="self-title">${esc(a)}</h2>${b?`<p class="self-copy">${esc(b)}</p>`:""}`}
 function pill(a,b="",n=0,attrs=""){return `<button class="option-row" ${attrs}><span class="option-row-copy"><span>${esc(a)}</span>${b?`<small>${esc(b)}</small>`:""}</span><span class="self-side">${n?`<b>${dots(n)}</b>`:""}<i>›</i></span></button>`}
@@ -45,10 +45,18 @@ function recapText(){
   return COURSE.pathway==="architectural-joiner"?"Tell me what you’re doing in the workshop. I’ll show you the evidence you could get from that job.":"Tell me what you’re doing on site. I’ll show you the evidence you could get from that job."
 }
 function mount(){document.getElementById("root").innerHTML=shell();bindShell();render()}
+function syncShell(){
+  const app=$(".evia-app"),panel=$(".self-panel"),stage=$(".menu-stage"),avatar=$("[data-evia]");
+  if(!app)return;
+  app.classList.toggle("is-open",open);
+  if(avatar)avatar.setAttribute("aria-expanded",open?"true":"false");
+  if(stage)stage.setAttribute("aria-hidden",open?"false":"true");
+  if(open)render();else if(panel)panel.innerHTML=""
+}
 function bindShell(){
-  $("[data-evia]").onclick=()=>{open=!open;if(!open){view="home";cat=job=opp=null}mount()};
-  $("[data-quick]").onclick=()=>{open=true;view="evidence";mount()};
-  document.querySelectorAll("[data-arch]").forEach(b=>b.onclick=()=>{if(b.dataset.arch==="KSB"){open=true;view="coverage";mount()}else toast(`${b.dataset.arch} is still available from the arch bar.`)});
+  $("[data-evia]").onclick=()=>{open=!open;if(!open){view="home";cat=job=opp=null}syncShell()};
+  $("[data-quick]").onclick=()=>{open=true;view="evidence";syncShell()};
+  document.querySelectorAll("[data-arch]").forEach(b=>b.onclick=()=>{if(b.dataset.arch==="KSB"){open=true;view="coverage";syncShell()}else toast(`${b.dataset.arch} is still available from the arch bar.`)});
   $("#selfPhoto").onchange=e=>{const f=e.target.files?.[0];e.target.value="";if(!f)return;photo=f;if(photoUrl)URL.revokeObjectURL(photoUrl);photoUrl=URL.createObjectURL(f);render()}
 }
 function render(){const p=$(".self-panel");if(!p||!open)return;if(view==="home")home(p);else if(view==="jobs")jobs(p);else if(view==="opps")opps(p);else if(view==="capture")capture(p);else if(view==="question")question(p);else if(view==="answer")answer(p);else if(view==="evidence")evidence(p);else if(view==="coverage")coverage(p);else if(view==="day")day(p);bindPanel()}
@@ -95,7 +103,7 @@ async function action(a){
   else if(a==="save")save();
   else if(a==="record")startRec();
   else if(a==="stop")stopRec();
-  else if(a==="submit"){cat=job=opp=null;view="home";open=false;mount();toast("Job submitted. Start another job whenever you’re ready.")}
+  else if(a==="submit"){cat=job=opp=null;view="home";open=false;syncShell();toast("Job submitted. Start another job whenever you’re ready.")}
   else if(a==="finish")finish();
   else if(a==="home"){view="home";render()}
   else if(a==="evidence"){view="evidence";render()}
@@ -112,7 +120,7 @@ async function save(){
   try{
     const now=Date.now(),photoId=photo?await storeBlob(photo,photo.name||`${opp.id}.jpg`,photo.type||"image/jpeg"):null,audioId=audio?await storeBlob(audio,`${opp.id}.webm`,audio.type||"audio/webm"):null;
     const e={id:`e-${now}-${Math.random().toString(36).slice(2,7)}`,createdAt:now,courseId:COURSE.courseId,pathway:COURSE.pathway||null,categoryId:cat.id,categoryTitle:cat.title,jobId:job.id,jobTitle:job.title,opportunityId:opp.id,title:opp.title,bundle:opp.bundle,question:opp.question,codes:[...opp.codes],answerMode:mode,answerText:mode==="type"?typed.trim():null,photoId,audioId,downloadedAt:null};
-    entries.unshift(e);dayIds.push(e.id);write(STORE,entries);write(DAY,dayIds);clearCapture();view="opps";mount();open=true;$(".evia-app").classList.add("is-open");render();toast("Evidence saved. About one minute, done.")
+    entries.unshift(e);dayIds.push(e.id);write(STORE,entries);write(DAY,dayIds);clearCapture();view="opps";open=true;syncShell();toast("Evidence saved. About one minute, done.")
   }catch(e){console.error(e);toast("That evidence could not be saved.")}
 }
 function finish(){const n=today().length;recap={at:Date.now(),count:n,touched:touched()};write(RECAP,recap);dayIds=[];write(DAY,dayIds);cat=job=opp=null;view="day";render()}
@@ -135,7 +143,7 @@ async function download(){
     for(let i=0;i<list.length;i++){const e=list[i],pre=`${String(i+1).padStart(2,"0")}-${safe(e.title)}`,ans=e.answerMode==="type"?(e.answerText||""):"See audio";rows.push([new Date(e.createdAt).toLocaleString("en-GB"),e.jobTitle,e.title,e.question,ans,e.codes.join(" ")]);const p=await getBlob(e.photoId),a=await getBlob(e.audioId);if(p)fs.push({name:`${pre}-photo.${p.type?.split("/")[1]||"jpg"}`,data:new Uint8Array(await p.blob.arrayBuffer())});if(a)fs.push({name:`${pre}-answer.webm`,data:new Uint8Array(await a.blob.arrayBuffer())})}
     fs.unshift({name:"Evia-New-Evidence.csv",data:en.encode(rows.map(r=>r.map(csv).join(",")).join("\r\n"))});
     const u=URL.createObjectURL(zip(fs)),a=document.createElement("a");a.href=u;a.download=`Evia-New-Evidence-${new Date().toISOString().slice(0,10)}.zip`;a.click();setTimeout(()=>URL.revokeObjectURL(u),1500);
-    const now=Date.now();entries=entries.map(e=>!e.downloadedAt?{...e,downloadedAt:now}:e);write(STORE,entries);tab="downloaded";view="evidence";mount();open=true;$(".evia-app").classList.add("is-open");render();toast(`${list.length} evidence item${list.length===1?"":"s"} moved to Downloaded.`)
+    const now=Date.now();entries=entries.map(e=>!e.downloadedAt?{...e,downloadedAt:now}:e);write(STORE,entries);tab="downloaded";view="evidence";open=true;syncShell();toast(`${list.length} evidence item${list.length===1?"":"s"} moved to Downloaded.`)
   }catch(e){console.error(e);toast("The evidence download could not be built.")}
 }
 function toast(m){const t=$(".app-toast");if(!t)return;clearTimeout(toastTimer);t.textContent=m;t.classList.add("is-visible");toastTimer=setTimeout(()=>t.classList.remove("is-visible"),2600)}
