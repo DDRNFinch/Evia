@@ -19,15 +19,17 @@ test("Evia keeps one mounted interaction shell",()=>{
   assert.doesNotMatch(live,/panel\.innerHTML=""/);
 });
 
-test("Evia motion matches the Milos interaction timing",()=>{
-  assert.match(motionCss,/top \.92s var\(--ease-out\)/);
-  assert.match(motionCss,/width \.92s var\(--ease-out\)/);
-  assert.match(motionCss,/height \.92s var\(--ease-out\)/);
-  assert.match(motionCss,/evia-milos-view-in \.46s var\(--ease-out\)/);
+test("Evia motion is compositor-only and follows the Milos path",()=>{
+  assert.match(motionCss,/transition:translate \.92s var\(--ease-out\),scale \.92s var\(--ease-out\)/);
+  assert.match(motionCss,/translate:-50% calc\(40\.5svh - 50%\)/);
+  assert.match(motionCss,/scale:\.605/);
+  assert.match(motionCss,/transform:translate3d\(0,14px,0\)/);
   assert.match(motionCss,/opacity \.36s ease \.14s/);
   assert.match(motionCss,/transform \.58s var\(--ease-out\) \.14s/);
-  assert.match(motionCss,/top:40\.5%/);
-  assert.match(motionCss,/--evia-size:5\.9rem/);
+  assert.match(motionCss,/will-change:translate,scale/);
+  assert.doesNotMatch(motionCss,/transition:top \.92s/);
+  assert.doesNotMatch(motionCss,/will-change:top,width,height/);
+  assert.match(motionCss,/\.selfobs \.self-panel>\*\{animation:none!important\}/);
 });
 
 test("Evia has one service-worker owner and one current cache",()=>{
