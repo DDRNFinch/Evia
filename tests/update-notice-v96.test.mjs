@@ -3,10 +3,13 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 
 const updater = fs.readFileSync(new URL("../assets/evia-updater.js", import.meta.url), "utf8");
-const guard = fs.readFileSync(new URL("../assets/evia-version-v96.js", import.meta.url), "utf8");
 const index = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const sw = fs.readFileSync(new URL("../sw.js", import.meta.url), "utf8");
+const publicSw = fs.readFileSync(new URL("../public/sw.js", import.meta.url), "utf8");
 const update = JSON.parse(fs.readFileSync(new URL("../update.json", import.meta.url), "utf8"));
+const publicUpdate = JSON.parse(fs.readFileSync(new URL("../public/update.json", import.meta.url), "utf8"));
+const version = String(update.version);
+const guard = fs.readFileSync(new URL(`../assets/evia-version-v${version}.js`, import.meta.url), "utf8");
 
 test("Evia shows a persistent update available notification", () => {
   assert.match(updater, /Update available/);
@@ -26,12 +29,12 @@ test("Evia no longer silently refreshes when the next cache is ready", () => {
   assert.doesNotMatch(updater, /rememberInstalled|effectiveVersion/);
 });
 
-test("Evia 96 shell and manifest agree", () => {
-  assert.equal(update.version, "96");
-  assert.match(guard, /EviaAppVersion=96/);
-  assert.match(index, /evia-app-version\" content=\"96/);
-  assert.match(index, /evia-updater\.js\?v=96/);
-  assert.match(index, /evia-version-v96\.js\?v=96/);
-  assert.match(sw, /evia-shell-v96/);
-  assert.match(sw, /evia-version-v96\.js/);
+test("current Evia shell, public assets and manifest agree", () => {
+  assert.equal(String(publicUpdate.version), version);
+  assert.match(guard, new RegExp(`EviaAppVersion=${version}`));
+  assert.match(index, new RegExp(`evia-app-version\\" content=\\"${version}`));
+  assert.match(index, new RegExp(`evia-updater\\.js\\?v=${version}`));
+  assert.match(index, new RegExp(`evia-version-v${version}\\.js\\?v=${version}`));
+  assert.match(sw, new RegExp(`evia-shell-v${version}`));
+  assert.equal(publicSw, sw);
 });
