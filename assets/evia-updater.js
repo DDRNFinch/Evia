@@ -26,5 +26,5 @@ window.addEventListener("focus",checkForUpdate);
 window.addEventListener("online",checkForUpdate);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")checkForUpdate()});
 setInterval(checkForUpdate,60000);
-window.EviaUpdater=Object.freeze({version:101,check:checkForUpdate});
+window.EviaUpdater=Object.freeze({version:102,check:checkForUpdate});
 })();
