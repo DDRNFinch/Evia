@@ -35,6 +35,10 @@
       color: #1f1f1f;
     }
 
+    button, textarea {
+      font: inherit;
+    }
+
     .screen {
       width: 100%;
       min-height: 100vh;
@@ -158,7 +162,7 @@
     .pill-stack {
       position: absolute;
       left: 50%;
-      top: calc(max(18px, env(safe-area-inset-top)) + 82px);
+      top: calc(max(18px, env(safe-area-inset-top)) + 112px);
       width: min(calc(100vw - 40px), 460px);
       display: flex;
       flex-direction: column;
@@ -174,7 +178,7 @@
       z-index: 1;
     }
 
-    .screen.active .pill-stack {
+    .screen.active:not(.evidence-open) .pill-stack {
       opacity: 1;
       visibility: visible;
       transform: translate(-50%, 0);
@@ -203,9 +207,6 @@
       transition:
         opacity 260ms ease,
         transform 430ms cubic-bezier(0.22, 1, 0.36, 1);
-    }
-
-    .pill[data-can-open="true"] {
       cursor: pointer;
     }
 
@@ -230,6 +231,157 @@
       flex: 0 0 auto;
     }
 
+    .evidence-screen {
+      position: absolute;
+      left: 50%;
+      top: calc(max(18px, env(safe-area-inset-top)) + 112px);
+      bottom: calc(max(62px, env(safe-area-inset-bottom) + 62px) + 8px);
+      width: min(calc(100vw - 28px), 520px);
+      transform: translateX(-50%);
+      display: none;
+      grid-template-rows: 1fr 1fr;
+      gap: 10px;
+      z-index: 3;
+    }
+
+    .screen.evidence-open .evidence-screen {
+      display: grid;
+    }
+
+    .evidence-top {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .evidence-choice,
+    .evidence-requirements,
+    .capture-surface {
+      border: 1.5px solid rgba(245, 196, 0, 0.35);
+      background: rgba(250, 249, 242, 0.96);
+      border-radius: 24px;
+      box-shadow:
+        0 8px 20px rgba(0, 0, 0, 0.05),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.72);
+    }
+
+    .evidence-choice {
+      width: 100%;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 18px;
+      color: rgba(45, 45, 45, 0.68);
+      cursor: pointer;
+    }
+
+    .evidence-choice strong {
+      font-weight: 600;
+    }
+
+    .evidence-requirements {
+      min-height: 0;
+      padding: 18px;
+      overflow-y: auto;
+      color: rgba(45, 45, 45, 0.68);
+      line-height: 1.45;
+    }
+
+    .evidence-requirements h2 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: rgba(45, 45, 45, 0.82);
+    }
+
+    .capture-surface {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    .capture-square {
+      width: min(100%, 46vh);
+      max-height: 100%;
+      aspect-ratio: 1 / 1;
+      margin: auto;
+      border-radius: 20px;
+      overflow: hidden;
+      background: #111;
+      position: relative;
+    }
+
+    .capture-square video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .capture-controls {
+      position: absolute;
+      left: 50%;
+      bottom: 12px;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      z-index: 2;
+    }
+
+    .capture-button {
+      min-height: 42px;
+      border: 0;
+      border-radius: 999px;
+      padding: 0 16px;
+      background: rgba(255, 255, 255, 0.92);
+      color: #222;
+      box-shadow: 0 5px 14px rgba(0, 0, 0, 0.12);
+    }
+
+    .audio-panel {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .microphone-mark {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 2px solid var(--evia-yellow);
+      display: grid;
+      place-items: center;
+      font-size: 28px;
+      color: var(--evia-yellow);
+    }
+
+    .text-evidence {
+      width: 100%;
+      height: 100%;
+      min-height: 120px;
+      resize: none;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      padding: 14px;
+      color: #333;
+      font-size: 16px;
+      line-height: 1.45;
+    }
+
     .naxos-menu {
       position: absolute;
       left: 50%;
@@ -246,7 +398,7 @@
         opacity 300ms ease,
         transform 500ms cubic-bezier(0.22, 1, 0.36, 1),
         visibility 0s linear 500ms;
-      z-index: 4;
+      z-index: 7;
     }
 
     .naxos-menu.open {
@@ -276,6 +428,7 @@
       color: rgba(45, 45, 45, 0.58);
       font-size: 14px;
       letter-spacing: 0.02em;
+      cursor: pointer;
     }
 
     .naxos-arch {
@@ -292,7 +445,7 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      z-index: 5;
+      z-index: 8;
     }
 
     .naxos-scan-mark {
@@ -326,6 +479,60 @@
       border-radius: 2px;
       background: rgba(255, 255, 255, 0.96);
       transform: translate(-50%, -50%);
+    }
+
+    .scanner-panel {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      background: rgba(255, 255, 255, 0.98);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .scanner-panel.open {
+      display: flex;
+    }
+
+    .scanner-card {
+      width: min(100%, 430px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .scanner-video-wrap {
+      width: min(100%, 360px);
+      aspect-ratio: 1 / 1;
+      border-radius: 28px;
+      overflow: hidden;
+      background: #111;
+      border: 2px solid rgba(245, 196, 0, 0.55);
+    }
+
+    .scanner-video-wrap video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .scanner-status {
+      min-height: 20px;
+      font-size: 13px;
+      color: rgba(45, 45, 45, 0.66);
+      text-align: center;
+    }
+
+    .scanner-close {
+      min-height: 44px;
+      border: 1.5px solid rgba(245, 196, 0, 0.45);
+      border-radius: 999px;
+      background: rgba(250, 249, 242, 0.96);
+      padding: 0 20px;
+      color: rgba(45, 45, 45, 0.72);
     }
 
     @keyframes stageFloat {
@@ -400,23 +607,33 @@
       </div>
     </div>
 
-    <div class="pill-stack" id="pillStack" aria-label="Menu placeholders">
-      <div class="pill" data-index="1" data-can-open="true" role="button" tabindex="0">Placeholder 1</div>
-      <div class="pill" data-index="2" data-can-open="true" role="button" tabindex="0">Placeholder 2</div>
-      <div class="pill" data-index="3" data-can-open="true" role="button" tabindex="0">Placeholder 3</div>
-      <div class="pill" data-index="4" data-can-open="true" role="button" tabindex="0">Placeholder 4</div>
-      <div class="pill" data-index="5" data-can-open="true" role="button" tabindex="0">Placeholder 5</div>
-    </div>
+    <div class="pill-stack" id="pillStack" aria-label="Course menu"></div>
+
+    <section class="evidence-screen" id="evidenceScreen" aria-label="Evidence">
+      <div class="evidence-top" id="evidenceTop"></div>
+      <div class="evidence-requirements" id="evidenceRequirements">
+        <h2>Evidence Requirements</h2>
+        <div id="requirementsText"></div>
+      </div>
+    </section>
 
     <div class="naxos-menu" id="naxosMenu" aria-label="Naxos QR menu">
-      <div class="naxos-pill">Send QR Code</div>
-      <div class="naxos-pill">Scan QR Code</div>
-      <div class="naxos-pill">My Portfolio</div>
+      <button class="naxos-pill" type="button" data-naxos-action="send">Send QR Code</button>
+      <button class="naxos-pill" type="button" data-naxos-action="scan">Scan QR Code</button>
+      <button class="naxos-pill" type="button" data-naxos-action="portfolio">My Portfolio</button>
     </div>
 
     <button class="naxos-arch" id="naxosArch" type="button" aria-label="Open Naxos QR menu" aria-expanded="false">
       <span class="naxos-scan-mark" aria-hidden="true"><span class="naxos-scan-dot"></span></span>
     </button>
+
+    <div class="scanner-panel" id="scannerPanel" aria-hidden="true">
+      <div class="scanner-card">
+        <div class="scanner-video-wrap"><video id="scannerVideo" playsinline muted></video></div>
+        <div class="scanner-status" id="scannerStatus">Point the camera at a Naxos QR code.</div>
+        <button class="scanner-close" id="scannerClose" type="button">Close</button>
+      </div>
+    </div>
   </main>
 
   <script>
@@ -424,8 +641,16 @@
     const evia = document.getElementById('evia');
     const eviaStage = document.getElementById('eviaStage');
     const pillStack = document.getElementById('pillStack');
+    const evidenceScreen = document.getElementById('evidenceScreen');
+    const evidenceTop = document.getElementById('evidenceTop');
+    const evidenceRequirements = document.getElementById('evidenceRequirements');
+    const requirementsText = document.getElementById('requirementsText');
     const naxosMenu = document.getElementById('naxosMenu');
     const naxosArch = document.getElementById('naxosArch');
+    const scannerPanel = document.getElementById('scannerPanel');
+    const scannerVideo = document.getElementById('scannerVideo');
+    const scannerStatus = document.getElementById('scannerStatus');
+    const scannerClose = document.getElementById('scannerClose');
     const root = document.documentElement;
 
     const looks = [
@@ -441,11 +666,33 @@
     ];
 
     const accents = ['accent-wobble', 'accent-squish', 'accent-lean'];
+    const placeholderCourse = Array.from({ length: 5 }, (_, a) => ({
+      label: `Placeholder ${a + 1}`,
+      children: Array.from({ length: 5 }, (_, b) => ({
+        label: `Placeholder ${a + 1}.${b + 1}`,
+        children: Array.from({ length: 5 }, (_, c) => ({
+          label: `Placeholder ${a + 1}.${b + 1}.${c + 1}`,
+          recommended: { label: 'Recommended', type: 'camera' },
+          alternative: { label: 'Alternative', type: 'text' },
+          requirements: 'Evidence requirements placeholder'
+        }))
+      }))
+    }));
+
     let accentBusy = false;
     let lastLook = 0;
     let menuLevel = 1;
     let menuPath = [];
     let pillTransitionBusy = false;
+    let currentItems = placeholderCourse;
+    let courseItems = loadSavedCourse() || placeholderCourse;
+    let activeEvidence = null;
+    let captureStream = null;
+    let recorder = null;
+    let recordedChunks = [];
+    let scannerStream = null;
+    let scannerFrame = null;
+    let scannerBusy = false;
 
     function pickDifferentLook() {
       let next = lastLook;
@@ -502,57 +749,124 @@
       setTimeout(scheduleAccents, 6200 + Math.random() * 2600);
     }
 
-    function pillLabel(index) {
-      if (menuLevel === 1) return `Placeholder ${index}`;
-      return `Placeholder ${menuPath.join('.')}.${index}`;
+    function loadSavedCourse() {
+      try {
+        const saved = localStorage.getItem('eviaNaxosCourse');
+        return saved ? JSON.parse(saved) : null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function saveCourse(items) {
+      try {
+        localStorage.setItem('eviaNaxosCourse', JSON.stringify(items));
+      } catch (error) {
+        // The imported course still remains active for this session.
+      }
+    }
+
+    function cleanText(value) {
+      return typeof value === 'string' ? value.trim() : '';
+    }
+
+    function normaliseEvidenceOption(option, fallbackLabel) {
+      if (!option) return null;
+      if (typeof option === 'string') {
+        return { label: option.trim() || fallbackLabel, type: 'text' };
+      }
+      if (typeof option !== 'object') return null;
+      const label = cleanText(option.label || option.name || option.title) || fallbackLabel;
+      const rawType = cleanText(option.type || option.method || option.evidenceType).toLowerCase();
+      let type = 'text';
+      if (['camera', 'video', 'photo'].includes(rawType)) type = 'camera';
+      if (['audio', 'microphone', 'voice', 'reflection'].includes(rawType)) type = 'audio';
+      if (['text', 'written', 'writing'].includes(rawType)) type = 'text';
+      return { label, type };
+    }
+
+    function normaliseNode(node, depth) {
+      if (!node) return null;
+      if (typeof node === 'string') return { label: node.trim() };
+      if (typeof node !== 'object') return null;
+
+      const label = cleanText(node.label || node.name || node.title || node.wording);
+      if (!label) return null;
+
+      const rawChildren = node.children || node.items || node.pills || node.sections || node.options || [];
+      const children = Array.isArray(rawChildren)
+        ? rawChildren.map((child) => normaliseNode(child, depth + 1)).filter(Boolean).slice(0, 5)
+        : [];
+
+      const normalised = { label };
+      if (children.length && depth < 3) normalised.children = children;
+
+      if (depth >= 3 || !children.length) {
+        normalised.recommended = normaliseEvidenceOption(node.recommended || node.recommendedEvidence, 'Recommended');
+        normalised.alternative = normaliseEvidenceOption(node.alternative || node.alternativeEvidence, 'Alternative');
+        normalised.requirements = cleanText(node.requirements || node.evidenceRequirements || node.evidence || node.guidance);
+      }
+
+      return normalised;
+    }
+
+    function normaliseCoursePayload(payload) {
+      const rootData = payload && typeof payload === 'object' && payload.course ? payload.course : payload;
+      if (!rootData || typeof rootData !== 'object') return null;
+      const rawItems = rootData.items || rootData.menu || rootData.sections || rootData.pills || rootData.children;
+      if (!Array.isArray(rawItems)) return null;
+      const items = rawItems.map((item) => normaliseNode(item, 1)).filter(Boolean).slice(0, 5);
+      return items.length ? items : null;
     }
 
     function renderPills(floatIn = false) {
       pillStack.innerHTML = '';
-
-      for (let index = 1; index <= 5; index += 1) {
+      currentItems.forEach((item, index) => {
         const pill = document.createElement('div');
         pill.className = `pill${floatIn ? ' float-in' : ''}`;
-        pill.dataset.index = index;
-        pill.dataset.canOpen = menuLevel < 3 ? 'true' : 'false';
-        pill.textContent = pillLabel(index);
-
-        if (menuLevel < 3) {
-          pill.setAttribute('role', 'button');
-          pill.setAttribute('tabindex', '0');
-        }
-
+        pill.dataset.index = String(index);
+        pill.setAttribute('role', 'button');
+        pill.setAttribute('tabindex', '0');
+        pill.textContent = item.label;
         pillStack.appendChild(pill);
-      }
+      });
 
       if (floatIn) {
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
-            pillStack.querySelectorAll('.pill').forEach((pill) => {
-              pill.classList.remove('float-in');
-            });
+            pillStack.querySelectorAll('.pill').forEach((pill) => pill.classList.remove('float-in'));
           });
         });
       }
     }
 
+    function selectedNode(index) {
+      return currentItems[index] || null;
+    }
+
     function openNextPillSet(selectedPill) {
-      if (pillTransitionBusy || menuLevel >= 3) return;
+      if (pillTransitionBusy) return;
+      const selectedIndex = Number(selectedPill.dataset.index);
+      const node = selectedNode(selectedIndex);
+      if (!node) return;
+
+      if (menuLevel >= 3 || !Array.isArray(node.children) || !node.children.length) {
+        openEvidence(node);
+        return;
+      }
 
       pillTransitionBusy = true;
-      const selectedIndex = Number(selectedPill.dataset.index);
       const pills = [...pillStack.querySelectorAll('.pill')];
-
       pills.forEach((pill) => {
         if (pill !== selectedPill) pill.classList.add('fade-out');
       });
 
       setTimeout(() => {
         selectedPill.classList.add('fade-out');
-
         setTimeout(() => {
           menuPath.push(selectedIndex);
           menuLevel += 1;
+          currentItems = node.children.slice(0, 5);
           renderPills(true);
           pillTransitionBusy = false;
         }, 260);
@@ -563,7 +877,46 @@
       menuLevel = 1;
       menuPath = [];
       pillTransitionBusy = false;
+      currentItems = courseItems.slice(0, 5);
       renderPills(false);
+    }
+
+    function openEvidence(node) {
+      stopCapture();
+      activeEvidence = node;
+      screen.classList.add('evidence-open');
+      evidenceTop.innerHTML = '';
+
+      const choices = [
+        ['Recommended', node.recommended],
+        ['Alternative', node.alternative]
+      ].filter(([, option]) => option && cleanText(option.label));
+
+      choices.forEach(([heading, option]) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'evidence-choice';
+        button.dataset.evidenceType = option.type || 'text';
+        button.innerHTML = `<strong>${heading}</strong>&nbsp;&nbsp;${option.label}`;
+        evidenceTop.appendChild(button);
+      });
+
+      if (choices.length === 1) evidenceTop.style.gridTemplateRows = '1fr';
+      else evidenceTop.style.gridTemplateRows = '1fr 1fr';
+
+      const requirements = cleanText(node.requirements);
+      evidenceRequirements.style.display = requirements ? 'block' : 'none';
+      requirementsText.textContent = requirements;
+      if (!requirements) evidenceScreen.style.gridTemplateRows = '1fr';
+      else evidenceScreen.style.gridTemplateRows = '1fr 1fr';
+    }
+
+    function closeEvidence() {
+      stopCapture();
+      activeEvidence = null;
+      screen.classList.remove('evidence-open');
+      evidenceScreen.style.gridTemplateRows = '1fr 1fr';
+      evidenceRequirements.style.display = 'block';
     }
 
     function activateHome() {
@@ -575,20 +928,18 @@
     }
 
     function deactivateHome() {
+      closeEvidence();
       screen.classList.remove('active');
       resetPills();
     }
 
     function toggleHome() {
-      if (screen.classList.contains('active')) {
-        deactivateHome();
-      } else {
-        activateHome();
-      }
+      if (screen.classList.contains('active')) deactivateHome();
+      else activateHome();
     }
 
     function handlePillActivation(event) {
-      const pill = event.target.closest('.pill[data-can-open="true"]');
+      const pill = event.target.closest('.pill');
       if (!pill || !screen.classList.contains('active')) return;
       openNextPillSet(pill);
     }
@@ -596,6 +947,217 @@
     function toggleNaxosMenu() {
       const isOpen = naxosMenu.classList.toggle('open');
       naxosArch.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+
+    function stopStream(stream) {
+      if (!stream) return;
+      stream.getTracks().forEach((track) => track.stop());
+    }
+
+    function stopCapture() {
+      if (recorder && recorder.state !== 'inactive') recorder.stop();
+      recorder = null;
+      recordedChunks = [];
+      stopStream(captureStream);
+      captureStream = null;
+    }
+
+    function preferredVideoMimeType() {
+      const options = [
+        'video/webm;codecs=vp9,opus',
+        'video/webm;codecs=vp8,opus',
+        'video/webm'
+      ];
+      return options.find((type) => window.MediaRecorder && MediaRecorder.isTypeSupported(type)) || '';
+    }
+
+    function preferredAudioMimeType() {
+      const options = ['audio/webm;codecs=opus', 'audio/webm'];
+      return options.find((type) => window.MediaRecorder && MediaRecorder.isTypeSupported(type)) || '';
+    }
+
+    async function openCameraCapture() {
+      stopCapture();
+      evidenceTop.innerHTML = '<div class="capture-surface"><div class="capture-square"><video id="captureVideo" playsinline muted></video><div class="capture-controls"><button class="capture-button" id="recordToggle" type="button">Record</button></div></div></div>';
+      evidenceTop.style.gridTemplateRows = '1fr';
+      const video = document.getElementById('captureVideo');
+      const toggle = document.getElementById('recordToggle');
+
+      try {
+        captureStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 1280 },
+            aspectRatio: { ideal: 1 },
+            frameRate: { ideal: 24, max: 30 }
+          },
+          audio: {
+            channelCount: { ideal: 1 },
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        });
+        video.srcObject = captureStream;
+        await video.play();
+
+        toggle.addEventListener('click', () => {
+          if (!window.MediaRecorder) return;
+          if (!recorder || recorder.state === 'inactive') {
+            recordedChunks = [];
+            const mimeType = preferredVideoMimeType();
+            const options = {
+              videoBitsPerSecond: 1200000,
+              audioBitsPerSecond: 64000
+            };
+            if (mimeType) options.mimeType = mimeType;
+            recorder = new MediaRecorder(captureStream, options);
+            recorder.ondataavailable = (event) => {
+              if (event.data && event.data.size) recordedChunks.push(event.data);
+            };
+            recorder.start(1000);
+            toggle.textContent = 'Stop';
+          } else {
+            recorder.stop();
+            toggle.textContent = 'Record';
+          }
+        });
+      } catch (error) {
+        evidenceTop.innerHTML = '<div class="capture-surface">Camera and microphone access is required for this evidence type.</div>';
+      }
+    }
+
+    async function openAudioCapture() {
+      stopCapture();
+      evidenceTop.innerHTML = '<div class="capture-surface"><div class="audio-panel"><div class="microphone-mark">●</div><button class="capture-button" id="audioToggle" type="button">Record audio</button></div></div>';
+      evidenceTop.style.gridTemplateRows = '1fr';
+      const toggle = document.getElementById('audioToggle');
+
+      try {
+        captureStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            channelCount: { ideal: 1 },
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        });
+
+        toggle.addEventListener('click', () => {
+          if (!window.MediaRecorder) return;
+          if (!recorder || recorder.state === 'inactive') {
+            recordedChunks = [];
+            const mimeType = preferredAudioMimeType();
+            const options = { audioBitsPerSecond: 48000 };
+            if (mimeType) options.mimeType = mimeType;
+            recorder = new MediaRecorder(captureStream, options);
+            recorder.ondataavailable = (event) => {
+              if (event.data && event.data.size) recordedChunks.push(event.data);
+            };
+            recorder.start(1000);
+            toggle.textContent = 'Stop audio';
+          } else {
+            recorder.stop();
+            toggle.textContent = 'Record audio';
+          }
+        });
+      } catch (error) {
+        evidenceTop.innerHTML = '<div class="capture-surface">Microphone access is required for this evidence type.</div>';
+      }
+    }
+
+    function openTextCapture() {
+      stopCapture();
+      evidenceTop.innerHTML = '<div class="capture-surface"><textarea class="text-evidence" aria-label="Written evidence" placeholder="Write your evidence here..."></textarea></div>';
+      evidenceTop.style.gridTemplateRows = '1fr';
+    }
+
+    function openEvidenceType(type) {
+      if (type === 'camera') openCameraCapture();
+      else if (type === 'audio') openAudioCapture();
+      else openTextCapture();
+    }
+
+    function parseNaxosPayload(rawValue) {
+      try {
+        const parsed = JSON.parse(rawValue);
+        return normaliseCoursePayload(parsed);
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function applyImportedCourse(items) {
+      courseItems = items.slice(0, 5);
+      saveCourse(courseItems);
+      closeEvidence();
+      resetPills();
+      screen.classList.add('active');
+      scannerStatus.textContent = 'Naxos course imported.';
+    }
+
+    async function startScanner() {
+      naxosMenu.classList.remove('open');
+      naxosArch.setAttribute('aria-expanded', 'false');
+      scannerPanel.classList.add('open');
+      scannerPanel.setAttribute('aria-hidden', 'false');
+      scannerStatus.textContent = 'Point the camera at a Naxos QR code.';
+
+      if (!('BarcodeDetector' in window)) {
+        scannerStatus.textContent = 'QR scanning is not supported by this browser.';
+        return;
+      }
+
+      try {
+        scannerStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 1280 }
+          },
+          audio: false
+        });
+        scannerVideo.srcObject = scannerStream;
+        await scannerVideo.play();
+        scannerBusy = false;
+        scanFrame();
+      } catch (error) {
+        scannerStatus.textContent = 'Camera access is required to scan a Naxos QR code.';
+      }
+    }
+
+    async function scanFrame() {
+      if (!scannerStream || scannerBusy || !scannerPanel.classList.contains('open')) return;
+      scannerBusy = true;
+      try {
+        const detector = new BarcodeDetector({ formats: ['qr_code'] });
+        const codes = await detector.detect(scannerVideo);
+        if (codes.length) {
+          const items = parseNaxosPayload(codes[0].rawValue);
+          if (items) {
+            applyImportedCourse(items);
+            closeScanner();
+            return;
+          }
+          scannerStatus.textContent = 'That QR code is not a valid Naxos course code.';
+        }
+      } catch (error) {
+        scannerStatus.textContent = 'Unable to read this QR code.';
+      }
+      scannerBusy = false;
+      scannerFrame = requestAnimationFrame(scanFrame);
+    }
+
+    function closeScanner() {
+      if (scannerFrame) cancelAnimationFrame(scannerFrame);
+      scannerFrame = null;
+      scannerBusy = false;
+      stopStream(scannerStream);
+      scannerStream = null;
+      scannerVideo.srcObject = null;
+      scannerPanel.classList.remove('open');
+      scannerPanel.setAttribute('aria-hidden', 'true');
     }
 
     eviaStage.addEventListener('click', toggleHome);
@@ -609,22 +1171,39 @@
     pillStack.addEventListener('click', handlePillActivation);
     pillStack.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' || event.key === ' ') {
-        const pill = event.target.closest('.pill[data-can-open="true"]');
+        const pill = event.target.closest('.pill');
         if (!pill) return;
         event.preventDefault();
         openNextPillSet(pill);
       }
     });
 
-    naxosArch.addEventListener('click', toggleNaxosMenu);
+    evidenceTop.addEventListener('click', (event) => {
+      const choice = event.target.closest('.evidence-choice');
+      if (!choice) return;
+      openEvidenceType(choice.dataset.evidenceType || 'text');
+    });
 
+    naxosArch.addEventListener('click', toggleNaxosMenu);
+    naxosMenu.addEventListener('click', (event) => {
+      const action = event.target.closest('[data-naxos-action]')?.dataset.naxosAction;
+      if (action === 'scan') startScanner();
+    });
+    scannerClose.addEventListener('click', closeScanner);
+
+    resetPills();
     applyLook();
     setTimeout(scheduleLooks, 1800);
     setTimeout(scheduleBlinks, 2200);
     setTimeout(scheduleAccents, 4200);
 
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) applyLook();
+      if (document.hidden) {
+        stopCapture();
+        closeScanner();
+      } else {
+        applyLook();
+      }
     });
   </script>
 </body>
