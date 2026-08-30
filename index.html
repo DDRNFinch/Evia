@@ -60,7 +60,7 @@
 
     .screen.active .evia-stage {
       top: calc(max(18px, env(safe-area-inset-top)) + 28px);
-      font-size: clamp(37.125px, 10.35vw, 49.5px);
+      font-size: clamp(61.875px, 17.25vw, 82.5px);
     }
 
     .evia-float {
@@ -230,6 +230,104 @@
       flex: 0 0 auto;
     }
 
+    .naxos-menu {
+      position: absolute;
+      left: 50%;
+      bottom: calc(max(58px, env(safe-area-inset-bottom) + 58px) + 14px);
+      width: min(calc(100vw - 40px), 360px);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      opacity: 0;
+      visibility: hidden;
+      transform: translate(-50%, 18px);
+      pointer-events: none;
+      transition:
+        opacity 300ms ease,
+        transform 500ms cubic-bezier(0.22, 1, 0.36, 1),
+        visibility 0s linear 500ms;
+      z-index: 4;
+    }
+
+    .naxos-menu.open {
+      opacity: 1;
+      visibility: visible;
+      transform: translate(-50%, 0);
+      pointer-events: auto;
+      transition:
+        opacity 300ms ease,
+        transform 500ms cubic-bezier(0.22, 1, 0.36, 1),
+        visibility 0s linear 0s;
+    }
+
+    .naxos-pill {
+      width: 100%;
+      min-height: 48px;
+      border-radius: 999px;
+      border: 1.5px solid rgba(245, 196, 0, 0.35);
+      background: rgba(250, 249, 242, 0.96);
+      box-shadow:
+        0 8px 20px rgba(0, 0, 0, 0.05),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.72);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 18px;
+      color: rgba(45, 45, 45, 0.58);
+      font-size: 14px;
+      letter-spacing: 0.02em;
+    }
+
+    .naxos-arch {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      width: 124px;
+      height: 62px;
+      border: 0;
+      border-radius: 124px 124px 0 0;
+      background: var(--evia-yellow);
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 5;
+    }
+
+    .naxos-scan-mark {
+      position: relative;
+      width: 30px;
+      height: 30px;
+    }
+
+    .naxos-scan-mark::before,
+    .naxos-scan-mark::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border: 3px solid rgba(255, 255, 255, 0.96);
+    }
+
+    .naxos-scan-mark::before {
+      clip-path: polygon(0 0, 38% 0, 38% 10%, 10% 10%, 10% 38%, 0 38%, 0 0, 62% 0, 100% 0, 100% 38%, 90% 38%, 90% 10%, 62% 10%);
+    }
+
+    .naxos-scan-mark::after {
+      clip-path: polygon(0 62%, 10% 62%, 10% 90%, 38% 90%, 38% 100%, 0 100%, 0 62%, 62% 90%, 90% 90%, 90% 62%, 100% 62%, 100% 100%, 62% 100%);
+    }
+
+    .naxos-scan-dot {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.96);
+      transform: translate(-50%, -50%);
+    }
+
     @keyframes stageFloat {
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-8px); }
@@ -279,7 +377,8 @@
       .eyes,
       .eye,
       .pill-stack,
-      .pill {
+      .pill,
+      .naxos-menu {
         animation: none !important;
         transition: none !important;
       }
@@ -308,6 +407,16 @@
       <div class="pill" data-index="4" data-can-open="true" role="button" tabindex="0">Placeholder 4</div>
       <div class="pill" data-index="5" data-can-open="true" role="button" tabindex="0">Placeholder 5</div>
     </div>
+
+    <div class="naxos-menu" id="naxosMenu" aria-label="Naxos QR menu">
+      <div class="naxos-pill">Send QR Code</div>
+      <div class="naxos-pill">Scan QR Code</div>
+      <div class="naxos-pill">My Portfolio</div>
+    </div>
+
+    <button class="naxos-arch" id="naxosArch" type="button" aria-label="Open Naxos QR menu" aria-expanded="false">
+      <span class="naxos-scan-mark" aria-hidden="true"><span class="naxos-scan-dot"></span></span>
+    </button>
   </main>
 
   <script>
@@ -315,6 +424,8 @@
     const evia = document.getElementById('evia');
     const eviaStage = document.getElementById('eviaStage');
     const pillStack = document.getElementById('pillStack');
+    const naxosMenu = document.getElementById('naxosMenu');
+    const naxosArch = document.getElementById('naxosArch');
     const root = document.documentElement;
 
     const looks = [
@@ -482,6 +593,11 @@
       openNextPillSet(pill);
     }
 
+    function toggleNaxosMenu() {
+      const isOpen = naxosMenu.classList.toggle('open');
+      naxosArch.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+
     eviaStage.addEventListener('click', toggleHome);
     eviaStage.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' || event.key === ' ') {
@@ -499,6 +615,8 @@
         openNextPillSet(pill);
       }
     });
+
+    naxosArch.addEventListener('click', toggleNaxosMenu);
 
     applyLook();
     setTimeout(scheduleLooks, 1800);
