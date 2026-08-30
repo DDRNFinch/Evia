@@ -147,17 +147,29 @@
       transform: scaleY(0.08);
     }
 
-    .evia-character.accent-wobble {
-      animation: accentWobble 1200ms cubic-bezier(0.22, 1, 0.36, 1);
+    .evia-character.accent-wobble { animation: accentWobble 1200ms cubic-bezier(0.22, 1, 0.36, 1); }
+    .evia-character.accent-squish { animation: accentSquish 1150ms cubic-bezier(0.22, 1, 0.36, 1); }
+    .evia-character.accent-lean { animation: accentLean 1350ms cubic-bezier(0.22, 1, 0.36, 1); }
+
+    .back-button {
+      position: absolute;
+      left: max(14px, env(safe-area-inset-left));
+      top: calc(max(14px, env(safe-area-inset-top)) + 8px);
+      min-width: 72px;
+      min-height: 42px;
+      border-radius: 999px;
+      border: 1.5px solid rgba(245, 196, 0, 0.38);
+      background: rgba(250, 249, 242, 0.97);
+      color: rgba(45, 45, 45, 0.68);
+      padding: 0 16px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 30;
+      cursor: pointer;
     }
 
-    .evia-character.accent-squish {
-      animation: accentSquish 1150ms cubic-bezier(0.22, 1, 0.36, 1);
-    }
-
-    .evia-character.accent-lean {
-      animation: accentLean 1350ms cubic-bezier(0.22, 1, 0.36, 1);
-    }
+    .back-button.show { display: flex; }
 
     .pill-stack {
       position: absolute;
@@ -244,9 +256,7 @@
       z-index: 3;
     }
 
-    .screen.evidence-open .evidence-screen {
-      display: grid;
-    }
+    .screen.evidence-open .evidence-screen { display: grid; }
 
     .evidence-top {
       min-height: 0;
@@ -277,9 +287,7 @@
       cursor: pointer;
     }
 
-    .evidence-choice strong {
-      font-weight: 600;
-    }
+    .evidence-choice strong { font-weight: 600; }
 
     .evidence-requirements {
       min-height: 0;
@@ -327,6 +335,23 @@
       display: block;
     }
 
+    .recording-timer {
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      min-width: 58px;
+      min-height: 30px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.58);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      padding: 0 10px;
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+      z-index: 2;
+    }
+
     .capture-controls {
       position: absolute;
       left: 50%;
@@ -345,6 +370,15 @@
       background: rgba(255, 255, 255, 0.92);
       color: #222;
       box-shadow: 0 5px 14px rgba(0, 0, 0, 0.12);
+      cursor: pointer;
+    }
+
+    .capture-status {
+      margin-top: 8px;
+      min-height: 18px;
+      text-align: center;
+      font-size: 12px;
+      color: rgba(45, 45, 45, 0.64);
     }
 
     .audio-panel {
@@ -370,7 +404,7 @@
 
     .text-evidence {
       width: 100%;
-      height: 100%;
+      flex: 1 1 auto;
       min-height: 120px;
       resize: none;
       border: 0;
@@ -380,6 +414,12 @@
       color: #333;
       font-size: 16px;
       line-height: 1.45;
+    }
+
+    .text-save-row {
+      display: flex;
+      justify-content: center;
+      padding: 8px 0 2px;
     }
 
     .naxos-menu {
@@ -481,7 +521,7 @@
       transform: translate(-50%, -50%);
     }
 
-    .scanner-panel {
+    .overlay-panel {
       position: absolute;
       inset: 0;
       z-index: 20;
@@ -489,15 +529,15 @@
       display: none;
       align-items: center;
       justify-content: center;
-      padding: 24px;
+      padding: 78px 24px 24px;
     }
 
-    .scanner-panel.open {
-      display: flex;
-    }
+    .overlay-panel.open { display: flex; }
 
-    .scanner-card {
+    .scanner-card,
+    .portfolio-card {
       width: min(100%, 430px);
+      max-height: calc(100dvh - 120px);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -519,20 +559,69 @@
       object-fit: cover;
     }
 
-    .scanner-status {
+    .scanner-status,
+    .portfolio-status {
       min-height: 20px;
       font-size: 13px;
       color: rgba(45, 45, 45, 0.66);
       text-align: center;
     }
 
-    .scanner-close {
+    .scanner-actions,
+    .portfolio-actions {
+      width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .secondary-button {
       min-height: 44px;
       border: 1.5px solid rgba(245, 196, 0, 0.45);
       border-radius: 999px;
       background: rgba(250, 249, 242, 0.96);
       padding: 0 20px;
       color: rgba(45, 45, 45, 0.72);
+      cursor: pointer;
+    }
+
+    .portfolio-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: rgba(45, 45, 45, 0.82);
+    }
+
+    .portfolio-list {
+      width: 100%;
+      max-height: 50dvh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .portfolio-item {
+      width: 100%;
+      border: 1px solid rgba(245, 196, 0, 0.28);
+      background: rgba(250, 249, 242, 0.9);
+      border-radius: 18px;
+      padding: 12px 14px;
+    }
+
+    .portfolio-item strong {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(45, 45, 45, 0.78);
+      margin-bottom: 4px;
+    }
+
+    .portfolio-item span {
+      display: block;
+      font-size: 12px;
+      line-height: 1.35;
+      color: rgba(45, 45, 45, 0.58);
     }
 
     @keyframes stageFloat {
@@ -594,6 +683,8 @@
 </head>
 <body>
   <main class="screen" id="screen" aria-label="Evia home">
+    <button class="back-button" id="backButton" type="button">Back</button>
+
     <div class="evia-stage" id="eviaStage" aria-label="Evia" role="button" tabindex="0">
       <div class="evia-float">
         <div class="evia-character" id="evia" aria-hidden="true">
@@ -627,11 +718,26 @@
       <span class="naxos-scan-mark" aria-hidden="true"><span class="naxos-scan-dot"></span></span>
     </button>
 
-    <div class="scanner-panel" id="scannerPanel" aria-hidden="true">
+    <div class="overlay-panel" id="scannerPanel" aria-hidden="true">
       <div class="scanner-card">
         <div class="scanner-video-wrap"><video id="scannerVideo" playsinline muted></video></div>
         <div class="scanner-status" id="scannerStatus">Point the camera at a Naxos QR code.</div>
-        <button class="scanner-close" id="scannerClose" type="button">Close</button>
+        <div class="scanner-actions">
+          <button class="secondary-button" id="qrImageButton" type="button">Upload QR Image</button>
+          <input id="qrImageInput" type="file" accept="image/*" hidden>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay-panel" id="portfolioPanel" aria-hidden="true">
+      <div class="portfolio-card">
+        <div class="portfolio-title">My Portfolio</div>
+        <div class="portfolio-list" id="portfolioList"></div>
+        <div class="portfolio-actions">
+          <button class="secondary-button" id="downloadPortfolio" type="button">Download ZIP</button>
+          <button class="secondary-button" id="uploadPortfolio" type="button">Upload Portfolio</button>
+        </div>
+        <div class="portfolio-status" id="portfolioStatus"></div>
       </div>
     </div>
   </main>
@@ -640,6 +746,7 @@
     const screen = document.getElementById('screen');
     const evia = document.getElementById('evia');
     const eviaStage = document.getElementById('eviaStage');
+    const backButton = document.getElementById('backButton');
     const pillStack = document.getElementById('pillStack');
     const evidenceScreen = document.getElementById('evidenceScreen');
     const evidenceTop = document.getElementById('evidenceTop');
@@ -650,7 +757,13 @@
     const scannerPanel = document.getElementById('scannerPanel');
     const scannerVideo = document.getElementById('scannerVideo');
     const scannerStatus = document.getElementById('scannerStatus');
-    const scannerClose = document.getElementById('scannerClose');
+    const qrImageButton = document.getElementById('qrImageButton');
+    const qrImageInput = document.getElementById('qrImageInput');
+    const portfolioPanel = document.getElementById('portfolioPanel');
+    const portfolioList = document.getElementById('portfolioList');
+    const portfolioStatus = document.getElementById('portfolioStatus');
+    const downloadPortfolio = document.getElementById('downloadPortfolio');
+    const uploadPortfolio = document.getElementById('uploadPortfolio');
     const root = document.documentElement;
 
     const looks = [
@@ -687,12 +800,16 @@
     let currentItems = placeholderCourse;
     let courseItems = loadSavedCourse() || placeholderCourse;
     let activeEvidence = null;
+    let activeEvidencePath = [];
+    let activeEvidenceMethod = null;
+    let captureMode = null;
     let captureStream = null;
     let recorder = null;
-    let recordedChunks = [];
     let scannerStream = null;
     let scannerFrame = null;
     let scannerBusy = false;
+    let recordingTimerInterval = null;
+    let recordingStartedAt = 0;
 
     function pickDifferentLook() {
       let next = lastLook;
@@ -762,7 +879,7 @@
       try {
         localStorage.setItem('eviaNaxosCourse', JSON.stringify(items));
       } catch (error) {
-        // The imported course still remains active for this session.
+        // Imported course remains active for this session.
       }
     }
 
@@ -772,9 +889,7 @@
 
     function normaliseEvidenceOption(option, fallbackLabel) {
       if (!option) return null;
-      if (typeof option === 'string') {
-        return { label: option.trim() || fallbackLabel, type: 'text' };
-      }
+      if (typeof option === 'string') return { label: option.trim() || fallbackLabel, type: 'text' };
       if (typeof option !== 'object') return null;
       const label = cleanText(option.label || option.name || option.title) || fallbackLabel;
       const rawType = cleanText(option.type || option.method || option.evidenceType).toLowerCase();
@@ -819,6 +934,28 @@
       return items.length ? items : null;
     }
 
+    function getItemsAtPath(path) {
+      let items = courseItems;
+      for (const index of path) {
+        const node = items[index];
+        if (!node || !Array.isArray(node.children)) return [];
+        items = node.children;
+      }
+      return items.slice(0, 5);
+    }
+
+    function getLabelsForPath(path) {
+      let items = courseItems;
+      const labels = [];
+      for (const index of path) {
+        const node = items[index];
+        if (!node) break;
+        labels.push(node.label);
+        items = Array.isArray(node.children) ? node.children : [];
+      }
+      return labels;
+    }
+
     function renderPills(floatIn = false) {
       pillStack.innerHTML = '';
       currentItems.forEach((item, index) => {
@@ -838,6 +975,7 @@
           });
         });
       }
+      updateBackButton();
     }
 
     function selectedNode(index) {
@@ -851,6 +989,7 @@
       if (!node) return;
 
       if (menuLevel >= 3 || !Array.isArray(node.children) || !node.children.length) {
+        activeEvidencePath = [...getLabelsForPath(menuPath), node.label];
         openEvidence(node);
         return;
       }
@@ -881,15 +1020,15 @@
       renderPills(false);
     }
 
-    function openEvidence(node) {
+    function renderEvidenceChoices() {
       stopCapture();
-      activeEvidence = node;
-      screen.classList.add('evidence-open');
+      captureMode = null;
+      activeEvidenceMethod = null;
       evidenceTop.innerHTML = '';
 
       const choices = [
-        ['Recommended', node.recommended],
-        ['Alternative', node.alternative]
+        ['Recommended', activeEvidence?.recommended],
+        ['Alternative', activeEvidence?.alternative]
       ].filter(([, option]) => option && cleanText(option.label));
 
       choices.forEach(([heading, option]) => {
@@ -897,26 +1036,38 @@
         button.type = 'button';
         button.className = 'evidence-choice';
         button.dataset.evidenceType = option.type || 'text';
+        button.dataset.evidenceHeading = heading;
+        button.dataset.evidenceLabel = option.label;
         button.innerHTML = `<strong>${heading}</strong>&nbsp;&nbsp;${option.label}`;
         evidenceTop.appendChild(button);
       });
 
-      if (choices.length === 1) evidenceTop.style.gridTemplateRows = '1fr';
-      else evidenceTop.style.gridTemplateRows = '1fr 1fr';
+      evidenceTop.style.gridTemplateRows = choices.length === 1 ? '1fr' : '1fr 1fr';
+      updateBackButton();
+    }
+
+    function openEvidence(node) {
+      activeEvidence = node;
+      screen.classList.add('evidence-open');
+      renderEvidenceChoices();
 
       const requirements = cleanText(node.requirements);
       evidenceRequirements.style.display = requirements ? 'block' : 'none';
       requirementsText.textContent = requirements;
-      if (!requirements) evidenceScreen.style.gridTemplateRows = '1fr';
-      else evidenceScreen.style.gridTemplateRows = '1fr 1fr';
+      evidenceScreen.style.gridTemplateRows = requirements ? '1fr 1fr' : '1fr';
+      updateBackButton();
     }
 
     function closeEvidence() {
       stopCapture();
+      captureMode = null;
+      activeEvidenceMethod = null;
       activeEvidence = null;
+      activeEvidencePath = [];
       screen.classList.remove('evidence-open');
       evidenceScreen.style.gridTemplateRows = '1fr 1fr';
       evidenceRequirements.style.display = 'block';
+      updateBackButton();
     }
 
     function activateHome() {
@@ -925,12 +1076,14 @@
       root.style.setProperty('--eye-y', '0em');
       root.style.setProperty('--char-tilt', '0deg');
       blink(true);
+      updateBackButton();
     }
 
     function deactivateHome() {
       closeEvidence();
       screen.classList.remove('active');
       resetPills();
+      updateBackButton();
     }
 
     function toggleHome() {
@@ -947,6 +1100,7 @@
     function toggleNaxosMenu() {
       const isOpen = naxosMenu.classList.toggle('open');
       naxosArch.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      updateBackButton();
     }
 
     function stopStream(stream) {
@@ -954,10 +1108,30 @@
       stream.getTracks().forEach((track) => track.stop());
     }
 
+    function stopRecordingTimer() {
+      if (recordingTimerInterval) clearInterval(recordingTimerInterval);
+      recordingTimerInterval = null;
+    }
+
+    function formatTimer(milliseconds) {
+      const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    function startRecordingTimer(element) {
+      stopRecordingTimer();
+      recordingStartedAt = Date.now();
+      element.textContent = '00:00';
+      recordingTimerInterval = setInterval(() => {
+        element.textContent = formatTimer(Date.now() - recordingStartedAt);
+      }, 250);
+    }
+
     function stopCapture() {
+      stopRecordingTimer();
       if (recorder && recorder.state !== 'inactive') recorder.stop();
-      recorder = null;
-      recordedChunks = [];
       stopStream(captureStream);
       captureStream = null;
     }
@@ -976,12 +1150,108 @@
       return options.find((type) => window.MediaRecorder && MediaRecorder.isTypeSupported(type)) || '';
     }
 
+    function openPortfolioDb() {
+      return new Promise((resolve, reject) => {
+        if (!('indexedDB' in window)) {
+          reject(new Error('IndexedDB unavailable'));
+          return;
+        }
+        const request = indexedDB.open('EviaPortfolio', 1);
+        request.onupgradeneeded = () => {
+          const db = request.result;
+          if (!db.objectStoreNames.contains('evidence')) {
+            const store = db.createObjectStore('evidence', { keyPath: 'id' });
+            store.createIndex('createdAt', 'createdAt');
+          }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    async function addPortfolioEntry(entry) {
+      const db = await openPortfolioDb();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('evidence', 'readwrite');
+        tx.objectStore('evidence').put(entry);
+        tx.oncomplete = () => { db.close(); resolve(entry); };
+        tx.onerror = () => { db.close(); reject(tx.error); };
+      });
+    }
+
+    async function getPortfolioEntries() {
+      const db = await openPortfolioDb();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('evidence', 'readonly');
+        const request = tx.objectStore('evidence').getAll();
+        request.onsuccess = () => resolve((request.result || []).sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+        request.onerror = () => reject(request.error);
+        tx.oncomplete = () => db.close();
+      });
+    }
+
+    function safeFilename(value) {
+      return cleanText(value)
+        .replace(/[^a-z0-9-_]+/gi, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '')
+        .slice(0, 70) || 'evidence';
+    }
+
+    function extensionForMime(mimeType, type) {
+      if (type === 'text') return 'txt';
+      if (/mp4/i.test(mimeType)) return 'mp4';
+      if (/ogg/i.test(mimeType)) return 'ogg';
+      return 'webm';
+    }
+
+    function captureEvidenceContext(type) {
+      return {
+        path: activeEvidencePath.slice(),
+        evidenceLabel: activeEvidencePath[activeEvidencePath.length - 1] || activeEvidence?.label || 'Evidence',
+        method: activeEvidenceMethod ? { ...activeEvidenceMethod } : { heading: type, label: type, type },
+        requirements: cleanText(activeEvidence?.requirements)
+      };
+    }
+
+    async function saveEvidenceBlob(blob, type, savedContext = null) {
+      const createdAt = new Date().toISOString();
+      const context = savedContext || captureEvidenceContext(type);
+      const method = context.method;
+      const label = context.evidenceLabel;
+      const extension = extensionForMime(blob.type, type);
+      const compactDate = createdAt.replace(/[-:]/g, '').replace(/\..+/, '').replace('T', '-');
+      const entry = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        createdAt,
+        type,
+        mimeType: blob.type || (type === 'text' ? 'text/plain' : 'application/octet-stream'),
+        fileName: `${compactDate}-${safeFilename(label)}.${extension}`,
+        path: context.path.slice(),
+        evidenceLabel: label,
+        methodHeading: method.heading,
+        methodLabel: method.label,
+        requirements: context.requirements,
+        blob
+      };
+      await addPortfolioEntry(entry);
+      return entry;
+    }
+
+    function showCaptureStatus(message) {
+      const status = document.getElementById('captureStatus');
+      if (status) status.textContent = message;
+    }
+
     async function openCameraCapture() {
       stopCapture();
-      evidenceTop.innerHTML = '<div class="capture-surface"><div class="capture-square"><video id="captureVideo" playsinline muted></video><div class="capture-controls"><button class="capture-button" id="recordToggle" type="button">Record</button></div></div></div>';
+      captureMode = 'camera';
+      evidenceTop.innerHTML = '<div class="capture-surface"><div class="capture-square"><video id="captureVideo" playsinline muted></video><div class="recording-timer" id="recordingTimer">00:00</div><div class="capture-controls"><button class="capture-button" id="recordToggle" type="button">Record</button></div></div><div class="capture-status" id="captureStatus"></div></div>';
       evidenceTop.style.gridTemplateRows = '1fr';
       const video = document.getElementById('captureVideo');
       const toggle = document.getElementById('recordToggle');
+      const timer = document.getElementById('recordingTimer');
+      updateBackButton();
 
       try {
         captureStream = await navigator.mediaDevices.getUserMedia({
@@ -1003,21 +1273,38 @@
         await video.play();
 
         toggle.addEventListener('click', () => {
-          if (!window.MediaRecorder) return;
+          if (!window.MediaRecorder) {
+            showCaptureStatus('Recording is not supported by this browser.');
+            return;
+          }
           if (!recorder || recorder.state === 'inactive') {
-            recordedChunks = [];
+            const chunks = [];
+            const recordingContext = captureEvidenceContext('video');
             const mimeType = preferredVideoMimeType();
-            const options = {
-              videoBitsPerSecond: 1200000,
-              audioBitsPerSecond: 64000
-            };
+            const options = { videoBitsPerSecond: 1200000, audioBitsPerSecond: 64000 };
             if (mimeType) options.mimeType = mimeType;
-            recorder = new MediaRecorder(captureStream, options);
-            recorder.ondataavailable = (event) => {
-              if (event.data && event.data.size) recordedChunks.push(event.data);
+            const currentRecorder = new MediaRecorder(captureStream, options);
+            recorder = currentRecorder;
+            currentRecorder.ondataavailable = (event) => {
+              if (event.data && event.data.size) chunks.push(event.data);
             };
-            recorder.start(1000);
+            currentRecorder.onstop = async () => {
+              stopRecordingTimer();
+              const blob = new Blob(chunks, { type: currentRecorder.mimeType || mimeType || 'video/webm' });
+              try {
+                if (blob.size) {
+                  await saveEvidenceBlob(blob, 'video', recordingContext);
+                  showCaptureStatus('Saved to My Portfolio');
+                }
+              } catch (error) {
+                showCaptureStatus('Could not save this recording.');
+              }
+              if (recorder === currentRecorder) recorder = null;
+            };
+            currentRecorder.start(1000);
+            startRecordingTimer(timer);
             toggle.textContent = 'Stop';
+            showCaptureStatus('');
           } else {
             recorder.stop();
             toggle.textContent = 'Record';
@@ -1030,9 +1317,11 @@
 
     async function openAudioCapture() {
       stopCapture();
-      evidenceTop.innerHTML = '<div class="capture-surface"><div class="audio-panel"><div class="microphone-mark">●</div><button class="capture-button" id="audioToggle" type="button">Record audio</button></div></div>';
+      captureMode = 'audio';
+      evidenceTop.innerHTML = '<div class="capture-surface"><div class="audio-panel"><div class="microphone-mark">●</div><button class="capture-button" id="audioToggle" type="button">Record audio</button><div class="capture-status" id="captureStatus"></div></div></div>';
       evidenceTop.style.gridTemplateRows = '1fr';
       const toggle = document.getElementById('audioToggle');
+      updateBackButton();
 
       try {
         captureStream = await navigator.mediaDevices.getUserMedia({
@@ -1045,18 +1334,36 @@
         });
 
         toggle.addEventListener('click', () => {
-          if (!window.MediaRecorder) return;
+          if (!window.MediaRecorder) {
+            showCaptureStatus('Recording is not supported by this browser.');
+            return;
+          }
           if (!recorder || recorder.state === 'inactive') {
-            recordedChunks = [];
+            const chunks = [];
+            const recordingContext = captureEvidenceContext('audio');
             const mimeType = preferredAudioMimeType();
             const options = { audioBitsPerSecond: 48000 };
             if (mimeType) options.mimeType = mimeType;
-            recorder = new MediaRecorder(captureStream, options);
-            recorder.ondataavailable = (event) => {
-              if (event.data && event.data.size) recordedChunks.push(event.data);
+            const currentRecorder = new MediaRecorder(captureStream, options);
+            recorder = currentRecorder;
+            currentRecorder.ondataavailable = (event) => {
+              if (event.data && event.data.size) chunks.push(event.data);
             };
-            recorder.start(1000);
+            currentRecorder.onstop = async () => {
+              const blob = new Blob(chunks, { type: currentRecorder.mimeType || mimeType || 'audio/webm' });
+              try {
+                if (blob.size) {
+                  await saveEvidenceBlob(blob, 'audio', recordingContext);
+                  showCaptureStatus('Saved to My Portfolio');
+                }
+              } catch (error) {
+                showCaptureStatus('Could not save this recording.');
+              }
+              if (recorder === currentRecorder) recorder = null;
+            };
+            currentRecorder.start(1000);
             toggle.textContent = 'Stop audio';
+            showCaptureStatus('');
           } else {
             recorder.stop();
             toggle.textContent = 'Record audio';
@@ -1069,11 +1376,29 @@
 
     function openTextCapture() {
       stopCapture();
-      evidenceTop.innerHTML = '<div class="capture-surface"><textarea class="text-evidence" aria-label="Written evidence" placeholder="Write your evidence here..."></textarea></div>';
+      captureMode = 'text';
+      evidenceTop.innerHTML = '<div class="capture-surface"><textarea class="text-evidence" id="textEvidence" aria-label="Written evidence" placeholder="Write your evidence here..."></textarea><div class="text-save-row"><button class="capture-button" id="saveTextEvidence" type="button">Save Evidence</button></div><div class="capture-status" id="captureStatus"></div></div>';
       evidenceTop.style.gridTemplateRows = '1fr';
+      updateBackButton();
+      const textarea = document.getElementById('textEvidence');
+      document.getElementById('saveTextEvidence').addEventListener('click', async () => {
+        const text = textarea.value.trim();
+        if (!text) {
+          showCaptureStatus('Write some evidence before saving.');
+          return;
+        }
+        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+        try {
+          await saveEvidenceBlob(blob, 'text');
+          showCaptureStatus('Saved to My Portfolio');
+        } catch (error) {
+          showCaptureStatus('Could not save this evidence.');
+        }
+      });
     }
 
-    function openEvidenceType(type) {
+    function openEvidenceType(type, heading, label) {
+      activeEvidenceMethod = { type, heading, label };
       if (type === 'camera') openCameraCapture();
       else if (type === 'audio') openAudioCapture();
       else openTextCapture();
@@ -1095,6 +1420,18 @@
       resetPills();
       screen.classList.add('active');
       scannerStatus.textContent = 'Naxos course imported.';
+      updateBackButton();
+    }
+
+    function handleQrRawValue(rawValue) {
+      const items = parseNaxosPayload(rawValue);
+      if (items) {
+        applyImportedCourse(items);
+        closeScanner(false);
+        return true;
+      }
+      scannerStatus.textContent = 'That QR code is not a valid Naxos course code.';
+      return false;
     }
 
     async function startScanner() {
@@ -1103,9 +1440,10 @@
       scannerPanel.classList.add('open');
       scannerPanel.setAttribute('aria-hidden', 'false');
       scannerStatus.textContent = 'Point the camera at a Naxos QR code.';
+      updateBackButton();
 
       if (!('BarcodeDetector' in window)) {
-        scannerStatus.textContent = 'QR scanning is not supported by this browser.';
+        scannerStatus.textContent = 'Live QR scanning is not supported by this browser. You can still try Upload QR Image.';
         return;
       }
 
@@ -1123,7 +1461,7 @@
         scannerBusy = false;
         scanFrame();
       } catch (error) {
-        scannerStatus.textContent = 'Camera access is required to scan a Naxos QR code.';
+        scannerStatus.textContent = 'Camera access is unavailable. You can use Upload QR Image instead.';
       }
     }
 
@@ -1133,15 +1471,7 @@
       try {
         const detector = new BarcodeDetector({ formats: ['qr_code'] });
         const codes = await detector.detect(scannerVideo);
-        if (codes.length) {
-          const items = parseNaxosPayload(codes[0].rawValue);
-          if (items) {
-            applyImportedCourse(items);
-            closeScanner();
-            return;
-          }
-          scannerStatus.textContent = 'That QR code is not a valid Naxos course code.';
-        }
+        if (codes.length && handleQrRawValue(codes[0].rawValue)) return;
       } catch (error) {
         scannerStatus.textContent = 'Unable to read this QR code.';
       }
@@ -1149,7 +1479,29 @@
       scannerFrame = requestAnimationFrame(scanFrame);
     }
 
-    function closeScanner() {
+    async function scanQrImage(file) {
+      if (!file) return;
+      if (!('BarcodeDetector' in window)) {
+        scannerStatus.textContent = 'QR image reading is not supported by this browser.';
+        return;
+      }
+      scannerStatus.textContent = 'Reading QR image...';
+      try {
+        const bitmap = await createImageBitmap(file);
+        const detector = new BarcodeDetector({ formats: ['qr_code'] });
+        const codes = await detector.detect(bitmap);
+        bitmap.close?.();
+        if (!codes.length) {
+          scannerStatus.textContent = 'No QR code was found in that image.';
+          return;
+        }
+        handleQrRawValue(codes[0].rawValue);
+      } catch (error) {
+        scannerStatus.textContent = 'Unable to read that QR image.';
+      }
+    }
+
+    function closeScanner(reopenNaxos = true) {
       if (scannerFrame) cancelAnimationFrame(scannerFrame);
       scannerFrame = null;
       scannerBusy = false;
@@ -1158,6 +1510,244 @@
       scannerVideo.srcObject = null;
       scannerPanel.classList.remove('open');
       scannerPanel.setAttribute('aria-hidden', 'true');
+      qrImageInput.value = '';
+      if (reopenNaxos) {
+        naxosMenu.classList.add('open');
+        naxosArch.setAttribute('aria-expanded', 'true');
+      }
+      updateBackButton();
+    }
+
+    function formatBytes(bytes) {
+      if (!Number.isFinite(bytes) || bytes <= 0) return '0 KB';
+      if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    async function openPortfolio() {
+      naxosMenu.classList.remove('open');
+      naxosArch.setAttribute('aria-expanded', 'false');
+      portfolioPanel.classList.add('open');
+      portfolioPanel.setAttribute('aria-hidden', 'false');
+      portfolioStatus.textContent = '';
+      updateBackButton();
+
+      try {
+        const entries = await getPortfolioEntries();
+        portfolioList.innerHTML = '';
+        if (!entries.length) {
+          portfolioList.innerHTML = '<div class="portfolio-item"><strong>No evidence yet</strong><span>Evidence you capture will appear here.</span></div>';
+          return;
+        }
+        entries.forEach((entry) => {
+          const item = document.createElement('div');
+          item.className = 'portfolio-item';
+          const path = Array.isArray(entry.path) ? entry.path.join(' › ') : entry.evidenceLabel || 'Evidence';
+          const date = new Date(entry.createdAt).toLocaleString();
+          item.innerHTML = `<strong>${path}</strong><span>${entry.methodHeading || ''}${entry.methodLabel ? ` — ${entry.methodLabel}` : ''}</span><span>${date} · ${formatBytes(entry.blob?.size || 0)}</span>`;
+          portfolioList.appendChild(item);
+        });
+      } catch (error) {
+        portfolioList.innerHTML = '<div class="portfolio-item"><strong>Portfolio unavailable</strong><span>Local evidence storage could not be opened.</span></div>';
+      }
+    }
+
+    function closePortfolio(reopenNaxos = true) {
+      portfolioPanel.classList.remove('open');
+      portfolioPanel.setAttribute('aria-hidden', 'true');
+      if (reopenNaxos) {
+        naxosMenu.classList.add('open');
+        naxosArch.setAttribute('aria-expanded', 'true');
+      }
+      updateBackButton();
+    }
+
+    function crc32(bytes) {
+      if (!crc32.table) {
+        crc32.table = Array.from({ length: 256 }, (_, n) => {
+          let c = n;
+          for (let k = 0; k < 8; k += 1) c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
+          return c >>> 0;
+        });
+      }
+      let crc = 0xffffffff;
+      for (const byte of bytes) crc = crc32.table[(crc ^ byte) & 0xff] ^ (crc >>> 8);
+      return (crc ^ 0xffffffff) >>> 0;
+    }
+
+    function dosDateTime(date) {
+      const year = Math.max(1980, date.getFullYear());
+      const time = (date.getHours() << 11) | (date.getMinutes() << 5) | Math.floor(date.getSeconds() / 2);
+      const day = ((year - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate();
+      return { time, day };
+    }
+
+    function writeUint16(view, offset, value) { view.setUint16(offset, value, true); }
+    function writeUint32(view, offset, value) { view.setUint32(offset, value >>> 0, true); }
+
+    function concatBytes(parts) {
+      const total = parts.reduce((sum, part) => sum + part.length, 0);
+      const output = new Uint8Array(total);
+      let offset = 0;
+      parts.forEach((part) => { output.set(part, offset); offset += part.length; });
+      return output;
+    }
+
+    async function createZip(files) {
+      const encoder = new TextEncoder();
+      const localParts = [];
+      const centralParts = [];
+      let offset = 0;
+
+      for (const file of files) {
+        const nameBytes = encoder.encode(file.name);
+        const data = file.data instanceof Uint8Array ? file.data : new Uint8Array(await file.data.arrayBuffer());
+        const crc = crc32(data);
+        const dt = dosDateTime(file.date || new Date());
+
+        const localHeader = new Uint8Array(30 + nameBytes.length);
+        const localView = new DataView(localHeader.buffer);
+        writeUint32(localView, 0, 0x04034b50);
+        writeUint16(localView, 4, 20);
+        writeUint16(localView, 6, 0);
+        writeUint16(localView, 8, 0);
+        writeUint16(localView, 10, dt.time);
+        writeUint16(localView, 12, dt.day);
+        writeUint32(localView, 14, crc);
+        writeUint32(localView, 18, data.length);
+        writeUint32(localView, 22, data.length);
+        writeUint16(localView, 26, nameBytes.length);
+        writeUint16(localView, 28, 0);
+        localHeader.set(nameBytes, 30);
+        localParts.push(localHeader, data);
+
+        const centralHeader = new Uint8Array(46 + nameBytes.length);
+        const centralView = new DataView(centralHeader.buffer);
+        writeUint32(centralView, 0, 0x02014b50);
+        writeUint16(centralView, 4, 20);
+        writeUint16(centralView, 6, 20);
+        writeUint16(centralView, 8, 0);
+        writeUint16(centralView, 10, 0);
+        writeUint16(centralView, 12, dt.time);
+        writeUint16(centralView, 14, dt.day);
+        writeUint32(centralView, 16, crc);
+        writeUint32(centralView, 20, data.length);
+        writeUint32(centralView, 24, data.length);
+        writeUint16(centralView, 28, nameBytes.length);
+        writeUint16(centralView, 30, 0);
+        writeUint16(centralView, 32, 0);
+        writeUint16(centralView, 34, 0);
+        writeUint16(centralView, 36, 0);
+        writeUint32(centralView, 38, 0);
+        writeUint32(centralView, 42, offset);
+        centralHeader.set(nameBytes, 46);
+        centralParts.push(centralHeader);
+        offset += localHeader.length + data.length;
+      }
+
+      const centralDirectory = concatBytes(centralParts);
+      const end = new Uint8Array(22);
+      const endView = new DataView(end.buffer);
+      writeUint32(endView, 0, 0x06054b50);
+      writeUint16(endView, 4, 0);
+      writeUint16(endView, 6, 0);
+      writeUint16(endView, 8, files.length);
+      writeUint16(endView, 10, files.length);
+      writeUint32(endView, 12, centralDirectory.length);
+      writeUint32(endView, 16, offset);
+      writeUint16(endView, 20, 0);
+
+      return new Blob([...localParts, centralDirectory, end], { type: 'application/zip' });
+    }
+
+    async function downloadPortfolioZip() {
+      portfolioStatus.textContent = 'Building portfolio ZIP...';
+      try {
+        const entries = await getPortfolioEntries();
+        if (!entries.length) {
+          portfolioStatus.textContent = 'There is no evidence to download yet.';
+          return;
+        }
+
+        const metadata = entries.map(({ blob, ...entry }) => ({ ...entry, size: blob?.size || 0 }));
+        const files = entries.map((entry) => ({
+          name: `evidence/${entry.fileName}`,
+          data: entry.blob,
+          date: new Date(entry.createdAt)
+        }));
+        files.unshift({
+          name: 'course.json',
+          data: new TextEncoder().encode(JSON.stringify({ course: { items: courseItems } }, null, 2)),
+          date: new Date()
+        });
+        files.unshift({
+          name: 'portfolio.json',
+          data: new TextEncoder().encode(JSON.stringify({ exportedAt: new Date().toISOString(), evidence: metadata }, null, 2)),
+          date: new Date()
+        });
+
+        const zipBlob = await createZip(files);
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(zipBlob);
+        link.href = url;
+        link.download = `Evia-Portfolio-${new Date().toISOString().slice(0, 10)}.zip`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+        portfolioStatus.textContent = 'Portfolio ZIP ready.';
+      } catch (error) {
+        portfolioStatus.textContent = 'Could not build the portfolio ZIP.';
+      }
+    }
+
+    function showSupabasePlaceholder() {
+      portfolioStatus.textContent = 'Supabase upload is ready to connect when the website endpoint is added. Your portfolio remains stored locally.';
+    }
+
+    function updateBackButton() {
+      const shouldShow =
+        scannerPanel.classList.contains('open') ||
+        portfolioPanel.classList.contains('open') ||
+        naxosMenu.classList.contains('open') ||
+        captureMode !== null ||
+        screen.classList.contains('evidence-open') ||
+        screen.classList.contains('active');
+      backButton.classList.toggle('show', shouldShow);
+    }
+
+    function goBackOneStep() {
+      if (scannerPanel.classList.contains('open')) {
+        closeScanner(true);
+        return;
+      }
+      if (portfolioPanel.classList.contains('open')) {
+        closePortfolio(true);
+        return;
+      }
+      if (naxosMenu.classList.contains('open')) {
+        naxosMenu.classList.remove('open');
+        naxosArch.setAttribute('aria-expanded', 'false');
+        updateBackButton();
+        return;
+      }
+      if (captureMode !== null && screen.classList.contains('evidence-open')) {
+        renderEvidenceChoices();
+        return;
+      }
+      if (screen.classList.contains('evidence-open')) {
+        closeEvidence();
+        renderPills(true);
+        return;
+      }
+      if (screen.classList.contains('active') && menuLevel > 1) {
+        menuPath.pop();
+        menuLevel -= 1;
+        currentItems = getItemsAtPath(menuPath);
+        renderPills(true);
+        return;
+      }
+      if (screen.classList.contains('active')) deactivateHome();
     }
 
     eviaStage.addEventListener('click', toggleHome);
@@ -1167,6 +1757,8 @@
         toggleHome();
       }
     });
+
+    backButton.addEventListener('click', goBackOneStep);
 
     pillStack.addEventListener('click', handlePillActivation);
     pillStack.addEventListener('keydown', (event) => {
@@ -1181,26 +1773,36 @@
     evidenceTop.addEventListener('click', (event) => {
       const choice = event.target.closest('.evidence-choice');
       if (!choice) return;
-      openEvidenceType(choice.dataset.evidenceType || 'text');
+      openEvidenceType(
+        choice.dataset.evidenceType || 'text',
+        choice.dataset.evidenceHeading || 'Evidence',
+        choice.dataset.evidenceLabel || 'Evidence'
+      );
     });
 
     naxosArch.addEventListener('click', toggleNaxosMenu);
     naxosMenu.addEventListener('click', (event) => {
       const action = event.target.closest('[data-naxos-action]')?.dataset.naxosAction;
       if (action === 'scan') startScanner();
+      if (action === 'portfolio') openPortfolio();
     });
-    scannerClose.addEventListener('click', closeScanner);
+
+    qrImageButton.addEventListener('click', () => qrImageInput.click());
+    qrImageInput.addEventListener('change', () => scanQrImage(qrImageInput.files?.[0]));
+    downloadPortfolio.addEventListener('click', downloadPortfolioZip);
+    uploadPortfolio.addEventListener('click', showSupabasePlaceholder);
 
     resetPills();
     applyLook();
     setTimeout(scheduleLooks, 1800);
     setTimeout(scheduleBlinks, 2200);
     setTimeout(scheduleAccents, 4200);
+    updateBackButton();
 
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         stopCapture();
-        closeScanner();
+        if (scannerPanel.classList.contains('open')) closeScanner(false);
       } else {
         applyLook();
       }
