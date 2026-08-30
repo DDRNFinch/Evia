@@ -7,10 +7,24 @@
   <title>Evia</title>
 
   <style>
+    :root {
+      --evia-yellow: #f5c400;
+      --bg: #ffffff;
+      --look-x: 0px;
+      --look-y: 0px;
+      --tilt: 0deg;
+      --squish-x: 1;
+      --squish-y: 1;
+      --glow-1: rgba(245, 196, 0, 0.62);
+      --glow-2: rgba(245, 196, 0, 0.34);
+      --glow-3: rgba(245, 196, 0, 0.16);
+    }
+
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      -webkit-tap-highlight-color: transparent;
     }
 
     html,
@@ -23,7 +37,7 @@
       min-height: 100vh;
       min-height: 100dvh;
       overflow: hidden;
-      background: #ffffff;
+      background: var(--bg);
       font-family: Arial, Helvetica, sans-serif;
     }
 
@@ -34,50 +48,340 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: 24px;
+      isolation: isolate;
     }
 
-    .evia {
+    .evia-stage {
       position: relative;
-      width: clamp(150px, 42vw, 190px);
+      width: min(72vw, 280px);
       aspect-ratio: 1;
-      border: clamp(5px, 1.5vw, 7px) solid #f5c400;
-      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: floaty 5.8s ease-in-out infinite;
+      transform-origin: center center;
+    }
+
+    .evia-stage::before {
+      content: "";
+      position: absolute;
+      inset: 14%;
+      border-radius: 32%;
+      background: radial-gradient(circle at center, rgba(245, 196, 0, 0.26), rgba(245, 196, 0, 0.08) 45%, rgba(245, 196, 0, 0) 75%);
+      filter: blur(16px);
+      transform: scale(1.15);
+      animation: glowPulse 5.8s ease-in-out infinite;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .evia-character {
+      position: relative;
+      width: clamp(165px, 46vw, 220px);
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform: rotate(var(--tilt));
+      z-index: 1;
+      will-change: transform;
+    }
+
+    .evia-body {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border: clamp(4px, 1.15vw, 6px) solid var(--evia-yellow);
+      border-radius: 30%;
       background: transparent;
       display: flex;
       align-items: center;
       justify-content: center;
+      transform: scaleX(var(--squish-x)) scaleY(var(--squish-y));
+      transform-origin: center center;
+      will-change: transform, border-radius;
       filter:
-        drop-shadow(0 0 10px rgba(245, 196, 0, 0.55))
-        drop-shadow(0 0 25px rgba(245, 196, 0, 0.34))
-        drop-shadow(0 0 50px rgba(245, 196, 0, 0.18));
+        drop-shadow(0 0 10px var(--glow-1))
+        drop-shadow(0 0 24px var(--glow-2))
+        drop-shadow(0 0 52px var(--glow-3));
+      animation:
+        bodyMorph 7.8s ease-in-out infinite,
+        bodyWiggle 3.8s ease-in-out infinite;
+    }
+
+    .evia-body::after {
+      content: "";
+      position: absolute;
+      inset: -2px;
+      border-radius: inherit;
+      box-shadow: inset 0 0 0 1px rgba(255, 231, 123, 0.2);
+      pointer-events: none;
     }
 
     .eyes {
+      position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: clamp(13px, 4vw, 19px);
-      transform: translateY(-2px);
+      gap: clamp(14px, 4vw, 22px);
+      transform: translate(var(--look-x), var(--look-y));
+      will-change: transform;
+      animation: eyesBob 4.4s ease-in-out infinite;
     }
 
     .eye {
-      width: clamp(33px, 9.5vw, 43px);
-      height: clamp(46px, 13vw, 58px);
-      border: clamp(4px, 1.1vw, 5px) solid #f5c400;
+      width: clamp(34px, 9.5vw, 46px);
+      height: clamp(48px, 13vw, 62px);
+      border: clamp(3px, 0.95vw, 5px) solid var(--evia-yellow);
       border-radius: 50%;
       background: transparent;
+      transform-origin: center center;
+      will-change: transform, opacity;
+      animation: eyeAlive 4.6s ease-in-out infinite;
+    }
+
+    .eye:nth-child(2) {
+      animation-delay: -1.3s;
+    }
+
+    .evia-character.blink .eye {
+      animation: none;
+      transform: scaleY(0.14) translateY(2px);
+    }
+
+    .evia-character.squeeze {
+      animation: squeezePop 420ms ease;
+    }
+
+    .evia-character.wriggle {
+      animation: quickWriggle 640ms ease;
+    }
+
+    .evia-character.pop {
+      animation: cheerfulPop 540ms ease;
+    }
+
+    .evia-character.look-left { --look-x: -12px; }
+    .evia-character.look-right { --look-x: 12px; }
+    .evia-character.look-up { --look-y: -10px; }
+    .evia-character.look-down { --look-y: 10px; }
+    .evia-character.look-up-left { --look-x: -10px; --look-y: -8px; }
+    .evia-character.look-up-right { --look-x: 10px; --look-y: -8px; }
+    .evia-character.look-down-left { --look-x: -10px; --look-y: 8px; }
+    .evia-character.look-down-right { --look-x: 10px; --look-y: 8px; }
+
+    @keyframes floaty {
+      0%, 100% { transform: translateY(0px); }
+      25% { transform: translateY(-5px); }
+      50% { transform: translateY(1px); }
+      75% { transform: translateY(-8px); }
+    }
+
+    @keyframes glowPulse {
+      0%, 100% { transform: scale(1.08); opacity: 0.82; }
+      50% { transform: scale(1.2); opacity: 1; }
+    }
+
+    @keyframes bodyMorph {
+      0%, 100% {
+        border-radius: 30% 30% 30% 30% / 30% 30% 30% 30%;
+        transform: scaleX(var(--squish-x)) scaleY(var(--squish-y));
+      }
+      18% {
+        border-radius: 28% 32% 29% 31% / 30% 28% 32% 30%;
+        transform: scaleX(calc(var(--squish-x) * 1.01)) scaleY(calc(var(--squish-y) * 0.99));
+      }
+      42% {
+        border-radius: 34% 27% 33% 28% / 28% 34% 27% 33%;
+        transform: scaleX(calc(var(--squish-x) * 0.985)) scaleY(calc(var(--squish-y) * 1.015));
+      }
+      65% {
+        border-radius: 27% 35% 28% 34% / 35% 27% 34% 28%;
+        transform: scaleX(calc(var(--squish-x) * 1.015)) scaleY(calc(var(--squish-y) * 0.985));
+      }
+      84% {
+        border-radius: 32% 29% 34% 27% / 27% 34% 28% 35%;
+        transform: scaleX(calc(var(--squish-x) * 0.995)) scaleY(calc(var(--squish-y) * 1.005));
+      }
+    }
+
+    @keyframes bodyWiggle {
+      0%, 100% { rotate: 0deg; }
+      20% { rotate: -1.5deg; }
+      40% { rotate: 1.2deg; }
+      60% { rotate: -0.9deg; }
+      80% { rotate: 0.8deg; }
+    }
+
+    @keyframes eyesBob {
+      0%, 100% { transform: translate(var(--look-x), var(--look-y)); }
+      50% { transform: translate(var(--look-x), calc(var(--look-y) + 1px)); }
+    }
+
+    @keyframes eyeAlive {
+      0%, 100% { transform: scale(1) rotate(0deg); }
+      22% { transform: scale(1.02, 0.98) rotate(-2deg); }
+      50% { transform: scale(0.99, 1.02) rotate(1deg); }
+      74% { transform: scale(1.01, 0.99) rotate(2deg); }
+    }
+
+    @keyframes squeezePop {
+      0% { transform: scale(1) rotate(var(--tilt)); }
+      25% { transform: scale(1.08, 0.9) rotate(calc(var(--tilt) - 2deg)); }
+      55% { transform: scale(0.92, 1.1) rotate(calc(var(--tilt) + 2deg)); }
+      100% { transform: scale(1) rotate(var(--tilt)); }
+    }
+
+    @keyframes quickWriggle {
+      0% { transform: rotate(var(--tilt)); }
+      20% { transform: rotate(calc(var(--tilt) - 5deg)); }
+      40% { transform: rotate(calc(var(--tilt) + 4deg)); }
+      60% { transform: rotate(calc(var(--tilt) - 3deg)); }
+      80% { transform: rotate(calc(var(--tilt) + 2deg)); }
+      100% { transform: rotate(var(--tilt)); }
+    }
+
+    @keyframes cheerfulPop {
+      0% { transform: scale(1) rotate(var(--tilt)); }
+      30% { transform: scale(1.06) rotate(calc(var(--tilt) - 2deg)); }
+      60% { transform: scale(0.98) rotate(calc(var(--tilt) + 2deg)); }
+      100% { transform: scale(1) rotate(var(--tilt)); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .evia-stage,
+      .evia-stage::before,
+      .evia-body,
+      .eyes,
+      .eye,
+      .evia-character {
+        animation: none !important;
+        transition: none !important;
+      }
     }
   </style>
 </head>
 
 <body>
-  <main class="screen" aria-label="Evia">
-    <div class="evia" aria-hidden="true">
-      <div class="eyes">
-        <span class="eye"></span>
-        <span class="eye"></span>
+  <main class="screen" aria-label="Evia animated mascot">
+    <div class="evia-stage">
+      <div class="evia-character" id="evia" aria-hidden="true">
+        <div class="evia-body">
+          <div class="eyes">
+            <span class="eye"></span>
+            <span class="eye"></span>
+          </div>
+        </div>
       </div>
     </div>
   </main>
+
+  <script>
+    const evia = document.getElementById('evia');
+    const root = document.documentElement;
+    const lookClasses = [
+      'look-left',
+      'look-right',
+      'look-up',
+      'look-down',
+      'look-up-left',
+      'look-up-right',
+      'look-down-left',
+      'look-down-right'
+    ];
+
+    function clearLookClasses() {
+      lookClasses.forEach(cls => evia.classList.remove(cls));
+    }
+
+    function choose(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function setIdleTilt() {
+      const tilt = (Math.random() * 8 - 4).toFixed(2) + 'deg';
+      root.style.setProperty('--tilt', tilt);
+    }
+
+    function setSquish() {
+      const x = (0.97 + Math.random() * 0.08).toFixed(3);
+      const y = (1.95 - x).toFixed(3);
+      root.style.setProperty('--squish-x', x);
+      root.style.setProperty('--squish-y', y);
+    }
+
+    function lookAround() {
+      clearLookClasses();
+      if (Math.random() > 0.18) {
+        evia.classList.add(choose(lookClasses));
+      }
+      setIdleTilt();
+      setSquish();
+    }
+
+    function blink(times = 1) {
+      let count = 0;
+      const doBlink = () => {
+        evia.classList.add('blink');
+        setTimeout(() => {
+          evia.classList.remove('blink');
+          count += 1;
+          if (count < times) {
+            setTimeout(doBlink, 90);
+          }
+        }, 150);
+      };
+      doBlink();
+    }
+
+    function triggerMotion(className, duration) {
+      evia.classList.remove(className);
+      void evia.offsetWidth;
+      evia.classList.add(className);
+      setTimeout(() => evia.classList.remove(className), duration);
+    }
+
+    function livelyMoment() {
+      const roll = Math.random();
+      if (roll < 0.28) {
+        triggerMotion('wriggle', 640);
+      } else if (roll < 0.56) {
+        triggerMotion('squeeze', 420);
+      } else if (roll < 0.78) {
+        triggerMotion('pop', 540);
+      } else {
+        blink(Math.random() < 0.5 ? 2 : 1);
+      }
+    }
+
+    function scheduleLook() {
+      lookAround();
+      setTimeout(scheduleLook, 1400 + Math.random() * 1700);
+    }
+
+    function scheduleBlink() {
+      blink(Math.random() < 0.2 ? 2 : 1);
+      setTimeout(scheduleBlink, 2200 + Math.random() * 2800);
+    }
+
+    function scheduleMotion() {
+      livelyMoment();
+      setTimeout(scheduleMotion, 1600 + Math.random() * 2200);
+    }
+
+    lookAround();
+    setIdleTilt();
+    setSquish();
+    setTimeout(scheduleLook, 900);
+    setTimeout(scheduleBlink, 1500);
+    setTimeout(scheduleMotion, 1200);
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        lookAround();
+      }
+    });
+  </script>
 </body>
 </html>
