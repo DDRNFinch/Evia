@@ -200,6 +200,24 @@
       color: rgba(45, 45, 45, 0.5);
       font-size: 14px;
       letter-spacing: 0.02em;
+      transition:
+        opacity 260ms ease,
+        transform 430ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .pill[data-can-open="true"] {
+      cursor: pointer;
+    }
+
+    .pill.fade-out {
+      opacity: 0;
+      transform: translateY(-8px);
+      pointer-events: none;
+    }
+
+    .pill.float-in {
+      opacity: 0;
+      transform: translateY(18px);
     }
 
     .pill::before {
@@ -260,7 +278,8 @@
       .evia-character,
       .eyes,
       .eye,
-      .pill-stack {
+      .pill-stack,
+      .pill {
         animation: none !important;
         transition: none !important;
       }
@@ -282,12 +301,12 @@
       </div>
     </div>
 
-    <div class="pill-stack" aria-label="Menu placeholders">
-      <div class="pill">Placeholder 1</div>
-      <div class="pill">Placeholder 2</div>
-      <div class="pill">Placeholder 3</div>
-      <div class="pill">Placeholder 4</div>
-      <div class="pill">Placeholder 5</div>
+    <div class="pill-stack" id="pillStack" aria-label="Menu placeholders">
+      <div class="pill" data-index="1" data-can-open="true" role="button" tabindex="0">Placeholder 1</div>
+      <div class="pill" data-index="2" data-can-open="true" role="button" tabindex="0">Placeholder 2</div>
+      <div class="pill" data-index="3" data-can-open="true" role="button" tabindex="0">Placeholder 3</div>
+      <div class="pill" data-index="4" data-can-open="true" role="button" tabindex="0">Placeholder 4</div>
+      <div class="pill" data-index="5" data-can-open="true" role="button" tabindex="0">Placeholder 5</div>
     </div>
   </main>
 
@@ -295,6 +314,7 @@
     const screen = document.getElementById('screen');
     const evia = document.getElementById('evia');
     const eviaStage = document.getElementById('eviaStage');
+    const pillStack = document.getElementById('pillStack');
     const root = document.documentElement;
 
     const looks = [
@@ -312,6 +332,9 @@
     const accents = ['accent-wobble', 'accent-squish', 'accent-lean'];
     let accentBusy = false;
     let lastLook = 0;
+    let menuLevel = 1;
+    let menuPath = [];
+    let pillTransitionBusy = false;
 
     function pickDifferentLook() {
       let next = lastLook;
@@ -368,6 +391,70 @@
       setTimeout(scheduleAccents, 6200 + Math.random() * 2600);
     }
 
+    function pillLabel(index) {
+      if (menuLevel === 1) return `Placeholder ${index}`;
+      return `Placeholder ${menuPath.join('.')}.${index}`;
+    }
+
+    function renderPills(floatIn = false) {
+      pillStack.innerHTML = '';
+
+      for (let index = 1; index <= 5; index += 1) {
+        const pill = document.createElement('div');
+        pill.className = `pill${floatIn ? ' float-in' : ''}`;
+        pill.dataset.index = index;
+        pill.dataset.canOpen = menuLevel < 3 ? 'true' : 'false';
+        pill.textContent = pillLabel(index);
+
+        if (menuLevel < 3) {
+          pill.setAttribute('role', 'button');
+          pill.setAttribute('tabindex', '0');
+        }
+
+        pillStack.appendChild(pill);
+      }
+
+      if (floatIn) {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            pillStack.querySelectorAll('.pill').forEach((pill) => {
+              pill.classList.remove('float-in');
+            });
+          });
+        });
+      }
+    }
+
+    function openNextPillSet(selectedPill) {
+      if (pillTransitionBusy || menuLevel >= 3) return;
+
+      pillTransitionBusy = true;
+      const selectedIndex = Number(selectedPill.dataset.index);
+      const pills = [...pillStack.querySelectorAll('.pill')];
+
+      pills.forEach((pill) => {
+        if (pill !== selectedPill) pill.classList.add('fade-out');
+      });
+
+      setTimeout(() => {
+        selectedPill.classList.add('fade-out');
+
+        setTimeout(() => {
+          menuPath.push(selectedIndex);
+          menuLevel += 1;
+          renderPills(true);
+          pillTransitionBusy = false;
+        }, 260);
+      }, 260);
+    }
+
+    function resetPills() {
+      menuLevel = 1;
+      menuPath = [];
+      pillTransitionBusy = false;
+      renderPills(false);
+    }
+
     function activateHome() {
       screen.classList.add('active');
       root.style.setProperty('--eye-x', '0em');
@@ -376,11 +463,40 @@
       blink(true);
     }
 
-    eviaStage.addEventListener('click', activateHome);
+    function deactivateHome() {
+      screen.classList.remove('active');
+      resetPills();
+    }
+
+    function toggleHome() {
+      if (screen.classList.contains('active')) {
+        deactivateHome();
+      } else {
+        activateHome();
+      }
+    }
+
+    function handlePillActivation(event) {
+      const pill = event.target.closest('.pill[data-can-open="true"]');
+      if (!pill || !screen.classList.contains('active')) return;
+      openNextPillSet(pill);
+    }
+
+    eviaStage.addEventListener('click', toggleHome);
     eviaStage.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
-        activateHome();
+        toggleHome();
+      }
+    });
+
+    pillStack.addEventListener('click', handlePillActivation);
+    pillStack.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        const pill = event.target.closest('.pill[data-can-open="true"]');
+        if (!pill) return;
+        event.preventDefault();
+        openNextPillSet(pill);
       }
     });
 
