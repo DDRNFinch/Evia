@@ -5,19 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
   <title>Evia</title>
-
   <style>
     :root {
       --evia-yellow: #f5c400;
       --bg: #ffffff;
-      --look-x: 0px;
-      --look-y: 0px;
-      --tilt: 0deg;
-      --squish-x: 1;
-      --squish-y: 1;
-      --glow-1: rgba(245, 196, 0, 0.62);
-      --glow-2: rgba(245, 196, 0, 0.34);
-      --glow-3: rgba(245, 196, 0, 0.16);
+      --eye-x: 0px;
+      --eye-y: 0px;
+      --char-tilt: 0deg;
     }
 
     * {
@@ -27,8 +21,7 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    html,
-    body {
+    html, body {
       width: 100%;
       min-height: 100%;
     }
@@ -59,19 +52,18 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      animation: floaty 5.8s ease-in-out infinite;
-      transform-origin: center center;
+      animation: stageFloat 8s ease-in-out infinite;
     }
 
     .evia-stage::before {
       content: "";
       position: absolute;
-      inset: 14%;
-      border-radius: 32%;
-      background: radial-gradient(circle at center, rgba(245, 196, 0, 0.26), rgba(245, 196, 0, 0.08) 45%, rgba(245, 196, 0, 0) 75%);
-      filter: blur(16px);
-      transform: scale(1.15);
-      animation: glowPulse 5.8s ease-in-out infinite;
+      inset: 10%;
+      border-radius: 30%;
+      background: radial-gradient(circle at center, rgba(245, 196, 0, 0.22), rgba(245, 196, 0, 0.08) 46%, rgba(245, 196, 0, 0) 76%);
+      filter: blur(22px);
+      transform: scale(1.12);
+      animation: glowPulse 8s ease-in-out infinite;
       z-index: 0;
       pointer-events: none;
     }
@@ -83,7 +75,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transform: rotate(var(--tilt));
+      transform: rotate(var(--char-tilt));
+      transition: transform 1400ms cubic-bezier(0.22, 1, 0.36, 1);
       z-index: 1;
       will-change: transform;
     }
@@ -93,41 +86,27 @@
       width: 100%;
       height: 100%;
       border: clamp(4px, 1.15vw, 6px) solid var(--evia-yellow);
-      border-radius: 30%;
+      border-radius: 29%;
       background: transparent;
       display: flex;
       align-items: center;
       justify-content: center;
-      transform: scaleX(var(--squish-x)) scaleY(var(--squish-y));
-      transform-origin: center center;
-      will-change: transform, border-radius;
       filter:
-        drop-shadow(0 0 10px var(--glow-1))
-        drop-shadow(0 0 24px var(--glow-2))
-        drop-shadow(0 0 52px var(--glow-3));
-      animation:
-        bodyMorph 7.8s ease-in-out infinite,
-        bodyWiggle 3.8s ease-in-out infinite;
-    }
-
-    .evia-body::after {
-      content: "";
-      position: absolute;
-      inset: -2px;
-      border-radius: inherit;
-      box-shadow: inset 0 0 0 1px rgba(255, 231, 123, 0.2);
-      pointer-events: none;
+        drop-shadow(0 0 8px rgba(245, 196, 0, 0.55))
+        drop-shadow(0 0 22px rgba(245, 196, 0, 0.28))
+        drop-shadow(0 0 48px rgba(245, 196, 0, 0.13));
+      animation: bodyDrift 10s ease-in-out infinite;
+      will-change: border-radius, transform;
     }
 
     .eyes {
-      position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: clamp(14px, 4vw, 22px);
-      transform: translate(var(--look-x), var(--look-y));
+      transform: translate(var(--eye-x), var(--eye-y));
+      transition: transform 1200ms cubic-bezier(0.22, 1, 0.36, 1);
       will-change: transform;
-      animation: eyesBob 4.4s ease-in-out infinite;
     }
 
     .eye {
@@ -136,133 +115,92 @@
       border: clamp(3px, 0.95vw, 5px) solid var(--evia-yellow);
       border-radius: 50%;
       background: transparent;
-      transform-origin: center center;
-      will-change: transform, opacity;
-      animation: eyeAlive 4.6s ease-in-out infinite;
-    }
-
-    .eye:nth-child(2) {
-      animation-delay: -1.3s;
+      transform-origin: center;
+      transition: transform 150ms ease;
+      will-change: transform;
     }
 
     .evia-character.blink .eye {
-      animation: none;
-      transform: scaleY(0.14) translateY(2px);
+      transform: scaleY(0.08);
     }
 
-    .evia-character.squeeze {
-      animation: squeezePop 420ms ease;
+    .evia-character.accent-wobble {
+      animation: accentWobble 1200ms cubic-bezier(0.22, 1, 0.36, 1);
     }
 
-    .evia-character.wriggle {
-      animation: quickWriggle 640ms ease;
+    .evia-character.accent-squish {
+      animation: accentSquish 1150ms cubic-bezier(0.22, 1, 0.36, 1);
     }
 
-    .evia-character.pop {
-      animation: cheerfulPop 540ms ease;
+    .evia-character.accent-lean {
+      animation: accentLean 1350ms cubic-bezier(0.22, 1, 0.36, 1);
     }
 
-    .evia-character.look-left { --look-x: -12px; }
-    .evia-character.look-right { --look-x: 12px; }
-    .evia-character.look-up { --look-y: -10px; }
-    .evia-character.look-down { --look-y: 10px; }
-    .evia-character.look-up-left { --look-x: -10px; --look-y: -8px; }
-    .evia-character.look-up-right { --look-x: 10px; --look-y: -8px; }
-    .evia-character.look-down-left { --look-x: -10px; --look-y: 8px; }
-    .evia-character.look-down-right { --look-x: 10px; --look-y: 8px; }
-
-    @keyframes floaty {
-      0%, 100% { transform: translateY(0px); }
-      25% { transform: translateY(-5px); }
-      50% { transform: translateY(1px); }
-      75% { transform: translateY(-8px); }
+    @keyframes stageFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
     }
 
     @keyframes glowPulse {
-      0%, 100% { transform: scale(1.08); opacity: 0.82; }
-      50% { transform: scale(1.2); opacity: 1; }
+      0%, 100% { transform: scale(1.08); opacity: 0.8; }
+      50% { transform: scale(1.16); opacity: 1; }
     }
 
-    @keyframes bodyMorph {
+    @keyframes bodyDrift {
       0%, 100% {
-        border-radius: 30% 30% 30% 30% / 30% 30% 30% 30%;
-        transform: scaleX(var(--squish-x)) scaleY(var(--squish-y));
+        border-radius: 29% 29% 29% 29% / 29% 29% 29% 29%;
+        transform: rotate(0deg) scale(1);
       }
-      18% {
-        border-radius: 28% 32% 29% 31% / 30% 28% 32% 30%;
-        transform: scaleX(calc(var(--squish-x) * 1.01)) scaleY(calc(var(--squish-y) * 0.99));
+      25% {
+        border-radius: 28% 31% 30% 29% / 31% 28% 30% 29%;
+        transform: rotate(-0.6deg) scale(1.005, 0.995);
       }
-      42% {
-        border-radius: 34% 27% 33% 28% / 28% 34% 27% 33%;
-        transform: scaleX(calc(var(--squish-x) * 0.985)) scaleY(calc(var(--squish-y) * 1.015));
+      50% {
+        border-radius: 31% 28% 29% 31% / 28% 31% 29% 30%;
+        transform: rotate(0.4deg) scale(0.995, 1.005);
       }
-      65% {
-        border-radius: 27% 35% 28% 34% / 35% 27% 34% 28%;
-        transform: scaleX(calc(var(--squish-x) * 1.015)) scaleY(calc(var(--squish-y) * 0.985));
-      }
-      84% {
-        border-radius: 32% 29% 34% 27% / 27% 34% 28% 35%;
-        transform: scaleX(calc(var(--squish-x) * 0.995)) scaleY(calc(var(--squish-y) * 1.005));
+      75% {
+        border-radius: 30% 30% 28% 31% / 30% 29% 31% 28%;
+        transform: rotate(-0.4deg) scale(1.003, 0.997);
       }
     }
 
-    @keyframes bodyWiggle {
-      0%, 100% { rotate: 0deg; }
-      20% { rotate: -1.5deg; }
-      40% { rotate: 1.2deg; }
-      60% { rotate: -0.9deg; }
-      80% { rotate: 0.8deg; }
+    @keyframes accentWobble {
+      0% { transform: rotate(var(--char-tilt)) scale(1); }
+      20% { transform: rotate(calc(var(--char-tilt) - 3deg)) scale(1.01); }
+      40% { transform: rotate(calc(var(--char-tilt) + 2.4deg)) scale(1.01); }
+      60% { transform: rotate(calc(var(--char-tilt) - 1.5deg)) scale(1.005); }
+      80% { transform: rotate(calc(var(--char-tilt) + 0.8deg)) scale(1.002); }
+      100% { transform: rotate(var(--char-tilt)) scale(1); }
     }
 
-    @keyframes eyesBob {
-      0%, 100% { transform: translate(var(--look-x), var(--look-y)); }
-      50% { transform: translate(var(--look-x), calc(var(--look-y) + 1px)); }
+    @keyframes accentSquish {
+      0% { transform: rotate(var(--char-tilt)) scale(1); }
+      25% { transform: rotate(calc(var(--char-tilt) - 1deg)) scale(1.05, 0.92); }
+      55% { transform: rotate(calc(var(--char-tilt) + 1deg)) scale(0.95, 1.06); }
+      100% { transform: rotate(var(--char-tilt)) scale(1); }
     }
 
-    @keyframes eyeAlive {
-      0%, 100% { transform: scale(1) rotate(0deg); }
-      22% { transform: scale(1.02, 0.98) rotate(-2deg); }
-      50% { transform: scale(0.99, 1.02) rotate(1deg); }
-      74% { transform: scale(1.01, 0.99) rotate(2deg); }
-    }
-
-    @keyframes squeezePop {
-      0% { transform: scale(1) rotate(var(--tilt)); }
-      25% { transform: scale(1.08, 0.9) rotate(calc(var(--tilt) - 2deg)); }
-      55% { transform: scale(0.92, 1.1) rotate(calc(var(--tilt) + 2deg)); }
-      100% { transform: scale(1) rotate(var(--tilt)); }
-    }
-
-    @keyframes quickWriggle {
-      0% { transform: rotate(var(--tilt)); }
-      20% { transform: rotate(calc(var(--tilt) - 5deg)); }
-      40% { transform: rotate(calc(var(--tilt) + 4deg)); }
-      60% { transform: rotate(calc(var(--tilt) - 3deg)); }
-      80% { transform: rotate(calc(var(--tilt) + 2deg)); }
-      100% { transform: rotate(var(--tilt)); }
-    }
-
-    @keyframes cheerfulPop {
-      0% { transform: scale(1) rotate(var(--tilt)); }
-      30% { transform: scale(1.06) rotate(calc(var(--tilt) - 2deg)); }
-      60% { transform: scale(0.98) rotate(calc(var(--tilt) + 2deg)); }
-      100% { transform: scale(1) rotate(var(--tilt)); }
+    @keyframes accentLean {
+      0% { transform: translateX(0) rotate(var(--char-tilt)) scale(1); }
+      25% { transform: translateX(-4px) rotate(calc(var(--char-tilt) - 2deg)) scale(1.01); }
+      60% { transform: translateX(2px) rotate(calc(var(--char-tilt) + 1deg)) scale(1.005); }
+      100% { transform: translateX(0) rotate(var(--char-tilt)) scale(1); }
     }
 
     @media (prefers-reduced-motion: reduce) {
       .evia-stage,
       .evia-stage::before,
       .evia-body,
+      .evia-character,
       .eyes,
-      .eye,
-      .evia-character {
+      .eye {
         animation: none !important;
         transition: none !important;
       }
     }
   </style>
 </head>
-
 <body>
   <main class="screen" aria-label="Evia animated mascot">
     <div class="evia-stage">
@@ -280,107 +218,85 @@
   <script>
     const evia = document.getElementById('evia');
     const root = document.documentElement;
-    const lookClasses = [
-      'look-left',
-      'look-right',
-      'look-up',
-      'look-down',
-      'look-up-left',
-      'look-up-right',
-      'look-down-left',
-      'look-down-right'
+
+    const looks = [
+      { x: 0, y: 0, tilt: 0 },
+      { x: -10, y: 0, tilt: -1.4 },
+      { x: 10, y: 0, tilt: 1.4 },
+      { x: 0, y: -8, tilt: 0 },
+      { x: 0, y: 8, tilt: 0.4 },
+      { x: -8, y: -6, tilt: -1.8 },
+      { x: 8, y: -6, tilt: 1.8 },
+      { x: -8, y: 6, tilt: -1.2 },
+      { x: 8, y: 6, tilt: 1.2 }
     ];
 
-    function clearLookClasses() {
-      lookClasses.forEach(cls => evia.classList.remove(cls));
+    const accents = ['accent-wobble', 'accent-squish', 'accent-lean'];
+    let accentBusy = false;
+    let lastLook = 0;
+
+    function pickDifferentLook() {
+      let next = lastLook;
+      while (next === lastLook) next = Math.floor(Math.random() * looks.length);
+      lastLook = next;
+      return looks[next];
     }
 
-    function choose(arr) {
-      return arr[Math.floor(Math.random() * arr.length)];
+    function applyLook() {
+      if (accentBusy) return;
+      const look = pickDifferentLook();
+      root.style.setProperty('--eye-x', `${look.x}px`);
+      root.style.setProperty('--eye-y', `${look.y}px`);
+      root.style.setProperty('--char-tilt', `${look.tilt}deg`);
     }
 
-    function setIdleTilt() {
-      const tilt = (Math.random() * 8 - 4).toFixed(2) + 'deg';
-      root.style.setProperty('--tilt', tilt);
+    function blink(doubleBlink = false) {
+      evia.classList.add('blink');
+      setTimeout(() => {
+        evia.classList.remove('blink');
+        if (doubleBlink) {
+          setTimeout(() => {
+            evia.classList.add('blink');
+            setTimeout(() => evia.classList.remove('blink'), 130);
+          }, 110);
+        }
+      }, 130);
     }
 
-    function setSquish() {
-      const x = (0.97 + Math.random() * 0.08).toFixed(3);
-      const y = (1.95 - x).toFixed(3);
-      root.style.setProperty('--squish-x', x);
-      root.style.setProperty('--squish-y', y);
+    function runAccent() {
+      if (accentBusy) return;
+      accentBusy = true;
+      const accent = accents[Math.floor(Math.random() * accents.length)];
+      evia.classList.add(accent);
+      const duration = accent === 'accent-lean' ? 1350 : accent === 'accent-squish' ? 1150 : 1200;
+      setTimeout(() => {
+        evia.classList.remove(accent);
+        accentBusy = false;
+      }, duration + 50);
     }
 
-    function lookAround() {
-      clearLookClasses();
-      if (Math.random() > 0.18) {
-        evia.classList.add(choose(lookClasses));
-      }
-      setIdleTilt();
-      setSquish();
+    function scheduleLooks() {
+      applyLook();
+      setTimeout(scheduleLooks, 2800 + Math.random() * 2200);
     }
 
-    function blink(times = 1) {
-      let count = 0;
-      const doBlink = () => {
-        evia.classList.add('blink');
-        setTimeout(() => {
-          evia.classList.remove('blink');
-          count += 1;
-          if (count < times) {
-            setTimeout(doBlink, 90);
-          }
-        }, 150);
-      };
-      doBlink();
+    function scheduleBlinks() {
+      blink(Math.random() < 0.22);
+      setTimeout(scheduleBlinks, 3200 + Math.random() * 2600);
     }
 
-    function triggerMotion(className, duration) {
-      evia.classList.remove(className);
-      void evia.offsetWidth;
-      evia.classList.add(className);
-      setTimeout(() => evia.classList.remove(className), duration);
+    function scheduleAccents() {
+      runAccent();
+      setTimeout(scheduleAccents, 6200 + Math.random() * 2600);
     }
 
-    function livelyMoment() {
-      const roll = Math.random();
-      if (roll < 0.28) {
-        triggerMotion('wriggle', 640);
-      } else if (roll < 0.56) {
-        triggerMotion('squeeze', 420);
-      } else if (roll < 0.78) {
-        triggerMotion('pop', 540);
-      } else {
-        blink(Math.random() < 0.5 ? 2 : 1);
-      }
-    }
-
-    function scheduleLook() {
-      lookAround();
-      setTimeout(scheduleLook, 1400 + Math.random() * 1700);
-    }
-
-    function scheduleBlink() {
-      blink(Math.random() < 0.2 ? 2 : 1);
-      setTimeout(scheduleBlink, 2200 + Math.random() * 2800);
-    }
-
-    function scheduleMotion() {
-      livelyMoment();
-      setTimeout(scheduleMotion, 1600 + Math.random() * 2200);
-    }
-
-    lookAround();
-    setIdleTilt();
-    setSquish();
-    setTimeout(scheduleLook, 900);
-    setTimeout(scheduleBlink, 1500);
-    setTimeout(scheduleMotion, 1200);
+    applyLook();
+    setTimeout(scheduleLooks, 1800);
+    setTimeout(scheduleBlinks, 2200);
+    setTimeout(scheduleAccents, 4200);
 
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) {
-        lookAround();
-      }
+      if (!document.hidden) applyLook();
     });
   </script>
 </body>
