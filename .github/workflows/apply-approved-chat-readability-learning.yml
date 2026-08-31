@@ -1,0 +1,62 @@
+name: Apply approved Evia chat readability and learning metadata
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/apply-approved-chat-readability-learning.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply approved patch
+        run: python .github/patch-approved-chat-readability-learning.py
+      - name: Validate Evia
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          text=Path('index.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script[^>]*>(.*?)</script>', text, flags=re.S)
+          if not scripts: raise SystemExit('No script found')
+          Path('/tmp/evia-script.js').write_text('\n'.join(scripts), encoding='utf-8')
+          required=[
+            'chat-option-checkin-badge',
+            "option.action === 'check-in' && weeklyCheckInIsDue()",
+            'async function openQuickReviewArea(label)',
+            "action === 'review-area'",
+            'What makes an EPA answer stronger?',
+            "eviaSpeech.classList.add('home-exit')",
+            "learningRequiredHours:glh",
+          ]
+          missing=[m for m in required if m not in text]
+          if missing: raise SystemExit('Missing markers: '+', '.join(missing))
+          ids=set(re.findall(r'id="([^"]+)"', text))
+          refs=set(re.findall(r"getElementById\(['\"]([^'\"]+)['\"]\)", text))
+          missing_ids=sorted(refs-ids)
+          if missing_ids: raise SystemExit('Missing element IDs: '+', '.join(missing_ids))
+          PY
+          node --check /tmp/evia-script.js
+      - name: Remove temporary update files
+        run: rm .github/patch-approved-chat-readability-learning.py .github/workflows/apply-approved-chat-readability-learning.yml
+      - name: Verify scope
+        run: |
+          python - <<'PY'
+          import subprocess
+          allowed={'index.html','.github/patch-approved-chat-readability-learning.py','.github/workflows/apply-approved-chat-readability-learning.yml'}
+          rows=subprocess.check_output(['git','status','--porcelain'],text=True).splitlines()
+          paths=set()
+          for row in rows:
+              p=row[3:].strip()
+              if ' -> ' in p: p=p.split(' -> ',1)[1]
+              paths.add(p)
+          extra=paths-allowed
+          if extra: raise SystemExit('Unexpected changed files: '+', '.join(sorted(extra)))
+          if 'index.html' not in paths: raise SystemExit('index.html was not changed')
+          PY
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Improve Evia chat readability and learning metadata
+          file_pattern: 'index.html .github/patch-approved-chat-readability-learning.py .github/workflows/apply-approved-chat-readability-learning.yml'
