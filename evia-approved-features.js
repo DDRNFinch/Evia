@@ -193,32 +193,52 @@
   }
 
   function epaConfidenceValue(label) {
-    const values = { confident: 100, 'getting-there': 65, 'need-help': 30 };
+    const values = {
+      'not-confident': 20,
+      'a-little': 45,
+      'fairly-confident': 75,
+      'very-confident': 100,
+      confident: 100,
+      'getting-there': 65,
+      'need-help': 30
+    };
     return values[label] ?? null;
   }
 
-  function storeAreaConfidence(area, answer) {
-    const cleanArea = String(area || '').trim();
+  function confidenceTaskKey(task) {
+    if (task && typeof task === 'object') {
+      if (Array.isArray(task.path) && task.path.length) return task.path.map((part) => String(part || '').trim()).join(' › ');
+      return String(task.label || '').trim();
+    }
+    return String(task || '').trim();
+  }
+
+  function storeAreaConfidence(task, answer) {
+    const key = confidenceTaskKey(task);
     const value = epaConfidenceValue(answer);
-    if (!cleanArea || value === null) return;
+    if (!key || value === null) return;
     const state = readConfidence();
-    state[cleanArea] = { value, answer, updatedAt: new Date().toISOString() };
+    state[key] = { value, answer, updatedAt: new Date().toISOString() };
     saveConfidence(state);
   }
 
   function currentConfidenceSummary() {
     const state = readConfidence();
-    const validCourseAreas = new Set(
-      Array.isArray(courseItems) ? courseItems.map((item) => String(item?.label || '').trim()).filter(Boolean) : []
-    );
+    const validTasks = new Set();
+    try {
+      courseLeaves().forEach((leaf) => {
+        const key = confidenceTaskKey({ path: leaf?.path, label: leaf?.node?.label });
+        if (key) validTasks.add(key);
+      });
+    } catch (error) {}
     const values = Object.entries(state)
-      .filter(([area, item]) => validCourseAreas.has(area) && Number.isFinite(Number(item?.value)))
+      .filter(([task, item]) => validTasks.has(task) && Number.isFinite(Number(item?.value)))
       .map(([, item]) => Number(item.value));
-    if (!values.length) return { percent: null, recorded: 0, total: validCourseAreas.size };
+    if (!values.length) return { percent: null, recorded: 0, total: validTasks.size };
     return {
       percent: values.reduce((sum, value) => sum + value, 0) / values.length,
       recorded: values.length,
-      total: validCourseAreas.size
+      total: validTasks.size
     };
   }
 
@@ -262,7 +282,7 @@
         <div class="epa-readiness-score">${fmtPercent(model.percent)}</div>
         <div class="epa-readiness-components">
           <div class="epa-readiness-component"><strong>${fmtPercent(model.coverage)}</strong><span>course coverage</span></div>
-          <div class="epa-readiness-component"><strong>${fmtPercent(model.confidence)}</strong><span>confidence${model.confidenceTotal ? ` · ${model.confidenceRecorded}/${model.confidenceTotal} areas` : ''}</span></div>
+          <div class="epa-readiness-component"><strong>${fmtPercent(model.confidence)}</strong><span>confidence${model.confidenceTotal ? ` · ${model.confidenceRecorded}/${model.confidenceTotal} tasks` : ''}</span></div>
           <div class="epa-readiness-component"><strong>${fmtPercent(model.practice)}</strong><span>EPA practice</span></div>
         </div>
         <p class="detail-muted">This is a readiness indicator, not official gateway approval.</p>
@@ -544,13 +564,15 @@
   if (typeof askTestQuestion === 'function') {
     const originalAskTestQuestion = askTestQuestion;
     askTestQuestion = async function (...args) {
-      const bank = quickTestBanks[testState?.category] || [];
+      const bank = typeof testBankForCategory === 'function' ? testBankForCategory(testState?.category) : (quickTestBanks[testState?.category] || []);
       if (testState?.category === 'epa' && testState.index >= bank.length && bank.length) {
         storeCompletedEpaPractice(testState.score, bank.length);
         const model = readinessModel();
         await chatSay(`${testState.score}/${bank.length}. Your EPA readiness indicator is now ${fmtPercent(model.percent)}. Want another go?`, [
           { label: 'Test Me again', action: 'test-me' },
-          { label: 'Back to menu', action: 'chat-home' }
+          { label: 'Quick Review', action: 'quick-review' },
+          { label: 'Teach Me', action: 'teach-me' },
+          { label: 'Main menu', action: 'chat-home' }
         ]);
         return;
       }
@@ -562,8 +584,8 @@
     const originalHandleChatAction = handleChatAction;
     handleChatAction = async function (action, value, label) {
       if (action === 'check-confidence' && checkInState) {
-        const area = checkInState.areas?.[checkInState.areaIndex];
-        storeAreaConfidence(area, value);
+        const task = checkInState.tasks?.[checkInState.taskIndex] || checkInState.areas?.[checkInState.areaIndex];
+        storeAreaConfidence(task, value);
       }
       return originalHandleChatAction.call(this, action, value, label);
     };
