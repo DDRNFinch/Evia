@@ -1,5 +1,6 @@
-const C='evia-pwa-v12';
+const C='evia-pwa-v13';
 const UPDATE_UI_MARKER='evia-update-ui-ready-v1';
+const BASELINE_MARKER_URL=new URL('./__evia-v1-update-ui-ready__',self.registration.scope).href;
 const F=['./manifest.webmanifest','./evia-release.json','./evia-approved-features.js','./evia-approved-learning-ui.js','./evia-approved-menu-support.js','./evia-approved-epa.js','./evia-approved-support-preview.js','./evia-approved-support-v1.js','./evia-approved-targets.js','./evia-approved-target-plan-v1.js','./evia-approved-updates.js','./icons/evia-180.png','./icons/evia-192.png','./icons/evia-512.png'];
 const QR_CACHE='evia-feature-lib-v1';
 const QR_LIBRARY_URL='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
@@ -84,8 +85,8 @@ async function cacheQrLibrary(){
 
 self.addEventListener('install',e=>{
   e.waitUntil((async()=>{
-    const keys=await caches.keys();
-    const updateUiAlreadyInstalled=keys.includes(UPDATE_UI_MARKER);
+    const marker=await caches.open(UPDATE_UI_MARKER);
+    const baselineReady=await marker.match(BASELINE_MARKER_URL);
     const cache=await caches.open(C);
     await cache.addAll(F);
     const index=await fetch('./index.html',{cache:'no-store'});
@@ -95,7 +96,7 @@ self.addEventListener('install',e=>{
     await cache.put('./',prepared.clone());
     await cacheQrLibrary();
     await cacheNaxosCourseGraph();
-    if(!updateUiAlreadyInstalled) await self.skipWaiting();
+    if(!baselineReady) await self.skipWaiting();
   })());
 });
 
@@ -103,7 +104,8 @@ self.addEventListener('activate',e=>{
   e.waitUntil((async()=>{
     const keys=await caches.keys();
     await Promise.all(keys.filter(key=>key!==C&&key!==QR_CACHE&&key!==NAXOS_CACHE&&key!==UPDATE_UI_MARKER).map(key=>caches.delete(key)));
-    await caches.open(UPDATE_UI_MARKER);
+    const marker=await caches.open(UPDATE_UI_MARKER);
+    await marker.put(BASELINE_MARKER_URL,new Response('ready',{headers:{'content-type':'text/plain'}}));
     await self.clients.claim();
   })());
 });
