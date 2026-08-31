@@ -18,41 +18,24 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          p=Path('index.html')
-          s=p.read_text()
-          old=s
-
-          replacements={
-          """    function stopTalkExpressions() {
-    if (talkExpressionInterval) clearInterval(talkExpressionInterval);
-    talkExpressionInterval = null;
-    evia.classList.remove('','','');
-  }
-  function startTalkExpressions() {
-    stopTalkExpressions();
-    const expressions=['','',''];
-    const apply=()=>{ evia.classList.remove(...expressions); evia.classList.add(expressions[talkExpressionStep++%expressions.length]); };
-    apply(); talkExpressionInterval=setInterval(apply,620);
-  }
-""": """    function stopTalkExpressions() {
-    if (talkExpressionInterval) clearInterval(talkExpressionInterval);
-    talkExpressionInterval = null;
-  }
-  function startTalkExpressions() {
-    stopTalkExpressions();
-  }
-""",
-          "evia.classList.remove('talking','');": "evia.classList.remove('talking');",
-          "evia.classList.add('talking','');": "evia.classList.add('talking');"
-          }
-
-          for a,b in replacements.items():
-              if a not in s:
-                  raise SystemExit(f'Expected repair target not found: {a[:60]!r}')
-              s=s.replace(a,b)
-
-          if s==old:
-              raise SystemExit('No changes made')
+          p = Path('index.html')
+          s = p.read_text()
+          targets = [
+              "    evia.classList.remove('','','');\n",
+              "    const expressions=['','',''];\n",
+              "    const apply=()=>{ evia.classList.remove(...expressions); evia.classList.add(expressions[talkExpressionStep++%expressions.length]); };\n",
+              "    apply(); talkExpressionInterval=setInterval(apply,620);\n",
+          ]
+          for target in targets:
+              if s.count(target) != 1:
+                  raise SystemExit(f'Expected one repair target, found {s.count(target)}: {target!r}')
+              s = s.replace(target, '', 1)
+          if s.count("evia.classList.remove('talking','');") != 2:
+              raise SystemExit('Unexpected talking remove count')
+          s = s.replace("evia.classList.remove('talking','');", "evia.classList.remove('talking');")
+          if s.count("evia.classList.add('talking','');") != 1:
+              raise SystemExit('Unexpected talking add count')
+          s = s.replace("evia.classList.add('talking','');", "evia.classList.add('talking');")
           for bad in ["classList.remove('','','')", "classList.remove('talking','')", "classList.add('talking','')", "const expressions=['','','']"]:
               if bad in s:
                   raise SystemExit(f'Invalid empty class code remains: {bad}')
@@ -65,9 +48,10 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import re
-          s=Path('index.html').read_text()
-          m=re.search(r'<script>(.*)</script>',s,re.S)
-          if not m: raise SystemExit('script not found')
+          s = Path('index.html').read_text()
+          m = re.search(r'<script>(.*)</script>', s, re.S)
+          if not m:
+              raise SystemExit('script not found')
           Path('/tmp/evia.js').write_text(m.group(1))
           PY
           node --check /tmp/evia.js
@@ -75,7 +59,7 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git diff --cached --name-only | grep -qx 'index.html'
+          test "$(git diff --cached --name-only)" = "index.html"
           git commit -m 'Fix Evia pill flow after round-eye update'
           git push
 
