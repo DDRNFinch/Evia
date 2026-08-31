@@ -1,0 +1,43 @@
+name: Apply approved Evia evidence routing and progress
+on:
+  push:
+    paths:
+      - .github/workflows/apply-approved-evidence-progress.yml
+permissions:
+  contents: write
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply approved evidence routing witness and progress changes
+        shell: bash
+        run: |
+          python3 .github/patch-approved-evidence-progress.py
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s = Path('index.html').read_text()
+          m = re.search(r'<script>(.*)</script>', s, re.S)
+          if not m:
+              raise SystemExit('script not found')
+          Path('/tmp/evia.js').write_text(m.group(1))
+          ids = set(re.findall(r'id="([^"]+)"', s))
+          refs = set(re.findall(r"getElementById\('([^']+)'\)", s))
+          missing = sorted(refs - ids)
+          if missing:
+              raise SystemExit(f'missing DOM ids: {missing}')
+          PY
+          node --check /tmp/evia.js
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          test "$(git diff --cached --name-only)" = "index.html"
+          git commit -m 'Fix Evia evidence routing witness import and pill progress'
+          git push
+          git rm .github/workflows/apply-approved-evidence-progress.yml .github/patch-approved-evidence-progress.py
+          git commit -m 'Remove temporary Evia evidence progress files'
+          git push
