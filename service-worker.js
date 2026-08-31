@@ -1,4 +1,4 @@
-const C='evia-pwa-v19';
+const C='evia-pwa-v20';
 const UPDATE_UI_MARKER='evia-update-ui-ready-v1';
 const RELEASE_VERSION='1.0';
 const RELEASE_MARKER_URL=new URL('./__evia-visible-release-version__',self.registration.scope).href;
