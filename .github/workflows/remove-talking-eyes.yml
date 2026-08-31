@@ -1,0 +1,90 @@
+name: Remove Evia talking eye shapes
+on:
+  push:
+    paths:
+      - .github/workflows/remove-talking-eyes.yml
+permissions:
+  contents: write
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Remove only special talking eye shapes
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path('index.html')
+          s = p.read_text()
+          original = s
+
+          # Remove the dedicated D-shaped/sloped talking-eye CSS only.
+          s, n = re.subn(
+              r'\n\s*\.evia-character\.talk-eyes \.eye \{.*?\.evia-character\.talk-expression-c \.eye:last-child \{.*?\}\n',
+              '\n',
+              s,
+              flags=re.S,
+          )
+          if n != 1:
+              raise SystemExit(f'Expected one talking-eye CSS block, found {n}')
+
+          # Remove all special eye-expression class names from JS class operations/arrays.
+          for token in ['talk-eyes', 'talk-expression-a', 'talk-expression-b', 'talk-expression-c']:
+              s = s.replace(f"'{token}', ", '')
+              s = s.replace(f", '{token}'", '')
+              s = s.replace(f"'{token}'", "''")
+
+          # Remove any helper that exists solely to switch the talking-eye expression.
+          s = re.sub(
+              r'\n\s*function setTalkingEyeExpression\([^)]*\) \{.*?\n\s*\}\n',
+              '\n',
+              s,
+              flags=re.S,
+          )
+          s = re.sub(
+              r'\n\s*function cycleTalkingEyeExpression\([^)]*\) \{.*?\n\s*\}\n',
+              '\n',
+              s,
+              flags=re.S,
+          )
+
+          # Remove any now-empty classList calls produced by token removal.
+          s = re.sub(r'\n\s*evia\.classList\.(?:add|remove)\(\s*\'\'\s*\);', '', s)
+
+          if s == original:
+              raise SystemExit('No Evia talking-eye changes were made')
+          if any(x in s for x in ['talk-eyes', 'talk-expression-a', 'talk-expression-b', 'talk-expression-c']):
+              raise SystemExit('Special talking-eye code remains after patch')
+          if '.evia-float.talking' not in s or '@keyframes talkingFloat' not in s or '@keyframes talkingTilt' not in s:
+              raise SystemExit('Talking movement was altered unexpectedly')
+          if 'speech-line-reveal' not in s or 'speechLineReveal' not in s:
+              raise SystemExit('Speech reveal was altered unexpectedly')
+
+          p.write_text(s)
+          PY
+
+          # Basic JS syntax check.
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text()
+          m=re.search(r'<script>(.*)</script>',s,re.S)
+          if not m: raise SystemExit('script not found')
+          Path('/tmp/evia.js').write_text(m.group(1))
+          PY
+          node --check /tmp/evia.js
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'Keep Evia round-eyed while talking'
+          git push
+
+          git rm .github/workflows/remove-talking-eyes.yml
+          git commit -m 'Remove temporary Evia eye update workflow'
+          git push
