@@ -33,7 +33,14 @@ jobs:
           rm .tmp_arch_pages_ui.py .tmp_arch_pages_import.py .github/workflows/apply-arch-detail-pages.yml
       - name: Verify functional scope
         run: |
-          test "$(git diff --name-only | tr '\n' ' ')" = "index.html "
+          python - <<'PY'
+          import subprocess
+          names=set(subprocess.check_output(['git','diff','--name-only'],text=True).splitlines())
+          allowed={'index.html','.tmp_arch_pages_ui.py','.tmp_arch_pages_import.py','.github/workflows/apply-arch-detail-pages.yml'}
+          extra=names-allowed
+          if extra: raise SystemExit(f'unexpected changed files: {sorted(extra)}')
+          if 'index.html' not in names: raise SystemExit('index.html was not changed')
+          PY
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: Add Evia arch detail pages and Naxos progress views
