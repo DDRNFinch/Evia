@@ -510,6 +510,27 @@
       padding: 8px 0 2px;
     }
 
+    .pill,.naxos-pill,.secondary-button,.capture-button,.reflection-pill,.chat-option{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .bottom-arches{position:absolute;left:0;right:0;bottom:0;height:64px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 86px minmax(0,1fr) minmax(0,1fr);align-items:end;gap:4px;padding:0 5px;z-index:8;pointer-events:none}
+    .bottom-arches>button{pointer-events:auto}
+    .status-arch{width:100%;height:54px;border-radius:58px 58px 0 0;border:1.5px solid rgba(245,196,0,.42);border-bottom:0;background:rgba(250,249,242,.97);box-shadow:0 -4px 14px rgba(0,0,0,.035),inset 0 0 0 1px rgba(255,255,255,.7);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;color:rgba(45,45,45,.65);padding:8px 3px 3px;cursor:default}
+    .status-arch-value{max-width:100%;font-size:12px;line-height:1;font-weight:700;color:rgba(45,45,45,.72);white-space:nowrap;overflow:hidden}
+    .status-arch-label{max-width:100%;font-size:9px;line-height:1.05;letter-spacing:.01em;white-space:nowrap;overflow:hidden}
+    .bottom-arches .naxos-arch{position:relative;left:auto;bottom:auto;width:86px;height:62px;transform:none;align-self:end}
+    .completion-panel{position:absolute;left:50%;top:calc(max(18px,env(safe-area-inset-top)) + 156px);bottom:72px;width:min(calc(100vw - 36px),430px);transform:translateX(-50%);display:none;align-items:flex-start;justify-content:center;z-index:6;pointer-events:none}
+    .screen.completion-open .completion-panel{display:flex}
+    .reflection-actions,.learn-reflection-box{width:100%;display:flex;flex-direction:column;gap:10px;pointer-events:auto}
+    .reflection-actions[hidden],.learn-reflection-box[hidden],.flying-file[hidden]{display:none!important}
+    .reflection-pill{width:100%;min-height:52px;border-radius:999px;border:1.5px solid rgba(245,196,0,.35);background:rgba(250,249,242,.96);box-shadow:0 8px 20px rgba(0,0,0,.05),inset 0 0 0 1px rgba(255,255,255,.72);color:rgba(45,45,45,.62);font-size:14px;padding:0 18px;cursor:pointer}
+    .learn-reflection-box{border:1.5px solid rgba(245,196,0,.35);background:rgba(250,249,242,.96);border-radius:24px;padding:14px;box-shadow:0 8px 20px rgba(0,0,0,.05),inset 0 0 0 1px rgba(255,255,255,.72)}
+    .learn-reflection-box textarea{width:100%;min-height:150px;resize:none;border:0;outline:0;background:transparent;color:#333;font-size:16px;line-height:1.45;padding:8px}
+    .learn-reflection-actions{display:flex;justify-content:center}.learn-reflection-status{min-height:18px;text-align:center;font-size:12px;color:rgba(45,45,45,.62)}
+    .flying-file{position:fixed;left:50%;top:43%;width:54px;height:68px;transform:translate(-50%,-50%) scale(1);border:2px solid rgba(245,196,0,.75);border-radius:8px;background:rgba(255,255,255,.98);box-shadow:0 10px 26px rgba(0,0,0,.12);opacity:0;pointer-events:none;z-index:40}
+    .flying-file::before{content:"";position:absolute;right:-2px;top:-2px;width:18px;height:18px;border-left:2px solid rgba(245,196,0,.75);border-bottom:2px solid rgba(245,196,0,.75);background:#fff;clip-path:polygon(0 0,100% 100%,0 100%)}
+    .flying-file::after{content:"";position:absolute;left:11px;right:11px;top:31px;height:2px;background:rgba(245,196,0,.55);box-shadow:0 8px 0 rgba(245,196,0,.38),0 16px 0 rgba(245,196,0,.25)}
+    .flying-file.fly{animation:fileToPortfolio 1250ms cubic-bezier(.2,.8,.2,1) forwards}
+    @keyframes fileToPortfolio{0%{top:43%;transform:translate(-50%,-50%) scale(.92);opacity:0}14%{opacity:1;transform:translate(-50%,-50%) scale(1)}72%{opacity:1}100%{top:calc(100dvh - 24px);transform:translate(-50%,-50%) scale(.16);opacity:0}}
+
     .naxos-menu {
       position: absolute;
       left: 50%;
@@ -1082,15 +1103,25 @@
       </div>
     </section>
 
+    <section class="completion-panel" id="completionPanel" aria-label="Evidence completion">
+      <div class="flying-file" id="flyingFile" hidden aria-hidden="true"></div>
+      <div class="reflection-actions" id="reflectionActions" hidden><button class="reflection-pill" id="learnYes" type="button">Yes</button><button class="reflection-pill" id="learnNo" type="button">No</button></div>
+      <div class="learn-reflection-box" id="learnReflectionBox" hidden><textarea id="learnReflectionText" aria-label="What did you learn?" placeholder="What did you learn while completing this task?"></textarea><div class="learn-reflection-actions"><button class="capture-button" id="saveLearnReflection" type="button">Save to Learn</button></div><div class="learn-reflection-status" id="learnReflectionStatus"></div></div>
+    </section>
+
     <div class="naxos-menu" id="naxosMenu" aria-label="Naxos QR menu">
       <button class="naxos-pill" type="button" data-naxos-action="send">Send QR Code</button>
       <button class="naxos-pill" type="button" data-naxos-action="scan">Scan QR Code</button>
       <button class="naxos-pill" type="button" data-naxos-action="portfolio">My Portfolio</button>
     </div>
 
-    <button class="naxos-arch" id="naxosArch" type="button" aria-label="Open Naxos QR menu" aria-expanded="false">
-      <span class="naxos-scan-mark" aria-hidden="true"><span class="naxos-scan-dot"></span></span>
-    </button>
+    <div class="bottom-arches" id="bottomArches" aria-label="Learner progress">
+      <button class="status-arch" id="timeArch" type="button" aria-label="Time on course" tabindex="-1"><span class="status-arch-value" id="timeArchValue">--</span><span class="status-arch-label">Time</span></button>
+      <button class="status-arch" id="courseArch" type="button" aria-label="Course progress" tabindex="-1"><span class="status-arch-value" id="courseArchValue">--</span><span class="status-arch-label">Course</span></button>
+      <button class="naxos-arch" id="naxosArch" type="button" aria-label="Open Naxos QR and portfolio menu" aria-expanded="false"><span class="naxos-scan-mark" aria-hidden="true"><span class="naxos-scan-dot"></span></span></button>
+      <button class="status-arch" id="attendanceArch" type="button" aria-label="Attendance" tabindex="-1"><span class="status-arch-value" id="attendanceArchValue">--</span><span class="status-arch-label">Attendance</span></button>
+      <button class="status-arch" id="learnArch" type="button" aria-label="Learn entries" tabindex="-1"><span class="status-arch-value" id="learnArchValue">0</span><span class="status-arch-label">Learn</span></button>
+    </div>
 
     <div class="overlay-panel" id="scannerPanel" aria-hidden="true">
       <div class="scanner-card">
@@ -1189,6 +1220,19 @@
     const requirementsText = document.getElementById('requirementsText');
     const naxosMenu = document.getElementById('naxosMenu');
     const naxosArch = document.getElementById('naxosArch');
+    const timeArchValue = document.getElementById('timeArchValue');
+    const courseArchValue = document.getElementById('courseArchValue');
+    const attendanceArchValue = document.getElementById('attendanceArchValue');
+    const learnArchValue = document.getElementById('learnArchValue');
+    const completionPanel = document.getElementById('completionPanel');
+    const flyingFile = document.getElementById('flyingFile');
+    const reflectionActions = document.getElementById('reflectionActions');
+    const learnYes = document.getElementById('learnYes');
+    const learnNo = document.getElementById('learnNo');
+    const learnReflectionBox = document.getElementById('learnReflectionBox');
+    const learnReflectionText = document.getElementById('learnReflectionText');
+    const saveLearnReflection = document.getElementById('saveLearnReflection');
+    const learnReflectionStatus = document.getElementById('learnReflectionStatus');
     const scannerPanel = document.getElementById('scannerPanel');
     const scannerVideo = document.getElementById('scannerVideo');
     const scannerStatus = document.getElementById('scannerStatus');
@@ -1259,6 +1303,11 @@
     let scannerBusy = false;
     let recordingTimerInterval = null;
     let recordingStartedAt = 0;
+    let capturePlan = [];
+    let captureStepIndex = 0;
+    let captureSessionId = 0;
+    let completionContext = null;
+    let learningEntries = loadLearningEntries();
     let learnerProfile = loadLearnerProfile();
     let profileViewOpen = false;
     let speechRunId = 0;
@@ -1427,7 +1476,7 @@
 
   function homeSpeechLines() {
       const name = learnerConversationName();
-      return [name ? `Hi ${name}` : 'Hi', 'What are we working on today?'];
+      return [name ? `Hi ${name}` : 'Hi', 'Tap me to get started'];
     }
 
     function menuSpeechLines(level = menuLevel) {
@@ -1485,6 +1534,18 @@
     function cleanText(value) {
       return typeof value === 'string' ? value.trim() : '';
     }
+
+    function fitTextToElement(element, minimum = 9) {
+      if (!element || !element.isConnected || element.offsetParent === null) return;
+      const computed = getComputedStyle(element);
+      const base = Number(element.dataset.fitBase || parseFloat(computed.fontSize) || 14);
+      if (!element.dataset.fitBase) element.dataset.fitBase = String(base);
+      element.style.fontSize = `${base}px`;
+      let size = base;
+      while (size > minimum && element.scrollWidth > element.clientWidth + 1) { size -= .5; element.style.fontSize = `${size}px`; }
+    }
+    function fitUiText(){requestAnimationFrame(()=>document.querySelectorAll('.pill,.naxos-pill,.secondary-button,.capture-button,.reflection-pill,.chat-option').forEach(el=>fitTextToElement(el)))}
+    function startTextFitObserver(){const observer=new MutationObserver(()=>fitUiText());observer.observe(screen,{subtree:true,childList:true,characterData:true});window.addEventListener('resize',fitUiText);fitUiText()}
 
     function evidenceTypeDisplayLabel(value) {
       const raw = cleanText(value).toLowerCase();
@@ -1734,6 +1795,7 @@
         button.dataset.evidenceType = option.type || 'text';
         button.dataset.evidenceHeading = heading;
         button.dataset.evidenceLabel = option.label || heading;
+        button.dataset.evidenceChoice = heading === 'Alternative' ? 'alternative' : 'recommended';
         appendEvidenceChoiceContent(button, heading, option);
         evidenceTop.appendChild(button);
       });
@@ -1799,6 +1861,7 @@
 
     function closeEvidence() {
       stopCapture();
+      clearCaptureSequence();
       captureMode = null;
       activeEvidenceMethod = null;
       activeEvidence = null;
@@ -1947,6 +2010,7 @@
 
     function extensionForMime(mimeType, type) {
       if (type === 'text') return 'txt';
+      if (type === 'photo') return /png/i.test(mimeType) ? 'png' : 'jpg';
       if (/mp4/i.test(mimeType)) return 'mp4';
       if (/ogg/i.test(mimeType)) return 'ogg';
       return 'webm';
@@ -1984,6 +2048,7 @@
         blob
       };
       await addPortfolioEntry(entry);
+      updateArchBars().catch(() => {});
       return entry;
     }
 
@@ -1992,166 +2057,148 @@
       if (status) status.textContent = message;
     }
 
-    async function openCameraCapture() {
-      stopCapture();
-      captureMode = 'camera';
-      evidenceTop.innerHTML = '<div class="capture-surface"><div class="capture-square"><video id="captureVideo" playsinline muted></video><div class="recording-timer" id="recordingTimer">00:00</div><div class="capture-controls"><button class="capture-button" id="recordToggle" type="button">Record</button></div></div><div class="capture-status" id="captureStatus"></div></div>';
-      evidenceTop.style.gridTemplateRows = '1fr';
-      const video = document.getElementById('captureVideo');
-      const toggle = document.getElementById('recordToggle');
-      const timer = document.getElementById('recordingTimer');
-      updateBackButton();
-
-      try {
-        captureStream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: { ideal: 'environment' },
-            width: { ideal: 1280 },
-            height: { ideal: 1280 },
-            aspectRatio: { ideal: 1 },
-            frameRate: { ideal: 24, max: 30 }
-          },
-          audio: {
-            channelCount: { ideal: 1 },
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true
-          }
-        });
-        video.srcObject = captureStream;
-        await video.play();
-
-        toggle.addEventListener('click', () => {
-          if (!window.MediaRecorder) {
-            showCaptureStatus('Recording is not supported by this browser.');
-            return;
-          }
-          if (!recorder || recorder.state === 'inactive') {
-            const chunks = [];
-            const recordingContext = captureEvidenceContext('video');
-            const mimeType = preferredVideoMimeType();
-            const options = { videoBitsPerSecond: 1200000, audioBitsPerSecond: 64000 };
-            if (mimeType) options.mimeType = mimeType;
-            const currentRecorder = new MediaRecorder(captureStream, options);
-            recorder = currentRecorder;
-            currentRecorder.ondataavailable = (event) => {
-              if (event.data && event.data.size) chunks.push(event.data);
-            };
-            currentRecorder.onstop = async () => {
-              stopRecordingTimer();
-              const blob = new Blob(chunks, { type: currentRecorder.mimeType || mimeType || 'video/webm' });
-              try {
-                if (blob.size) {
-                  await saveEvidenceBlob(blob, 'video', recordingContext);
-                  showCaptureStatus('Saved to My Portfolio');
-                }
-              } catch (error) {
-                showCaptureStatus('Could not save this recording.');
-              }
-              if (recorder === currentRecorder) recorder = null;
-            };
-            currentRecorder.start(1000);
-            startRecordingTimer(timer);
-            toggle.textContent = 'Stop';
-            showCaptureStatus('');
-          } else {
-            recorder.stop();
-            toggle.textContent = 'Record';
-          }
-        });
-      } catch (error) {
-        evidenceTop.innerHTML = '<div class="capture-surface">Camera and microphone access is required for this evidence type.</div>';
-      }
+    function captureKindFromDetail(detail, fallbackType = 'text') {
+      const text = `${detail?.displayType || ''} ${detail?.label || ''} ${detail?.instruction || ''}`.toLowerCase();
+      if (/\bvideo\b/.test(text)) return 'video';
+      if (/\bphotos?\b|\bcamera\b|\bimages?\b/.test(text)) return 'photo';
+      if (/\baudio\b|\bvoice\b|\bmicrophone\b|\breflection\b/.test(text)) return 'audio';
+      if (/\bwritten\b|\bwrite\b|\btext\b|\bstatement\b|\btyping\b/.test(text)) return 'text';
+      if (fallbackType === 'camera') return 'photo';
+      if (fallbackType === 'audio') return 'audio';
+      return 'text';
     }
 
-    async function openAudioCapture() {
-      stopCapture();
-      captureMode = 'audio';
-      evidenceTop.innerHTML = '<div class="capture-surface"><div class="audio-panel"><div class="microphone-mark">●</div><button class="capture-button" id="audioToggle" type="button">Record audio</button><div class="capture-status" id="captureStatus"></div></div></div>';
-      evidenceTop.style.gridTemplateRows = '1fr';
-      const toggle = document.getElementById('audioToggle');
-      updateBackButton();
-
-      try {
-        captureStream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            channelCount: { ideal: 1 },
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true
-          }
-        });
-
-        toggle.addEventListener('click', () => {
-          if (!window.MediaRecorder) {
-            showCaptureStatus('Recording is not supported by this browser.');
-            return;
-          }
-          if (!recorder || recorder.state === 'inactive') {
-            const chunks = [];
-            const recordingContext = captureEvidenceContext('audio');
-            const mimeType = preferredAudioMimeType();
-            const options = { audioBitsPerSecond: 48000 };
-            if (mimeType) options.mimeType = mimeType;
-            const currentRecorder = new MediaRecorder(captureStream, options);
-            recorder = currentRecorder;
-            currentRecorder.ondataavailable = (event) => {
-              if (event.data && event.data.size) chunks.push(event.data);
-            };
-            currentRecorder.onstop = async () => {
-              const blob = new Blob(chunks, { type: currentRecorder.mimeType || mimeType || 'audio/webm' });
-              try {
-                if (blob.size) {
-                  await saveEvidenceBlob(blob, 'audio', recordingContext);
-                  showCaptureStatus('Saved to My Portfolio');
-                }
-              } catch (error) {
-                showCaptureStatus('Could not save this recording.');
-              }
-              if (recorder === currentRecorder) recorder = null;
-            };
-            currentRecorder.start(1000);
-            toggle.textContent = 'Stop audio';
-            showCaptureStatus('');
-          } else {
-            recorder.stop();
-            toggle.textContent = 'Record audio';
-          }
-        });
-      } catch (error) {
-        evidenceTop.innerHTML = '<div class="capture-surface">Microphone access is required for this evidence type.</div>';
-      }
+    function captureQuantity(detail, type) {
+      const label = cleanText(detail?.label);
+      const instruction = cleanText(detail?.instruction);
+      const source = `${label} ${instruction}`;
+      const words = type === 'photo' ? 'photos?|images?'
+        : type === 'video' ? 'videos?|recordings?'
+        : type === 'audio' ? 'audio|recordings?|voice notes?'
+        : 'written|text|statements?|entries';
+      const direct = source.match(new RegExp(`\\b(\\d+)\\s*(?:x\\s*)?(?:${words})\\b`, 'i'));
+      const leading = label.match(/^\s*(\d+)\b/);
+      const raw = Number(direct?.[1] || leading?.[1] || 1);
+      return Number.isFinite(raw) ? Math.max(1, Math.min(12, raw)) : 1;
     }
 
-    function openTextCapture() {
-      stopCapture();
-      captureMode = 'text';
-      evidenceTop.innerHTML = '<div class="capture-surface"><textarea class="text-evidence" id="textEvidence" aria-label="Written evidence" placeholder="Write your evidence here..."></textarea><div class="text-save-row"><button class="capture-button" id="saveTextEvidence" type="button">Save Evidence</button></div><div class="capture-status" id="captureStatus"></div></div>';
-      evidenceTop.style.gridTemplateRows = '1fr';
-      updateBackButton();
-      const textarea = document.getElementById('textEvidence');
-      document.getElementById('saveTextEvidence').addEventListener('click', async () => {
-        const text = textarea.value.trim();
-        if (!text) {
-          showCaptureStatus('Write some evidence before saving.');
-          return;
-        }
-        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-        try {
-          await saveEvidenceBlob(blob, 'text');
-          showCaptureStatus('Saved to My Portfolio');
-        } catch (error) {
-          showCaptureStatus('Could not save this evidence.');
+    function buildCapturePlan(option) {
+      const details = Array.isArray(option?.details) && option.details.length
+        ? option.details
+        : [{ displayType: option?.displayType || '', label: option?.label || '', instruction: option?.instruction || '' }];
+      const fallback = option?.type || 'text';
+      const steps = [];
+      details.forEach((detail) => {
+        const cleanDetail = normaliseEvidenceDetail(detail) || detail || {};
+        const type = captureKindFromDetail(cleanDetail, fallback);
+        const quantity = captureQuantity(cleanDetail, type);
+        for (let index = 0; index < quantity; index += 1) {
+          steps.push({ type, label: cleanText(cleanDetail.label) || evidenceTypeDisplayLabel(type), instruction: cleanText(cleanDetail.instruction), itemIndex: index + 1, itemTotal: quantity });
         }
       });
+      if (!steps.length) steps.push({ type: fallback === 'audio' ? 'audio' : fallback === 'camera' ? 'photo' : 'text', label: option?.label || 'Evidence', instruction: '', itemIndex: 1, itemTotal: 1 });
+      return steps;
     }
 
-    function openEvidenceType(type, heading, label) {
-      activeEvidenceMethod = { type, heading, label };
-      if (type === 'camera') openCameraCapture();
-      else if (type === 'audio') openAudioCapture();
-      else openTextCapture();
+    function clearCaptureSequence() {
+      captureSessionId += 1;
+      capturePlan = [];
+      captureStepIndex = 0;
     }
+
+    function captureStepStatus(step) {
+      const typeName = step.type === 'photo' ? 'Photo' : step.type === 'video' ? 'Video' : step.type === 'audio' ? 'Audio' : 'Written evidence';
+      if (step.itemTotal > 1) return `${typeName} ${step.itemIndex} of ${step.itemTotal}`;
+      if (capturePlan.length > 1) return `${typeName} · step ${captureStepIndex + 1} of ${capturePlan.length}`;
+      return typeName;
+    }
+
+    async function completeCaptureStep(sessionId) {
+      if (sessionId !== captureSessionId) return;
+      stopCapture();
+      captureStepIndex += 1;
+      if (captureStepIndex < capturePlan.length) {
+        await wait(280);
+        if (sessionId !== captureSessionId) return;
+        runCaptureStep();
+        return;
+      }
+      await completeEvidenceExperience();
+    }
+
+    async function openPhotoCapture(step, sessionId) {
+      stopCapture(); captureMode = 'photo';
+      evidenceTop.innerHTML = '<div class="capture-surface"><div class="capture-square"><video id="captureVideo" playsinline muted></video><div class="capture-controls"><button class="capture-button" id="photoCapture" type="button">Take photo</button></div></div><div class="capture-status" id="captureStatus"></div></div>';
+      evidenceTop.style.gridTemplateRows = '1fr';
+      const video=document.getElementById('captureVideo'), capture=document.getElementById('photoCapture');
+      updateBackButton(); fitUiText();
+      try {
+        captureStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1600},height:{ideal:1600},aspectRatio:{ideal:1}},audio:false});
+        if(sessionId!==captureSessionId){stopCapture();return}
+        video.srcObject=captureStream; await video.play(); showCaptureStatus(captureStepStatus(step));
+        capture.addEventListener('click',async()=>{
+          if(sessionId!==captureSessionId)return; capture.disabled=true;
+          const canvas=document.createElement('canvas'); canvas.width=video.videoWidth||1280; canvas.height=video.videoHeight||1280;
+          canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height);
+          const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.9));
+          if(!blob||sessionId!==captureSessionId){capture.disabled=false;return}
+          try{await saveEvidenceBlob(blob,'photo');showCaptureStatus('Saved');await completeCaptureStep(sessionId)}catch(error){capture.disabled=false;showCaptureStatus('Could not save this photo.')}
+        });
+      } catch(error){evidenceTop.innerHTML='<div class="capture-surface">Camera access is required to take this photo.</div>'}
+    }
+
+    async function openVideoCapture(step, sessionId) {
+      stopCapture(); captureMode='video';
+      evidenceTop.innerHTML='<div class="capture-surface"><div class="capture-square"><video id="captureVideo" playsinline muted></video><div class="recording-timer" id="recordingTimer">00:00</div><div class="capture-controls"><button class="capture-button" id="recordToggle" type="button">Record video</button></div></div><div class="capture-status" id="captureStatus"></div></div>';
+      evidenceTop.style.gridTemplateRows='1fr';
+      const video=document.getElementById('captureVideo'),toggle=document.getElementById('recordToggle'),timer=document.getElementById('recordingTimer');
+      updateBackButton();fitUiText();
+      try{
+        captureStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:1280},aspectRatio:{ideal:1},frameRate:{ideal:24,max:30}},audio:{channelCount:{ideal:1},echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+        if(sessionId!==captureSessionId){stopCapture();return} video.srcObject=captureStream;await video.play();showCaptureStatus(captureStepStatus(step));
+        toggle.addEventListener('click',()=>{
+          if(!window.MediaRecorder){showCaptureStatus('Recording is not supported by this browser.');return}
+          if(!recorder||recorder.state==='inactive'){
+            const chunks=[],recordingContext=captureEvidenceContext('video'),mimeType=preferredVideoMimeType(),options={videoBitsPerSecond:1200000,audioBitsPerSecond:64000};if(mimeType)options.mimeType=mimeType;
+            const currentRecorder=new MediaRecorder(captureStream,options);recorder=currentRecorder;
+            currentRecorder.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
+            currentRecorder.onstop=async()=>{stopRecordingTimer();if(recorder===currentRecorder)recorder=null;if(sessionId!==captureSessionId)return;const blob=new Blob(chunks,{type:currentRecorder.mimeType||mimeType||'video/webm'});try{if(blob.size){await saveEvidenceBlob(blob,'video',recordingContext);showCaptureStatus('Saved');await completeCaptureStep(sessionId)}}catch(error){showCaptureStatus('Could not save this video.')}};
+            currentRecorder.start(1000);startRecordingTimer(timer);toggle.textContent='Stop video';showCaptureStatus(captureStepStatus(step));fitUiText();
+          }else{recorder.stop();toggle.disabled=true}
+        });
+      }catch(error){evidenceTop.innerHTML='<div class="capture-surface">Camera and microphone access is required for this video.</div>'}
+    }
+
+    async function openAudioCapture(step, sessionId) {
+      stopCapture(); captureMode='audio';
+      evidenceTop.innerHTML='<div class="capture-surface"><div class="audio-panel"><div class="microphone-mark" aria-label="Microphone">🎙</div><button class="capture-button" id="audioToggle" type="button">Record audio</button><div class="capture-status" id="captureStatus"></div></div></div>';
+      evidenceTop.style.gridTemplateRows='1fr';const toggle=document.getElementById('audioToggle');updateBackButton();fitUiText();
+      try{
+        captureStream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:{ideal:1},echoCancellation:true,noiseSuppression:true,autoGainControl:true}});showCaptureStatus(captureStepStatus(step));
+        toggle.addEventListener('click',()=>{
+          if(!window.MediaRecorder){showCaptureStatus('Recording is not supported by this browser.');return}
+          if(!recorder||recorder.state==='inactive'){
+            const chunks=[],recordingContext=captureEvidenceContext('audio'),mimeType=preferredAudioMimeType(),options={audioBitsPerSecond:48000};if(mimeType)options.mimeType=mimeType;
+            const currentRecorder=new MediaRecorder(captureStream,options);recorder=currentRecorder;currentRecorder.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
+            currentRecorder.onstop=async()=>{if(recorder===currentRecorder)recorder=null;if(sessionId!==captureSessionId)return;const blob=new Blob(chunks,{type:currentRecorder.mimeType||mimeType||'audio/webm'});try{if(blob.size){await saveEvidenceBlob(blob,'audio',recordingContext);showCaptureStatus('Saved');await completeCaptureStep(sessionId)}}catch(error){showCaptureStatus('Could not save this audio.')}};
+            currentRecorder.start(1000);toggle.textContent='Stop audio';showCaptureStatus(captureStepStatus(step));fitUiText();
+          }else{recorder.stop();toggle.disabled=true}
+        });
+      }catch(error){evidenceTop.innerHTML='<div class="capture-surface">Microphone access is required for this audio evidence.</div>'}
+    }
+
+    function openTextCapture(step, sessionId) {
+      stopCapture(); captureMode='text';
+      evidenceTop.innerHTML='<div class="capture-surface"><textarea class="text-evidence" id="textEvidence" aria-label="Written evidence" placeholder="Write your evidence here..."></textarea><div class="text-save-row"><button class="capture-button" id="saveTextEvidence" type="button">Save evidence</button></div><div class="capture-status" id="captureStatus"></div></div>';
+      evidenceTop.style.gridTemplateRows='1fr';updateBackButton();fitUiText();const textarea=document.getElementById('textEvidence');showCaptureStatus(captureStepStatus(step));
+      document.getElementById('saveTextEvidence').addEventListener('click',async()=>{const value=textarea.value.trim();if(!value){showCaptureStatus('Write some evidence before saving.');return}const blob=new Blob([value],{type:'text/plain;charset=utf-8'});try{await saveEvidenceBlob(blob,'text');showCaptureStatus('Saved');await completeCaptureStep(sessionId)}catch(error){showCaptureStatus('Could not save this evidence.')}});
+    }
+
+    function runCaptureStep(){const step=capturePlan[captureStepIndex],sessionId=captureSessionId;if(!step)return;if(step.type==='photo')openPhotoCapture(step,sessionId);else if(step.type==='video')openVideoCapture(step,sessionId);else if(step.type==='audio')openAudioCapture(step,sessionId);else openTextCapture(step,sessionId)}
+
+    function beginEvidenceCollection(option, heading){clearCaptureSequence();captureSessionId+=1;capturePlan=buildCapturePlan(option);captureStepIndex=0;activeEvidenceMethod={type:option?.type||'text',heading,label:option?.label||heading};evidenceRequirements.style.display='none';evidenceScreen.style.gridTemplateRows='1fr';runCaptureStep()}
+
+    function cancelEvidenceCollectionToChoices(){clearCaptureSequence();stopCapture();captureMode=null;activeEvidenceMethod=null;const hasRequirements=renderEvidenceRequirements(activeEvidence);evidenceRequirements.style.display=hasRequirements?'block':'none';evidenceScreen.style.gridTemplateRows=hasRequirements?'1fr 1fr':'1fr';setSpeech(evidenceSpeechLines());evidenceRequirements.classList.remove('evidence-enter','reveal-step');renderEvidenceChoices(false);screen.classList.add('evidence-ready')}
 
     function parseNaxosPayload(rawValue) {
       try {
@@ -2320,6 +2367,7 @@
       const items = buildNaxosKsbCourse(customisedCategories, registry, evidenceRules);
       if (!items.length) throw new Error('The Naxos KSB pack contains no course structure.');
       applyImportedCourse(items, cleanText(pack?.qualification?.title));
+      updateArchBars().catch(() => {});
       closeScanner(false);
     }
 
@@ -2796,6 +2844,46 @@
       return Math.max(0, Math.min(100, ((now - start) / (end - start)) * 100));
     }
 
+    function loadLearningEntries() {
+      try { const parsed=JSON.parse(localStorage.getItem('eviaLearningEntries')||'[]'); return Array.isArray(parsed)?parsed:[]; }
+      catch(error){ return []; }
+    }
+
+    function saveLearningEntries(){ try{localStorage.setItem('eviaLearningEntries',JSON.stringify(learningEntries))}catch(error){} }
+
+    function saveLearningReflection(textValue){
+      const value=cleanText(textValue); if(!value)return null;
+      const entry={id:`${Date.now()}-${Math.random().toString(36).slice(2,8)}`,createdAt:new Date().toISOString(),text:value,evidencePath:completionContext?.path?completionContext.path.slice():[],evidenceLabel:completionContext?.label||'',courseTitle:activeCourseTitle,evidenceUse:'OTJ/GLH learning evidence'};
+      learningEntries.unshift(entry);saveLearningEntries();updateArchBars().catch(()=>{});return entry;
+    }
+
+    async function updateArchBars(){
+      const elapsed=courseProgressPercent();timeArchValue.textContent=elapsed===null?'--':`${Math.round(elapsed)}%`;
+      if(courseItems===placeholderCourse){courseArchValue.textContent='--'}else{
+        try{const leaves=courseLeaves(),entries=await getPortfolioEntries(),covered=new Set(entries.map(entry=>Array.isArray(entry.path)?entry.path.join('||'):'').filter(Boolean)),count=leaves.filter(leaf=>covered.has(leaf.path.join('||'))).length;courseArchValue.textContent=leaves.length?`${Math.round((count/leaves.length)*100)}%`:'--'}catch(error){courseArchValue.textContent='--'}
+      }
+      let attendance='';try{attendance=localStorage.getItem('eviaAttendancePercent')||''}catch(error){}
+      const n=Number(attendance);attendanceArchValue.textContent=attendance!==''&&Number.isFinite(n)?`${Math.max(0,Math.min(100,Math.round(n)))}%`:'--';learnArchValue.textContent=String(learningEntries.length||0);
+    }
+
+    async function animateEvidenceIntoPortfolio(){flyingFile.hidden=false;flyingFile.classList.remove('fly');void flyingFile.offsetWidth;flyingFile.classList.add('fly');await wait(1280);flyingFile.classList.remove('fly');flyingFile.hidden=true}
+
+    async function completeEvidenceExperience(){
+      completionContext={path:activeEvidencePath.slice(),label:activeEvidencePath[activeEvidencePath.length-1]||activeEvidence?.label||'Evidence'};
+      closeEvidence();resetPills();screen.classList.add('active','completion-open');screen.classList.remove('pills-ready','evidence-ready');reflectionActions.hidden=true;learnReflectionBox.hidden=true;learnReflectionText.value='';learnReflectionStatus.textContent='';updateBackButton();
+      evia.classList.add('accent-squish');setTimeout(()=>evia.classList.remove('accent-squish'),1200);
+      await speak(['Nice work — that evidence is safely filed in your portfolio.']);if(!screen.classList.contains('completion-open'))return;
+      await animateEvidenceIntoPortfolio();if(!screen.classList.contains('completion-open'))return;
+      await speak(['Did you learn anything new while doing this task?']);if(!screen.classList.contains('completion-open'))return;
+      reflectionActions.hidden=false;fitUiText();updateBackButton();
+    }
+
+    function returnToHomeFromCompletion(){stopTalking(false);clearCaptureSequence();completionContext=null;reflectionActions.hidden=true;learnReflectionBox.hidden=true;flyingFile.hidden=true;screen.classList.remove('completion-open','active','pills-ready','evidence-open','evidence-ready');resetPills();setSpeech(homeSpeechLines());updateBackButton();fitUiText()}
+
+    async function openLearnReflection(){reflectionActions.hidden=true;learnReflectionBox.hidden=false;learnReflectionText.value='';learnReflectionStatus.textContent='';await speak(['What did you learn?']);if(screen.classList.contains('completion-open'))learnReflectionText.focus()}
+
+    async function storeLearnReflection(){const value=learnReflectionText.value.trim();if(!value){learnReflectionStatus.textContent='Add what you learned before saving.';return}saveLearningReflection(value);learnReflectionStatus.textContent='Saved to Learn.';await speak(["Thanks — I've added that to Learn."]);await wait(350);returnToHomeFromCompletion()}
+
     async function runQuickReview() {
       const leaves = courseLeaves();
       let entries = [];
@@ -3075,6 +3163,7 @@
         portfolioPanel.classList.contains('open') ||
         naxosMenu.classList.contains('open') ||
         captureMode !== null ||
+        screen.classList.contains('completion-open') ||
         screen.classList.contains('evidence-open') ||
         screen.classList.contains('active');
       backButton.classList.toggle('show', shouldShow);
@@ -3108,11 +3197,12 @@
         updateBackButton();
         return;
       }
+      if (screen.classList.contains('completion-open')) {
+        returnToHomeFromCompletion();
+        return;
+      }
       if (captureMode !== null && screen.classList.contains('evidence-open')) {
-        setSpeech(evidenceSpeechLines());
-        evidenceRequirements.classList.remove('evidence-enter', 'reveal-step');
-        renderEvidenceChoices(false);
-        screen.classList.add('evidence-ready');
+        cancelEvidenceCollectionToChoices();
         return;
       }
       if (screen.classList.contains('evidence-open')) {
@@ -3164,12 +3254,13 @@
     evidenceTop.addEventListener('click', (event) => {
       const choice = event.target.closest('.evidence-choice');
       if (!choice) return;
-      openEvidenceType(
-        choice.dataset.evidenceType || 'text',
-        choice.dataset.evidenceHeading || 'Evidence',
-        choice.dataset.evidenceLabel || 'Evidence'
-      );
+      const option = choice.dataset.evidenceChoice === 'alternative' ? activeEvidence?.alternative : activeEvidence?.recommended;
+      beginEvidenceCollection(option, choice.dataset.evidenceHeading || 'Evidence');
     });
+
+    learnNo.addEventListener('click', returnToHomeFromCompletion);
+    learnYes.addEventListener('click', openLearnReflection);
+    saveLearnReflection.addEventListener('click', storeLearnReflection);
 
     naxosArch.addEventListener('click', toggleNaxosMenu);
     naxosMenu.addEventListener('click', (event) => {
@@ -3196,6 +3287,7 @@
       });
       profileStatus.textContent = 'Profile saved.';
       refreshGuidanceStatic();
+      updateArchBars().catch(() => {});
     });
 
     downloadPortfolio.addEventListener('click', downloadPortfolioZip);
@@ -3204,6 +3296,8 @@
     resetPills();
     renderCourseTitle();
     applyLook();
+    startTextFitObserver();
+    updateArchBars().catch(() => {});
     speak(homeSpeechLines());
     setTimeout(scheduleLooks, 1800);
     setTimeout(scheduleBlinks, 2200);
