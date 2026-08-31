@@ -1,5 +1,6 @@
-const C='evia-pwa-v11';
-const F=['./manifest.webmanifest','./evia-approved-features.js','./evia-approved-learning-ui.js','./evia-approved-menu-support.js','./evia-approved-epa.js','./evia-approved-support-preview.js','./evia-approved-targets.js','./icons/evia-180.png','./icons/evia-192.png','./icons/evia-512.png'];
+const C='evia-pwa-v12';
+const UPDATE_UI_MARKER='evia-update-ui-ready-v1';
+const F=['./manifest.webmanifest','./evia-release.json','./evia-approved-features.js','./evia-approved-learning-ui.js','./evia-approved-menu-support.js','./evia-approved-epa.js','./evia-approved-support-preview.js','./evia-approved-support-v1.js','./evia-approved-targets.js','./evia-approved-target-plan-v1.js','./evia-approved-updates.js','./icons/evia-180.png','./icons/evia-192.png','./icons/evia-512.png'];
 const QR_CACHE='evia-feature-lib-v1';
 const QR_LIBRARY_URL='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
 const NAXOS_CACHE='evia-naxos-offline-v1';
@@ -20,7 +21,10 @@ function injectFeatures(html){
   if(!html.includes('evia-approved-menu-support.js'))tags.push('<script src="./evia-approved-menu-support.js"></script>');
   if(!html.includes('evia-approved-epa.js'))tags.push('<script src="./evia-approved-epa.js"></script>');
   if(!html.includes('evia-approved-support-preview.js'))tags.push('<script src="./evia-approved-support-preview.js"></script>');
+  if(!html.includes('evia-approved-support-v1.js'))tags.push('<script src="./evia-approved-support-v1.js"></script>');
   if(!html.includes('evia-approved-targets.js'))tags.push('<script src="./evia-approved-targets.js"></script>');
+  if(!html.includes('evia-approved-target-plan-v1.js'))tags.push('<script src="./evia-approved-target-plan-v1.js"></script>');
+  if(!html.includes('evia-approved-updates.js'))tags.push('<script src="./evia-approved-updates.js"></script>');
   if(!tags.length)return html;
   const tag=tags.join('');
   return html.includes('</body>')?html.replace('</body>',`${tag}</body>`):`${html}${tag}`;
@@ -80,6 +84,8 @@ async function cacheQrLibrary(){
 
 self.addEventListener('install',e=>{
   e.waitUntil((async()=>{
+    const keys=await caches.keys();
+    const updateUiAlreadyInstalled=keys.includes(UPDATE_UI_MARKER);
     const cache=await caches.open(C);
     await cache.addAll(F);
     const index=await fetch('./index.html',{cache:'no-store'});
@@ -89,13 +95,21 @@ self.addEventListener('install',e=>{
     await cache.put('./',prepared.clone());
     await cacheQrLibrary();
     await cacheNaxosCourseGraph();
-    await self.skipWaiting();
+    if(!updateUiAlreadyInstalled) await self.skipWaiting();
   })());
 });
 
 self.addEventListener('activate',e=>{
-  e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==C&&key!==QR_CACHE&&key!==NAXOS_CACHE).map(key=>caches.delete(key)))));
-  self.clients.claim();
+  e.waitUntil((async()=>{
+    const keys=await caches.keys();
+    await Promise.all(keys.filter(key=>key!==C&&key!==QR_CACHE&&key!==NAXOS_CACHE&&key!==UPDATE_UI_MARKER).map(key=>caches.delete(key)));
+    await caches.open(UPDATE_UI_MARKER);
+    await self.clients.claim();
+  })());
+});
+
+self.addEventListener('message',e=>{
+  if(e.data?.type==='EVIA_INSTALL_UPDATE') e.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener('fetch',e=>{
