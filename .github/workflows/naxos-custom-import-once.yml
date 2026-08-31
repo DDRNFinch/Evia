@@ -20,14 +20,101 @@ jobs:
 
           path = Path('index.html')
           text = path.read_text()
-          old = """    function buildNaxosKsbCourse(categories, registry, evidenceRules) {\n      const profiles = evidenceRules?.profiles || {};\n      return (categories || []).slice(0, 5).map((category) => ({\n        label: cleanText(category?.title) || `Route ${category?.id || ''}`.trim(),\n        children: (category?.subcategories || []).slice(0, 5).map((subcategory) => ({\n          label: cleanText(subcategory?.title) || `Section ${subcategory?.id || ''}`.trim(),\n          children: (subcategory?.tasks || []).slice(0, 5).map((task) => {\n            const profile = profiles[task?.evidenceProfile] || profiles.knowledge || {};\n            const requirementItems = naxosTaskRequirements(task, registry, profile);\n            return {\n              label: cleanText(task?.title) || cleanText(task?.id) || 'Task',\n              recommended: naxosPreferredOption(profile),\n              alternative: naxosAlternativeOption(profile),\n              requirementsHeading: 'What the evidence must show or explain',\n              requirementItems,\n              requirements: requirementItems.join('\\\n')\n            };\n          })\n        }))\n      })).filter((category) => category.label && category.children.length);\n    }\n"""
-          new = """    function applyNaxosKsbCustomisations(categories, customisations) {\n      const cloned = JSON.parse(JSON.stringify(categories || []));\n      const custom = customisations && typeof customisations === 'object' ? customisations : {};\n      const titles = custom.titles && typeof custom.titles === 'object' ? custom.titles : {};\n      const taskEdits = custom.taskEdits && typeof custom.taskEdits === 'object' ? custom.taskEdits : {};\n\n      cloned.forEach((category, categoryIndex) => {\n        const categoryTitle = cleanText(titles.category?.[String(categoryIndex)]);\n        if (categoryTitle) category.title = categoryTitle;\n        (category.subcategories || []).forEach((subcategory, subcategoryIndex) => {\n          const subKey = `${categoryIndex}:${subcategoryIndex}`;\n          const subcategoryTitle = cleanText(titles.subcategory?.[subKey]);\n          if (subcategoryTitle) subcategory.title = subcategoryTitle;\n          (subcategory.tasks || []).forEach((task, taskIndex) => {\n            const taskKey = `${categoryIndex}:${subcategoryIndex}:${taskIndex}`;\n            const taskTitle = cleanText(titles.task?.[taskKey]);\n            if (taskTitle) task.title = taskTitle;\n            const evidence = taskEdits[taskKey]?.evidence;\n            if (evidence && typeof evidence === 'object') task.naxosEvidenceOverride = evidence;\n          });\n        });\n      });\n\n      const customTasks = Array.isArray(custom.customTasks) ? custom.customTasks : [];\n      customTasks.forEach((customTask, index) => {\n        const categoryIndex = Number(customTask?.categoryIndex);\n        const subcategoryIndex = Number(customTask?.subcategoryIndex);\n        if (!Number.isInteger(categoryIndex) || !Number.isInteger(subcategoryIndex)) return;\n        const subcategory = cloned[categoryIndex]?.subcategories?.[subcategoryIndex];\n        if (!subcategory) return;\n        const title = cleanText(customTask?.title);\n        const targets = Array.isArray(customTask?.targets) ? customTask.targets.map(cleanText).filter(Boolean) : [];\n        if (!title || !targets.length) return;\n        const evidence = customTask?.evidence && typeof customTask.evidence === 'object' ? customTask.evidence : null;\n        subcategory.tasks = Array.isArray(subcategory.tasks) ? subcategory.tasks : [];\n        subcategory.tasks.push({\n          id: cleanText(customTask?.id) || `custom-${categoryIndex}-${subcategoryIndex}-${index + 1}`,\n          title,\n          ksbTargets: targets,\n          evidenceRequirements: Array.isArray(customTask?.evidenceRequirements) ? customTask.evidenceRequirements.map(cleanText).filter(Boolean) : [],\n          evidenceProfile: cleanText(evidence?.profileId) || 'knowledge',\n          naxosEvidenceOverride: evidence,\n          naxosCustom: true\n        });\n      });\n\n      return cloned;\n    }\n\n    function naxosResolvedProfile(task, profiles) {\n      const override = task?.naxosEvidenceOverride && typeof task.naxosEvidenceOverride === 'object' ? task.naxosEvidenceOverride : null;\n      const overrideProfileId = cleanText(override?.profileId);\n      const base = profiles[overrideProfileId] || profiles[task?.evidenceProfile] || profiles.knowledge || {};\n      if (!override) return base;\n      const preferred = Array.isArray(override.preferred) ? override.preferred : null;\n      return preferred ? { ...base, preferred } : base;\n    }\n\n    function buildNaxosKsbCourse(categories, registry, evidenceRules) {\n      const profiles = evidenceRules?.profiles || {};\n      return (categories || []).slice(0, 5).map((category) => ({\n        label: cleanText(category?.title) || `Route ${category?.id || ''}`.trim(),\n        children: (category?.subcategories || []).slice(0, 5).map((subcategory) => ({\n          label: cleanText(subcategory?.title) || `Section ${subcategory?.id || ''}`.trim(),\n          children: (subcategory?.tasks || []).slice(0, 5).map((task) => {\n            const profile = naxosResolvedProfile(task, profiles);\n            const requirementItems = naxosTaskRequirements(task, registry, profile);\n            return {\n              label: cleanText(task?.title) || cleanText(task?.id) || 'Task',\n              recommended: naxosPreferredOption(profile),\n              alternative: naxosAlternativeOption(profile),\n              requirementsHeading: 'What the evidence must show or explain',\n              requirementItems,\n              requirements: requirementItems.join('\\\n'),\n              ksbTargets: Array.isArray(task?.ksbTargets) ? task.ksbTargets.map(cleanText).filter(Boolean) : [],\n              evidenceRequirements: Array.isArray(task?.evidenceRequirements) ? task.evidenceRequirements.map(cleanText).filter(Boolean) : [],\n              naxosCustom: Boolean(task?.naxosCustom)\n            };\n          })\n        }))\n      })).filter((category) => category.label && category.children.length);\n    }\n"""
-          if old not in text:
-              raise SystemExit('Expected Naxos course builder block was not found')
-          text = text.replace(old, new, 1)
+          start_marker = '    function buildNaxosKsbCourse(categories, registry, evidenceRules) {'
+          end_marker = '    async function importNaxosKsbPack(pointer) {'
+          start = text.find(start_marker)
+          end = text.find(end_marker, start)
+          if start < 0 or end < 0:
+              raise SystemExit('Could not locate the Naxos KSB importer boundaries')
 
-          old_import = """      const items = buildNaxosKsbCourse(categories, registry, evidenceRules);\n"""
-          new_import = """      const customisedCategories = applyNaxosKsbCustomisations(categories, pointer.customisations);\n      const items = buildNaxosKsbCourse(customisedCategories, registry, evidenceRules);\n"""
+          new = r"""    function applyNaxosKsbCustomisations(categories, customisations) {
+      const cloned = JSON.parse(JSON.stringify(categories || []));
+      const custom = customisations && typeof customisations === 'object' ? customisations : {};
+      const titles = custom.titles && typeof custom.titles === 'object' ? custom.titles : {};
+      const taskEdits = custom.taskEdits && typeof custom.taskEdits === 'object' ? custom.taskEdits : {};
+
+      cloned.forEach((category, categoryIndex) => {
+        const categoryTitle = cleanText(titles.category?.[String(categoryIndex)]);
+        if (categoryTitle) category.title = categoryTitle;
+        (category.subcategories || []).forEach((subcategory, subcategoryIndex) => {
+          const subKey = `${categoryIndex}:${subcategoryIndex}`;
+          const subcategoryTitle = cleanText(titles.subcategory?.[subKey]);
+          if (subcategoryTitle) subcategory.title = subcategoryTitle;
+          (subcategory.tasks || []).forEach((task, taskIndex) => {
+            const taskKey = `${categoryIndex}:${subcategoryIndex}:${taskIndex}`;
+            const taskTitle = cleanText(titles.task?.[taskKey]);
+            if (taskTitle) task.title = taskTitle;
+            const evidence = taskEdits[taskKey]?.evidence;
+            if (evidence && typeof evidence === 'object') task.naxosEvidenceOverride = evidence;
+          });
+        });
+      });
+
+      const customTasks = Array.isArray(custom.customTasks) ? custom.customTasks : [];
+      customTasks.forEach((customTask, index) => {
+        const categoryIndex = Number(customTask?.categoryIndex);
+        const subcategoryIndex = Number(customTask?.subcategoryIndex);
+        if (!Number.isInteger(categoryIndex) || !Number.isInteger(subcategoryIndex)) return;
+        const subcategory = cloned[categoryIndex]?.subcategories?.[subcategoryIndex];
+        if (!subcategory) return;
+        const title = cleanText(customTask?.title);
+        const targets = Array.isArray(customTask?.targets) ? customTask.targets.map(cleanText).filter(Boolean) : [];
+        if (!title || !targets.length) return;
+        const evidence = customTask?.evidence && typeof customTask.evidence === 'object' ? customTask.evidence : null;
+        subcategory.tasks = Array.isArray(subcategory.tasks) ? subcategory.tasks : [];
+        subcategory.tasks.push({
+          id: cleanText(customTask?.id) || `custom-${categoryIndex}-${subcategoryIndex}-${index + 1}`,
+          title,
+          ksbTargets: targets,
+          evidenceRequirements: Array.isArray(customTask?.evidenceRequirements) ? customTask.evidenceRequirements.map(cleanText).filter(Boolean) : [],
+          evidenceProfile: cleanText(evidence?.profileId) || 'knowledge',
+          naxosEvidenceOverride: evidence,
+          naxosCustom: true
+        });
+      });
+
+      return cloned;
+    }
+
+    function naxosResolvedProfile(task, profiles) {
+      const override = task?.naxosEvidenceOverride && typeof task.naxosEvidenceOverride === 'object' ? task.naxosEvidenceOverride : null;
+      const overrideProfileId = cleanText(override?.profileId);
+      const base = profiles[overrideProfileId] || profiles[task?.evidenceProfile] || profiles.knowledge || {};
+      if (!override) return base;
+      const preferred = Array.isArray(override.preferred) ? override.preferred : null;
+      return preferred ? { ...base, preferred } : base;
+    }
+
+    function buildNaxosKsbCourse(categories, registry, evidenceRules) {
+      const profiles = evidenceRules?.profiles || {};
+      return (categories || []).slice(0, 5).map((category) => ({
+        label: cleanText(category?.title) || `Route ${category?.id || ''}`.trim(),
+        children: (category?.subcategories || []).slice(0, 5).map((subcategory) => ({
+          label: cleanText(subcategory?.title) || `Section ${subcategory?.id || ''}`.trim(),
+          children: (subcategory?.tasks || []).slice(0, 5).map((task) => {
+            const profile = naxosResolvedProfile(task, profiles);
+            const requirementItems = naxosTaskRequirements(task, registry, profile);
+            return {
+              label: cleanText(task?.title) || cleanText(task?.id) || 'Task',
+              recommended: naxosPreferredOption(profile),
+              alternative: naxosAlternativeOption(profile),
+              requirementsHeading: 'What the evidence must show or explain',
+              requirementItems,
+              requirements: requirementItems.join('\n'),
+              ksbTargets: Array.isArray(task?.ksbTargets) ? task.ksbTargets.map(cleanText).filter(Boolean) : [],
+              evidenceRequirements: Array.isArray(task?.evidenceRequirements) ? task.evidenceRequirements.map(cleanText).filter(Boolean) : [],
+              naxosCustom: Boolean(task?.naxosCustom)
+            };
+          })
+        }))
+      })).filter((category) => category.label && category.children.length);
+    }
+
+"""
+          text = text[:start] + new + text[end:]
+
+          old_import = '      const items = buildNaxosKsbCourse(categories, registry, evidenceRules);'
+          new_import = "      const customisedCategories = applyNaxosKsbCustomisations(categories, pointer.customisations);\n      const items = buildNaxosKsbCourse(customisedCategories, registry, evidenceRules);"
           if old_import not in text:
               raise SystemExit('Expected Naxos import call was not found')
           text = text.replace(old_import, new_import, 1)
