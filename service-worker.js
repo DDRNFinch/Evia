@@ -1,5 +1,5 @@
-const C='evia-pwa-v9';
-const F=['./manifest.webmanifest','./evia-approved-features.js','./evia-approved-learning-ui.js','./evia-approved-menu-support.js','./evia-approved-epa.js','./icons/evia-180.png','./icons/evia-192.png','./icons/evia-512.png'];
+const C='evia-pwa-v10';
+const F=['./manifest.webmanifest','./evia-approved-features.js','./evia-approved-learning-ui.js','./evia-approved-menu-support.js','./evia-approved-epa.js','./evia-approved-support-preview.js','./icons/evia-180.png','./icons/evia-192.png','./icons/evia-512.png'];
 const QR_CACHE='evia-feature-lib-v1';
 const QR_LIBRARY_URL='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
 const NAXOS_CACHE='evia-naxos-offline-v1';
@@ -19,6 +19,7 @@ function injectFeatures(html){
   if(!html.includes('evia-approved-learning-ui.js'))tags.push('<script src="./evia-approved-learning-ui.js"></script>');
   if(!html.includes('evia-approved-menu-support.js'))tags.push('<script src="./evia-approved-menu-support.js"></script>');
   if(!html.includes('evia-approved-epa.js'))tags.push('<script src="./evia-approved-epa.js"></script>');
+  if(!html.includes('evia-approved-support-preview.js'))tags.push('<script src="./evia-approved-support-preview.js"></script>');
   if(!tags.length)return html;
   const tag=tags.join('');
   return html.includes('</body>')?html.replace('</body>',`${tag}</body>`):`${html}${tag}`;
