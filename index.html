@@ -1370,17 +1370,13 @@
     function stopTalkExpressions() {
     if (talkExpressionInterval) clearInterval(talkExpressionInterval);
     talkExpressionInterval = null;
-    evia.classList.remove('','','');
   }
   function startTalkExpressions() {
     stopTalkExpressions();
-    const expressions=['','',''];
-    const apply=()=>{ evia.classList.remove(...expressions); evia.classList.add(expressions[talkExpressionStep++%expressions.length]); };
-    apply(); talkExpressionInterval=setInterval(apply,620);
   }
   function stopTalking(clearText = false) {
     speechRunId += 1; stopTalkExpressions();
-    evia.classList.remove('talking',''); eviaFloat?.classList.remove('talking');
+    evia.classList.remove('talking'); eviaFloat?.classList.remove('talking');
     if (clearText) eviaSpeech.innerHTML = '';
   }
 
@@ -1398,7 +1394,7 @@
     stopTalking(true); const runId=speechRunId; const cleanLines=lines.filter(Boolean);
     if (!cleanLines.length) return true;
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) { setSpeech(cleanLines); return true; }
-    evia.classList.add('talking',''); eviaFloat?.classList.add('talking'); startTalkExpressions();
+    evia.classList.add('talking'); eviaFloat?.classList.add('talking'); startTalkExpressions();
     root.style.setProperty('--eye-x','0em'); root.style.setProperty('--eye-y','0em');
     for (let i=0;i<cleanLines.length;i+=1) {
       if (runId!==speechRunId) return false;
@@ -1407,7 +1403,7 @@
       if (i<cleanLines.length-1) await wait(170);
     }
     if (runId!==speechRunId) return false; await wait(160); if (runId!==speechRunId) return false;
-    stopTalkExpressions(); evia.classList.remove('talking',''); eviaFloat?.classList.remove('talking'); blink(true); return true;
+    stopTalkExpressions(); evia.classList.remove('talking'); eviaFloat?.classList.remove('talking'); blink(true); return true;
   }
 
   function homeSpeechLines() {
