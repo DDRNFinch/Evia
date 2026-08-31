@@ -11,6 +11,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Normalise current arch updater formatting
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          text=p.read_text(encoding='utf-8')
+          old='    async function updateArchBars(){const elapsed=courseProgressPercent();'
+          new='    async function updateArchBars(){\n      const elapsed=courseProgressPercent();'
+          if old not in text:
+              raise SystemExit('current updateArchBars marker not found')
+          p.write_text(text.replace(old,new,1),encoding='utf-8')
+          PY
       - name: Apply approved patch
         run: python .github/patch-approved-ksb-checkin.py
       - name: Validate Evia
