@@ -1,0 +1,54 @@
+name: Apply Naxos customisation import
+
+on:
+  push:
+    paths:
+      - '.github/workflows/naxos-custom-import-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch Naxos KSB importer
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('index.html')
+          text = path.read_text()
+          old = """    function buildNaxosKsbCourse(categories, registry, evidenceRules) {\n      const profiles = evidenceRules?.profiles || {};\n      return (categories || []).slice(0, 5).map((category) => ({\n        label: cleanText(category?.title) || `Route ${category?.id || ''}`.trim(),\n        children: (category?.subcategories || []).slice(0, 5).map((subcategory) => ({\n          label: cleanText(subcategory?.title) || `Section ${subcategory?.id || ''}`.trim(),\n          children: (subcategory?.tasks || []).slice(0, 5).map((task) => {\n            const profile = profiles[task?.evidenceProfile] || profiles.knowledge || {};\n            const requirementItems = naxosTaskRequirements(task, registry, profile);\n            return {\n              label: cleanText(task?.title) || cleanText(task?.id) || 'Task',\n              recommended: naxosPreferredOption(profile),\n              alternative: naxosAlternativeOption(profile),\n              requirementsHeading: 'What the evidence must show or explain',\n              requirementItems,\n              requirements: requirementItems.join('\\\n')\n            };\n          })\n        }))\n      })).filter((category) => category.label && category.children.length);\n    }\n"""
+          new = """    function applyNaxosKsbCustomisations(categories, customisations) {\n      const cloned = JSON.parse(JSON.stringify(categories || []));\n      const custom = customisations && typeof customisations === 'object' ? customisations : {};\n      const titles = custom.titles && typeof custom.titles === 'object' ? custom.titles : {};\n      const taskEdits = custom.taskEdits && typeof custom.taskEdits === 'object' ? custom.taskEdits : {};\n\n      cloned.forEach((category, categoryIndex) => {\n        const categoryTitle = cleanText(titles.category?.[String(categoryIndex)]);\n        if (categoryTitle) category.title = categoryTitle;\n        (category.subcategories || []).forEach((subcategory, subcategoryIndex) => {\n          const subKey = `${categoryIndex}:${subcategoryIndex}`;\n          const subcategoryTitle = cleanText(titles.subcategory?.[subKey]);\n          if (subcategoryTitle) subcategory.title = subcategoryTitle;\n          (subcategory.tasks || []).forEach((task, taskIndex) => {\n            const taskKey = `${categoryIndex}:${subcategoryIndex}:${taskIndex}`;\n            const taskTitle = cleanText(titles.task?.[taskKey]);\n            if (taskTitle) task.title = taskTitle;\n            const evidence = taskEdits[taskKey]?.evidence;\n            if (evidence && typeof evidence === 'object') task.naxosEvidenceOverride = evidence;\n          });\n        });\n      });\n\n      const customTasks = Array.isArray(custom.customTasks) ? custom.customTasks : [];\n      customTasks.forEach((customTask, index) => {\n        const categoryIndex = Number(customTask?.categoryIndex);\n        const subcategoryIndex = Number(customTask?.subcategoryIndex);\n        if (!Number.isInteger(categoryIndex) || !Number.isInteger(subcategoryIndex)) return;\n        const subcategory = cloned[categoryIndex]?.subcategories?.[subcategoryIndex];\n        if (!subcategory) return;\n        const title = cleanText(customTask?.title);\n        const targets = Array.isArray(customTask?.targets) ? customTask.targets.map(cleanText).filter(Boolean) : [];\n        if (!title || !targets.length) return;\n        const evidence = customTask?.evidence && typeof customTask.evidence === 'object' ? customTask.evidence : null;\n        subcategory.tasks = Array.isArray(subcategory.tasks) ? subcategory.tasks : [];\n        subcategory.tasks.push({\n          id: cleanText(customTask?.id) || `custom-${categoryIndex}-${subcategoryIndex}-${index + 1}`,\n          title,\n          ksbTargets: targets,\n          evidenceRequirements: Array.isArray(customTask?.evidenceRequirements) ? customTask.evidenceRequirements.map(cleanText).filter(Boolean) : [],\n          evidenceProfile: cleanText(evidence?.profileId) || 'knowledge',\n          naxosEvidenceOverride: evidence,\n          naxosCustom: true\n        });\n      });\n\n      return cloned;\n    }\n\n    function naxosResolvedProfile(task, profiles) {\n      const override = task?.naxosEvidenceOverride && typeof task.naxosEvidenceOverride === 'object' ? task.naxosEvidenceOverride : null;\n      const overrideProfileId = cleanText(override?.profileId);\n      const base = profiles[overrideProfileId] || profiles[task?.evidenceProfile] || profiles.knowledge || {};\n      if (!override) return base;\n      const preferred = Array.isArray(override.preferred) ? override.preferred : null;\n      return preferred ? { ...base, preferred } : base;\n    }\n\n    function buildNaxosKsbCourse(categories, registry, evidenceRules) {\n      const profiles = evidenceRules?.profiles || {};\n      return (categories || []).slice(0, 5).map((category) => ({\n        label: cleanText(category?.title) || `Route ${category?.id || ''}`.trim(),\n        children: (category?.subcategories || []).slice(0, 5).map((subcategory) => ({\n          label: cleanText(subcategory?.title) || `Section ${subcategory?.id || ''}`.trim(),\n          children: (subcategory?.tasks || []).slice(0, 5).map((task) => {\n            const profile = naxosResolvedProfile(task, profiles);\n            const requirementItems = naxosTaskRequirements(task, registry, profile);\n            return {\n              label: cleanText(task?.title) || cleanText(task?.id) || 'Task',\n              recommended: naxosPreferredOption(profile),\n              alternative: naxosAlternativeOption(profile),\n              requirementsHeading: 'What the evidence must show or explain',\n              requirementItems,\n              requirements: requirementItems.join('\\\n'),\n              ksbTargets: Array.isArray(task?.ksbTargets) ? task.ksbTargets.map(cleanText).filter(Boolean) : [],\n              evidenceRequirements: Array.isArray(task?.evidenceRequirements) ? task.evidenceRequirements.map(cleanText).filter(Boolean) : [],\n              naxosCustom: Boolean(task?.naxosCustom)\n            };\n          })\n        }))\n      })).filter((category) => category.label && category.children.length);\n    }\n"""
+          if old not in text:
+              raise SystemExit('Expected Naxos course builder block was not found')
+          text = text.replace(old, new, 1)
+
+          old_import = """      const items = buildNaxosKsbCourse(categories, registry, evidenceRules);\n"""
+          new_import = """      const customisedCategories = applyNaxosKsbCustomisations(categories, pointer.customisations);\n      const items = buildNaxosKsbCourse(customisedCategories, registry, evidenceRules);\n"""
+          if old_import not in text:
+              raise SystemExit('Expected Naxos import call was not found')
+          text = text.replace(old_import, new_import, 1)
+          path.write_text(text)
+          PY
+      - name: Validate inline JavaScript
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          text=Path('index.html').read_text()
+          scripts=[]
+          for attrs,body in re.findall(r'<script([^>]*)>(.*?)</script>', text, re.S|re.I):
+              if 'src=' not in attrs.lower() and body.strip(): scripts.append(body)
+          Path('/tmp/evia-inline.js').write_text('\n'.join(scripts))
+          PY
+          node --check /tmp/evia-inline.js
+      - name: Commit importer bridge
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "Import Naxos KSB course customisations"
+          git push
