@@ -15,7 +15,7 @@ function injectStyles(){
   const style=document.createElement('style');
   style.id='eviaUpdateStyles';
   style.textContent=`
-    .evia-release-version{position:absolute;left:50%;bottom:calc(max(7px,env(safe-area-inset-bottom)) + 2px);transform:translateX(-50%);z-index:8;font-size:9px;font-weight:700;letter-spacing:.04em;color:rgba(45,45,45,.34);pointer-events:none}
+    .evia-settings-version{margin:14px 2px 2px;padding-top:12px;border-top:1px solid rgba(45,45,45,.07);text-align:center;font-size:9.5px;font-weight:700;letter-spacing:.035em;color:rgba(45,45,45,.38)}
     .evia-update-pill{position:absolute;left:50%;top:calc(50% - clamp(112px,29vw,137px));transform:translateX(-50%);min-height:34px;padding:0 14px;border:1.5px solid rgba(245,196,0,.5);border-radius:999px;background:rgba(250,249,242,.98);box-shadow:0 7px 18px rgba(0,0,0,.06);color:#665500;font-size:11px;font-weight:800;display:none;align-items:center;justify-content:center;gap:7px;z-index:38;cursor:pointer}
     .screen.evia-update-ready:not(.active) .evia-update-pill{display:flex}
     .evia-update-dot{width:7px;height:7px;border-radius:50%;background:${YELLOW};box-shadow:0 0 0 4px rgba(245,196,0,.13)}
@@ -34,15 +34,27 @@ function injectStyles(){
   `;
   document.head.appendChild(style);
 }
+function syncSettingsVersion(){
+  document.getElementById('eviaReleaseVersion')?.remove();
+  const overlay=document.getElementById('eviaSupportOverlay');
+  const title=String(document.getElementById('eviaSupportTitle')?.textContent||'').trim().toLowerCase();
+  if(!overlay?.classList.contains('open')||title!=='settings')return;
+  const content=document.getElementById('eviaSupportContent');
+  if(!content)return;
+  let footer=content.querySelector('.evia-settings-version');
+  if(!footer){footer=document.createElement('div');footer.className='evia-settings-version';content.appendChild(footer)}
+  footer.textContent=`Evia v${CURRENT_VERSION}`;
+}
 function ensureUi(){
   injectStyles();
+  document.getElementById('eviaReleaseVersion')?.remove();
   const screen=document.getElementById('screen')||document.body;
-  if(!document.getElementById('eviaReleaseVersion')){const version=document.createElement('div');version.id='eviaReleaseVersion';version.className='evia-release-version';version.textContent=`v${CURRENT_VERSION}`;screen.appendChild(version)}
   if(!document.getElementById('eviaUpdatePill')){const pill=document.createElement('button');pill.id='eviaUpdatePill';pill.className='evia-update-pill';pill.type='button';pill.innerHTML='<span class="evia-update-dot" aria-hidden="true"></span><span>Update ready</span>';pill.addEventListener('click',openUpdate);screen.appendChild(pill)}
   if(!document.getElementById('eviaUpdateOverlay')){
     const overlay=document.createElement('section');overlay.id='eviaUpdateOverlay';overlay.className='evia-update-overlay';overlay.setAttribute('aria-hidden','true');overlay.innerHTML='<div class="evia-update-shell" id="eviaUpdateShell"></div>';document.body.appendChild(overlay);
     overlay.addEventListener('click',event=>{const action=event.target.closest('[data-update-action]')?.dataset.updateAction;if(action==='later')closeUpdate();if(action==='install')installUpdate()});
   }
+  syncSettingsVersion();
 }
 async function fetchRelease(){
   try{
@@ -70,13 +82,29 @@ function installUpdate(){
   const button=document.getElementById('eviaInstallUpdate');if(button){button.disabled=true;button.textContent='Installing…'}
   try{waitingWorker.postMessage({type:'EVIA_INSTALL_UPDATE'})}catch{installing=false;if(button){button.disabled=false;button.textContent='Install now'}}
 }
-function watchRegistration(reg){registration=reg;if(reg.waiting)setReady(reg.waiting);reg.addEventListener('updatefound',()=>{const worker=reg.installing;if(!worker)return;worker.addEventListener('statechange',()=>{if(worker.state==='installed'&&navigator.serviceWorker.controller)setReady(worker)})})}
+function watchRegistration(reg){
+  registration=reg;
+  if(reg.waiting)setReady(reg.waiting);
+  reg.addEventListener('updatefound',()=>{
+    const worker=reg.installing;if(!worker)return;
+    worker.addEventListener('statechange',()=>{
+      if(worker.state!=='installed'||!navigator.serviceWorker.controller)return;
+      setTimeout(()=>{if(reg.waiting===worker)setReady(worker)},180);
+    });
+  });
+}
 async function checkForUpdate(){if(!registration)return;try{await registration.update();if(registration.waiting)setReady(registration.waiting)}catch{}}
 async function start(){
   ensureUi();
+  const observer=new MutationObserver(syncSettingsVersion);observer.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['class']});
   if(!('serviceWorker'in navigator))return;
   try{const existing=await navigator.serviceWorker.getRegistration('./');const reg=existing||await navigator.serviceWorker.register('./service-worker.js');watchRegistration(reg);await checkForUpdate()}catch{}
-  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!installing||reloading)return;reloading=true;try{localStorage.removeItem(PENDING_RELEASE_KEY)}catch{}clearReady();window.location.reload()});
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(reloading)return;
+    reloading=true;
+    if(installing){try{localStorage.removeItem(PENDING_RELEASE_KEY)}catch{}clearReady()}
+    window.location.reload();
+  });
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkForUpdate()});
   window.addEventListener('online',checkForUpdate);
   setInterval(checkForUpdate,30*60*1000);
