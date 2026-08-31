@@ -25,6 +25,7 @@
   }
 
   function fmtPercent(value) {
+    if (value === null || value === undefined || value === '') return '--';
     const n = Number(value);
     return Number.isFinite(n) ? `${Math.max(0, Math.min(100, Math.round(n)))}%` : '--';
   }
