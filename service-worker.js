@@ -1,7 +1,8 @@
-const C='evia-pwa-v13';
+const C='evia-pwa-v14';
 const UPDATE_UI_MARKER='evia-update-ui-ready-v1';
-const BASELINE_MARKER_URL=new URL('./__evia-v1-update-ui-ready__',self.registration.scope).href;
-const F=['./manifest.webmanifest','./evia-release.json','./evia-approved-features.js','./evia-approved-learning-ui.js','./evia-approved-menu-support.js','./evia-approved-epa.js','./evia-approved-support-preview.js','./evia-approved-support-v1.js','./evia-approved-targets.js','./evia-approved-target-plan-v1.js','./evia-approved-updates.js','./icons/evia-180.png','./icons/evia-192.png','./icons/evia-512.png'];
+const RELEASE_VERSION='1.0';
+const RELEASE_MARKER_URL=new URL('./__evia-visible-release-version__',self.registration.scope).href;
+const F=['./manifest.webmanifest','./evia-release.json','./evia-approved-features.js','./evia-approved-learning-ui.js','./evia-approved-menu-support.js','./evia-approved-epa.js','./evia-approved-support-preview.js','./evia-approved-support-v1.js','./evia-approved-targets.js','./evia-approved-target-plan-v1.js','./evia-approved-updates.js','./evia-approved-smoke-fixes-v1.js','./icons/evia-180.png','./icons/evia-192.png','./icons/evia-512.png'];
 const QR_CACHE='evia-feature-lib-v1';
 const QR_LIBRARY_URL='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
 const NAXOS_CACHE='evia-naxos-offline-v1';
@@ -26,6 +27,7 @@ function injectFeatures(html){
   if(!html.includes('evia-approved-targets.js'))tags.push('<script src="./evia-approved-targets.js"></script>');
   if(!html.includes('evia-approved-target-plan-v1.js'))tags.push('<script src="./evia-approved-target-plan-v1.js"></script>');
   if(!html.includes('evia-approved-updates.js'))tags.push('<script src="./evia-approved-updates.js"></script>');
+  if(!html.includes('evia-approved-smoke-fixes-v1.js'))tags.push('<script src="./evia-approved-smoke-fixes-v1.js"></script>');
   if(!tags.length)return html;
   const tag=tags.join('');
   return html.includes('</body>')?html.replace('</body>',`${tag}</body>`):`${html}${tag}`;
@@ -86,7 +88,8 @@ async function cacheQrLibrary(){
 self.addEventListener('install',e=>{
   e.waitUntil((async()=>{
     const marker=await caches.open(UPDATE_UI_MARKER);
-    const baselineReady=await marker.match(BASELINE_MARKER_URL);
+    const installedRelease=await marker.match(RELEASE_MARKER_URL);
+    const installedVersion=installedRelease?await installedRelease.text():'';
     const cache=await caches.open(C);
     await cache.addAll(F);
     const index=await fetch('./index.html',{cache:'no-store'});
@@ -96,7 +99,7 @@ self.addEventListener('install',e=>{
     await cache.put('./',prepared.clone());
     await cacheQrLibrary();
     await cacheNaxosCourseGraph();
-    if(!baselineReady) await self.skipWaiting();
+    if(!installedVersion||installedVersion===RELEASE_VERSION) await self.skipWaiting();
   })());
 });
 
@@ -105,7 +108,7 @@ self.addEventListener('activate',e=>{
     const keys=await caches.keys();
     await Promise.all(keys.filter(key=>key!==C&&key!==QR_CACHE&&key!==NAXOS_CACHE&&key!==UPDATE_UI_MARKER).map(key=>caches.delete(key)));
     const marker=await caches.open(UPDATE_UI_MARKER);
-    await marker.put(BASELINE_MARKER_URL,new Response('ready',{headers:{'content-type':'text/plain'}}));
+    await marker.put(RELEASE_MARKER_URL,new Response(RELEASE_VERSION,{headers:{'content-type':'text/plain'}}));
     await self.clients.claim();
   })());
 });
