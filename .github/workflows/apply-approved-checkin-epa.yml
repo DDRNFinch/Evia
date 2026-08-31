@@ -1,0 +1,76 @@
+name: Apply approved Evia check-in and EPA update
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/apply-approved-checkin-epa.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply approved patch
+        run: python .github/patch-approved-checkin-epa.py
+      - name: Validate Evia
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('index.html').read_text(encoding='utf-8')
+          feature=Path('evia-approved-features.js').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script[^>]*>(.*?)</script>',html,flags=re.S)
+          if not scripts: raise SystemExit('No inline script found')
+          Path('/tmp/evia-inline.js').write_text('\n'.join(scripts),encoding='utf-8')
+          required_html=[
+            'Wellbeing check-in — how are you feeling this week?',
+            'function shuffledConfidenceTasks(count = 3)',
+            "{ label: 'Not confident', action: 'check-confidence', value: 'not-confident' }",
+            "{ label: 'Very confident', action: 'check-confidence', value: 'very-confident' }",
+            "action: 'chat-more-options'",
+            'function testBankForCategory(category)',
+            'A 6 m wall is 12 mm out of line before the next lift. First action?',
+            'A door opening is 9 mm out of square. Before fixing the lining?',
+            'A component is 2 mm oversize after machining. Best next step?',
+            'You uncover material that may contain asbestos. First action?'
+          ]
+          missing=[x for x in required_html if x not in html]
+          if missing: raise SystemExit('Missing HTML markers: '+', '.join(missing))
+          required_feature=[
+            "'not-confident': 20",
+            "'very-confident': 100",
+            'function confidenceTaskKey(task)',
+            'checkInState.tasks?.[checkInState.taskIndex]',
+            'testBankForCategory'
+          ]
+          missing=[x for x in required_feature if x not in feature]
+          if missing: raise SystemExit('Missing feature markers: '+', '.join(missing))
+          forbidden=["How's today going?",'What makes an EPA answer stronger?','One-word reply']
+          present=[x for x in forbidden if x in html]
+          if present: raise SystemExit('Old wording remains: '+', '.join(present))
+          ids=set(re.findall(r'id="([^"]+)"',html)); refs=set(re.findall(r"getElementById\(['\"]([^'\"]+)['\"]\)",html))
+          missing_ids=sorted(refs-ids)
+          if missing_ids: raise SystemExit('Missing element IDs: '+', '.join(missing_ids))
+          PY
+          node --check /tmp/evia-inline.js
+          node --check evia-approved-features.js
+      - name: Remove temporary update files
+        run: rm .github/patch-approved-checkin-epa.py .github/workflows/apply-approved-checkin-epa.yml
+      - name: Verify scope
+        run: |
+          python - <<'PY'
+          import subprocess
+          allowed={'index.html','evia-approved-features.js','.github/patch-approved-checkin-epa.py','.github/workflows/apply-approved-checkin-epa.yml'}
+          paths=set()
+          for row in subprocess.check_output(['git','status','--porcelain'],text=True).splitlines():
+              p=row[3:].strip(); p=p.split(' -> ',1)[-1]; paths.add(p)
+          extra=paths-allowed
+          if extra: raise SystemExit('Unexpected changed files: '+', '.join(sorted(extra)))
+          for required in {'index.html','evia-approved-features.js'}:
+              if required not in paths: raise SystemExit(required+' was not changed')
+          PY
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Improve Evia wellbeing confidence and EPA practice
+          file_pattern: 'index.html evia-approved-features.js .github/patch-approved-checkin-epa.py .github/workflows/apply-approved-checkin-epa.yml'
