@@ -163,20 +163,6 @@
         transform 150ms ease;
     }
 
-    .evia-character.talk-eyes .eye {
-    width: 0.235em; height: 0.165em;
-    border: 0.022em solid var(--evia-yellow);
-    border-radius: 54% 54% 7% 7% / 76% 76% 12% 12%;
-    background: transparent; transform: translateY(0.012em);
-    transition: width 220ms ease, height 220ms ease, border-radius 220ms ease, transform 220ms ease, clip-path 220ms ease;
-  }
-  .evia-character.talk-expression-a .eye:first-child { transform: translateY(0.012em) rotate(-2deg); }
-  .evia-character.talk-expression-a .eye:last-child { transform: translateY(0.012em) rotate(2deg); }
-  .evia-character.talk-expression-b .eye:first-child { clip-path: polygon(0 13%,100% 0,100% 100%,0 100%); transform: translateY(0.008em); }
-  .evia-character.talk-expression-b .eye:last-child { height: 0.178em; transform: translateY(0.004em); }
-  .evia-character.talk-expression-c .eye:first-child { height: 0.178em; transform: translateY(0.004em); }
-  .evia-character.talk-expression-c .eye:last-child { clip-path: polygon(0 0,100% 13%,100% 100%,0 100%); transform: translateY(0.008em); }
-
     .evia-float.talking {
       animation: talkingFloat 1050ms ease-in-out infinite;
     }
@@ -1371,17 +1357,17 @@
     function stopTalkExpressions() {
     if (talkExpressionInterval) clearInterval(talkExpressionInterval);
     talkExpressionInterval = null;
-    evia.classList.remove('talk-expression-a','talk-expression-b','talk-expression-c');
+    evia.classList.remove('','','');
   }
   function startTalkExpressions() {
     stopTalkExpressions();
-    const expressions=['talk-expression-a','talk-expression-b','talk-expression-c'];
+    const expressions=['','',''];
     const apply=()=>{ evia.classList.remove(...expressions); evia.classList.add(expressions[talkExpressionStep++%expressions.length]); };
     apply(); talkExpressionInterval=setInterval(apply,620);
   }
   function stopTalking(clearText = false) {
     speechRunId += 1; stopTalkExpressions();
-    evia.classList.remove('talking','talk-eyes'); eviaFloat?.classList.remove('talking');
+    evia.classList.remove('talking',''); eviaFloat?.classList.remove('talking');
     if (clearText) eviaSpeech.innerHTML = '';
   }
 
@@ -1399,7 +1385,7 @@
     stopTalking(true); const runId=speechRunId; const cleanLines=lines.filter(Boolean);
     if (!cleanLines.length) return true;
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) { setSpeech(cleanLines); return true; }
-    evia.classList.add('talking','talk-eyes'); eviaFloat?.classList.add('talking'); startTalkExpressions();
+    evia.classList.add('talking',''); eviaFloat?.classList.add('talking'); startTalkExpressions();
     root.style.setProperty('--eye-x','0em'); root.style.setProperty('--eye-y','0em');
     for (let i=0;i<cleanLines.length;i+=1) {
       if (runId!==speechRunId) return false;
@@ -1408,7 +1394,7 @@
       if (i<cleanLines.length-1) await wait(170);
     }
     if (runId!==speechRunId) return false; await wait(160); if (runId!==speechRunId) return false;
-    stopTalkExpressions(); evia.classList.remove('talking','talk-eyes'); eviaFloat?.classList.remove('talking'); blink(true); return true;
+    stopTalkExpressions(); evia.classList.remove('talking',''); eviaFloat?.classList.remove('talking'); blink(true); return true;
   }
 
   function homeSpeechLines() {
