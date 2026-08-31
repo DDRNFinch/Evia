@@ -1,0 +1,43 @@
+name: Apply approved Evia arch and Catch Up polish
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-approved-arch-catchup-polish.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply approved changes
+        run: |
+          python .tmp_arch_polish_a.py
+          python .tmp_arch_polish_b.py
+          python .tmp_arch_polish_c.py
+      - name: Validate Evia
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text()
+          start=s.rfind('<script>')+len('<script>')
+          end=s.rfind('</script>')
+          Path('/tmp/evia.js').write_text(s[start:end])
+          required=['arch-progress-svg','setArchProgress','OTJ_ACTIVITY_LIBRARY','renderOtjIdeasPage','completedEvidenceDate','renderCatchupEvidence','data-catchup-view']
+          missing=[x for x in required if x not in s]
+          if missing: raise SystemExit(f'missing markers: {missing}')
+          if 'normal college days here' not in s: raise SystemExit('college exclusion missing')
+          PY
+          node --check /tmp/evia.js
+          git diff --check
+      - name: Remove temporary update files
+        run: |
+          rm -f .tmp_probe .tmp_arch_polish_a.py .tmp_arch_polish_b.py .tmp_arch_polish_c.py .github/workflows/apply-approved-arch-catchup-polish.yml
+      - name: Verify scope
+        run: |
+          test -n "$(git diff --name-only -- index.html)"
+          unexpected="$(git diff --name-only | grep -Ev '^(index.html|\.tmp_probe|\.tmp_arch_polish_a\.py|\.tmp_arch_polish_b\.py|\.tmp_arch_polish_c\.py|\.github/workflows/apply-approved-arch-catchup-polish\.yml)$' || true)"
+          test -z "$unexpected"
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Improve Evia arch progress and Catch Up learning
