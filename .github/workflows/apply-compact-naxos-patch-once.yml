@@ -1,0 +1,44 @@
+name: Apply compact Naxos patch import
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-compact-naxos-patch-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Apply compact Naxos patch import
+        run: python .github/scripts/apply_compact_naxos_patch.py
+      - name: Validate inline JavaScript
+        run: |
+          python - <<'PY'
+          import re
+          from pathlib import Path
+          text=Path('index.html').read_text()
+          blocks=[]
+          for match in re.finditer(r'<script([^>]*)>(.*?)</script>', text, re.S|re.I):
+              if 'src=' not in match.group(1).lower():
+                  blocks.append(match.group(2))
+          if not blocks:
+              raise SystemExit('No inline JavaScript found')
+          Path('/tmp/evia-inline.js').write_text(max(blocks,key=len))
+          PY
+          node --check /tmp/evia-inline.js
+      - name: Commit changes
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html
+          git diff --cached --quiet || git commit -m "Import compact Naxos course patches"
+          git push
