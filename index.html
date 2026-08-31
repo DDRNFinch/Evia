@@ -337,7 +337,8 @@
     .evidence-top {
       min-height: 0;
       display: grid;
-      grid-template-rows: 1fr 1fr;
+      grid-template-rows: auto auto;
+      align-content: start;
       gap: 10px;
     }
 
@@ -364,7 +365,8 @@
       color: rgba(45, 45, 45, 0.68);
       text-align: left;
       cursor: pointer;
-      overflow-y: auto;
+      overflow: visible;
+      flex: 0 0 auto;
     }
 
     .evidence-choice-heading { font-size: 12px; font-weight: 600; color: rgba(45,45,45,.58); letter-spacing: .02em; }
@@ -1799,7 +1801,7 @@
         appendEvidenceChoiceContent(button, heading, option);
         evidenceTop.appendChild(button);
       });
-      evidenceTop.style.gridTemplateRows = choices.length === 1 ? '1fr' : '1fr 1fr';
+      evidenceTop.style.gridTemplateRows = choices.length === 1 ? 'auto' : 'auto auto';
       if (!animateIn) evidenceRequirements.classList.remove('evidence-enter', 'reveal-step');
       updateBackButton();
       return [...evidenceTop.querySelectorAll('.evidence-choice')];
@@ -1851,7 +1853,7 @@
       const hasRequirements = renderEvidenceRequirements(node);
       evidenceRequirements.style.display = hasRequirements ? 'block' : 'none';
       evidenceRequirements.classList.remove('reveal-step');
-      evidenceScreen.style.gridTemplateRows = hasRequirements ? '1fr 1fr' : '1fr';
+      evidenceScreen.style.gridTemplateRows = hasRequirements ? 'auto minmax(0, 1fr)' : 'auto';
       updateBackButton();
       const evidenceAtStart = activeEvidence;
       const finished = await speak(evidenceSpeechLines());
@@ -2057,15 +2059,23 @@
       if (status) status.textContent = message;
     }
 
-    function captureKindFromDetail(detail, fallbackType = 'text') {
-      const text = `${detail?.displayType || ''} ${detail?.label || ''} ${detail?.instruction || ''}`.toLowerCase();
+    function captureKindFromText(value, fallbackType = 'text') {
+      const text = cleanText(value).toLowerCase();
       if (/\bvideo\b/.test(text)) return 'video';
       if (/\bphotos?\b|\bcamera\b|\bimages?\b/.test(text)) return 'photo';
       if (/\baudio\b|\bvoice\b|\bmicrophone\b|\breflection\b/.test(text)) return 'audio';
       if (/\bwritten\b|\bwrite\b|\btext\b|\bstatement\b|\btyping\b/.test(text)) return 'text';
       if (fallbackType === 'camera') return 'photo';
       if (fallbackType === 'audio') return 'audio';
-      return 'text';
+      return fallbackType === 'video' ? 'video' : 'text';
+    }
+
+    function captureKindsFromDetail(detail, fallbackType = 'text') {
+      const source = `${detail?.displayType || ''} ${detail?.label || ''} ${detail?.instruction || ''}`;
+      const additiveParts = source.split(/\b(?:plus|then|followed by)\b/i).map((part) => part.trim()).filter(Boolean);
+      const parts = additiveParts.length > 1 ? additiveParts : [source];
+      const kinds = parts.map((part) => captureKindFromText(part, '')).filter(Boolean);
+      return kinds.length ? kinds : [captureKindFromText(source, fallbackType)];
     }
 
     function captureQuantity(detail, type) {
@@ -2076,7 +2086,7 @@
         : type === 'video' ? 'videos?|recordings?'
         : type === 'audio' ? 'audio|recordings?|voice notes?'
         : 'written|text|statements?|entries';
-      const direct = source.match(new RegExp(`\\b(\\d+)\\s*(?:x\\s*)?(?:${words})\\b`, 'i'));
+      const direct = source.match(new RegExp(`\\b(\\d+)\\s*(?:x\\s*)?(?:-|\\s)?(?:${words})\\b`, 'i'));
       const leading = label.match(/^\s*(\d+)\b/);
       const raw = Number(direct?.[1] || leading?.[1] || 1);
       return Number.isFinite(raw) ? Math.max(1, Math.min(12, raw)) : 1;
@@ -2090,11 +2100,13 @@
       const steps = [];
       details.forEach((detail) => {
         const cleanDetail = normaliseEvidenceDetail(detail) || detail || {};
-        const type = captureKindFromDetail(cleanDetail, fallback);
-        const quantity = captureQuantity(cleanDetail, type);
-        for (let index = 0; index < quantity; index += 1) {
-          steps.push({ type, label: cleanText(cleanDetail.label) || evidenceTypeDisplayLabel(type), instruction: cleanText(cleanDetail.instruction), itemIndex: index + 1, itemTotal: quantity });
-        }
+        const types = captureKindsFromDetail(cleanDetail, fallback);
+        types.forEach((type) => {
+          const quantity = captureQuantity(cleanDetail, type);
+          for (let index = 0; index < quantity; index += 1) {
+            steps.push({ type, label: cleanText(cleanDetail.label) || evidenceTypeDisplayLabel(type), instruction: cleanText(cleanDetail.instruction), itemIndex: index + 1, itemTotal: quantity });
+          }
+        });
       });
       if (!steps.length) steps.push({ type: fallback === 'audio' ? 'audio' : fallback === 'camera' ? 'photo' : 'text', label: option?.label || 'Evidence', instruction: '', itemIndex: 1, itemTotal: 1 });
       return steps;
@@ -2196,7 +2208,7 @@
 
     function runCaptureStep(){const step=capturePlan[captureStepIndex],sessionId=captureSessionId;if(!step)return;if(step.type==='photo')openPhotoCapture(step,sessionId);else if(step.type==='video')openVideoCapture(step,sessionId);else if(step.type==='audio')openAudioCapture(step,sessionId);else openTextCapture(step,sessionId)}
 
-    function beginEvidenceCollection(option, heading){clearCaptureSequence();captureSessionId+=1;capturePlan=buildCapturePlan(option);captureStepIndex=0;activeEvidenceMethod={type:option?.type||'text',heading,label:option?.label||heading};evidenceRequirements.style.display='none';evidenceScreen.style.gridTemplateRows='1fr';runCaptureStep()}
+    function beginEvidenceCollection(option, heading){clearCaptureSequence();captureSessionId+=1;capturePlan=buildCapturePlan(option);captureStepIndex=0;activeEvidenceMethod={type:option?.type||'text',heading,label:option?.label||heading};const hasRequirements=renderEvidenceRequirements(activeEvidence);evidenceRequirements.style.display=hasRequirements?'block':'none';evidenceScreen.style.gridTemplateRows=hasRequirements?'1fr 1fr':'1fr';runCaptureStep()}
 
     function cancelEvidenceCollectionToChoices(){clearCaptureSequence();stopCapture();captureMode=null;activeEvidenceMethod=null;const hasRequirements=renderEvidenceRequirements(activeEvidence);evidenceRequirements.style.display=hasRequirements?'block':'none';evidenceScreen.style.gridTemplateRows=hasRequirements?'1fr 1fr':'1fr';setSpeech(evidenceSpeechLines());evidenceRequirements.classList.remove('evidence-enter','reveal-step');renderEvidenceChoices(false);screen.classList.add('evidence-ready')}
 
