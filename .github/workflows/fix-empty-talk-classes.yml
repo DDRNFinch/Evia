@@ -1,0 +1,84 @@
+name: Fix Evia empty talk classes
+on:
+  push:
+    paths:
+      - .github/workflows/fix-empty-talk-classes.yml
+permissions:
+  contents: write
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Repair only invalid empty talk classes
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          old=s
+
+          replacements={
+          """    function stopTalkExpressions() {
+    if (talkExpressionInterval) clearInterval(talkExpressionInterval);
+    talkExpressionInterval = null;
+    evia.classList.remove('','','');
+  }
+  function startTalkExpressions() {
+    stopTalkExpressions();
+    const expressions=['','',''];
+    const apply=()=>{ evia.classList.remove(...expressions); evia.classList.add(expressions[talkExpressionStep++%expressions.length]); };
+    apply(); talkExpressionInterval=setInterval(apply,620);
+  }
+""": """    function stopTalkExpressions() {
+    if (talkExpressionInterval) clearInterval(talkExpressionInterval);
+    talkExpressionInterval = null;
+  }
+  function startTalkExpressions() {
+    stopTalkExpressions();
+  }
+""",
+          "evia.classList.remove('talking','');": "evia.classList.remove('talking');",
+          "evia.classList.add('talking','');": "evia.classList.add('talking');"
+          }
+
+          for a,b in replacements.items():
+              if a not in s:
+                  raise SystemExit(f'Expected repair target not found: {a[:60]!r}')
+              s=s.replace(a,b)
+
+          if s==old:
+              raise SystemExit('No changes made')
+          for bad in ["classList.remove('','','')", "classList.remove('talking','')", "classList.add('talking','')", "const expressions=['','','']"]:
+              if bad in s:
+                  raise SystemExit(f'Invalid empty class code remains: {bad}')
+          for keep in ['function renderPills(', '.evia-float.talking', '@keyframes talkingFloat', '@keyframes talkingTilt', 'speech-line-reveal', 'function renderEvidenceChoices(', 'function renderEvidenceRequirements(']:
+              if keep not in s:
+                  raise SystemExit(f'Unexpected missing existing code: {keep}')
+          p.write_text(s)
+          PY
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text()
+          m=re.search(r'<script>(.*)</script>',s,re.S)
+          if not m: raise SystemExit('script not found')
+          Path('/tmp/evia.js').write_text(m.group(1))
+          PY
+          node --check /tmp/evia.js
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --name-only | grep -qx 'index.html'
+          git commit -m 'Fix Evia pill flow after round-eye update'
+          git push
+
+          git rm .github/workflows/fix-empty-talk-classes.yml
+          git commit -m 'Remove temporary Evia pill repair workflow'
+          git push
