@@ -65,18 +65,22 @@ function injectStyles(){
     html.evia-simple-reading #screen .etr-review{padding:20px!important}
     html.evia-simple-reading #screen .detail-muted{opacity:.7!important}
 
-    #eviaSupportPreview[data-preview-kind="dyslexia"] .evia-preview-column:nth-child(2) .evia-preview-sample{font-family:Verdana,Tahoma,Arial,sans-serif!important;line-height:1.72!important;letter-spacing:.035em!important;word-spacing:.11em!important}
-    #eviaSupportPreview[data-preview-kind="dyslexia"] .evia-preview-column:nth-child(2) .evia-preview-sample p{max-width:34ch;margin-bottom:16px!important}
+    #eviaSupportPreview[data-preview-kind="dyslexia"][data-preview-enable="1"] .evia-preview-column:nth-child(2) .evia-preview-sample{font-family:Verdana,Tahoma,Arial,sans-serif!important;line-height:1.72!important;letter-spacing:.035em!important;word-spacing:.11em!important}
+    #eviaSupportPreview[data-preview-kind="dyslexia"][data-preview-enable="1"] .evia-preview-column:nth-child(2) .evia-preview-sample p{max-width:34ch;margin-bottom:16px!important}
+    #eviaSupportPreview[data-preview-kind="simplified"][data-preview-enable="1"] .evia-preview-column:nth-child(2) .evia-preview-sample{padding:23px!important;line-height:1.78!important;box-shadow:none!important;background:#fff!important}
+    #eviaSupportPreview[data-preview-kind="simplified"][data-preview-enable="1"] .evia-preview-column:nth-child(2) .evia-preview-sample p{font-size:1.08em!important;line-height:1.78!important;margin-bottom:20px!important}
+    #eviaSupportPreview[data-preview-kind="simplified"][data-preview-enable="1"] .evia-preview-column:nth-child(2) .evia-preview-pill{margin-top:16px!important;min-height:46px!important;box-shadow:none!important;background:#fff!important}
+    #eviaSupportPreview[data-preview-kind="simplified"][data-preview-enable="1"] .evia-preview-column:nth-child(2) .evia-preview-motion{display:none!important}
+    #eviaSupportPreview[data-preview-kind="line"][data-preview-enable="1"] .evia-preview-column:nth-child(2) .evia-preview-sample{line-height:1.85!important}
+    #eviaSupportPreview[data-preview-kind="line"][data-preview-enable="1"] .evia-preview-column:nth-child(2) .evia-preview-sample p{line-height:1.85!important}
+    #eviaSupportPreview[data-preview-kind="letters"][data-preview-enable="1"] .evia-preview-column:nth-child(2) .evia-preview-sample{letter-spacing:.07em!important;word-spacing:.2em!important}
+    #eviaSupportPreview[data-preview-kind="contrast"][data-preview-enable="1"] .evia-preview-column:nth-child(2) .evia-preview-sample{filter:contrast(1.35)!important;border-color:rgba(120,94,0,.68)!important}
 
-    #eviaSupportPreview[data-preview-kind="simplified"] .evia-preview-column:nth-child(2) .evia-preview-sample{padding:23px!important;line-height:1.78!important;box-shadow:none!important;background:#fff!important}
-    #eviaSupportPreview[data-preview-kind="simplified"] .evia-preview-column:nth-child(2) .evia-preview-sample p{font-size:1.08em!important;line-height:1.78!important;margin-bottom:20px!important}
-    #eviaSupportPreview[data-preview-kind="simplified"] .evia-preview-column:nth-child(2) .evia-preview-pill{margin-top:16px!important;min-height:46px!important;box-shadow:none!important;background:#fff!important}
-    #eviaSupportPreview[data-preview-kind="simplified"] .evia-preview-column:nth-child(2) .evia-preview-motion{display:none!important}
-
-    #eviaSupportPreview[data-preview-kind="line"] .evia-preview-column:nth-child(2) .evia-preview-sample{line-height:1.85!important}
-    #eviaSupportPreview[data-preview-kind="line"] .evia-preview-column:nth-child(2) .evia-preview-sample p{line-height:1.85!important}
-    #eviaSupportPreview[data-preview-kind="letters"] .evia-preview-column:nth-child(2) .evia-preview-sample{letter-spacing:.07em!important;word-spacing:.2em!important}
-    #eviaSupportPreview[data-preview-kind="contrast"] .evia-preview-column:nth-child(2) .evia-preview-sample{filter:contrast(1.35)!important;border-color:rgba(120,94,0,.68)!important}
+    #eviaSupportPreview[data-preview-kind="dyslexia"][data-preview-enable="0"] .evia-preview-column:nth-child(1) .evia-preview-sample{font-family:Verdana,Tahoma,Arial,sans-serif!important;line-height:1.72!important;letter-spacing:.035em!important;word-spacing:.11em!important}
+    #eviaSupportPreview[data-preview-kind="simplified"][data-preview-enable="0"] .evia-preview-column:nth-child(1) .evia-preview-sample{padding:23px!important;line-height:1.78!important;box-shadow:none!important;background:#fff!important}
+    #eviaSupportPreview[data-preview-kind="line"][data-preview-enable="0"] .evia-preview-column:nth-child(1) .evia-preview-sample{line-height:1.85!important}
+    #eviaSupportPreview[data-preview-kind="letters"][data-preview-enable="0"] .evia-preview-column:nth-child(1) .evia-preview-sample{letter-spacing:.07em!important;word-spacing:.2em!important}
+    #eviaSupportPreview[data-preview-kind="contrast"][data-preview-enable="0"] .evia-preview-column:nth-child(1) .evia-preview-sample{filter:contrast(1.35)!important;border-color:rgba(120,94,0,.68)!important}
   `;
   document.head.appendChild(style);
 }
@@ -91,6 +95,11 @@ function markPreview(){
   else if(title.includes('word and letter'))kind='letters';
   else if(title.includes('contrast'))kind='contrast';
   preview.dataset.previewKind=kind;
+  const key={dyslexia:'dyslexiaFriendly',simplified:'simplifiedReading',line:'lineSpacing',letters:'letterSpacing',contrast:'highContrast'}[kind];
+  if(key){
+    let saved={};try{saved=JSON.parse(localStorage.getItem('eviaLearningSupportV1')||'{}')||{}}catch{}
+    preview.dataset.previewEnable=saved[key]?'0':'1';
+  }else preview.dataset.previewEnable='';
 }
 injectStyles();
 const observer=new MutationObserver(markPreview);
