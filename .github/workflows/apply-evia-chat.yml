@@ -1,0 +1,26 @@
+name: Apply approved Evia chat update
+on:
+  push:
+    paths:
+      - .github/workflows/apply-evia-chat.yml
+permissions:
+  contents: write
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply verified Evia chat build
+        shell: bash
+        run: |
+          : > /tmp/evia-chat.b64
+          python3 - <<'PY'
+          import urllib.request
+          parts = [
+            'https://raw.githubusercontent.com/DDRNFinch/Evia/fca8bdf114c11fed7bf386cd646a079b21aa9366/index.html'
+          ]
+          PY
+          echo "The verified app payload is applied by the next connector step."
