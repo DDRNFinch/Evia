@@ -123,7 +123,8 @@
   function courseCoverage() {
     try {
       const progress = typeof completedCourseProgress === 'function' ? completedCourseProgress() : null;
-      return Number.isFinite(Number(progress?.percent)) ? Number(progress.percent) : null;
+      const value = progress?.percent;
+      return value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value)) ? Number(value) : null;
     } catch (error) {
       return null;
     }
@@ -132,7 +133,8 @@
   function confidenceSummary() {
     const state = safeJson(EPA_CONFIDENCE_KEY, {});
     const rows = Object.entries(state && typeof state === 'object' ? state : {})
-      .map(([key, value]) => ({ key, value: Number(value?.value) }))
+      .filter(([, value]) => value?.value !== null && value?.value !== undefined && value?.value !== '')
+      .map(([key, value]) => ({ key, value: Number(value.value) }))
       .filter((row) => Number.isFinite(row.value));
     if (!rows.length) return { percent:null, weak:[] };
     const percent = rows.reduce((sum, row) => sum + row.value, 0) / rows.length;
@@ -146,8 +148,9 @@
 
   function practiceSummary() {
     const state = safeJson(EPA_PRACTICE_KEY, {});
-    const percent = Number(state?.percent);
-    return { percent:Number.isFinite(percent) ? percent : null, completedAt:clean(state?.completedAt) };
+    const raw = state?.percent;
+    const percent = raw !== null && raw !== undefined && raw !== '' && Number.isFinite(Number(raw)) ? Number(raw) : null;
+    return { percent, completedAt:clean(state?.completedAt) };
   }
 
   function learningSummary() {
@@ -184,7 +187,7 @@
     const coverage = courseCoverage();
     const confidence = confidenceSummary();
     const practice = practiceSummary();
-    const values = [coverage, confidence.percent, practice.percent].filter((value) => Number.isFinite(Number(value)));
+    const values = [coverage, confidence.percent, practice.percent].filter((value) => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value)));
     return {
       percent:values.length ? values.reduce((sum,value) => sum + Number(value), 0) / values.length : null,
       coverage,
