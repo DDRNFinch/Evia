@@ -37,13 +37,18 @@ function start(){
     fallbackTimer=setTimeout(finishLanding,1240);
   }
 
-  stage.addEventListener('pointerdown',()=>{
-    if(screen.classList.contains('active'))return;
+  function beginPressFade(){
+    const stateAtPress=screen.classList.contains('active');
     speech.classList.add(PRESSING);
     if(pressTimer)clearTimeout(pressTimer);
     pressTimer=setTimeout(()=>{
-      if(!screen.classList.contains('active')&&!speech.classList.contains(MOVING))speech.classList.remove(PRESSING);
+      if(screen.classList.contains('active')===stateAtPress&&!speech.classList.contains(MOVING))speech.classList.remove(PRESSING);
     },520);
+  }
+
+  stage.addEventListener('pointerdown',beginPressFade,true);
+  stage.addEventListener('keydown',event=>{
+    if(event.key==='Enter'||event.key===' ')beginPressFade();
   },true);
 
   stage.addEventListener('transitionend',event=>{
