@@ -16,6 +16,7 @@ jobs:
       - name: Apply approved Naxos evidence display
         shell: bash
         run: |
+          python3 .github/fix_naxos_patch.py
           python3 .github/patch_naxos_evidence.py
           python3 - <<'PY'
           from pathlib import Path
@@ -31,6 +32,6 @@ jobs:
           git add index.html
           git commit -m 'Show full Naxos evidence guidance in Evia'
           git push
-          git rm .github/workflows/apply-full-naxos-evidence.yml .github/patch_naxos_evidence.py
+          git rm .github/workflows/apply-full-naxos-evidence.yml .github/patch_naxos_evidence.py .github/fix_naxos_patch.py
           git commit -m 'Remove temporary Naxos evidence patch files'
           git push
