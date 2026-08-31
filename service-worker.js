@@ -1,7 +1,8 @@
-const C='evia-pwa-v16';
+const C='evia-pwa-v17';
 const UPDATE_UI_MARKER='evia-update-ui-ready-v1';
 const RELEASE_VERSION='1.0';
 const RELEASE_MARKER_URL=new URL('./__evia-visible-release-version__',self.registration.scope).href;
+const INTERNAL_RELOAD_MARKER_URL=new URL('./__evia-internal-reload__',self.registration.scope).href;
 const F=['./manifest.webmanifest','./evia-release.json','./evia-approved-features.js','./evia-approved-learning-ui.js','./evia-approved-menu-support.js','./evia-approved-epa.js','./evia-approved-support-preview.js','./evia-approved-support-v1.js','./evia-approved-targets.js','./evia-approved-target-plan-v1.js','./evia-approved-updates.js','./evia-approved-smoke-fixes-v1.js','./evia-ui-polish-v1.js','./evia-ui-polish-visible-v1.js','./icons/evia-180.png','./icons/evia-192.png','./icons/evia-512.png'];
 const QR_CACHE='evia-feature-lib-v1';
 const QR_LIBRARY_URL='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
@@ -101,6 +102,7 @@ self.addEventListener('install',e=>{
     await cache.put('./',prepared.clone());
     await cacheQrLibrary();
     await cacheNaxosCourseGraph();
+    if(installedVersion===RELEASE_VERSION)await marker.put(INTERNAL_RELOAD_MARKER_URL,new Response('1',{headers:{'content-type':'text/plain'}}));
     if(!installedVersion||installedVersion===RELEASE_VERSION) await self.skipWaiting();
   })());
 });
@@ -110,8 +112,14 @@ self.addEventListener('activate',e=>{
     const keys=await caches.keys();
     await Promise.all(keys.filter(key=>key!==C&&key!==QR_CACHE&&key!==NAXOS_CACHE&&key!==UPDATE_UI_MARKER).map(key=>caches.delete(key)));
     const marker=await caches.open(UPDATE_UI_MARKER);
+    const internalReload=await marker.match(INTERNAL_RELOAD_MARKER_URL);
     await marker.put(RELEASE_MARKER_URL,new Response(RELEASE_VERSION,{headers:{'content-type':'text/plain'}}));
     await self.clients.claim();
+    if(internalReload){
+      await marker.delete(INTERNAL_RELOAD_MARKER_URL);
+      const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+      await Promise.all(windows.map(client=>client.navigate(client.url).catch(()=>null)));
+    }
   })());
 });
 
