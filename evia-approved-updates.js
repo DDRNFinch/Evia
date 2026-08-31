@@ -1,10 +1,12 @@
 (()=>{'use strict';
 const CURRENT_VERSION='1.0';
 const RELEASE_URL='./evia-release.json';
+const PENDING_RELEASE_KEY='eviaPendingReleaseV1';
 const YELLOW='#f5c400';
 let registration=null;
 let waitingWorker=null;
 let releaseInfo={version:CURRENT_VERSION,title:`Evia v${CURRENT_VERSION}`,whatsNew:[]};
+try{const cached=JSON.parse(localStorage.getItem(PENDING_RELEASE_KEY)||'null');if(cached&&typeof cached==='object')releaseInfo=cached}catch{}
 let installing=false;
 let reloading=false;
 
@@ -35,23 +37,18 @@ function injectStyles(){
 function ensureUi(){
   injectStyles();
   const screen=document.getElementById('screen')||document.body;
-  if(!document.getElementById('eviaReleaseVersion')){
-    const version=document.createElement('div');version.id='eviaReleaseVersion';version.className='evia-release-version';version.textContent=`v${CURRENT_VERSION}`;screen.appendChild(version);
-  }
-  if(!document.getElementById('eviaUpdatePill')){
-    const pill=document.createElement('button');pill.id='eviaUpdatePill';pill.className='evia-update-pill';pill.type='button';pill.innerHTML='<span class="evia-update-dot" aria-hidden="true"></span><span>Update ready</span>';pill.addEventListener('click',openUpdate);screen.appendChild(pill);
-  }
+  if(!document.getElementById('eviaReleaseVersion')){const version=document.createElement('div');version.id='eviaReleaseVersion';version.className='evia-release-version';version.textContent=`v${CURRENT_VERSION}`;screen.appendChild(version)}
+  if(!document.getElementById('eviaUpdatePill')){const pill=document.createElement('button');pill.id='eviaUpdatePill';pill.className='evia-update-pill';pill.type='button';pill.innerHTML='<span class="evia-update-dot" aria-hidden="true"></span><span>Update ready</span>';pill.addEventListener('click',openUpdate);screen.appendChild(pill)}
   if(!document.getElementById('eviaUpdateOverlay')){
     const overlay=document.createElement('section');overlay.id='eviaUpdateOverlay';overlay.className='evia-update-overlay';overlay.setAttribute('aria-hidden','true');overlay.innerHTML='<div class="evia-update-shell" id="eviaUpdateShell"></div>';document.body.appendChild(overlay);
-    overlay.addEventListener('click',event=>{
-      const action=event.target.closest('[data-update-action]')?.dataset.updateAction;
-      if(action==='later')closeUpdate();
-      if(action==='install')installUpdate();
-    });
+    overlay.addEventListener('click',event=>{const action=event.target.closest('[data-update-action]')?.dataset.updateAction;if(action==='later')closeUpdate();if(action==='install')installUpdate()});
   }
 }
 async function fetchRelease(){
-  try{const response=await fetch(`${RELEASE_URL}?t=${Date.now()}`,{cache:'no-store'});if(response.ok){const data=await response.json();if(data&&typeof data==='object')releaseInfo=data}}catch{}
+  try{
+    const response=await fetch(`${RELEASE_URL}?t=${Date.now()}`,{cache:'no-store'});
+    if(response.ok){const data=await response.json();if(data&&typeof data==='object'){releaseInfo=data;try{localStorage.setItem(PENDING_RELEASE_KEY,JSON.stringify(data))}catch{}}}
+  }catch{}
   return releaseInfo;
 }
 function setReady(worker){if(!worker)return;waitingWorker=worker;document.getElementById('screen')?.classList.add('evia-update-ready');fetchRelease()}
@@ -73,17 +70,13 @@ function installUpdate(){
   const button=document.getElementById('eviaInstallUpdate');if(button){button.disabled=true;button.textContent='Installing…'}
   try{waitingWorker.postMessage({type:'EVIA_INSTALL_UPDATE'})}catch{installing=false;if(button){button.disabled=false;button.textContent='Install now'}}
 }
-function watchRegistration(reg){
-  registration=reg;
-  if(reg.waiting)setReady(reg.waiting);
-  reg.addEventListener('updatefound',()=>{const worker=reg.installing;if(!worker)return;worker.addEventListener('statechange',()=>{if(worker.state==='installed'&&navigator.serviceWorker.controller)setReady(worker)})});
-}
+function watchRegistration(reg){registration=reg;if(reg.waiting)setReady(reg.waiting);reg.addEventListener('updatefound',()=>{const worker=reg.installing;if(!worker)return;worker.addEventListener('statechange',()=>{if(worker.state==='installed'&&navigator.serviceWorker.controller)setReady(worker)})})}
 async function checkForUpdate(){if(!registration)return;try{await registration.update();if(registration.waiting)setReady(registration.waiting)}catch{}}
 async function start(){
   ensureUi();
   if(!('serviceWorker'in navigator))return;
   try{const existing=await navigator.serviceWorker.getRegistration('./');const reg=existing||await navigator.serviceWorker.register('./service-worker.js');watchRegistration(reg);await checkForUpdate()}catch{}
-  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!installing||reloading)return;reloading=true;clearReady();window.location.reload()});
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!installing||reloading)return;reloading=true;try{localStorage.removeItem(PENDING_RELEASE_KEY)}catch{}clearReady();window.location.reload()});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkForUpdate()});
   window.addEventListener('online',checkForUpdate);
   setInterval(checkForUpdate,30*60*1000);
