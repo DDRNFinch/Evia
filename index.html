@@ -1243,6 +1243,96 @@
     .detail-section-heading{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:2px 3px 0}.detail-section-heading strong{font-size:14px;color:rgba(45,45,45,.78)}.detail-section-heading span{font-size:11px;color:rgba(45,45,45,.48)}.otj-ideas{display:flex;flex-direction:column;gap:8px}.otj-idea.uncovered{border-color:rgba(245,196,0,.46);background:rgba(245,196,0,.055)}.otj-idea-badge{display:inline-flex!important;width:fit-content;margin:0 0 6px!important;padding:3px 7px;border-radius:999px;background:rgba(245,196,0,.16);color:rgba(45,45,45,.62)!important;font-size:9px!important;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
     .evidence-gallery{display:flex;flex-direction:column;gap:10px;width:100%}.evidence-gallery-item{border:1px solid rgba(245,196,0,.22);border-radius:18px;background:#fff;padding:12px}.evidence-gallery-meta{font-size:11px;line-height:1.4;color:rgba(45,45,45,.55);margin-bottom:9px}.evidence-gallery-preview{width:100%;display:flex;align-items:center;justify-content:center}.evidence-gallery-preview img,.evidence-gallery-preview video{max-width:100%;max-height:46dvh;border-radius:12px}.evidence-gallery-preview audio{width:100%}
 
+    /* approved KSB/AC proportional progress + weekly check-in badge */
+    .criterion-tile.met::after { content: none; }
+    .criterion-code { position: relative; z-index: 1; }
+    .criterion-progress-mark {
+      position: absolute;
+      right: 5px;
+      top: 5px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      flex: 0 0 auto;
+    }
+    .criterion-progress-ring {
+      background: conic-gradient(var(--evia-yellow) var(--criterion-progress, 0deg), rgba(245,196,0,.16) 0);
+    }
+    .criterion-progress-ring::after {
+      content: '';
+      position: absolute;
+      inset: 3px;
+      border-radius: 50%;
+      background: #fff;
+    }
+    .criterion-progress-tick {
+      display: grid;
+      place-items: center;
+      background: var(--evia-yellow);
+      color: #fff;
+      font-size: 13px;
+      line-height: 1;
+      font-weight: 800;
+    }
+    .mapping-button.completed {
+      border-color: rgba(245,196,0,.52);
+      background: rgba(245,196,0,.07);
+    }
+    .mapping-status {
+      margin-top: 6px !important;
+      font-size: 10px !important;
+      font-weight: 700;
+      color: rgba(45,45,45,.50) !important;
+    }
+    .mapping-button.completed .mapping-status { color: rgba(128,102,0,.82) !important; }
+    .chat-button {
+      width: 46px;
+      height: 46px;
+      border: 1.5px solid rgba(245,196,0,.34);
+      border-radius: 50%;
+      background: rgba(255,255,255,.98);
+      box-shadow: 0 7px 18px rgba(0,0,0,.055), inset 0 0 0 1px rgba(255,255,255,.8);
+    }
+    .chat-icon {
+      width: 23px;
+      height: 18px;
+      border: 1.8px solid rgba(45,45,45,.61);
+      border-radius: 8px;
+      background:
+        radial-gradient(circle at 31% 50%, rgba(45,45,45,.52) 0 1.4px, transparent 1.6px),
+        radial-gradient(circle at 50% 50%, rgba(45,45,45,.52) 0 1.4px, transparent 1.6px),
+        radial-gradient(circle at 69% 50%, rgba(45,45,45,.52) 0 1.4px, transparent 1.6px),
+        rgba(255,255,255,.98);
+    }
+    .chat-icon::after {
+      right: 3px;
+      bottom: -4px;
+      width: 7px;
+      height: 7px;
+      border-right: 1.8px solid rgba(45,45,45,.61);
+      border-bottom: 1.8px solid rgba(45,45,45,.61);
+      background: #fff;
+    }
+    .chat-notification-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border: 2px solid #fff;
+      border-radius: 999px;
+      background: #d93025;
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 10px;
+      line-height: 1;
+      font-weight: 800;
+      z-index: 2;
+    }
+    .chat-notification-badge[hidden] { display: none; }
+
     @keyframes talkingFloat {
       0%, 100% { transform: translateY(0) scale(1); }
       35% { transform: translateY(-5px) scale(1.012); }
@@ -1328,6 +1418,7 @@
     <button class="back-button" id="backButton" type="button">Back</button>
     <button class="chat-button" id="chatButton" type="button" aria-label="Open Evia chat">
       <span class="chat-icon" aria-hidden="true"></span>
+      <span class="chat-notification-badge" id="chatNotificationBadge" hidden aria-hidden="true">1</span>
     </button>
 
     <div class="evia-stage" id="eviaStage" aria-label="Evia" role="button" tabindex="0">
@@ -3870,9 +3961,32 @@
       return out;
     }
 
+    function targetProgress(id) {
+      const raw = courseMetaMappings()[id] || [];
+      const unique = [];
+      const seen = new Set();
+      raw.forEach((path) => {
+        if (!Array.isArray(path) || !path.length) return;
+        const key = evidencePathKey(path);
+        if (seen.has(key)) return;
+        seen.add(key);
+        unique.push(path);
+      });
+      const total = unique.length;
+      const completed = unique.filter((path) => completedEvidencePaths.has(evidencePathKey(path))).length;
+      const fraction = total ? completed / total : 0;
+      return { completed, total, fraction, percent: fraction * 100, complete: total > 0 && completed >= total, paths: unique };
+    }
+
     function targetIsMet(id) {
-      const mappings = courseMetaMappings()[id] || [];
-      return mappings.some(path => completedEvidencePaths.has(evidencePathKey(path)));
+      return targetProgress(id).complete;
+    }
+
+    function criterionProgressMarkup(id) {
+      const progress = targetProgress(id);
+      if (!progress.total) return '';
+      if (progress.complete) return '<span class="criterion-progress-mark criterion-progress-tick" aria-hidden="true">✓</span>';
+      return `<span class="criterion-progress-mark criterion-progress-ring" style="--criterion-progress:${progress.fraction * 360}deg" aria-hidden="true"></span>`;
     }
 
     function naturalTargetSort(a,b) {
@@ -3905,33 +4019,42 @@
       const mappings = courseMetaMappings();
       const official = meta.officialItems || {};
       const ids = (Array.isArray(meta.ksbOrder) && meta.ksbOrder.length ? meta.ksbOrder : Object.keys(official).length ? Object.keys(official) : Object.keys(mappings)).slice().sort(naturalTargetSort);
-      archDetailContent.innerHTML = `<div class="detail-card"><strong>${escapeDetailHtml(meta.title || activeCourseTitle || 'Course')}</strong><p>${ids.length} mapped KSBs</p></div><div class="criterion-grid">${ids.map(id=>`<button class="criterion-tile${targetIsMet(id)?' met':''}" type="button" data-course-target="${escapeDetailHtml(id)}">${escapeDetailHtml(id)}</button>`).join('')}</div>${Object.keys(official).length?'':'<div class="detail-muted">Re-import this Naxos course once to load its full official KSB wording into this device.</div>'}`;
+      archDetailContent.innerHTML = `<div class="detail-card"><strong>${escapeDetailHtml(meta.title || activeCourseTitle || 'Course')}</strong><p>${ids.length} mapped KSBs</p></div><div class="criterion-grid">${ids.map(id=>{const progress=targetProgress(id);return `<button class="criterion-tile${progress.complete?' met':''}" type="button" data-course-target="${escapeDetailHtml(id)}" aria-label="${escapeDetailHtml(id)}. ${progress.completed} of ${progress.total} mapped evidence locations complete"><span class="criterion-code">${escapeDetailHtml(id)}</span>${criterionProgressMarkup(id)}</button>`}).join('')}</div>${Object.keys(official).length?'':'<div class="detail-muted">Re-import this Naxos course once to load its full official KSB wording into this device.</div>'}`;
     }
 
     function nvqCriteria(meta, unit) {
       return (Array.isArray(meta.criteria) ? meta.criteria : []).filter(item => String(item.id).split('.')[0] === String(unit));
     }
 
+    function nvqUnitProgress(meta, unit) {
+      const criteria = nvqCriteria(meta, unit);
+      if (!criteria.length) return { fraction: 0, complete: false, completedCriteria: 0, totalCriteria: 0 };
+      const progress = criteria.map((item) => targetProgress(item.id));
+      const fraction = progress.reduce((sum, item) => sum + item.fraction, 0) / criteria.length;
+      const complete = progress.every((item) => item.complete);
+      return { fraction, complete, completedCriteria: progress.filter((item) => item.complete).length, totalCriteria: criteria.length };
+    }
+
     function renderNvqUnits(meta) {
       const units = Array.isArray(meta.units) && meta.units.length ? meta.units : [...new Set((meta.criteria||[]).map(x=>String(x.id).split('.')[0]))];
       archDetailContent.innerHTML = `<div class="detail-card"><strong>${escapeDetailHtml(meta.title || activeCourseTitle || 'NVQ')}</strong><p>Select a unit to view its Assessment Criteria.</p></div><div class="unit-list">${units.map(unit=>{
-        const criteria=nvqCriteria(meta,unit), met=criteria.filter(x=>targetIsMet(x.id)).length, total=criteria.length||1, complete=criteria.length>0&&met>=criteria.length;
+        const progress=nvqUnitProgress(meta,unit);
         const title=meta.unitTitles?.[unit] || `Unit ${unit}`;
-        return `<button class="unit-button" type="button" data-nvq-unit="${escapeDetailHtml(unit)}"><span class="unit-progress${complete?' complete':''}" style="--unit-progress:${(met/total)*360}deg"></span><span class="unit-copy"><strong>${escapeDetailHtml(title)}</strong><span>${met}/${criteria.length} ACs complete</span></span></button>`;
+        return `<button class="unit-button" type="button" data-nvq-unit="${escapeDetailHtml(unit)}"><span class="unit-progress${progress.complete?' complete':''}" style="--unit-progress:${progress.fraction*360}deg"></span><span class="unit-copy"><strong>${escapeDetailHtml(title)}</strong><span>${progress.completedCriteria}/${progress.totalCriteria} ACs fully complete</span></span></button>`;
       }).join('')}</div>`;
     }
 
     function renderNvqUnitDetail(unit) {
       const meta=inferredCourseMeta(), criteria=nvqCriteria(meta,unit);
-      archDetailContent.innerHTML = `<div class="criterion-grid">${criteria.map(item=>`<button class="criterion-tile${targetIsMet(item.id)?' met':''}" type="button" data-course-target="${escapeDetailHtml(item.id)}">${escapeDetailHtml(item.id)}</button>`).join('')}</div>`;
+      archDetailContent.innerHTML = `<div class="criterion-grid">${criteria.map(item=>{const progress=targetProgress(item.id);return `<button class="criterion-tile${progress.complete?' met':''}" type="button" data-course-target="${escapeDetailHtml(item.id)}" aria-label="${escapeDetailHtml(item.id)}. ${progress.completed} of ${progress.total} mapped evidence locations complete"><span class="criterion-code">${escapeDetailHtml(item.id)}</span>${criterionProgressMarkup(item.id)}</button>`}).join('')}</div>`;
     }
 
     function renderTargetDetail(id) {
       const meta=inferredCourseMeta(), mappings=courseMetaMappings(), isNvq=meta.courseType==='nvq';
       const wording = isNvq ? cleanText((meta.criteria||[]).find(x=>x.id===id)?.wording) : cleanText(meta.officialItems?.[id]);
       const atoms = isNvq ? ((meta.criteria||[]).find(x=>x.id===id)?.atoms || []) : [];
-      const paths = mappings[id] || [];
-      archDetailContent.innerHTML = `<div class="detail-card"><strong>${escapeDetailHtml(id)}</strong>${wording?`<p>${escapeDetailHtml(wording)}</p>`:`<p class="detail-muted">${isNvq?'The current Naxos pack supplies this official AC identifier and mapping, but does not yet include its full official wording. Evia will show it here when Naxos supplies it.':'Official wording is not stored on this device yet. Re-import the Naxos course to load it.'}</p>`}${atoms.length?`<p>Atomic criteria: ${atoms.map(escapeDetailHtml).join(', ')}</p>`:''}</div><div class="detail-card"><strong>Where this can be evidenced</strong><div class="mapping-list">${paths.length?paths.map(path=>`<button class="mapping-button" type="button" data-evidence-path="${encodeURIComponent(JSON.stringify(path))}"><strong>${escapeDetailHtml(path[path.length-1]||'Evidence')}</strong><span>${escapeDetailHtml(path.slice(0,-1).join(' › '))}</span></button>`).join(''):'<p>No mapped evidence location is stored for this item.</p>'}</div></div>`;
+      const paths = targetProgress(id).paths;
+      archDetailContent.innerHTML = `<div class="detail-card"><strong>${escapeDetailHtml(id)}</strong>${wording?`<p>${escapeDetailHtml(wording)}</p>`:`<p class="detail-muted">${isNvq?'The current Naxos pack supplies this official AC identifier and mapping, but does not yet include its full official wording. Evia will show it here when Naxos supplies it.':'Official wording is not stored on this device yet. Re-import the Naxos course to load it.'}</p>`}${atoms.length?`<p>Atomic criteria: ${atoms.map(escapeDetailHtml).join(', ')}</p>`:''}</div><div class="detail-card"><strong>Where this can be evidenced</strong><div class="mapping-list">${paths.length?paths.map(path=>{const completed=completedEvidencePaths.has(evidencePathKey(path));return `<button class="mapping-button${completed?' completed':''}" type="button" data-evidence-path="${encodeURIComponent(JSON.stringify(path))}"><strong>${escapeDetailHtml(path[path.length-1]||'Evidence')}</strong><span>${escapeDetailHtml(path.slice(0,-1).join(' › '))}</span><span class="mapping-status">${completed?'✓ Completed':'Not completed yet'}</span></button>`}).join(''):'<p>No mapped evidence location is stored for this item.</p>'}</div></div>`;
     }
 
     function findCoursePathIndices(labels) {
@@ -4072,7 +4195,9 @@
     }
 
     function setArchProgress(archId,value){const arch=document.getElementById(archId),n=Number(value),ready=value!==null&&value!==undefined&&Number.isFinite(n);if(!arch)return;arch.style.setProperty('--arch-progress',String(ready?Math.max(0,Math.min(100,n)):0));arch.classList.toggle('progress-ready',ready)}
-    async function updateArchBars(){const elapsed=courseProgressPercent();timeArchValue.textContent=elapsed===null?'--':`${Math.round(elapsed)}%`;setArchProgress('timeArch',elapsed);let coursePercent=null;if(courseItems===placeholderCourse){courseArchValue.textContent='--'}else{try{const leaves=courseLeaves(),entries=await getPortfolioEntries(),covered=new Set(entries.map(entry=>Array.isArray(entry.path)?entry.path.join('||'):'').filter(Boolean)),count=leaves.filter(leaf=>covered.has(leaf.path.join('||'))).length;coursePercent=leaves.length?(count/leaves.length)*100:null;courseArchValue.textContent=coursePercent===null?'--':`${Math.round(coursePercent)}%`}catch(error){courseArchValue.textContent='--';coursePercent=null}}setArchProgress('courseArch',coursePercent);const attendance=combinedAttendancePercent();attendanceArchValue.textContent=attendance===null?'--':`${Math.max(0,Math.min(100,Math.round(attendance)))}%`;setArchProgress('attendanceArch',attendance);const required=totalLearningRequirement(),college=loadAttendanceData().collegeLearningHours||0,learner=learnerLearningHours(),total=college+learner,learnPercent=required?Math.min(100,(total/required)*100):null;learnArchValue.textContent=learnPercent!==null?`${Math.round(learnPercent)}%`:String(learningEntries.length||0);setArchProgress('learnArch',learnPercent)}
+    async function updateArchBars(){
+      updateWeeklyCheckInBadge();
+      const elapsed=courseProgressPercent();timeArchValue.textContent=elapsed===null?'--':`${Math.round(elapsed)}%`;setArchProgress('timeArch',elapsed);let coursePercent=null;if(courseItems===placeholderCourse){courseArchValue.textContent='--'}else{try{const leaves=courseLeaves(),entries=await getPortfolioEntries(),covered=new Set(entries.map(entry=>Array.isArray(entry.path)?entry.path.join('||'):'').filter(Boolean)),count=leaves.filter(leaf=>covered.has(leaf.path.join('||'))).length;coursePercent=leaves.length?(count/leaves.length)*100:null;courseArchValue.textContent=coursePercent===null?'--':`${Math.round(coursePercent)}%`}catch(error){courseArchValue.textContent='--';coursePercent=null}}setArchProgress('courseArch',coursePercent);const attendance=combinedAttendancePercent();attendanceArchValue.textContent=attendance===null?'--':`${Math.max(0,Math.min(100,Math.round(attendance)))}%`;setArchProgress('attendanceArch',attendance);const required=totalLearningRequirement(),college=loadAttendanceData().collegeLearningHours||0,learner=learnerLearningHours(),total=college+learner,learnPercent=required?Math.min(100,(total/required)*100):null;learnArchValue.textContent=learnPercent!==null?`${Math.round(learnPercent)}%`:String(learningEntries.length||0);setArchProgress('learnArch',learnPercent)}
 
     async function animateEvidenceIntoPortfolio(){flyingFile.hidden=false;flyingFile.classList.remove('fly');void flyingFile.offsetWidth;flyingFile.classList.add('fly');await wait(1280);flyingFile.classList.remove('fly');flyingFile.hidden=true}
 
@@ -4149,6 +4274,35 @@
       return labels.slice(0, Math.min(count, labels.length));
     }
 
+    function weeklyCheckInMondayKey(date = new Date()) {
+      const day = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const daysSinceMonday = (day.getDay() + 6) % 7;
+      day.setDate(day.getDate() - daysSinceMonday);
+      const year = day.getFullYear();
+      const month = String(day.getMonth() + 1).padStart(2, '0');
+      const dateNumber = String(day.getDate()).padStart(2, '0');
+      return `${year}-${month}-${dateNumber}`;
+    }
+
+    function weeklyCheckInIsDue() {
+      let completedWeek = '';
+      try { completedWeek = localStorage.getItem('eviaWeeklyCheckInCompletedWeek') || ''; } catch (error) {}
+      return completedWeek !== weeklyCheckInMondayKey();
+    }
+
+    function updateWeeklyCheckInBadge() {
+      const badge = document.getElementById('chatNotificationBadge');
+      if (!badge) return;
+      const due = weeklyCheckInIsDue();
+      badge.hidden = !due;
+      chatButton.setAttribute('aria-label', due ? 'Open Evia chat. Weekly check-in due.' : 'Open Evia chat');
+    }
+
+    function markWeeklyCheckInComplete() {
+      try { localStorage.setItem('eviaWeeklyCheckInCompletedWeek', weeklyCheckInMondayKey()); } catch (error) {}
+      updateWeeklyCheckInBadge();
+    }
+
     async function startCheckIn() {
       checkInState = { stage: 'day', areas: randomCourseAreas(3), areaIndex: 0 };
       await chatSay("How's your day going?", [
@@ -4180,6 +4334,7 @@
     async function askConfidenceArea() {
       if (!checkInState) return;
       if (checkInState.areaIndex >= checkInState.areas.length) {
+        markWeeklyCheckInComplete();
         const name = learnerConversationName();
         await chatSay(name ? `Thanks ${name}. That's your quick check-in done.` : "Thanks. That's your quick check-in done.", mainChatOptions());
         return;
