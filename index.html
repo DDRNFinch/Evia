@@ -309,14 +309,40 @@
       transform: translateY(18px);
     }
 
-    .pill::before {
-      content: "";
-      width: 10px;
-      height: 10px;
+    .pill-label {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .pill-progress-mark {
+      width: 20px;
+      height: 20px;
+      margin-left: 12px;
       border-radius: 50%;
-      background: rgba(245, 196, 0, 0.72);
-      margin-right: 12px;
       flex: 0 0 auto;
+      position: relative;
+    }
+
+    .pill-progress-ring {
+      background: conic-gradient(var(--evia-yellow) var(--pill-progress, 0deg), rgba(245, 196, 0, 0.18) 0);
+    }
+
+    .pill-progress-ring::after {
+      content: "";
+      position: absolute;
+      inset: 3px;
+      border-radius: 50%;
+      background: rgba(250, 249, 242, 0.98);
+    }
+
+    .pill-progress-tick {
+      display: grid;
+      place-items: center;
+      background: var(--evia-yellow);
+      color: #fff;
+      font-size: 13px;
+      line-height: 1;
+      font-weight: 700;
     }
 
     .evidence-screen {
@@ -1310,6 +1336,7 @@
     let captureSessionId = 0;
     let completionContext = null;
     let learningEntries = loadLearningEntries();
+    let completedEvidencePaths = loadCompletedEvidencePaths();
     let learnerProfile = loadLearnerProfile();
     let profileViewOpen = false;
     let speechRunId = 0;
@@ -1667,15 +1694,75 @@
       return labels;
     }
 
+    function evidencePathKey(path) {
+      return JSON.stringify((Array.isArray(path) ? path : []).map(cleanText));
+    }
+
+    function loadCompletedEvidencePaths() {
+      try {
+        const saved = JSON.parse(localStorage.getItem('eviaCompletedEvidencePathsV1') || '[]');
+        return new Set(Array.isArray(saved) ? saved.filter((item) => typeof item === 'string') : []);
+      } catch (error) {
+        return new Set();
+      }
+    }
+
+    function saveCompletedEvidencePaths() {
+      try {
+        localStorage.setItem('eviaCompletedEvidencePathsV1', JSON.stringify([...completedEvidencePaths]));
+      } catch (error) {
+        // Completion still remains active for this session.
+      }
+    }
+
+    function markEvidencePathComplete(path) {
+      const key = evidencePathKey(path);
+      if (key === '[]') return;
+      completedEvidencePaths.add(key);
+      saveCompletedEvidencePaths();
+    }
+
+    function leafEvidencePaths(node, prefix) {
+      const path = [...prefix, cleanText(node?.label)];
+      const children = Array.isArray(node?.children) ? node.children.filter(Boolean) : [];
+      if (!children.length) return [path];
+      return children.flatMap((child) => leafEvidencePaths(child, path));
+    }
+
+    function pillCompletion(node, prefix) {
+      const leaves = leafEvidencePaths(node, prefix);
+      const total = leaves.length || 1;
+      const completed = leaves.reduce((sum, path) => sum + (completedEvidencePaths.has(evidencePathKey(path)) ? 1 : 0), 0);
+      return { completed, total, complete: completed >= total };
+    }
+
     function renderPills(floatIn = false) {
       pillStack.innerHTML = '';
+      const prefix = getLabelsForPath(menuPath);
       currentItems.forEach((item, index) => {
         const pill = document.createElement('div');
         pill.className = `pill${floatIn ? ' float-in' : ''}`;
         pill.dataset.index = String(index);
         pill.setAttribute('role', 'button');
         pill.setAttribute('tabindex', '0');
-        pill.textContent = item.label;
+
+        const label = document.createElement('span');
+        label.className = 'pill-label';
+        label.textContent = item.label;
+        pill.appendChild(label);
+
+        const progress = pillCompletion(item, prefix);
+        const mark = document.createElement('span');
+        mark.setAttribute('aria-hidden', 'true');
+        if (progress.complete) {
+          mark.className = 'pill-progress-mark pill-progress-tick';
+          mark.textContent = '✓';
+        } else {
+          mark.className = 'pill-progress-mark pill-progress-ring';
+          mark.style.setProperty('--pill-progress', `${(progress.completed / progress.total) * 360}deg`);
+        }
+        pill.appendChild(mark);
+        pill.setAttribute('aria-label', progress.complete ? `${item.label}, complete` : `${item.label}, ${progress.completed} of ${progress.total} complete`);
         pillStack.appendChild(pill);
       });
 
@@ -2059,29 +2146,45 @@
       if (status) status.textContent = message;
     }
 
-    function captureKindFromText(value, fallbackType = 'text') {
-      const text = cleanText(value).toLowerCase();
-      if (/\bvideo\b/.test(text)) return 'video';
+    function stripEvidenceConditionals(value) {
+      return cleanText(value)
+        .replace(/\bif\s+(?:a\s+)?video\s+is\s+not\s+practical\b[:,]?\s*/ig, '')
+        .replace(/\bif\s+(?:a\s+)?video\s+(?:is\s+)?not\s+possible\b[:,]?\s*/ig, '')
+        .trim();
+    }
+
+    function captureKindFromText(value, fallbackType = '') {
+      const text = stripEvidenceConditionals(value).toLowerCase();
+      if (/\bwitness\s+(?:testimony|statement)\b|\btestimony\b/.test(text)) return 'witness';
+      const hasAudio = /\baudio\b|\bvoice\b|\bmicrophone\b|\breflection\b/.test(text);
+      const hasWritten = /\bwritten\b|\bwrite\b|\btext\b|\btyping\b/.test(text);
+      if (hasAudio && hasWritten && /\bor\b/.test(text)) return 'audio-or-text';
       if (/\bphotos?\b|\bcamera\b|\bimages?\b/.test(text)) return 'photo';
-      if (/\baudio\b|\bvoice\b|\bmicrophone\b|\breflection\b/.test(text)) return 'audio';
-      if (/\bwritten\b|\bwrite\b|\btext\b|\bstatement\b|\btyping\b/.test(text)) return 'text';
+      if (/\bvideo\b/.test(text)) return 'video';
+      if (hasAudio) return 'audio';
+      if (hasWritten) return 'text';
       if (fallbackType === 'camera') return 'photo';
       if (fallbackType === 'audio') return 'audio';
-      return fallbackType === 'video' ? 'video' : 'text';
+      if (fallbackType === 'video') return 'video';
+      if (fallbackType === 'witness') return 'witness';
+      return fallbackType === 'text' ? 'text' : '';
     }
 
     function captureKindsFromDetail(detail, fallbackType = 'text') {
-      const source = `${detail?.displayType || ''} ${detail?.label || ''} ${detail?.instruction || ''}`;
+      const source = stripEvidenceConditionals(`${detail?.label || ''} ${detail?.instruction || ''}`);
       const additiveParts = source.split(/\b(?:plus|then|followed by)\b/i).map((part) => part.trim()).filter(Boolean);
       const parts = additiveParts.length > 1 ? additiveParts : [source];
       const kinds = parts.map((part) => captureKindFromText(part, '')).filter(Boolean);
-      return kinds.length ? kinds : [captureKindFromText(source, fallbackType)];
+      if (kinds.length) return kinds;
+      const displayKind = captureKindFromText(detail?.displayType || '', '');
+      return displayKind ? [displayKind] : [captureKindFromText(source, fallbackType) || 'text'];
     }
 
     function captureQuantity(detail, type) {
       const label = cleanText(detail?.label);
       const instruction = cleanText(detail?.instruction);
       const source = `${label} ${instruction}`;
+      if (type === 'witness' || type === 'audio-or-text') return 1;
       const words = type === 'photo' ? 'photos?|images?'
         : type === 'video' ? 'videos?|recordings?'
         : type === 'audio' ? 'audio|recordings?|voice notes?'
@@ -2119,7 +2222,12 @@
     }
 
     function captureStepStatus(step) {
-      const typeName = step.type === 'photo' ? 'Photo' : step.type === 'video' ? 'Video' : step.type === 'audio' ? 'Audio' : 'Written evidence';
+      const typeName = step.type === 'photo' ? 'Photo'
+        : step.type === 'video' ? 'Video'
+        : step.type === 'audio' ? 'Audio'
+        : step.type === 'witness' ? 'Witness testimony'
+        : step.type === 'audio-or-text' ? 'Audio or written evidence'
+        : 'Written evidence';
       if (step.itemTotal > 1) return `${typeName} ${step.itemIndex} of ${step.itemTotal}`;
       if (capturePlan.length > 1) return `${typeName} · step ${captureStepIndex + 1} of ${capturePlan.length}`;
       return typeName;
@@ -2206,7 +2314,67 @@
       document.getElementById('saveTextEvidence').addEventListener('click',async()=>{const value=textarea.value.trim();if(!value){showCaptureStatus('Write some evidence before saving.');return}const blob=new Blob([value],{type:'text/plain;charset=utf-8'});try{await saveEvidenceBlob(blob,'text');showCaptureStatus('Saved');await completeCaptureStep(sessionId)}catch(error){showCaptureStatus('Could not save this evidence.')}});
     }
 
-    function runCaptureStep(){const step=capturePlan[captureStepIndex],sessionId=captureSessionId;if(!step)return;if(step.type==='photo')openPhotoCapture(step,sessionId);else if(step.type==='video')openVideoCapture(step,sessionId);else if(step.type==='audio')openAudioCapture(step,sessionId);else openTextCapture(step,sessionId)}
+    function openAudioOrTextChoice(step, sessionId) {
+      stopCapture(); captureMode='choice';
+      evidenceTop.innerHTML='<div class="capture-surface"><div class="audio-panel"><button class="capture-button" id="chooseAudioEvidence" type="button">Record audio</button><button class="capture-button" id="chooseWrittenEvidence" type="button">Write evidence</button><div class="capture-status" id="captureStatus"></div></div></div>';
+      evidenceTop.style.gridTemplateRows='1fr'; updateBackButton(); fitUiText(); showCaptureStatus('Choose audio or written evidence.');
+      document.getElementById('chooseAudioEvidence').addEventListener('click',()=>{if(sessionId!==captureSessionId)return;capturePlan[captureStepIndex]={...step,type:'audio'};runCaptureStep()});
+      document.getElementById('chooseWrittenEvidence').addEventListener('click',()=>{if(sessionId!==captureSessionId)return;capturePlan[captureStepIndex]={...step,type:'text'};runCaptureStep()});
+    }
+
+    function witnessFileExtension(file) {
+      const name = cleanText(file?.name);
+      const match = name.match(/\.([a-z0-9]{1,8})$/i);
+      if (match) return match[1].toLowerCase();
+      const mime = cleanText(file?.type).toLowerCase();
+      if (/pdf/.test(mime)) return 'pdf';
+      if (/wordprocessingml/.test(mime)) return 'docx';
+      if (/msword/.test(mime)) return 'doc';
+      if (/png/.test(mime)) return 'png';
+      if (/jpe?g/.test(mime)) return 'jpg';
+      if (/text\//.test(mime)) return 'txt';
+      return 'file';
+    }
+
+    async function saveWitnessFile(file) {
+      const createdAt = new Date().toISOString();
+      const context = captureEvidenceContext('witness');
+      const method = context.method;
+      const label = context.evidenceLabel;
+      const compactDate = createdAt.replace(/[-:]/g, '').replace(/\..+/, '').replace('T', '-');
+      const entry = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        createdAt,
+        type: 'witness',
+        mimeType: file.type || 'application/octet-stream',
+        fileName: `${compactDate}-${safeFilename(label)}.${witnessFileExtension(file)}`,
+        originalFileName: cleanText(file.name),
+        path: context.path.slice(),
+        evidenceLabel: label,
+        methodHeading: method.heading,
+        methodLabel: method.label,
+        requirements: context.requirements,
+        learner: context.learner || officialLearnerProfile(),
+        blob: file
+      };
+      await addPortfolioEntry(entry);
+      updateArchBars().catch(() => {});
+      return entry;
+    }
+
+    function openWitnessImport(step, sessionId) {
+      stopCapture(); captureMode='witness';
+      evidenceTop.innerHTML='<div class="capture-surface"><div class="audio-panel"><button class="capture-button" id="importWitnessFile" type="button">Import witness file</button><input id="witnessFileInput" type="file" hidden><div class="capture-status" id="captureStatus"></div></div></div>';
+      evidenceTop.style.gridTemplateRows='1fr'; updateBackButton(); fitUiText(); showCaptureStatus('Witness testimony can be imported as a file.');
+      const input=document.getElementById('witnessFileInput');
+      document.getElementById('importWitnessFile').addEventListener('click',()=>input.click());
+      input.addEventListener('change',async()=>{
+        const file=input.files?.[0]; if(!file||sessionId!==captureSessionId)return;
+        try{await saveWitnessFile(file);showCaptureStatus('Witness file imported.');await completeCaptureStep(sessionId)}catch(error){showCaptureStatus('Could not import this witness file.')}
+      });
+    }
+
+    function runCaptureStep(){const step=capturePlan[captureStepIndex],sessionId=captureSessionId;if(!step)return;if(step.type==='photo')openPhotoCapture(step,sessionId);else if(step.type==='video')openVideoCapture(step,sessionId);else if(step.type==='audio')openAudioCapture(step,sessionId);else if(step.type==='audio-or-text')openAudioOrTextChoice(step,sessionId);else if(step.type==='witness')openWitnessImport(step,sessionId);else openTextCapture(step,sessionId)}
 
     function beginEvidenceCollection(option, heading){clearCaptureSequence();captureSessionId+=1;capturePlan=buildCapturePlan(option);captureStepIndex=0;activeEvidenceMethod={type:option?.type||'text',heading,label:option?.label||heading};const hasRequirements=renderEvidenceRequirements(activeEvidence);evidenceRequirements.style.display=hasRequirements?'block':'none';evidenceScreen.style.gridTemplateRows=hasRequirements?'1fr 1fr':'1fr';runCaptureStep()}
 
@@ -2242,6 +2410,7 @@
 
     function naxosCaptureType(value) {
       const text = cleanText(value).toLowerCase();
+      if (/witness|testimony/.test(text)) return 'witness';
       if (/video|photo|camera/.test(text)) return 'camera';
       if (/audio|voice|reflection|microphone/.test(text)) return 'audio';
       return 'text';
@@ -2882,6 +3051,7 @@
 
     async function completeEvidenceExperience(){
       completionContext={path:activeEvidencePath.slice(),label:activeEvidencePath[activeEvidencePath.length-1]||activeEvidence?.label||'Evidence'};
+      markEvidencePathComplete(completionContext.path);
       closeEvidence();resetPills();screen.classList.add('active','completion-open');screen.classList.remove('pills-ready','evidence-ready');reflectionActions.hidden=true;learnReflectionBox.hidden=true;learnReflectionText.value='';learnReflectionStatus.textContent='';updateBackButton();
       evia.classList.add('accent-squish');setTimeout(()=>evia.classList.remove('accent-squish'),1200);
       await speak(['Nice work — that evidence is safely filed in your portfolio.']);if(!screen.classList.contains('completion-open'))return;
