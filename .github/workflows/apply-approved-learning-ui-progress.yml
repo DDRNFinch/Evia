@@ -11,6 +11,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Skip redundant Quick Review matcher
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('.github/patch-approved-learning-ui-progress.py')
+          t=p.read_text(encoding='utf-8')
+          old="replace_once(old_quick,new_quick,'Quick Review progress source')"
+          if old not in t: raise SystemExit('redundant matcher marker missing')
+          p.write_text(t.replace(old,"# Quick Review already uses completedEvidencePaths",1),encoding='utf-8')
+          PY
       - name: Apply approved patch
         run: python .github/patch-approved-learning-ui-progress.py
       - name: Validate Evia
