@@ -43,7 +43,18 @@ function syncSettingsVersion(){
   if(!content)return;
   let footer=content.querySelector('.evia-settings-version');
   if(!footer){footer=document.createElement('div');footer.className='evia-settings-version';content.appendChild(footer)}
-  footer.textContent=`Evia v${CURRENT_VERSION}`;
+  const text=`Evia v${CURRENT_VERSION}`;
+  if(footer.textContent!==text)footer.textContent=text;
+}
+function bindSettingsVersion(){
+  const overlay=document.getElementById('eviaSupportOverlay');
+  if(overlay){
+    const observer=new MutationObserver(()=>{if(overlay.classList.contains('open'))setTimeout(syncSettingsVersion,0)});
+    observer.observe(overlay,{attributes:true,attributeFilter:['class']});
+  }
+  document.addEventListener('click',event=>{
+    if(event.target.closest('[data-evia-tool="settings"]'))setTimeout(syncSettingsVersion,0);
+  });
 }
 function ensureUi(){
   injectStyles();
@@ -96,7 +107,7 @@ function watchRegistration(reg){
 async function checkForUpdate(){if(!registration)return;try{await registration.update();if(registration.waiting)setReady(registration.waiting)}catch{}}
 async function start(){
   ensureUi();
-  const observer=new MutationObserver(syncSettingsVersion);observer.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['class']});
+  bindSettingsVersion();
   if(!('serviceWorker'in navigator))return;
   try{const existing=await navigator.serviceWorker.getRegistration('./');const reg=existing||await navigator.serviceWorker.register('./service-worker.js');watchRegistration(reg);await checkForUpdate()}catch{}
   navigator.serviceWorker.addEventListener('controllerchange',()=>{
