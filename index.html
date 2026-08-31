@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
   <title>Evia</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/evia-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/evia-180.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Evia">
   <style>
     :root {
       --evia-yellow: #f5c400;
@@ -156,14 +163,19 @@
         transform 150ms ease;
     }
 
-    .evia-character.happy-eyes .eye {
-      width: 0.235em;
-      height: 0.105em;
-      border: 0;
-      border-bottom: 0.027em solid var(--evia-yellow);
-      border-radius: 0 0 50% 50%;
-      transform: translateY(0.018em);
-    }
+    .evia-character.talk-eyes .eye {
+    width: 0.235em; height: 0.165em;
+    border: 0.022em solid var(--evia-yellow);
+    border-radius: 54% 54% 7% 7% / 76% 76% 12% 12%;
+    background: transparent; transform: translateY(0.012em);
+    transition: width 220ms ease, height 220ms ease, border-radius 220ms ease, transform 220ms ease, clip-path 220ms ease;
+  }
+  .evia-character.talk-expression-a .eye:first-child { transform: translateY(0.012em) rotate(-2deg); }
+  .evia-character.talk-expression-a .eye:last-child { transform: translateY(0.012em) rotate(2deg); }
+  .evia-character.talk-expression-b .eye:first-child { clip-path: polygon(0 13%,100% 0,100% 100%,0 100%); transform: translateY(0.008em); }
+  .evia-character.talk-expression-b .eye:last-child { height: 0.178em; transform: translateY(0.004em); }
+  .evia-character.talk-expression-c .eye:first-child { height: 0.178em; transform: translateY(0.004em); }
+  .evia-character.talk-expression-c .eye:last-child { clip-path: polygon(0 0,100% 13%,100% 100%,0 100%); transform: translateY(0.008em); }
 
     .evia-float.talking {
       animation: talkingFloat 1050ms ease-in-out infinite;
@@ -199,16 +211,15 @@
       top: calc(max(18px, env(safe-area-inset-top)) + 88px);
     }
 
-    .speech-line {
-      min-height: 20px;
-    }
-
-    .speech-word {
-      display: inline-block;
-      opacity: 0;
-      transform: translateY(4px);
-      animation: speechWordIn 220ms ease forwards;
-    }
+    .speech-line { width: 100%; min-height: 21px; line-height: 1.45; white-space: normal; }
+  .speech-line-reveal {
+    opacity: 0; transform: translateX(-8px);
+    -webkit-mask-image: linear-gradient(90deg,#000 0%,#000 66%,transparent 100%);
+    mask-image: linear-gradient(90deg,#000 0%,#000 66%,transparent 100%);
+    -webkit-mask-size: 240% 100%; mask-size: 240% 100%;
+    -webkit-mask-position: 100% 0; mask-position: 100% 0;
+    animation: speechLineReveal 720ms cubic-bezier(0.22,1,0.36,1) forwards;
+  }
 
     .evia-character.accent-wobble { animation: accentWobble 1200ms cubic-bezier(0.22, 1, 0.36, 1); }
     .evia-character.accent-squish { animation: accentSquish 1150ms cubic-bezier(0.22, 1, 0.36, 1); }
@@ -724,7 +735,16 @@
       z-index: 15;
     }
 
-    .chat-icon {
+    .chat-exit-button {
+    position: absolute; right: max(14px, env(safe-area-inset-right));
+    top: calc(max(14px, env(safe-area-inset-top)) + 8px);
+    min-width: 72px; min-height: 42px; border-radius: 999px;
+    border: 1.5px solid rgba(245,196,0,.38); background: rgba(250,249,242,.97);
+    color: rgba(45,45,45,.68); padding: 0 16px; display: flex;
+    align-items: center; justify-content: center; cursor: pointer; z-index: 31;
+  }
+
+  .chat-icon {
       position: relative;
       width: 28px;
       height: 22px;
@@ -947,9 +967,11 @@
       70% { transform: rotate(calc(var(--char-tilt) + 1.5deg)); }
     }
 
-    @keyframes speechWordIn {
-      to { opacity: 1; transform: translateY(0); }
-    }
+    @keyframes speechLineReveal {
+    0% { opacity:0; transform:translateX(-8px); -webkit-mask-position:100% 0; mask-position:100% 0; }
+    20% { opacity:1; }
+    100% { opacity:1; transform:translateX(0); -webkit-mask-position:0% 0; mask-position:0% 0; }
+  }
 
     @keyframes stageFloat {
       0%, 100% { transform: translateY(0); }
@@ -1003,7 +1025,7 @@
       .pill,
       .naxos-menu,
       .evia-speech,
-      .speech-word,
+      .speech-line-reveal,
       .mini-evia,
       .typing-bubble i,
       .evidence-enter {
@@ -1067,6 +1089,7 @@
     </div>
 
     <div class="overlay-panel" id="chatPanel" aria-hidden="true">
+      <button class="chat-exit-button" id="chatExitButton" type="button">Exit</button>
       <div class="chat-card">
         <div class="chat-header">Evia</div>
         <div class="chat-scroll" id="chatScroll" aria-live="polite"></div>
@@ -1138,6 +1161,7 @@
     const eviaSpeech = document.getElementById('eviaSpeech');
     const backButton = document.getElementById('backButton');
     const chatButton = document.getElementById('chatButton');
+    const chatExitButton = document.getElementById('chatExitButton');
     const chatPanel = document.getElementById('chatPanel');
     const chatScroll = document.getElementById('chatScroll');
     const chatOptions = document.getElementById('chatOptions');
@@ -1220,6 +1244,8 @@
     let learnerProfile = loadLearnerProfile();
     let profileViewOpen = false;
     let speechRunId = 0;
+    let talkExpressionInterval = null;
+    let talkExpressionStep = 0;
     let chatRunId = 0;
     let chatNavStack = [];
     let checkInState = null;
@@ -1342,12 +1368,22 @@
       return new Promise((resolve) => setTimeout(resolve, ms));
     }
 
-    function stopTalking(clearText = false) {
-      speechRunId += 1;
-      evia.classList.remove('talking', 'happy-eyes');
-      eviaFloat?.classList.remove('talking');
-      if (clearText) eviaSpeech.innerHTML = '';
-    }
+    function stopTalkExpressions() {
+    if (talkExpressionInterval) clearInterval(talkExpressionInterval);
+    talkExpressionInterval = null;
+    evia.classList.remove('talk-expression-a','talk-expression-b','talk-expression-c');
+  }
+  function startTalkExpressions() {
+    stopTalkExpressions();
+    const expressions=['talk-expression-a','talk-expression-b','talk-expression-c'];
+    const apply=()=>{ evia.classList.remove(...expressions); evia.classList.add(expressions[talkExpressionStep++%expressions.length]); };
+    apply(); talkExpressionInterval=setInterval(apply,620);
+  }
+  function stopTalking(clearText = false) {
+    speechRunId += 1; stopTalkExpressions();
+    evia.classList.remove('talking','talk-eyes'); eviaFloat?.classList.remove('talking');
+    if (clearText) eviaSpeech.innerHTML = '';
+  }
 
     function setSpeech(lines) {
       stopTalking(true);
@@ -1360,49 +1396,22 @@
     }
 
     async function speak(lines) {
-      stopTalking(true);
-      const runId = speechRunId;
-      const cleanLines = lines.filter(Boolean);
-      if (!cleanLines.length) return true;
-
-      if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
-        setSpeech(cleanLines);
-        return true;
-      }
-
-      evia.classList.add('talking', 'happy-eyes');
-      eviaFloat?.classList.add('talking');
-      root.style.setProperty('--eye-x', '0em');
-      root.style.setProperty('--eye-y', '0.018em');
-
-      for (let lineIndex = 0; lineIndex < cleanLines.length; lineIndex += 1) {
-        if (runId !== speechRunId) return false;
-        const lineElement = document.createElement('div');
-        lineElement.className = 'speech-line';
-        eviaSpeech.appendChild(lineElement);
-        const words = cleanLines[lineIndex].split(/\s+/).filter(Boolean);
-        for (let wordIndex = 0; wordIndex < words.length; wordIndex += 1) {
-          if (runId !== speechRunId) return false;
-          const word = document.createElement('span');
-          word.className = 'speech-word';
-          word.textContent = `${wordIndex ? ' ' : ''}${words[wordIndex]}`;
-          lineElement.appendChild(word);
-          const punctuationPause = /[.!?]$/.test(words[wordIndex]) ? 120 : /[,;:]$/.test(words[wordIndex]) ? 70 : 0;
-          await wait(82 + punctuationPause);
-        }
-        if (lineIndex < cleanLines.length - 1) await wait(280);
-      }
-
-      if (runId !== speechRunId) return false;
-      await wait(180);
-      if (runId !== speechRunId) return false;
-      evia.classList.remove('talking', 'happy-eyes');
-      eviaFloat?.classList.remove('talking');
-      blink(true);
-      return true;
+    stopTalking(true); const runId=speechRunId; const cleanLines=lines.filter(Boolean);
+    if (!cleanLines.length) return true;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) { setSpeech(cleanLines); return true; }
+    evia.classList.add('talking','talk-eyes'); eviaFloat?.classList.add('talking'); startTalkExpressions();
+    root.style.setProperty('--eye-x','0em'); root.style.setProperty('--eye-y','0em');
+    for (let i=0;i<cleanLines.length;i+=1) {
+      if (runId!==speechRunId) return false;
+      const line=document.createElement('div'); line.className='speech-line speech-line-reveal';
+      line.textContent=cleanLines[i]; eviaSpeech.appendChild(line); await wait(760);
+      if (i<cleanLines.length-1) await wait(170);
     }
+    if (runId!==speechRunId) return false; await wait(160); if (runId!==speechRunId) return false;
+    stopTalkExpressions(); evia.classList.remove('talking','talk-eyes'); eviaFloat?.classList.remove('talking'); blink(true); return true;
+  }
 
-    function homeSpeechLines() {
+  function homeSpeechLines() {
       const name = learnerConversationName();
       return [name ? `Hi ${name}` : 'Hi', 'What are we doing today?'];
     }
@@ -2958,6 +2967,7 @@
 
     backButton.addEventListener('click', goBackOneStep);
     chatButton.addEventListener('click', openChat);
+    chatExitButton.addEventListener('click', closeChat);
     chatOptions.addEventListener('click', (event) => {
       const button = event.target.closest('[data-chat-action]');
       if (!button) return;
@@ -3021,6 +3031,8 @@
     setTimeout(scheduleBlinks, 2200);
     setTimeout(scheduleAccents, 4200);
     updateBackButton();
+
+    if ('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(()=>{}));
 
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
