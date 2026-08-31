@@ -1333,6 +1333,52 @@
     }
     .chat-notification-badge[hidden] { display: none; }
 
+    /* approved readability + concise chat pills */
+    .evia-speech { transition: top 1100ms cubic-bezier(0.22,1,0.36,1), opacity 220ms ease; }
+    .evia-speech.home-exit { opacity: 0; }
+    .pill { min-height: 52px; height: auto; padding-top: 9px; padding-bottom: 9px; font-size: 13px; }
+    .pill-label { white-space: normal; line-height: 1.25; overflow-wrap: anywhere; }
+    .chat-option { min-height: 42px; height: auto; padding: 8px 10px; font-size: 12.5px; line-height: 1.25; white-space: normal; overflow-wrap: anywhere; position: relative; }
+    .chat-option-checkin-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border: 2px solid #fff;
+      border-radius: 999px;
+      background: #d93025;
+      color: #fff !important;
+      display: grid;
+      place-items: center;
+      font-size: 10px;
+      line-height: 1;
+      font-weight: 800;
+    }
+    #screen,
+    #screen button,
+    #screen input,
+    #screen textarea,
+    #screen a,
+    #screen p,
+    #screen span,
+    #screen strong,
+    #screen label,
+    #screen div { color: #333; }
+    #screen .detail-muted,
+    #screen .profile-note,
+    #screen .profile-status,
+    #screen .portfolio-status,
+    #screen .portfolio-viewer-meta,
+    #screen .evidence-gallery-meta,
+    #screen .mapping-status { color: #505050; }
+    #screen .pill-progress-tick,
+    #screen .criterion-progress-tick,
+    #screen .chat-notification-badge,
+    #screen .chat-option-checkin-badge { color: #fff; }
+    .unit-progress.complete::after { color: #fff; }
+
     @keyframes talkingFloat {
       0%, 100% { transform: translateY(0) scale(1); }
       35% { transform: translateY(-5px) scale(1.012); }
@@ -2343,6 +2389,10 @@
     }
 
     async function activateHome() {
+      eviaSpeech.classList.add('home-exit');
+      await wait(220);
+      eviaSpeech.innerHTML = '';
+      eviaSpeech.classList.remove('home-exit');
       screen.classList.add('active');
       screen.classList.remove('pills-ready', 'evidence-ready');
       root.style.setProperty('--eye-x', '0em');
@@ -3128,7 +3178,10 @@
       flatNvqTasks(categories).forEach(({task})=>uniqueStrings([...(task.directLo7Targets||[]),...(task.mappedAtomicTargets||[])]).forEach(atom=>{const parent=nvqParentAc(atom);if(!atomsByParent.has(parent))atomsByParent.set(parent,new Set());atomsByParent.get(parent).add(atom)}));
       const wordingSource=pack.criteriaWording||qualification.criteriaWording||{};
       const criteria=[...atomsByParent.entries()].map(([id,atoms])=>({id,wording:cleanText(wordingSource[id]),atoms:[...atoms].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}))})).sort((a,b)=>a.id.localeCompare(b.id,undefined,{numeric:true}));
-      return { courseType:'nvq', qualificationId:cleanText(qualification.id), title:cleanText(qualification.title), source:cleanText(qualification.source), glh:Number(qualification.glh||0)||null, tqt:Number(qualification.tqt||0)||null, units, unitTitles, criteria, mappings:mappedPathsFromCourse(items,'acTargets'), atomicTargetCount:requiredTargets.length, qualification:{id:cleanText(qualification.id),title:cleanText(qualification.title),glh:Number(qualification.glh||0)||null,tqt:Number(qualification.tqt||0)||null} };
+      const suppliedLearning=pack?.learning||qualification?.learning||{};
+      const glh=Number(suppliedLearning.requiredHours||qualification.glh||0)||null;
+      const learning={type:cleanText(suppliedLearning.type)||'GLH',requiredHours:glh};
+      return { courseType:'nvq', qualificationId:cleanText(qualification.id), title:cleanText(qualification.title), source:cleanText(qualification.source), learning, learningRequiredHours:glh, glh, tqt:Number(qualification.tqt||0)||null, units, unitTitles, criteria, mappings:mappedPathsFromCourse(items,'acTargets'), atomicTargetCount:requiredTargets.length, qualification:{id:cleanText(qualification.id),title:cleanText(qualification.title),glh,tqt:Number(qualification.tqt||0)||null} };
     }
 
     async function importNaxosNvqPack(pointer) {
@@ -3750,6 +3803,14 @@
         button.dataset.chatAction = option.action;
         if (option.value !== undefined) button.dataset.chatValue = String(option.value);
         button.textContent = option.label;
+        if (option.action === 'check-in' && weeklyCheckInIsDue()) {
+          const dueBadge = document.createElement('span');
+          dueBadge.className = 'chat-option-checkin-badge';
+          dueBadge.textContent = '1';
+          dueBadge.setAttribute('aria-hidden', 'true');
+          button.appendChild(dueBadge);
+          button.setAttribute('aria-label', `${option.label}. Weekly check-in due.`);
+        }
         chatOptions.appendChild(button);
       });
     }
@@ -3810,7 +3871,7 @@
       chatPanel.setAttribute('aria-hidden', 'false');
       updateBackButton();
       const name = learnerConversationName();
-      await chatSay(name ? `Hi ${name}, what's up?` : "Hi, what's up?", mainChatOptions());
+      await chatSay(name ? `Hi ${name}. What can I help with?` : 'Hi. What can I help with?', mainChatOptions());
     }
 
     function closeChat() {
@@ -4220,49 +4281,81 @@
 
     async function runQuickReview() {
       const leaves = courseLeaves();
-      let entries = [];
-      try { entries = await getPortfolioEntries(); } catch (error) { entries = []; }
-      const evidencePaths = new Set(entries.map((entry) => Array.isArray(entry.path) ? entry.path.join('||') : '').filter(Boolean));
-      const coveredLeaves = leaves.filter((leaf) => evidencePaths.has(leaf.path.join('||')));
-      const coverage = leaves.length ? Math.round((coveredLeaves.length / leaves.length) * 100) : 0;
-      const elapsed = courseProgressPercent();
-
       if (!leaves.length) {
-        await chatSay('I need a Naxos course in Evia before I can give you a useful quick review.', mainChatOptions());
+        await chatSay('I need your Naxos course first. Once it is loaded, I can review your progress.', mainChatOptions());
         return;
       }
 
-      let paceMessage = `You have evidence against ${coveredLeaves.length} of ${leaves.length} mapped areas (${coverage}%).`;
+      const coveredLeaves = leaves.filter((leaf) => completedEvidencePaths.has(evidencePathKey(leaf.path)));
+      const coverage = leaves.length ? Math.round((coveredLeaves.length / leaves.length) * 100) : 0;
+      const elapsed = courseProgressPercent();
+      let paceMessage = `You have completed ${coveredLeaves.length} of ${leaves.length} evidence areas (${coverage}%).`;
+
       if (elapsed !== null) {
         const elapsedRounded = Math.round(elapsed);
         const targetCount = Math.ceil((elapsed / 100) * leaves.length);
         const catchUp = Math.max(0, targetCount - coveredLeaves.length);
         if (coverage + 5 >= elapsedRounded) {
-          paceMessage += ` Your course is about ${elapsedRounded}% through, so you're on target overall.`;
+          paceMessage += ` You're about ${elapsedRounded}% through the course, so you're on track.`;
         } else {
-          paceMessage += ` Your course is about ${elapsedRounded}% through, so you're behind your current pace.`;
-          if (catchUp) paceMessage += ` Evidence in about ${catchUp} more mapped area${catchUp === 1 ? '' : 's'} would bring you closer to target.`;
+          paceMessage += ` You're about ${elapsedRounded}% through the course, so there are a few areas to catch up.`;
+          if (catchUp) paceMessage += ` Around ${catchUp} more evidence area${catchUp === 1 ? '' : 's'} would bring you closer to target.`;
         }
       } else {
-        paceMessage += ' Add your course start and end dates in Learner Profile and I can compare that with your course pace.';
+        paceMessage += ' Add your course dates and I can compare this with where you should be.';
       }
       await chatSay(paceMessage);
 
-      const areaStats = courseItems.map((area) => {
+      const areaStats = courseItems.map((area, index) => {
         const areaLeaves = courseLeaves([area]);
-        const covered = areaLeaves.filter((leaf) => evidencePaths.has(leaf.path.join('||'))).length;
-        return { label: area.label, total: areaLeaves.length, covered, rate: areaLeaves.length ? covered / areaLeaves.length : 0 };
+        const covered = areaLeaves.filter((leaf) => completedEvidencePaths.has(evidencePathKey(leaf.path))).length;
+        return { label: area.label, index, total: areaLeaves.length, covered, rate: areaLeaves.length ? covered / areaLeaves.length : 0 };
       }).filter((area) => area.total);
       areaStats.sort((a, b) => b.rate - a.rate);
       const strongest = areaStats[0];
       const weakest = areaStats[areaStats.length - 1];
-      if (strongest && weakest) {
-        const strongText = strongest.rate > 0 ? `Your strongest mapped area is ${strongest.label}.` : 'You are just getting started, so there is not a strongest evidence area yet.';
-        const weakText = weakest.rate < 1 ? `The area needing most attention is ${weakest.label}.` : 'Every mapped area currently has evidence.';
-        await chatSay(`${strongText} ${weakText}`, mainChatOptions());
-      } else {
-        await chatSay('Keep adding evidence and I will be able to show your stronger and weaker areas here.', mainChatOptions());
+
+      if (!strongest || !weakest) {
+        await chatSay('Keep adding evidence and I’ll be able to show you where to focus next.', mainChatOptions());
+        return;
       }
+
+      if (strongest.rate > 0 && strongest.label !== weakest.label) {
+        await chatSay(`${strongest.label} is looking strongest right now.`);
+      }
+
+      if (weakest.rate < 1) {
+        await chatSay(`${weakest.label} needs the most attention. Want me to take you there?`, [
+          { label: 'Go there', action: 'review-area', value: weakest.label },
+          { label: 'Not now', action: 'chat-home' }
+        ]);
+      } else {
+        await chatSay('Everything currently mapped has evidence. Nice work.', mainChatOptions());
+      }
+    }
+
+    async function openQuickReviewArea(label) {
+      const index = courseItems.findIndex((item) => item.label === label);
+      if (index < 0) {
+        await chatSay('I could not open that area. Try it from My Course.', mainChatOptions());
+        return;
+      }
+      closeChat();
+      stopTalking(false);
+      closeEvidence();
+      resetPills();
+      pillTransitionBusy = false;
+      menuPath = [];
+      menuLevel = 1;
+      currentItems = courseItems;
+      screen.classList.add('active');
+      screen.classList.remove('completion-open', 'evidence-open', 'evidence-ready');
+      renderPills(false);
+      screen.classList.add('pills-ready');
+      updateBackButton();
+      await wait(80);
+      const pill = pillStack.querySelector(`.pill[data-index="${index}"]`);
+      if (pill) openNextPillSet(pill);
     }
 
     function randomCourseAreas(count = 3) {
@@ -4305,7 +4398,7 @@
 
     async function startCheckIn() {
       checkInState = { stage: 'day', areas: randomCourseAreas(3), areaIndex: 0 };
-      await chatSay("How's your day going?", [
+      await chatSay("How's today going?", [
         { label: 'Great', action: 'check-day', value: 'great' },
         { label: 'Okay', action: 'check-day', value: 'okay' },
         { label: 'Not great', action: 'check-day', value: 'not-great' }
@@ -4314,7 +4407,7 @@
 
     async function askSupportChoice() {
       const assessorLabel = learnerProfile.assessorName || 'Assessor';
-      await chatSay('Want to speak to someone?', [
+      await chatSay('Want to talk to someone?', [
         { label: assessorLabel, action: 'call-assessor' },
         { label: 'Safeguarding', action: 'call-safeguarding' },
         { label: 'No', action: 'support-no' }
@@ -4324,7 +4417,7 @@
     async function askFeeling() {
       if (!checkInState) return;
       checkInState.stage = 'feeling';
-      await chatSay('How are you feeling right now?', [
+      await chatSay('How are you feeling?', [
         { label: 'Good', action: 'check-feeling', value: 'good' },
         { label: 'Okay', action: 'check-feeling', value: 'okay' },
         { label: 'A bit low', action: 'check-feeling', value: 'low' }
@@ -4336,12 +4429,12 @@
       if (checkInState.areaIndex >= checkInState.areas.length) {
         markWeeklyCheckInComplete();
         const name = learnerConversationName();
-        await chatSay(name ? `Thanks ${name}. That's your quick check-in done.` : "Thanks. That's your quick check-in done.", mainChatOptions());
+        await chatSay(name ? `Thanks ${name}. Check-in done.` : 'Thanks. Check-in done.', mainChatOptions());
         return;
       }
       const area = checkInState.areas[checkInState.areaIndex];
       checkInState.stage = 'confidence';
-      await chatSay(`How confident do you feel with ${area}?`, [
+      await chatSay(`How confident are you with ${area}?`, [
         { label: 'Confident', action: 'check-confidence', value: 'confident' },
         { label: 'Getting there', action: 'check-confidence', value: 'getting-there' },
         { label: 'Need help', action: 'check-confidence', value: 'need-help' }
@@ -4367,7 +4460,7 @@
 
     async function startTeachMe() {
       teachState = { path: [], items: courseItems.slice(0, 5) };
-      await chatSay('What do you want to learn about?', teachingOptions(teachState.items, 1));
+      await chatSay('What do you want to go over?', teachingOptions(teachState.items, 1));
     }
 
     async function teachPick(index) {
@@ -4377,7 +4470,7 @@
       teachState.path.push(node.label);
       if (Array.isArray(node.children) && node.children.length) {
         teachState.items = node.children.slice(0, 5);
-        const prompt = teachState.path.length === 1 ? 'Which part of that area?' : 'Which topic?';
+        const prompt = teachState.path.length === 1 ? 'Which part?' : 'Which topic?';
         await chatSay(prompt, teachingOptions(teachState.items, teachState.path.length + 1));
         return;
       }
@@ -4405,30 +4498,30 @@
 
     const quickTestBanks = {
       maths: [
-        { q: 'A length is 4.8 metres. How many millimetres is that?', a: ['480 mm', '4,800 mm', '48,000 mm', '0.48 mm'], correct: 1 },
+        { q: '4.8 m is how many mm?', a: ['480 mm', '4,800 mm', '48,000 mm', '0.48 mm'], correct: 1 },
         { q: 'What is 25% of 240?', a: ['40', '50', '60', '80'], correct: 2 },
-        { q: 'A rectangle is 3.5 m by 2 m. What is its area?', a: ['5.5 m²', '7 m²', '11 m²', '14 m²'], correct: 1 }
+        { q: 'Area of 3.5 m × 2 m?', a: ['5.5 m²', '7 m²', '11 m²', '14 m²'], correct: 1 }
       ],
       english: [
-        { q: 'Which sentence is punctuated correctly?', a: ['please check the drawing before work starts.', 'Please check the drawing before work starts.', 'Please check the drawing before work starts', 'please Check the drawing before work starts.'], correct: 1 },
-        { q: 'What is the main purpose of an instruction text?', a: ['To entertain', 'To tell someone how to do something', 'To advertise', 'To describe a person'], correct: 1 },
-        { q: 'Which is the most suitable wording for a formal work message?', a: ['Send it now.', 'Can u send it?', 'Please could you send the updated drawing when available?', 'Need drawing ASAP lol'], correct: 2 }
+        { q: 'Which is punctuated correctly?', a: ['please check the drawing.', 'Please check the drawing.', 'Please check the drawing', 'please Check the drawing.'], correct: 1 },
+        { q: 'What is an instruction text for?', a: ['To entertain', 'To explain how', 'To advertise', 'To describe someone'], correct: 1 },
+        { q: 'Best formal work message?', a: ['Send it now.', 'Can u send it?', 'Please send the updated drawing.', 'Need it ASAP lol'], correct: 2 }
       ],
       trade: [
-        { q: 'You find a damaged electrical tool before starting work. What should you do first?', a: ['Use it carefully', 'Tape it up and carry on', 'Stop using it and report it', 'Give it to someone else'], correct: 2 },
-        { q: 'On a 1:50 drawing, 1 cm represents how much in real life?', a: ['5 cm', '50 cm', '5 m', '50 m'], correct: 1 },
-        { q: 'Before starting an unfamiliar task, what is the best first step?', a: ['Start and work it out', 'Check the method, risks and requirements', 'Wait until someone notices', 'Skip the quality checks'], correct: 1 }
+        { q: 'Damaged power tool: first action?', a: ['Use carefully', 'Tape it up', 'Stop and report it', 'Pass it on'], correct: 2 },
+        { q: 'At 1:50, 1 cm represents?', a: ['5 cm', '50 cm', '5 m', '50 m'], correct: 1 },
+        { q: 'Unfamiliar task: first step?', a: ['Start and adapt', 'Check method & risks', 'Wait', 'Skip checks'], correct: 1 }
       ],
       epa: [
-        { q: 'In an EPA discussion, what makes an answer stronger?', a: ['A one-word answer', 'Explaining what you did and why', 'Guessing what the assessor wants', 'Changing the subject'], correct: 1 },
-        { q: 'If asked about quality, what is the strongest response?', a: ['I just know it is right', 'Someone else checks it', 'Explain the checks, tolerances or standards you used', 'I work quickly'], correct: 2 },
-        { q: 'If you are unsure of a safety requirement during an assessment, what should you do?', a: ['Carry on anyway', 'Make up an answer', 'Explain how you would check the correct information', 'Ignore the question'], correct: 2 }
+        { q: 'What makes an EPA answer stronger?', a: ['One-word reply', 'What you did + why', 'Guessing', 'Changing subject'], correct: 1 },
+        { q: 'Best way to explain quality?', a: ["I know it's right", 'Someone checks', 'Checks + standards', 'I work quickly'], correct: 2 },
+        { q: 'Unsure about a safety rule in EPA?', a: ['Carry on', 'Make it up', "Explain how you'd check", 'Ignore it'], correct: 2 }
       ]
     };
 
     async function startTestMe() {
       testState = null;
-      await chatSay('What do you want me to test you on?', [
+      await chatSay('What should I test you on?', [
         { label: 'Maths', action: 'test-category', value: 'maths' },
         { label: 'English', action: 'test-category', value: 'english' },
         { label: 'Trade', action: 'test-category', value: 'trade' },
@@ -4440,7 +4533,7 @@
       if (!testState) return;
       const bank = quickTestBanks[testState.category] || [];
       if (testState.index >= bank.length) {
-        await chatSay(`You got ${testState.score} out of ${bank.length}.`, [
+        await chatSay(`${testState.score}/${bank.length}. Want another go?`, [
           { label: 'Test Me again', action: 'test-me' },
           { label: 'Back to menu', action: 'chat-home' }
         ]);
@@ -4465,10 +4558,11 @@
         checkInState = null;
         teachState = null;
         testState = null;
-        await chatSay('What would you like to do?', mainChatOptions());
+        await chatSay('What do you want to do?', mainChatOptions());
         return;
       }
       if (action === 'quick-review') { await runQuickReview(); return; }
+      if (action === 'review-area') { await openQuickReviewArea(value); return; }
       if (action === 'check-in') { await startCheckIn(); return; }
       if (action === 'teach-me') { await startTeachMe(); return; }
       if (action === 'test-me') { await startTestMe(); return; }
@@ -4511,7 +4605,7 @@
         const correct = Number(value) === question.correct;
         if (correct) testState.score += 1;
         testState.index += 1;
-        await chatSay(correct ? 'Correct.' : `Not quite. The answer is ${question.a[question.correct]}.`);
+        await chatSay(correct ? "Yep — that's right." : `Not quite — it's ${question.a[question.correct]}.`);
         await askTestQuestion();
       }
     }
