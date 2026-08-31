@@ -1,0 +1,180 @@
+name: Apply Naxos KSB import support
+
+on:
+  push:
+    paths:
+      - '.github/workflows/naxos-ksb-import-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch Evia Naxos QR importer
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+          start_marker = '    function parseNaxosPayload(rawValue) {'
+          end_marker = '    async function startScanner() {'
+          start = text.index(start_marker)
+          end = text.index(end_marker, start)
+
+          replacement = r'''    function parseNaxosPayload(rawValue) {
+      try {
+        const parsed = JSON.parse(rawValue);
+        return normaliseCoursePayload(parsed);
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function parseNaxosPackPointer(rawValue) {
+      try {
+        const parsed = JSON.parse(rawValue);
+        if (!parsed || typeof parsed !== 'object') return null;
+        if (parsed.type !== 'evia-mapping-pack-url-v1') return null;
+        if (cleanText(parsed.courseType).toLowerCase() !== 'ksb') return null;
+        if (!cleanText(parsed.packUrl)) return null;
+        return parsed;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    async function fetchNaxosJson(url) {
+      const response = await fetch(url, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`${url}: ${response.status}`);
+      return response.json();
+    }
+
+    function naxosCaptureType(value) {
+      const text = cleanText(value).toLowerCase();
+      if (/video|photo|camera/.test(text)) return 'camera';
+      if (/audio|voice|reflection|microphone/.test(text)) return 'audio';
+      return 'text';
+    }
+
+    function naxosPreferredOption(profile) {
+      const preferred = Array.isArray(profile?.preferred) ? profile.preferred : [];
+      if (!preferred.length) return { label: 'Written evidence', type: 'text' };
+      const label = preferred.map((item) => cleanText(item?.label || item?.type)).filter(Boolean).join(' + ') || 'Recommended evidence';
+      const typeSource = preferred.map((item) => `${item?.type || ''} ${item?.label || ''} ${item?.instruction || ''}`).join(' ');
+      return { label, type: naxosCaptureType(typeSource) };
+    }
+
+    function naxosAlternativeOption(profile) {
+      const alternative = Array.isArray(profile?.alternatives) ? profile.alternatives[0] : null;
+      if (!alternative) return null;
+      const label = cleanText(alternative.label) || 'Alternative evidence';
+      return { label, type: naxosCaptureType(`${label} ${alternative.instruction || ''}`) };
+    }
+
+    function naxosTaskRequirements(task, registry, profile) {
+      const lines = [];
+      const prompt = cleanText(task?.conditionalPrompt);
+      if (prompt) lines.push(prompt);
+      const capture = Array.isArray(profile?.capture) ? profile.capture.map(cleanText).filter(Boolean) : [];
+      if (capture.length) lines.push(`Evidence must show or explain: ${capture.join(' • ')}`);
+      const ksbs = Array.isArray(task?.ksbTargets) ? task.ksbTargets : [];
+      if (ksbs.length) {
+        const wording = ksbs.map((id) => {
+          const text = cleanText(registry?.items?.[id]);
+          return text ? `${id} — ${text}` : id;
+        });
+        lines.push(`KSBs this task can support:\n${wording.join('\n')}`);
+      }
+      return lines.join('\n\n');
+    }
+
+    function buildNaxosKsbCourse(categories, registry, evidenceRules) {
+      const profiles = evidenceRules?.profiles || {};
+      return (categories || []).slice(0, 5).map((category) => ({
+        label: cleanText(category?.title) || `Route ${category?.id || ''}`.trim(),
+        children: (category?.subcategories || []).slice(0, 5).map((subcategory) => ({
+          label: cleanText(subcategory?.title) || `Section ${subcategory?.id || ''}`.trim(),
+          children: (subcategory?.tasks || []).slice(0, 5).map((task) => {
+            const profile = profiles[task?.evidenceProfile] || profiles.knowledge || {};
+            return {
+              label: cleanText(task?.title) || cleanText(task?.id) || 'Task',
+              recommended: naxosPreferredOption(profile),
+              alternative: naxosAlternativeOption(profile),
+              requirements: naxosTaskRequirements(task, registry, profile)
+            };
+          })
+        }))
+      })).filter((category) => category.label && category.children.length);
+    }
+
+    async function importNaxosKsbPack(pointer) {
+      scannerStatus.textContent = 'Loading Naxos KSB course...';
+      const packUrl = new URL(pointer.packUrl, window.location.href).href;
+      const pack = await fetchNaxosJson(packUrl);
+      if (cleanText(pack?.courseType).toLowerCase() !== 'ksb') throw new Error('The Naxos pack is not a KSB course.');
+      const packDir = new URL('./', packUrl);
+      const registryUrl = new URL(pack.ksbRegistry, packDir).href;
+      const evidenceRulesUrl = new URL(pack.evidenceRules, packDir).href;
+      const categoryUrls = (pack.categoryFiles || []).map((file) => new URL(file, packDir).href);
+      const [registry, evidenceRules, ...categories] = await Promise.all([
+        fetchNaxosJson(registryUrl),
+        fetchNaxosJson(evidenceRulesUrl),
+        ...categoryUrls.map(fetchNaxosJson)
+      ]);
+      const items = buildNaxosKsbCourse(categories, registry, evidenceRules);
+      if (!items.length) throw new Error('The Naxos KSB pack contains no course structure.');
+      applyImportedCourse(items);
+      closeScanner(false);
+    }
+
+    function applyImportedCourse(items) {
+      courseItems = items.slice(0, 5);
+      saveCourse(courseItems);
+      closeEvidence();
+      resetPills();
+      screen.classList.add('active', 'pills-ready');
+      setSpeech(menuSpeechLines(1));
+      scannerStatus.textContent = 'Naxos course imported.';
+      updateBackButton();
+    }
+
+    function handleQrRawValue(rawValue) {
+      const pointer = parseNaxosPackPointer(rawValue);
+      if (pointer) {
+        importNaxosKsbPack(pointer).catch((error) => {
+          console.error('Could not import Naxos KSB pack', error);
+          scannerStatus.textContent = 'Could not load that Naxos KSB course.';
+          scannerBusy = false;
+          if (scannerPanel.classList.contains('open') && scannerStream) scannerFrame = requestAnimationFrame(scanFrame);
+        });
+        return true;
+      }
+      const items = parseNaxosPayload(rawValue);
+      if (items) {
+        applyImportedCourse(items);
+        closeScanner(false);
+        return true;
+      }
+      scannerStatus.textContent = 'That QR code is not a valid Naxos course code.';
+      return false;
+    }
+
+'''
+
+          path.write_text(text[:start] + replacement + text[end:], encoding='utf-8')
+          PY
+      - name: Commit importer update
+        run: |
+          if git diff --quiet -- index.html; then
+            echo "No index change was required"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Load Naxos KSB mapping packs in Evia"
+          git push
