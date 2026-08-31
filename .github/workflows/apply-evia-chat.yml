@@ -16,11 +16,13 @@ jobs:
       - name: Apply verified Evia chat build
         shell: bash
         run: |
-          : > /tmp/evia-chat.b64
-          python3 - <<'PY'
-          import urllib.request
-          parts = [
-            'https://raw.githubusercontent.com/DDRNFinch/Evia/fca8bdf114c11fed7bf386cd646a079b21aa9366/index.html'
-          ]
-          PY
-          echo "The verified app payload is applied by the next connector step."
+          cat .evia-transfer/chat-00.b64 .evia-transfer/chat-01.b64 .evia-transfer/chat-02.b64 .evia-transfer/chat-03.b64 > /tmp/evia-chat.b64
+          base64 -d /tmp/evia-chat.b64 | gzip -d > index.html
+          test "$(git hash-object index.html)" = "75255f9272a64e6ca00eba5a72dd55d418b453c7"
+          rm -rf .evia-transfer
+          rm .github/workflows/apply-evia-chat.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Add Evia quick chat, reviews and staged evidence reveal"
+          git push
