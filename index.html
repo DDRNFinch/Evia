@@ -695,6 +695,190 @@
       gap: 14px;
     }
 
+    .evidence-choice.evidence-enter,
+    .evidence-requirements.evidence-enter {
+      opacity: 0;
+      transform: translateY(18px);
+      transition:
+        opacity 320ms ease,
+        transform 460ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .evidence-choice.evidence-enter.reveal-step,
+    .evidence-requirements.evidence-enter.reveal-step {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .chat-button {
+      position: absolute;
+      right: max(14px, env(safe-area-inset-right));
+      top: calc(max(14px, env(safe-area-inset-top)) + 8px);
+      width: 44px;
+      height: 44px;
+      border: 0;
+      background: transparent;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      z-index: 15;
+    }
+
+    .chat-icon {
+      position: relative;
+      width: 28px;
+      height: 22px;
+      border: 2px solid rgba(45, 45, 45, 0.64);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.94);
+    }
+
+    .chat-icon::after {
+      content: "";
+      position: absolute;
+      right: 3px;
+      bottom: -5px;
+      width: 8px;
+      height: 8px;
+      border-right: 2px solid rgba(45, 45, 45, 0.64);
+      border-bottom: 2px solid rgba(45, 45, 45, 0.64);
+      background: #fff;
+      transform: skewY(-34deg) rotate(18deg);
+    }
+
+    .chat-card {
+      width: min(100%, 480px);
+      height: min(calc(100dvh - 118px), 690px);
+      min-height: 360px;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      border: 1px solid rgba(45, 45, 45, 0.1);
+      border-radius: 26px;
+      overflow: hidden;
+    }
+
+    .chat-header {
+      min-height: 54px;
+      display: flex;
+      align-items: center;
+      padding: 0 18px;
+      border-bottom: 1px solid rgba(45, 45, 45, 0.08);
+      font-size: 15px;
+      font-weight: 600;
+      color: rgba(45, 45, 45, 0.78);
+    }
+
+    .chat-scroll {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 16px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: rgba(247, 247, 247, 0.72);
+    }
+
+    .chat-row {
+      width: 100%;
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    .chat-row.user {
+      justify-content: flex-end;
+    }
+
+    .mini-evia {
+      width: 32px;
+      height: 32px;
+      border: 2px solid var(--evia-yellow);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      flex: 0 0 auto;
+      animation: miniEviaFloat 1800ms ease-in-out infinite;
+    }
+
+    .mini-evia span {
+      width: 7px;
+      height: 7px;
+      border: 1.5px solid var(--evia-yellow);
+      border-radius: 50%;
+    }
+
+    .chat-bubble {
+      max-width: min(78%, 330px);
+      border-radius: 18px 18px 18px 5px;
+      background: #ececec;
+      color: rgba(35, 35, 35, 0.82);
+      padding: 10px 13px;
+      font-size: 14px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+    }
+
+    .chat-row.user .chat-bubble {
+      border-radius: 18px 18px 5px 18px;
+      background: rgba(245, 196, 0, 0.19);
+    }
+
+    .typing-bubble {
+      min-width: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .typing-bubble i {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(80, 80, 80, 0.55);
+      animation: typingDot 1050ms ease-in-out infinite;
+    }
+
+    .typing-bubble i:nth-child(2) { animation-delay: 120ms; }
+    .typing-bubble i:nth-child(3) { animation-delay: 240ms; }
+
+    .chat-options {
+      flex: 0 0 auto;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      padding: 10px 12px 14px;
+      border-top: 1px solid rgba(45, 45, 45, 0.08);
+      background: #fff;
+    }
+
+    .chat-options:empty { display: none; }
+
+    .chat-option {
+      min-height: 44px;
+      border: 1.5px solid rgba(245, 196, 0, 0.4);
+      border-radius: 999px;
+      background: rgba(250, 249, 242, 0.98);
+      color: rgba(45, 45, 45, 0.72);
+      padding: 8px 12px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    @keyframes miniEviaFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-2px); }
+    }
+
+    @keyframes typingDot {
+      0%, 70%, 100% { transform: translateY(0); opacity: 0.45; }
+      35% { transform: translateY(-3px); opacity: 1; }
+    }
+
     .learner-profile {
       width: 100%;
       min-height: 0;
@@ -819,7 +1003,10 @@
       .pill,
       .naxos-menu,
       .evia-speech,
-      .speech-word {
+      .speech-word,
+      .mini-evia,
+      .typing-bubble i,
+      .evidence-enter {
         animation: none !important;
         transition: none !important;
       }
@@ -829,6 +1016,9 @@
 <body>
   <main class="screen" id="screen" aria-label="Evia home">
     <button class="back-button" id="backButton" type="button">Back</button>
+    <button class="chat-button" id="chatButton" type="button" aria-label="Open Evia chat">
+      <span class="chat-icon" aria-hidden="true"></span>
+    </button>
 
     <div class="evia-stage" id="eviaStage" aria-label="Evia" role="button" tabindex="0">
       <div class="evia-float">
@@ -876,6 +1066,14 @@
       </div>
     </div>
 
+    <div class="overlay-panel" id="chatPanel" aria-hidden="true">
+      <div class="chat-card">
+        <div class="chat-header">Evia</div>
+        <div class="chat-scroll" id="chatScroll" aria-live="polite"></div>
+        <div class="chat-options" id="chatOptions" aria-label="Chat choices"></div>
+      </div>
+    </div>
+
     <div class="overlay-panel" id="portfolioPanel" aria-hidden="true">
       <div class="portfolio-card">
         <div class="portfolio-title" id="portfolioTitle">My Portfolio</div>
@@ -910,6 +1108,18 @@
             <label for="profileEndDate">Course end date</label>
             <input id="profileEndDate" name="endDate" type="date">
           </div>
+          <div class="profile-field">
+            <label for="profileAssessorName">Assessor name</label>
+            <input id="profileAssessorName" name="assessorName" type="text" autocomplete="name">
+          </div>
+          <div class="profile-field">
+            <label for="profileAssessorPhone">Assessor phone number</label>
+            <input id="profileAssessorPhone" name="assessorPhone" type="tel" autocomplete="tel">
+          </div>
+          <div class="profile-field">
+            <label for="profileSafeguardingPhone">Safeguarding phone number</label>
+            <input id="profileSafeguardingPhone" name="safeguardingPhone" type="tel" autocomplete="tel">
+          </div>
           <div class="profile-note">Evia uses your nickname when you add one; official evidence uses your first and last name.</div>
           <div class="profile-actions">
             <button class="secondary-button" type="submit">Save Profile</button>
@@ -927,6 +1137,10 @@
     const eviaFloat = evia.closest('.evia-float');
     const eviaSpeech = document.getElementById('eviaSpeech');
     const backButton = document.getElementById('backButton');
+    const chatButton = document.getElementById('chatButton');
+    const chatPanel = document.getElementById('chatPanel');
+    const chatScroll = document.getElementById('chatScroll');
+    const chatOptions = document.getElementById('chatOptions');
     const pillStack = document.getElementById('pillStack');
     const evidenceScreen = document.getElementById('evidenceScreen');
     const evidenceTop = document.getElementById('evidenceTop');
@@ -951,6 +1165,9 @@
     const profileNickname = document.getElementById('profileNickname');
     const profileStartDate = document.getElementById('profileStartDate');
     const profileEndDate = document.getElementById('profileEndDate');
+    const profileAssessorName = document.getElementById('profileAssessorName');
+    const profileAssessorPhone = document.getElementById('profileAssessorPhone');
+    const profileSafeguardingPhone = document.getElementById('profileSafeguardingPhone');
     const profileStatus = document.getElementById('profileStatus');
     const downloadPortfolio = document.getElementById('downloadPortfolio');
     const uploadPortfolio = document.getElementById('uploadPortfolio');
@@ -1003,6 +1220,11 @@
     let learnerProfile = loadLearnerProfile();
     let profileViewOpen = false;
     let speechRunId = 0;
+    let chatRunId = 0;
+    let chatNavStack = [];
+    let checkInState = null;
+    let teachState = null;
+    let testState = null;
 
     function pickDifferentLook() {
       let next = lastLook;
@@ -1069,10 +1291,16 @@
           lastName: cleanText(parsed.lastName),
           nickname: cleanText(parsed.nickname),
           startDate: cleanText(parsed.startDate),
-          endDate: cleanText(parsed.endDate)
+          endDate: cleanText(parsed.endDate),
+          assessorName: cleanText(parsed.assessorName),
+          assessorPhone: cleanText(parsed.assessorPhone),
+          safeguardingPhone: cleanText(parsed.safeguardingPhone)
         };
       } catch (error) {
-        return { firstName: '', lastName: '', nickname: '', startDate: '', endDate: '' };
+        return {
+          firstName: '', lastName: '', nickname: '', startDate: '', endDate: '',
+          assessorName: '', assessorPhone: '', safeguardingPhone: ''
+        };
       }
     }
 
@@ -1082,7 +1310,10 @@
         lastName: cleanText(profile.lastName),
         nickname: cleanText(profile.nickname),
         startDate: cleanText(profile.startDate),
-        endDate: cleanText(profile.endDate)
+        endDate: cleanText(profile.endDate),
+        assessorName: cleanText(profile.assessorName),
+        assessorPhone: cleanText(profile.assessorPhone),
+        safeguardingPhone: cleanText(profile.safeguardingPhone)
       };
       try {
         localStorage.setItem('eviaLearnerProfile', JSON.stringify(learnerProfile));
@@ -1249,6 +1480,10 @@
         normalised.recommended = normaliseEvidenceOption(node.recommended || node.recommendedEvidence, 'Recommended');
         normalised.alternative = normaliseEvidenceOption(node.alternative || node.alternativeEvidence, 'Alternative');
         normalised.requirements = cleanText(node.requirements || node.evidenceRequirements || node.evidence || node.guidance);
+        const rawTeachingPoints = node.teachingPoints || node.didYouKnow || node.teach || [];
+        if (Array.isArray(rawTeachingPoints)) {
+          normalised.teachingPoints = rawTeachingPoints.map(cleanText).filter(Boolean).slice(0, 3);
+        }
       }
 
       return normalised;
@@ -1317,12 +1552,7 @@
       const node = selectedNode(selectedIndex);
       if (!node) return;
 
-      if (menuLevel >= 3 || !Array.isArray(node.children) || !node.children.length) {
-        activeEvidencePath = [...getLabelsForPath(menuPath), node.label];
-        openEvidence(node);
-        return;
-      }
-
+      const opensEvidence = menuLevel >= 3 || !Array.isArray(node.children) || !node.children.length;
       pillTransitionBusy = true;
       const sourceLevel = menuLevel;
       const sourcePath = menuPath.join('.');
@@ -1343,6 +1573,14 @@
             pillTransitionBusy = false;
             return;
           }
+
+          if (opensEvidence) {
+            activeEvidencePath = [...getLabelsForPath(menuPath), node.label];
+            pillTransitionBusy = false;
+            await openEvidence(node);
+            return;
+          }
+
           menuPath.push(selectedIndex);
           menuLevel += 1;
           currentItems = node.children.slice(0, 5);
@@ -1369,7 +1607,7 @@
       renderPills(false);
     }
 
-    function renderEvidenceChoices() {
+    function renderEvidenceChoices(animateIn = false) {
       stopCapture();
       captureMode = null;
       activeEvidenceMethod = null;
@@ -1383,7 +1621,7 @@
       choices.forEach(([heading, option]) => {
         const button = document.createElement('button');
         button.type = 'button';
-        button.className = 'evidence-choice';
+        button.className = `evidence-choice${animateIn ? ' evidence-enter' : ''}`;
         button.dataset.evidenceType = option.type || 'text';
         button.dataset.evidenceHeading = heading;
         button.dataset.evidenceLabel = option.label;
@@ -1392,7 +1630,33 @@
       });
 
       evidenceTop.style.gridTemplateRows = choices.length === 1 ? '1fr' : '1fr 1fr';
+      if (!animateIn) {
+        evidenceRequirements.classList.remove('evidence-enter', 'reveal-step');
+      }
       updateBackButton();
+      return [...evidenceTop.querySelectorAll('.evidence-choice')];
+    }
+
+    async function revealEvidenceOptions() {
+      const choices = renderEvidenceChoices(true);
+      const requirementsVisible = evidenceRequirements.style.display !== 'none';
+      evidenceRequirements.classList.toggle('evidence-enter', requirementsVisible);
+      evidenceRequirements.classList.remove('reveal-step');
+      screen.classList.add('evidence-ready');
+
+      for (const choice of choices) {
+        await wait(180);
+        if (!screen.classList.contains('evidence-open')) return false;
+        choice.classList.add('reveal-step');
+        await wait(250);
+      }
+
+      if (requirementsVisible) {
+        await wait(160);
+        if (!screen.classList.contains('evidence-open')) return false;
+        evidenceRequirements.classList.add('reveal-step');
+      }
+      return true;
     }
 
     async function openEvidence(node) {
@@ -1403,6 +1667,7 @@
 
       const requirements = cleanText(node.requirements);
       evidenceRequirements.style.display = requirements ? 'block' : 'none';
+      evidenceRequirements.classList.remove('reveal-step');
       requirementsText.textContent = requirements;
       evidenceScreen.style.gridTemplateRows = requirements ? '1fr 1fr' : '1fr';
       updateBackButton();
@@ -1410,8 +1675,7 @@
       const evidenceAtStart = activeEvidence;
       const finished = await speak(evidenceSpeechLines());
       if (!finished || activeEvidence !== evidenceAtStart || !screen.classList.contains('evidence-open')) return;
-      renderEvidenceChoices();
-      screen.classList.add('evidence-ready');
+      await revealEvidenceOptions();
     }
 
     function closeEvidence() {
@@ -1423,6 +1687,7 @@
       screen.classList.remove('evidence-open', 'evidence-ready');
       evidenceScreen.style.gridTemplateRows = '1fr 1fr';
       evidenceRequirements.style.display = 'block';
+      evidenceRequirements.classList.remove('evidence-enter', 'reveal-step');
       updateBackButton();
     }
 
@@ -1895,6 +2160,9 @@
       profileNickname.value = learnerProfile.nickname;
       profileStartDate.value = learnerProfile.startDate;
       profileEndDate.value = learnerProfile.endDate;
+      profileAssessorName.value = learnerProfile.assessorName;
+      profileAssessorPhone.value = learnerProfile.assessorPhone;
+      profileSafeguardingPhone.value = learnerProfile.safeguardingPhone;
       profileStatus.textContent = '';
     }
 
@@ -2098,12 +2366,418 @@
       }
     }
 
+    function miniEviaMarkup() {
+      return '<div class="mini-evia" aria-hidden="true"><span></span><span></span></div>';
+    }
+
+    function scrollChatBottom() {
+      requestAnimationFrame(() => {
+        chatScroll.scrollTop = chatScroll.scrollHeight;
+      });
+    }
+
+    function appendBotBubble(text, typing = false) {
+      const row = document.createElement('div');
+      row.className = 'chat-row bot';
+      const bubble = document.createElement('div');
+      bubble.className = `chat-bubble${typing ? ' typing-bubble' : ''}`;
+      if (typing) bubble.innerHTML = '<i></i><i></i><i></i>';
+      else bubble.textContent = text;
+      row.innerHTML = miniEviaMarkup();
+      row.appendChild(bubble);
+      chatScroll.appendChild(row);
+      scrollChatBottom();
+      return { row, bubble };
+    }
+
+    function appendUserBubble(text) {
+      const row = document.createElement('div');
+      row.className = 'chat-row user';
+      const bubble = document.createElement('div');
+      bubble.className = 'chat-bubble';
+      bubble.textContent = text;
+      row.appendChild(bubble);
+      chatScroll.appendChild(row);
+      scrollChatBottom();
+    }
+
+    function renderChatOptions(options = []) {
+      chatOptions.innerHTML = '';
+      options.forEach((option) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'chat-option';
+        button.dataset.chatAction = option.action;
+        if (option.value !== undefined) button.dataset.chatValue = String(option.value);
+        button.textContent = option.label;
+        chatOptions.appendChild(button);
+      });
+    }
+
+    async function chatSay(text, options = []) {
+      chatRunId += 1;
+      const runId = chatRunId;
+      renderChatOptions([]);
+      const { bubble } = appendBotBubble('', true);
+      await wait(2000);
+      if (runId !== chatRunId || !chatPanel.classList.contains('open')) return false;
+      bubble.className = 'chat-bubble';
+      bubble.textContent = text;
+      renderChatOptions(options);
+      scrollChatBottom();
+      return true;
+    }
+
+    function mainChatOptions() {
+      return [
+        { label: 'Quick Review', action: 'quick-review' },
+        { label: 'Check-in', action: 'check-in' },
+        { label: 'Teach Me', action: 'teach-me' },
+        { label: 'Test Me', action: 'test-me' }
+      ];
+    }
+
+    function captureChatSnapshot() {
+      return {
+        scroll: chatScroll.innerHTML,
+        options: chatOptions.innerHTML,
+        checkInState: checkInState ? JSON.parse(JSON.stringify(checkInState)) : null,
+        teachState: teachState ? JSON.parse(JSON.stringify(teachState)) : null,
+        testState: testState ? JSON.parse(JSON.stringify(testState)) : null
+      };
+    }
+
+    function restoreChatSnapshot(snapshot) {
+      chatRunId += 1;
+      chatScroll.innerHTML = snapshot.scroll;
+      chatOptions.innerHTML = snapshot.options;
+      checkInState = snapshot.checkInState;
+      teachState = snapshot.teachState;
+      testState = snapshot.testState;
+      scrollChatBottom();
+      updateBackButton();
+    }
+
+    async function openChat() {
+      stopTalking(false);
+      chatNavStack = [];
+      checkInState = null;
+      teachState = null;
+      testState = null;
+      chatScroll.innerHTML = '';
+      chatOptions.innerHTML = '';
+      chatPanel.classList.add('open');
+      chatPanel.setAttribute('aria-hidden', 'false');
+      updateBackButton();
+      const name = learnerConversationName();
+      await chatSay(name ? `Hi ${name}, what's up?` : "Hi, what's up?", mainChatOptions());
+    }
+
+    function closeChat() {
+      chatRunId += 1;
+      chatPanel.classList.remove('open');
+      chatPanel.setAttribute('aria-hidden', 'true');
+      chatNavStack = [];
+      checkInState = null;
+      teachState = null;
+      testState = null;
+      updateBackButton();
+      refreshGuidanceStatic();
+    }
+
+    function courseLeaves(items = courseItems, path = [], result = []) {
+      items.forEach((node) => {
+        const nextPath = [...path, node.label];
+        if (Array.isArray(node.children) && node.children.length) courseLeaves(node.children, nextPath, result);
+        else result.push({ node, path: nextPath });
+      });
+      return result;
+    }
+
+    function courseProgressPercent() {
+      if (!learnerProfile.startDate || !learnerProfile.endDate) return null;
+      const start = Date.parse(`${learnerProfile.startDate}T00:00:00Z`);
+      const end = Date.parse(`${learnerProfile.endDate}T00:00:00Z`);
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
+      const now = Date.now();
+      return Math.max(0, Math.min(100, ((now - start) / (end - start)) * 100));
+    }
+
+    async function runQuickReview() {
+      const leaves = courseLeaves();
+      let entries = [];
+      try { entries = await getPortfolioEntries(); } catch (error) { entries = []; }
+      const evidencePaths = new Set(entries.map((entry) => Array.isArray(entry.path) ? entry.path.join('||') : '').filter(Boolean));
+      const coveredLeaves = leaves.filter((leaf) => evidencePaths.has(leaf.path.join('||')));
+      const coverage = leaves.length ? Math.round((coveredLeaves.length / leaves.length) * 100) : 0;
+      const elapsed = courseProgressPercent();
+
+      if (!leaves.length) {
+        await chatSay('I need a Naxos course in Evia before I can give you a useful quick review.', mainChatOptions());
+        return;
+      }
+
+      let paceMessage = `You have evidence against ${coveredLeaves.length} of ${leaves.length} mapped areas (${coverage}%).`;
+      if (elapsed !== null) {
+        const elapsedRounded = Math.round(elapsed);
+        const targetCount = Math.ceil((elapsed / 100) * leaves.length);
+        const catchUp = Math.max(0, targetCount - coveredLeaves.length);
+        if (coverage + 5 >= elapsedRounded) {
+          paceMessage += ` Your course is about ${elapsedRounded}% through, so you're on target overall.`;
+        } else {
+          paceMessage += ` Your course is about ${elapsedRounded}% through, so you're behind your current pace.`;
+          if (catchUp) paceMessage += ` Evidence in about ${catchUp} more mapped area${catchUp === 1 ? '' : 's'} would bring you closer to target.`;
+        }
+      } else {
+        paceMessage += ' Add your course start and end dates in Learner Profile and I can compare that with your course pace.';
+      }
+      await chatSay(paceMessage);
+
+      const areaStats = courseItems.map((area) => {
+        const areaLeaves = courseLeaves([area]);
+        const covered = areaLeaves.filter((leaf) => evidencePaths.has(leaf.path.join('||'))).length;
+        return { label: area.label, total: areaLeaves.length, covered, rate: areaLeaves.length ? covered / areaLeaves.length : 0 };
+      }).filter((area) => area.total);
+      areaStats.sort((a, b) => b.rate - a.rate);
+      const strongest = areaStats[0];
+      const weakest = areaStats[areaStats.length - 1];
+      if (strongest && weakest) {
+        const strongText = strongest.rate > 0 ? `Your strongest mapped area is ${strongest.label}.` : 'You are just getting started, so there is not a strongest evidence area yet.';
+        const weakText = weakest.rate < 1 ? `The area needing most attention is ${weakest.label}.` : 'Every mapped area currently has evidence.';
+        await chatSay(`${strongText} ${weakText}`, mainChatOptions());
+      } else {
+        await chatSay('Keep adding evidence and I will be able to show your stronger and weaker areas here.', mainChatOptions());
+      }
+    }
+
+    function randomCourseAreas(count = 3) {
+      const labels = courseItems.map((item) => item.label).filter(Boolean);
+      for (let i = labels.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [labels[i], labels[j]] = [labels[j], labels[i]];
+      }
+      return labels.slice(0, Math.min(count, labels.length));
+    }
+
+    async function startCheckIn() {
+      checkInState = { stage: 'day', areas: randomCourseAreas(3), areaIndex: 0 };
+      await chatSay("How's your day going?", [
+        { label: 'Great', action: 'check-day', value: 'great' },
+        { label: 'Okay', action: 'check-day', value: 'okay' },
+        { label: 'Not great', action: 'check-day', value: 'not-great' }
+      ]);
+    }
+
+    async function askSupportChoice() {
+      const assessorLabel = learnerProfile.assessorName || 'Assessor';
+      await chatSay('Want to speak to someone?', [
+        { label: assessorLabel, action: 'call-assessor' },
+        { label: 'Safeguarding', action: 'call-safeguarding' },
+        { label: 'No', action: 'support-no' }
+      ]);
+    }
+
+    async function askFeeling() {
+      if (!checkInState) return;
+      checkInState.stage = 'feeling';
+      await chatSay('How are you feeling right now?', [
+        { label: 'Good', action: 'check-feeling', value: 'good' },
+        { label: 'Okay', action: 'check-feeling', value: 'okay' },
+        { label: 'A bit low', action: 'check-feeling', value: 'low' }
+      ]);
+    }
+
+    async function askConfidenceArea() {
+      if (!checkInState) return;
+      if (checkInState.areaIndex >= checkInState.areas.length) {
+        const name = learnerConversationName();
+        await chatSay(name ? `Thanks ${name}. That's your quick check-in done.` : "Thanks. That's your quick check-in done.", mainChatOptions());
+        return;
+      }
+      const area = checkInState.areas[checkInState.areaIndex];
+      checkInState.stage = 'confidence';
+      await chatSay(`How confident do you feel with ${area}?`, [
+        { label: 'Confident', action: 'check-confidence', value: 'confident' },
+        { label: 'Getting there', action: 'check-confidence', value: 'getting-there' },
+        { label: 'Need help', action: 'check-confidence', value: 'need-help' }
+      ]);
+    }
+
+    function dialSavedNumber(number, missingMessage) {
+      const cleanNumber = String(number || '').replace(/[^\d+]/g, '');
+      if (!cleanNumber) {
+        chatSay(missingMessage, [{ label: 'Back to chat', action: 'chat-home' }]);
+        return;
+      }
+      window.location.href = `tel:${cleanNumber}`;
+    }
+
+    function teachingOptions(items, depth) {
+      return items.slice(0, 5).map((item, index) => ({
+        label: item.label,
+        action: 'teach-pick',
+        value: index
+      }));
+    }
+
+    async function startTeachMe() {
+      teachState = { path: [], items: courseItems.slice(0, 5) };
+      await chatSay('What do you want to learn about?', teachingOptions(teachState.items, 1));
+    }
+
+    async function teachPick(index) {
+      if (!teachState) return;
+      const node = teachState.items[index];
+      if (!node) return;
+      teachState.path.push(node.label);
+      if (Array.isArray(node.children) && node.children.length) {
+        teachState.items = node.children.slice(0, 5);
+        const prompt = teachState.path.length === 1 ? 'Which part of that area?' : 'Which topic?';
+        await chatSay(prompt, teachingOptions(teachState.items, teachState.path.length + 1));
+        return;
+      }
+
+      const supplied = Array.isArray(node.teachingPoints) ? node.teachingPoints.filter(Boolean).slice(0, 3) : [];
+      const fallbacks = [
+        `Did you know? ${node.label} sits within ${teachState.path.slice(0, -1).join(' › ') || 'your course'}.`,
+        cleanText(node.requirements)
+          ? `One useful thing to remember is the mapped requirement: ${cleanText(node.requirements)}`
+          : `${node.label} is one of the mapped areas in your course.`,
+        node.recommended?.label
+          ? `For evidence, Naxos recommends ${node.recommended.label} for this topic.`
+          : 'Use the evidence opportunities in your course pack to show what you can do.'
+      ];
+      const points = supplied.length ? supplied : fallbacks;
+      for (let i = 0; i < Math.min(3, points.length); i += 1) {
+        const prefix = supplied.length ? (i === 0 ? 'Did you know? ' : '') : '';
+        await chatSay(`${prefix}${points[i]}`);
+      }
+      await chatSay('Want to learn something else?', [
+        { label: 'Teach Me', action: 'teach-me' },
+        { label: 'Back to menu', action: 'chat-home' }
+      ]);
+    }
+
+    const quickTestBanks = {
+      maths: [
+        { q: 'A length is 4.8 metres. How many millimetres is that?', a: ['480 mm', '4,800 mm', '48,000 mm', '0.48 mm'], correct: 1 },
+        { q: 'What is 25% of 240?', a: ['40', '50', '60', '80'], correct: 2 },
+        { q: 'A rectangle is 3.5 m by 2 m. What is its area?', a: ['5.5 m²', '7 m²', '11 m²', '14 m²'], correct: 1 }
+      ],
+      english: [
+        { q: 'Which sentence is punctuated correctly?', a: ['please check the drawing before work starts.', 'Please check the drawing before work starts.', 'Please check the drawing before work starts', 'please Check the drawing before work starts.'], correct: 1 },
+        { q: 'What is the main purpose of an instruction text?', a: ['To entertain', 'To tell someone how to do something', 'To advertise', 'To describe a person'], correct: 1 },
+        { q: 'Which is the most suitable wording for a formal work message?', a: ['Send it now.', 'Can u send it?', 'Please could you send the updated drawing when available?', 'Need drawing ASAP lol'], correct: 2 }
+      ],
+      trade: [
+        { q: 'You find a damaged electrical tool before starting work. What should you do first?', a: ['Use it carefully', 'Tape it up and carry on', 'Stop using it and report it', 'Give it to someone else'], correct: 2 },
+        { q: 'On a 1:50 drawing, 1 cm represents how much in real life?', a: ['5 cm', '50 cm', '5 m', '50 m'], correct: 1 },
+        { q: 'Before starting an unfamiliar task, what is the best first step?', a: ['Start and work it out', 'Check the method, risks and requirements', 'Wait until someone notices', 'Skip the quality checks'], correct: 1 }
+      ],
+      epa: [
+        { q: 'In an EPA discussion, what makes an answer stronger?', a: ['A one-word answer', 'Explaining what you did and why', 'Guessing what the assessor wants', 'Changing the subject'], correct: 1 },
+        { q: 'If asked about quality, what is the strongest response?', a: ['I just know it is right', 'Someone else checks it', 'Explain the checks, tolerances or standards you used', 'I work quickly'], correct: 2 },
+        { q: 'If you are unsure of a safety requirement during an assessment, what should you do?', a: ['Carry on anyway', 'Make up an answer', 'Explain how you would check the correct information', 'Ignore the question'], correct: 2 }
+      ]
+    };
+
+    async function startTestMe() {
+      testState = null;
+      await chatSay('What do you want me to test you on?', [
+        { label: 'Maths', action: 'test-category', value: 'maths' },
+        { label: 'English', action: 'test-category', value: 'english' },
+        { label: 'Trade', action: 'test-category', value: 'trade' },
+        { label: 'EPA', action: 'test-category', value: 'epa' }
+      ]);
+    }
+
+    async function askTestQuestion() {
+      if (!testState) return;
+      const bank = quickTestBanks[testState.category] || [];
+      if (testState.index >= bank.length) {
+        await chatSay(`You got ${testState.score} out of ${bank.length}.`, [
+          { label: 'Test Me again', action: 'test-me' },
+          { label: 'Back to menu', action: 'chat-home' }
+        ]);
+        return;
+      }
+      const question = bank[testState.index];
+      await chatSay(question.q, question.a.map((answer, index) => ({
+        label: answer,
+        action: 'test-answer',
+        value: index
+      })));
+    }
+
+    async function handleChatAction(action, value, label) {
+      if (!action) return;
+      if (!['call-assessor', 'call-safeguarding'].includes(action)) {
+        chatNavStack.push(captureChatSnapshot());
+      }
+      appendUserBubble(label);
+
+      if (action === 'chat-home') {
+        checkInState = null;
+        teachState = null;
+        testState = null;
+        await chatSay('What would you like to do?', mainChatOptions());
+        return;
+      }
+      if (action === 'quick-review') { await runQuickReview(); return; }
+      if (action === 'check-in') { await startCheckIn(); return; }
+      if (action === 'teach-me') { await startTeachMe(); return; }
+      if (action === 'test-me') { await startTestMe(); return; }
+
+      if (action === 'check-day') {
+        if (checkInState) checkInState.day = value;
+        if (value === 'not-great') await askSupportChoice();
+        else await askFeeling();
+        return;
+      }
+      if (action === 'support-no') { await askFeeling(); return; }
+      if (action === 'call-assessor') {
+        dialSavedNumber(learnerProfile.assessorPhone, 'Add your assessor phone number in Learner Profile before using this call option.');
+        return;
+      }
+      if (action === 'call-safeguarding') {
+        dialSavedNumber(learnerProfile.safeguardingPhone, 'Add the safeguarding phone number in Learner Profile before using this call option.');
+        return;
+      }
+      if (action === 'check-feeling') {
+        if (checkInState) checkInState.feeling = value;
+        await askConfidenceArea();
+        return;
+      }
+      if (action === 'check-confidence') {
+        if (checkInState) checkInState.areaIndex += 1;
+        await askConfidenceArea();
+        return;
+      }
+      if (action === 'teach-pick') { await teachPick(Number(value)); return; }
+      if (action === 'test-category') {
+        testState = { category: value, index: 0, score: 0 };
+        await askTestQuestion();
+        return;
+      }
+      if (action === 'test-answer') {
+        const bank = quickTestBanks[testState?.category] || [];
+        const question = bank[testState?.index || 0];
+        if (!testState || !question) return;
+        const correct = Number(value) === question.correct;
+        if (correct) testState.score += 1;
+        testState.index += 1;
+        await chatSay(correct ? 'Correct.' : `Not quite. The answer is ${question.a[question.correct]}.`);
+        await askTestQuestion();
+      }
+    }
+
     function showSupabasePlaceholder() {
       portfolioStatus.textContent = 'Supabase upload is ready to connect when the website endpoint is added. Your portfolio remains stored locally.';
     }
 
     function updateBackButton() {
       const shouldShow =
+        chatPanel.classList.contains('open') ||
         scannerPanel.classList.contains('open') ||
         portfolioPanel.classList.contains('open') ||
         naxosMenu.classList.contains('open') ||
@@ -2115,6 +2789,14 @@
 
     function goBackOneStep() {
       stopTalking(false);
+      if (chatPanel.classList.contains('open')) {
+        if (chatNavStack.length) {
+          restoreChatSnapshot(chatNavStack.pop());
+        } else {
+          closeChat();
+        }
+        return;
+      }
       if (scannerPanel.classList.contains('open')) {
         closeScanner(true);
         return;
@@ -2135,7 +2817,8 @@
       }
       if (captureMode !== null && screen.classList.contains('evidence-open')) {
         setSpeech(evidenceSpeechLines());
-        renderEvidenceChoices();
+        evidenceRequirements.classList.remove('evidence-enter', 'reveal-step');
+        renderEvidenceChoices(false);
         screen.classList.add('evidence-ready');
         return;
       }
@@ -2167,6 +2850,12 @@
     });
 
     backButton.addEventListener('click', goBackOneStep);
+    chatButton.addEventListener('click', openChat);
+    chatOptions.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-chat-action]');
+      if (!button) return;
+      handleChatAction(button.dataset.chatAction, button.dataset.chatValue, button.textContent.trim());
+    });
 
     pillStack.addEventListener('click', handlePillActivation);
     pillStack.addEventListener('keydown', (event) => {
@@ -2206,7 +2895,10 @@
         lastName: profileLastName.value,
         nickname: profileNickname.value,
         startDate: profileStartDate.value,
-        endDate: profileEndDate.value
+        endDate: profileEndDate.value,
+        assessorName: profileAssessorName.value,
+        assessorPhone: profileAssessorPhone.value,
+        safeguardingPhone: profileSafeguardingPhone.value
       });
       profileStatus.textContent = 'Profile saved.';
       refreshGuidanceStatic();
