@@ -338,16 +338,25 @@
 
     .evidence-choice {
       width: 100%;
-      border-radius: 999px;
+      border-radius: 24px;
       display: flex;
-      align-items: center;
+      flex-direction: column;
+      align-items: flex-start;
       justify-content: center;
+      gap: 4px;
       padding: 14px 18px;
       color: rgba(45, 45, 45, 0.68);
+      text-align: left;
       cursor: pointer;
+      overflow-y: auto;
     }
 
-    .evidence-choice strong { font-weight: 600; }
+    .evidence-choice-heading { font-size: 12px; font-weight: 600; color: rgba(45,45,45,.58); letter-spacing: .02em; }
+    .evidence-choice-detail { width: 100%; display: flex; flex-direction: column; gap: 3px; }
+    .evidence-choice-detail + .evidence-choice-detail { margin-top: 5px; padding-top: 7px; border-top: 1px solid rgba(245,196,0,.2); }
+    .evidence-choice-type { font-size: 14px; font-weight: 600; color: rgba(45,45,45,.82); }
+    .evidence-choice-label { font-size: 13px; font-weight: 600; color: rgba(45,45,45,.74); }
+    .evidence-choice-instruction { font-size: 12px; line-height: 1.38; color: rgba(45,45,45,.66); }
 
     .evidence-requirements {
       min-height: 0;
@@ -363,6 +372,9 @@
       margin-bottom: 10px;
       color: rgba(45, 45, 45, 0.82);
     }
+
+    .evidence-requirements ul { margin: 0; padding-left: 19px; display: flex; flex-direction: column; gap: 7px; }
+    .evidence-requirements li { padding-left: 2px; font-size: 13px; line-height: 1.38; }
 
     .capture-surface {
       width: 100%;
@@ -1048,7 +1060,7 @@
     <section class="evidence-screen" id="evidenceScreen" aria-label="Evidence">
       <div class="evidence-top" id="evidenceTop"></div>
       <div class="evidence-requirements" id="evidenceRequirements">
-        <h2>Evidence Requirements</h2>
+        <h2 id="requirementsHeading">Evidence Requirements</h2>
         <div id="requirementsText"></div>
       </div>
     </section>
@@ -1155,6 +1167,7 @@
     const evidenceScreen = document.getElementById('evidenceScreen');
     const evidenceTop = document.getElementById('evidenceTop');
     const evidenceRequirements = document.getElementById('evidenceRequirements');
+    const requirementsHeading = document.getElementById('requirementsHeading');
     const requirementsText = document.getElementById('requirementsText');
     const naxosMenu = document.getElementById('naxosMenu');
     const naxosArch = document.getElementById('naxosArch');
@@ -1442,17 +1455,47 @@
       return typeof value === 'string' ? value.trim() : '';
     }
 
+    function evidenceTypeDisplayLabel(value) {
+      const raw = cleanText(value).toLowerCase();
+      const labels = {
+        video: 'Video', photos: 'Photos', photo: 'Photo', camera: 'Camera',
+        audio: 'Audio', microphone: 'Audio', voice: 'Audio', reflection: 'Reflection',
+        text: 'Written', written: 'Written', writing: 'Written', document: 'Document',
+        witness: 'Witness statement', observation: 'Assessor observation'
+      };
+      return labels[raw] || cleanText(value);
+    }
+
+    function normaliseEvidenceDetail(item) {
+      if (!item) return null;
+      if (typeof item === 'string') return { displayType: '', label: cleanText(item), instruction: '' };
+      if (typeof item !== 'object') return null;
+      const rawType = cleanText(item.type || item.method || item.evidenceType);
+      return {
+        displayType: cleanText(item.displayType || item.typeLabel) || evidenceTypeDisplayLabel(rawType),
+        label: cleanText(item.label || item.name || item.title),
+        instruction: cleanText(item.instruction || item.description || item.guidance || item.text)
+      };
+    }
+
     function normaliseEvidenceOption(option, fallbackLabel) {
       if (!option) return null;
-      if (typeof option === 'string') return { label: option.trim() || fallbackLabel, type: 'text' };
+      if (typeof option === 'string') return { label: option.trim() || fallbackLabel, type: 'text', displayType: '', instruction: '', details: [] };
       if (typeof option !== 'object') return null;
       const label = cleanText(option.label || option.name || option.title) || fallbackLabel;
       const rawType = cleanText(option.type || option.method || option.evidenceType).toLowerCase();
       let type = 'text';
-      if (['camera', 'video', 'photo'].includes(rawType)) type = 'camera';
+      if (['camera', 'video', 'photo', 'photos'].includes(rawType)) type = 'camera';
       if (['audio', 'microphone', 'voice', 'reflection'].includes(rawType)) type = 'audio';
       if (['text', 'written', 'writing'].includes(rawType)) type = 'text';
-      return { label, type };
+      const details = Array.isArray(option.details) ? option.details.map(normaliseEvidenceDetail).filter(Boolean) : [];
+      return {
+        label,
+        type,
+        displayType: cleanText(option.displayType || option.typeLabel) || evidenceTypeDisplayLabel(rawType),
+        instruction: cleanText(option.instruction || option.description || option.guidance || option.text),
+        details
+      };
     }
 
     function normaliseNode(node, depth) {
@@ -1472,9 +1515,24 @@
       if (children.length && depth < 3) normalised.children = children;
 
       if (depth >= 3 || !children.length) {
-        normalised.recommended = normaliseEvidenceOption(node.recommended || node.recommendedEvidence, 'Recommended');
-        normalised.alternative = normaliseEvidenceOption(node.alternative || node.alternativeEvidence, 'Alternative');
-        normalised.requirements = cleanText(node.requirements || node.evidenceRequirements || node.evidence || node.guidance);
+        const recommendedSource = node.recommended || node.recommendedEvidence || (Array.isArray(node.preferred) ? {
+          label: node.preferred.map((item) => cleanText(item?.label || item?.type)).filter(Boolean).join(' + '),
+          type: node.preferred[0]?.type, details: node.preferred
+        } : null);
+        const alternativeSource = node.alternative || node.alternativeEvidence || (Array.isArray(node.alternatives) && node.alternatives.length ? {
+          label: cleanText(node.alternatives[0]?.label) || 'Alternative',
+          type: node.alternatives[0]?.type, details: node.alternatives
+        } : null);
+        normalised.recommended = normaliseEvidenceOption(recommendedSource, 'Recommended');
+        normalised.alternative = normaliseEvidenceOption(alternativeSource, 'Alternative');
+
+        const requirementObject = node.evidenceRequirements && typeof node.evidenceRequirements === 'object' && !Array.isArray(node.evidenceRequirements) ? node.evidenceRequirements : null;
+        const rawRequirementItems = node.requirementItems || node.requirementsItems || node.capture || requirementObject?.items || requirementObject?.bullets || (Array.isArray(node.evidenceRequirements) ? node.evidenceRequirements : []);
+        const requirementItems = Array.isArray(rawRequirementItems) ? rawRequirementItems.map(cleanText).filter(Boolean) : [];
+        const requirementText = cleanText(node.requirements || (typeof node.evidenceRequirements === 'string' ? node.evidenceRequirements : '') || node.evidence || node.guidance);
+        normalised.requirementsHeading = cleanText(node.requirementsHeading || requirementObject?.heading || requirementObject?.title);
+        normalised.requirementItems = requirementItems;
+        normalised.requirements = requirementItems.length ? requirementItems.join('\n') : requirementText;
         const rawTeachingPoints = node.teachingPoints || node.didYouKnow || node.teach || [];
         if (Array.isArray(rawTeachingPoints)) {
           normalised.teachingPoints = rawTeachingPoints.map(cleanText).filter(Boolean).slice(0, 3);
@@ -1602,32 +1660,53 @@
       renderPills(false);
     }
 
+    function appendEvidenceChoiceContent(button, heading, option) {
+      const headingElement = document.createElement('div');
+      headingElement.className = 'evidence-choice-heading';
+      headingElement.textContent = heading;
+      button.appendChild(headingElement);
+      const details = Array.isArray(option?.details) && option.details.length
+        ? option.details
+        : [{ displayType: option?.displayType || '', label: option?.label || '', instruction: option?.instruction || '' }];
+      details.forEach((detail) => {
+        const cleanDetail = normaliseEvidenceDetail(detail);
+        if (!cleanDetail) return;
+        const wrap = document.createElement('div');
+        wrap.className = 'evidence-choice-detail';
+        if (cleanDetail.displayType) {
+          const el = document.createElement('div'); el.className = 'evidence-choice-type'; el.textContent = cleanDetail.displayType; wrap.appendChild(el);
+        }
+        if (cleanDetail.label) {
+          const el = document.createElement('div'); el.className = 'evidence-choice-label'; el.textContent = cleanDetail.label; wrap.appendChild(el);
+        }
+        if (cleanDetail.instruction) {
+          const el = document.createElement('div'); el.className = 'evidence-choice-instruction'; el.textContent = cleanDetail.instruction; wrap.appendChild(el);
+        }
+        button.appendChild(wrap);
+      });
+    }
+
     function renderEvidenceChoices(animateIn = false) {
       stopCapture();
       captureMode = null;
       activeEvidenceMethod = null;
       evidenceTop.innerHTML = '';
-
       const choices = [
         ['Recommended', activeEvidence?.recommended],
         ['Alternative', activeEvidence?.alternative]
-      ].filter(([, option]) => option && cleanText(option.label));
-
+      ].filter(([, option]) => option && (cleanText(option.label) || (Array.isArray(option.details) && option.details.length)));
       choices.forEach(([heading, option]) => {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = `evidence-choice${animateIn ? ' evidence-enter' : ''}`;
         button.dataset.evidenceType = option.type || 'text';
         button.dataset.evidenceHeading = heading;
-        button.dataset.evidenceLabel = option.label;
-        button.innerHTML = `<strong>${heading}</strong>&nbsp;&nbsp;${option.label}`;
+        button.dataset.evidenceLabel = option.label || heading;
+        appendEvidenceChoiceContent(button, heading, option);
         evidenceTop.appendChild(button);
       });
-
       evidenceTop.style.gridTemplateRows = choices.length === 1 ? '1fr' : '1fr 1fr';
-      if (!animateIn) {
-        evidenceRequirements.classList.remove('evidence-enter', 'reveal-step');
-      }
+      if (!animateIn) evidenceRequirements.classList.remove('evidence-enter', 'reveal-step');
       updateBackButton();
       return [...evidenceTop.querySelectorAll('.evidence-choice')];
     }
@@ -1654,19 +1733,32 @@
       return true;
     }
 
+    function renderEvidenceRequirements(node) {
+      const items = Array.isArray(node?.requirementItems) ? node.requirementItems.map(cleanText).filter(Boolean) : [];
+      const text = cleanText(node?.requirements);
+      const hasRequirements = items.length > 0 || Boolean(text);
+      requirementsHeading.textContent = cleanText(node?.requirementsHeading) || (items.length ? 'What the evidence must show or explain' : 'Evidence Requirements');
+      requirementsText.innerHTML = '';
+      if (items.length) {
+        const list = document.createElement('ul');
+        items.forEach((item) => { const li = document.createElement('li'); li.textContent = item; list.appendChild(li); });
+        requirementsText.appendChild(list);
+      } else if (text) {
+        requirementsText.textContent = text;
+      }
+      return hasRequirements;
+    }
+
     async function openEvidence(node) {
       activeEvidence = node;
       screen.classList.remove('pills-ready', 'evidence-ready');
       screen.classList.add('evidence-open');
       evidenceTop.innerHTML = '';
-
-      const requirements = cleanText(node.requirements);
-      evidenceRequirements.style.display = requirements ? 'block' : 'none';
+      const hasRequirements = renderEvidenceRequirements(node);
+      evidenceRequirements.style.display = hasRequirements ? 'block' : 'none';
       evidenceRequirements.classList.remove('reveal-step');
-      requirementsText.textContent = requirements;
-      evidenceScreen.style.gridTemplateRows = requirements ? '1fr 1fr' : '1fr';
+      evidenceScreen.style.gridTemplateRows = hasRequirements ? '1fr 1fr' : '1fr';
       updateBackButton();
-
       const evidenceAtStart = activeEvidence;
       const finished = await speak(evidenceSpeechLines());
       if (!finished || activeEvidence !== evidenceAtStart || !screen.classList.contains('evidence-open')) return;
@@ -2065,34 +2157,33 @@
 
     function naxosPreferredOption(profile) {
       const preferred = Array.isArray(profile?.preferred) ? profile.preferred : [];
-      if (!preferred.length) return { label: 'Written evidence', type: 'text' };
+      if (!preferred.length) return { label: 'Written evidence', type: 'text', details: [] };
+      const details = preferred.map((item) => ({
+        displayType: evidenceTypeDisplayLabel(item?.type),
+        label: cleanText(item?.label),
+        instruction: cleanText(item?.instruction)
+      }));
       const label = preferred.map((item) => cleanText(item?.label || item?.type)).filter(Boolean).join(' + ') || 'Recommended evidence';
       const typeSource = preferred.map((item) => `${item?.type || ''} ${item?.label || ''} ${item?.instruction || ''}`).join(' ');
-      return { label, type: naxosCaptureType(typeSource) };
+      return { label, type: naxosCaptureType(typeSource), details };
     }
 
     function naxosAlternativeOption(profile) {
       const alternative = Array.isArray(profile?.alternatives) ? profile.alternatives[0] : null;
       if (!alternative) return null;
       const label = cleanText(alternative.label) || 'Alternative evidence';
-      return { label, type: naxosCaptureType(`${label} ${alternative.instruction || ''}`) };
+      return {
+        label,
+        type: naxosCaptureType(`${label} ${alternative.instruction || ''}`),
+        details: [{ displayType: evidenceTypeDisplayLabel(alternative.type), label, instruction: cleanText(alternative.instruction) }]
+      };
     }
 
     function naxosTaskRequirements(task, registry, profile) {
-      const lines = [];
+      const items = Array.isArray(profile?.capture) ? profile.capture.map(cleanText).filter(Boolean) : [];
       const prompt = cleanText(task?.conditionalPrompt);
-      if (prompt) lines.push(prompt);
-      const capture = Array.isArray(profile?.capture) ? profile.capture.map(cleanText).filter(Boolean) : [];
-      if (capture.length) lines.push(`Evidence must show or explain: ${capture.join(' • ')}`);
-      const ksbs = Array.isArray(task?.ksbTargets) ? task.ksbTargets : [];
-      if (ksbs.length) {
-        const wording = ksbs.map((id) => {
-          const text = cleanText(registry?.items?.[id]);
-          return text ? `${id} — ${text}` : id;
-        });
-        lines.push(`KSBs this task can support:\n${wording.join('\n')}`);
-      }
-      return lines.join('\n\n');
+      if (prompt) items.push(prompt);
+      return items;
     }
 
     function buildNaxosKsbCourse(categories, registry, evidenceRules) {
@@ -2103,11 +2194,14 @@
           label: cleanText(subcategory?.title) || `Section ${subcategory?.id || ''}`.trim(),
           children: (subcategory?.tasks || []).slice(0, 5).map((task) => {
             const profile = profiles[task?.evidenceProfile] || profiles.knowledge || {};
+            const requirementItems = naxosTaskRequirements(task, registry, profile);
             return {
               label: cleanText(task?.title) || cleanText(task?.id) || 'Task',
               recommended: naxosPreferredOption(profile),
               alternative: naxosAlternativeOption(profile),
-              requirements: naxosTaskRequirements(task, registry, profile)
+              requirementsHeading: 'What the evidence must show or explain',
+              requirementItems,
+              requirements: requirementItems.join('\n')
             };
           })
         }))
