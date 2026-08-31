@@ -1233,6 +1233,16 @@
     }
     .learn-catchup-form textarea { min-height:120px; resize:vertical; }
 
+    /* approved arch progress + detail UI polish */
+    .status-arch{position:relative;overflow:hidden;isolation:isolate}.status-arch-value,.status-arch-label{position:relative;z-index:2}
+    .arch-progress-svg{position:absolute;inset:0;width:100%;height:54px;z-index:1;pointer-events:none;overflow:visible}.arch-progress-track,.arch-progress-fill{fill:none;vector-effect:non-scaling-stroke;stroke-width:3}.arch-progress-track{stroke:rgba(245,196,0,.13)}.arch-progress-fill{stroke:var(--evia-yellow);stroke-linecap:round;stroke-dasharray:var(--arch-progress,0) 100;transition:stroke-dasharray 700ms cubic-bezier(.22,1,.36,1),opacity 240ms ease;opacity:0}.status-arch.progress-ready .arch-progress-fill{opacity:1}
+    #archDetailPanel{background:rgba(255,255,255,.94);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}.arch-detail-card{background:#fff;border:1px solid rgba(45,45,45,.08);border-radius:28px;padding:16px;box-shadow:0 18px 46px rgba(0,0,0,.08);gap:14px}.arch-detail-title{font-size:21px;font-weight:700;letter-spacing:-.015em;color:rgba(45,45,45,.86)}.arch-detail-content{gap:11px;padding:2px 1px 8px}
+    .detail-card{border-color:rgba(245,196,0,.25);background:linear-gradient(180deg,rgba(255,255,255,.99),rgba(250,249,242,.96));border-radius:22px;padding:16px;box-shadow:0 8px 22px rgba(0,0,0,.045)}.detail-card>strong:first-child{font-size:15px;line-height:1.25}.detail-card p{margin-top:7px}.detail-metric{min-height:82px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-color:rgba(245,196,0,.20);background:linear-gradient(180deg,#fff,rgba(250,249,242,.92));box-shadow:0 6px 18px rgba(0,0,0,.035)}.detail-metric strong{font-size:19px}
+    .time-track{height:18px;margin-top:26px;box-shadow:inset 0 1px 3px rgba(0,0,0,.05)}.time-track-fill{box-shadow:0 2px 8px rgba(245,196,0,.18)}.criterion-tile{min-height:58px;background:#fff;box-shadow:0 5px 14px rgba(0,0,0,.035);transition:transform 180ms ease,border-color 180ms ease,background 180ms ease}.criterion-tile:active{transform:scale(.98)}.criterion-tile.met{background:rgba(245,196,0,.08);border-color:rgba(245,196,0,.46)}.unit-button,.mapping-button,.catchup-button{border-radius:19px;background:#fff;box-shadow:0 6px 16px rgba(0,0,0,.035)}
+    .catchup-evidence-card,.otj-idea{width:100%;border:1.5px solid rgba(245,196,0,.24);border-radius:20px;background:#fff;padding:14px;box-shadow:0 6px 16px rgba(0,0,0,.035)}.catchup-evidence-card strong,.otj-idea strong{display:block;color:rgba(45,45,45,.80);font-size:13px}.catchup-evidence-card span,.otj-idea span{display:block;margin-top:4px;color:rgba(45,45,45,.56);font-size:11px;line-height:1.4}.catchup-evidence-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:11px}.catchup-evidence-actions button,.detail-action-button{min-height:40px;border:1.5px solid rgba(245,196,0,.34);border-radius:999px;background:rgba(250,249,242,.98);color:rgba(45,45,45,.68);padding:7px 10px;font-size:12px;cursor:pointer}
+    .detail-section-heading{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:2px 3px 0}.detail-section-heading strong{font-size:14px;color:rgba(45,45,45,.78)}.detail-section-heading span{font-size:11px;color:rgba(45,45,45,.48)}.otj-ideas{display:flex;flex-direction:column;gap:8px}.otj-idea.uncovered{border-color:rgba(245,196,0,.46);background:rgba(245,196,0,.055)}.otj-idea-badge{display:inline-flex!important;width:fit-content;margin:0 0 6px!important;padding:3px 7px;border-radius:999px;background:rgba(245,196,0,.16);color:rgba(45,45,45,.62)!important;font-size:9px!important;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+    .evidence-gallery{display:flex;flex-direction:column;gap:10px;width:100%}.evidence-gallery-item{border:1px solid rgba(245,196,0,.22);border-radius:18px;background:#fff;padding:12px}.evidence-gallery-meta{font-size:11px;line-height:1.4;color:rgba(45,45,45,.55);margin-bottom:9px}.evidence-gallery-preview{width:100%;display:flex;align-items:center;justify-content:center}.evidence-gallery-preview img,.evidence-gallery-preview video{max-width:100%;max-height:46dvh;border-radius:12px}.evidence-gallery-preview audio{width:100%}
+
     @keyframes talkingFloat {
       0%, 100% { transform: translateY(0) scale(1); }
       35% { transform: translateY(-5px) scale(1.012); }
@@ -1359,11 +1369,11 @@
     </div>
 
     <div class="bottom-arches" id="bottomArches" aria-label="Learner progress">
-      <button class="status-arch" id="timeArch" type="button" aria-label="Time on course"><span class="status-arch-value" id="timeArchValue">--</span><span class="status-arch-label">Time</span></button>
-      <button class="status-arch" id="courseArch" type="button" aria-label="Course progress"><span class="status-arch-value" id="courseArchValue">--</span><span class="status-arch-label">Course</span></button>
+      <button class="status-arch" id="timeArch" type="button" aria-label="Time on course"><svg class="arch-progress-svg" viewBox="0 0 100 54" preserveAspectRatio="none" aria-hidden="true"><path class="arch-progress-track" pathLength="100" d="M5 51 A45 45 0 0 1 95 51"></path><path class="arch-progress-fill" pathLength="100" d="M5 51 A45 45 0 0 1 95 51"></path></svg><span class="status-arch-value" id="timeArchValue">--</span><span class="status-arch-label">Time</span></button>
+      <button class="status-arch" id="courseArch" type="button" aria-label="Course progress"><svg class="arch-progress-svg" viewBox="0 0 100 54" preserveAspectRatio="none" aria-hidden="true"><path class="arch-progress-track" pathLength="100" d="M5 51 A45 45 0 0 1 95 51"></path><path class="arch-progress-fill" pathLength="100" d="M5 51 A45 45 0 0 1 95 51"></path></svg><span class="status-arch-value" id="courseArchValue">--</span><span class="status-arch-label">Course</span></button>
       <button class="naxos-arch" id="naxosArch" type="button" aria-label="Open Naxos QR and portfolio menu" aria-expanded="false"><span class="naxos-scan-mark" aria-hidden="true"><span class="naxos-scan-dot"></span></span></button>
-      <button class="status-arch" id="attendanceArch" type="button" aria-label="Attendance"><span class="status-arch-value" id="attendanceArchValue">--</span><span class="status-arch-label">Attendance</span></button>
-      <button class="status-arch" id="learnArch" type="button" aria-label="Learn entries"><span class="status-arch-value" id="learnArchValue">0</span><span class="status-arch-label">Learn</span></button>
+      <button class="status-arch" id="attendanceArch" type="button" aria-label="Attendance"><svg class="arch-progress-svg" viewBox="0 0 100 54" preserveAspectRatio="none" aria-hidden="true"><path class="arch-progress-track" pathLength="100" d="M5 51 A45 45 0 0 1 95 51"></path><path class="arch-progress-fill" pathLength="100" d="M5 51 A45 45 0 0 1 95 51"></path></svg><span class="status-arch-value" id="attendanceArchValue">--</span><span class="status-arch-label">Attend</span></button>
+      <button class="status-arch" id="learnArch" type="button" aria-label="Learn entries"><svg class="arch-progress-svg" viewBox="0 0 100 54" preserveAspectRatio="none" aria-hidden="true"><path class="arch-progress-track" pathLength="100" d="M5 51 A45 45 0 0 1 95 51"></path><path class="arch-progress-fill" pathLength="100" d="M5 51 A45 45 0 0 1 95 51"></path></svg><span class="status-arch-value" id="learnArchValue">0</span><span class="status-arch-label">Learn</span></button>
     </div>
 
     <div class="overlay-panel" id="archDetailPanel" aria-hidden="true">
@@ -1591,6 +1601,7 @@
     let profileViewOpen = false;
     let archDetailOpen = false;
     let archDetailStack = [];
+    let archPreviewUrls = [];
     let portfolioViewerOpen = false;
     let activePortfolioEntry = null;
     let portfolioEntriesById = new Map();
@@ -3776,7 +3787,10 @@
       return parts.join(' ');
     }
 
+    function clearArchPreviewUrls(){archPreviewUrls.forEach(url=>URL.revokeObjectURL(url));archPreviewUrls=[]}
+
     function closeArchDetail() {
+      clearArchPreviewUrls();
       archDetailOpen = false;
       archDetailStack = [];
       archDetailPanel.classList.remove('open');
@@ -3796,6 +3810,7 @@
     }
 
     function pushArchView(renderer, title) {
+      clearArchPreviewUrls();
       archDetailStack.push({ html: archDetailContent.innerHTML, title: archDetailTitle.textContent });
       archDetailTitle.textContent = title;
       archDetailContent.innerHTML = '';
@@ -3805,6 +3820,7 @@
     }
 
     function restoreArchView() {
+      clearArchPreviewUrls();
       const previous = archDetailStack.pop();
       if (!previous) { closeArchDetail(); return; }
       archDetailTitle.textContent = previous.title;
@@ -3973,14 +3989,32 @@
       return null;
     }
 
-    function renderLearnPage() {
-      openArchShell('Learn'); archDetailStack=[];
-      const attendance=loadAttendanceData(), college=attendance.collegeLearningHours||0, learner=learnerLearningHours(), total=college+learner, required=totalLearningRequirement(), elapsed=courseProgressPercent();
-      const targetNow=required!==null&&elapsed!==null?required*(elapsed/100):null;
-      const catchup=targetNow===null?null:Math.max(0,targetNow-total);
-      const label=inferredCourseMeta().courseType==='nvq'?'GLH':'OTJ';
-      archDetailContent.innerHTML=`<div class="detail-metrics"><div class="detail-metric"><strong>${college.toFixed(1)}h</strong><span>college ${label}</span></div><div class="detail-metric"><strong>${learner.toFixed(1)}h</strong><span>learner-added ${label}</span></div><div class="detail-metric"><strong>${total.toFixed(1)}h</strong><span>total learning</span></div><div class="detail-metric"><strong>${targetNow===null?'--':`${targetNow.toFixed(1)}h`}</strong><span>expected by now</span></div></div><div class="detail-card"><strong>${required===null?'Learning requirement not yet supplied by Naxos':`${required.toFixed(1)} total ${label} hours required`}</strong>${catchup===null?'<p>Evia will calculate catch-up once the Naxos learning requirement and course dates are available.</p>':catchup>0?`<p>You need ${catchup.toFixed(1)} additional learning hours to reach the current course position.</p>`:'<p>You are currently on or ahead of the learning-hours position.</p>'}</div><button class="catchup-button" id="openLearnCatchup" type="button"><strong>Catch Up</strong><span>Check completed evidence for learning entries that may have been missed.</span></button>`;
-    }
+    const OTJ_ACTIVITY_LIBRARY = [
+      {id:'toolbox-talks',title:'Toolbox talks',description:'Toolbox talks or safety briefings that teach new KSB-relevant knowledge, controls or methods.',keywords:['toolbox','safety briefing','briefing']},
+      {id:'tools',title:'Tools & equipment learning',description:'Learning to select, use, check, maintain or store tools and equipment correctly.',keywords:['tool','equipment','hand tool','power tool']},
+      {id:'machinery',title:'Machinery & plant training',description:'Training or supervised learning on machinery, plant, powered equipment or safe operating methods.',keywords:['machinery','machine','plant','mixer','disc cutter']},
+      {id:'manufacturer',title:'Manufacturer or product training',description:'Manufacturer demonstrations, product sessions or learning how new materials and systems are used.',keywords:['manufacturer','product training','demonstration','demo']},
+      {id:'training-days',title:'Training days & courses',description:'Employer or provider training days and courses that develop new occupational KSBs.',keywords:['training day','training course','workshop']},
+      {id:'shadowing',title:'Shadowing experienced workers',description:'Structured shadowing where you learn a new method, process, responsibility or occupational skill.',keywords:['shadow','shadowing']},
+      {id:'mentoring',title:'Mentoring & coaching',description:'Mentoring or coaching that develops new occupational knowledge, skills or behaviours.',keywords:['mentor','mentoring','coach','coaching']},
+      {id:'supervised-practice',title:'Supervised practice',description:'Practising a new or developing skill with guidance and feedback rather than routine productive work.',keywords:['supervised','practice','practise','feedback']},
+      {id:'industry-visits',title:'Industry & site visits',description:'Visits used to learn about construction methods, systems, products, processes or another part of the industry.',keywords:['industry visit','site visit']},
+      {id:'cpd-events',title:'CPD & apprentice events',description:'Relevant CPD sessions, trade events, apprentice events, seminars or technical presentations.',keywords:['cpd','seminar','apprentice event','trade event']},
+      {id:'online-learning',title:'Online learning & webinars',description:'Structured online learning, webinars or tutorials that develop occupational KSBs.',keywords:['webinar','online learning','online course','tutorial']},
+      {id:'drawings-specs',title:'Drawings, specifications & technical information',description:'Learning how to read, interpret or use drawings, specifications, technical information and work instructions.',keywords:['drawing','specification','technical information']},
+      {id:'planning-estimating',title:'Planning, estimating & digital tools',description:'Learning planning, estimating, measurement, digital design, modelling or construction software skills.',keywords:['planning','estimate','estimating','digital','software','modelling','modeling']},
+      {id:'quality',title:'Quality checks & inspection',description:'Learning new quality-control, measurement, tolerance, inspection, testing or defect-prevention methods.',keywords:['quality','inspection','tolerance','testing']},
+      {id:'sustainability',title:'Environment & sustainability',description:'Learning about waste, recycling, efficient resources, environmental controls or sustainable construction.',keywords:['sustainability','environment','recycling','waste']},
+      {id:'materials-methods',title:'New materials & construction methods',description:'Learning about unfamiliar materials, products, installation methods or modern construction techniques.',keywords:['material','new method','construction method']},
+      {id:'health-safety',title:'Health, safety & wellbeing training',description:'Training that teaches new relevant health, safety, wellbeing, PPE, RPE, RAMS or hazard-control knowledge.',keywords:['health and safety','health & safety','ppe','rpe','rams','risk assessment','wellbeing']},
+      {id:'communication-team',title:'Communication & team development',description:'Structured learning that develops occupational communication, teamwork, inclusion or coordination behaviours.',keywords:['communication','teamwork','team working','inclusion','coordination']},
+      {id:'study-revision',title:'Occupational study & revision',description:'Study, revision or assignment work that develops the occupational KSBs required by the apprenticeship.',keywords:['study','revision','assignment','research']},
+      {id:'new-responsibilities',title:'Preparing for new responsibilities',description:'Structured learning before taking on a new occupational task, process or responsibility.',keywords:['new responsibility','new task','preparation']}
+    ];
+    function learningEntryMatchesOtjIdea(entry,idea){if(cleanText(entry?.activityType)===idea.id)return true;const text=`${entry?.text||''} ${entry?.evidenceLabel||''}`.toLowerCase();return idea.keywords.some(keyword=>text.includes(keyword))}
+    function uncoveredOtjIdeas(){return OTJ_ACTIVITY_LIBRARY.filter(idea=>!learningEntries.some(entry=>learningEntryMatchesOtjIdea(entry,idea)))}
+    function renderOtjIdeasPage(){const uncovered=uncoveredOtjIdeas(),ids=new Set(uncovered.map(x=>x.id)),priority=uncovered.slice(0,8);archDetailContent.innerHTML=`<div class="detail-card"><strong>Other off-the-job learning to consider</strong><p>College learning is tracked separately, so Evia does not suggest normal college days here. Only record an activity when it was active learning that developed new occupational KSBs during working hours.</p><p class="detail-muted">Routine productive work, progress reviews and standalone English or maths qualifications are not suggested as OTJ here.</p></div><div class="detail-section-heading"><strong>Areas not recorded yet</strong><span>${uncovered.length} of ${OTJ_ACTIVITY_LIBRARY.length}</span></div><div class="otj-ideas">${priority.length?priority.map(idea=>`<div class="otj-idea uncovered"><span class="otj-idea-badge">Not recorded yet</span><strong>${escapeDetailHtml(idea.title)}</strong><span>${escapeDetailHtml(idea.description)}</span></div>`).join(''):'<div class="detail-card"><strong>Good coverage</strong><p>Your Learn entries already mention all of Evia’s OTJ idea areas.</p></div>'}</div><div class="detail-section-heading"><strong>Full OTJ idea list</strong><span>College days excluded</span></div><div class="otj-ideas">${OTJ_ACTIVITY_LIBRARY.map(idea=>`<div class="otj-idea${ids.has(idea.id)?' uncovered':''}">${ids.has(idea.id)?'<span class="otj-idea-badge">Gap to consider</span>':''}<strong>${escapeDetailHtml(idea.title)}</strong><span>${escapeDetailHtml(idea.description)}</span></div>`).join('')}</div>`}
+    function renderLearnPage(){openArchShell('Learn');archDetailStack=[];const attendance=loadAttendanceData(),college=attendance.collegeLearningHours||0,learner=learnerLearningHours(),total=college+learner,required=totalLearningRequirement(),elapsed=courseProgressPercent();const targetNow=required!==null&&elapsed!==null?required*(elapsed/100):null,catchup=targetNow===null?null:Math.max(0,targetNow-total),label=inferredCourseMeta().courseType==='nvq'?'GLH':'OTJ',uncovered=uncoveredOtjIdeas();archDetailContent.innerHTML=`<div class="detail-card"><strong>${label} learning position</strong><p>${required===null?'Evia is waiting for the course learning-hours requirement from Naxos.':`${required.toFixed(1)} total ${label} hours are required for this course.`}</p></div><div class="detail-metrics"><div class="detail-metric"><strong>${college.toFixed(1)}h</strong><span>college ${label}</span></div><div class="detail-metric"><strong>${learner.toFixed(1)}h</strong><span>learner-added ${label}</span></div><div class="detail-metric"><strong>${total.toFixed(1)}h</strong><span>total learning</span></div><div class="detail-metric"><strong>${targetNow===null?'--':`${targetNow.toFixed(1)}h`}</strong><span>expected by now</span></div></div><div class="detail-card"><strong>${catchup===null?'Catch-up position not available yet':catchup>0?`${catchup.toFixed(1)}h to catch up`:'On or ahead of target'}</strong>${catchup===null?'<p>Evia will calculate catch-up once the Naxos learning requirement and course dates are available.</p>':catchup>0?`<p>You need ${catchup.toFixed(1)} additional learning hours to reach the current course position.</p>`:'<p>Your recorded learning hours are currently on or ahead of the expected course position.</p>'}</div><button class="catchup-button" id="openLearnCatchup" type="button"><strong>Catch Up from evidence</strong><span>Check completed evidence for Learn entries that may have been missed.</span></button><button class="catchup-button" id="openOtjIdeas" type="button"><strong>Explore OTJ ideas</strong><span>${uncovered.length} learning area${uncovered.length===1?'':'s'} not yet mentioned in your Learn entries. College days are excluded.</span></button>`}
 
     function completedPathsWithoutLearning() {
       const learned=new Set(learningEntries.filter(x=>Array.isArray(x.evidencePath)&&x.evidencePath.length).map(x=>evidencePathKey(x.evidencePath)));
@@ -3989,32 +4023,36 @@
       return result;
     }
 
-    function renderCatchupPage() {
-      const paths=completedPathsWithoutLearning();
-      archDetailContent.innerHTML=`<div class="detail-card"><strong>Evia catch-up</strong><p>These are completed evidence tasks where no Learn entry is currently attached. Only add learning that actually happened.</p></div>${paths.length?`<div class="mapping-list">${paths.map(path=>`<button class="mapping-button" type="button" data-catchup-path="${encodeURIComponent(JSON.stringify(path))}"><strong>${escapeDetailHtml(path[path.length-1])}</strong><span>${escapeDetailHtml(path.slice(0,-1).join(' › '))}</span></button>`).join('')}</div>`:'<div class="detail-card"><strong>No missing learning entries found</strong><p>Every completed evidence task currently has a Learn entry attached.</p></div>'}`;
+    function entriesForEvidencePath(entries,path){const key=evidencePathKey(path);return (entries||[]).filter(entry=>Array.isArray(entry.path)&&evidencePathKey(entry.path)===key).sort((a,b)=>Date.parse(a.createdAt||0)-Date.parse(b.createdAt||0))}
+    function completedEvidenceDate(entries){const stamps=(entries||[]).map(entry=>Date.parse(entry.createdAt||'')).filter(Number.isFinite);return stamps.length?new Date(Math.max(...stamps)).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}):''}
+
+    async function renderCatchupPage(){
+      const paths=completedPathsWithoutLearning();let entries=[];try{entries=await getPortfolioEntries()}catch(error){}
+      const cards=paths.map(path=>{const evidence=entriesForEvidencePath(entries,path),date=completedEvidenceDate(evidence),encoded=encodeURIComponent(JSON.stringify(path));return `<div class="catchup-evidence-card"><strong>${escapeDetailHtml(path[path.length-1])}</strong><span>${escapeDetailHtml(path.slice(0,-1).join(' › '))}</span><span>${date?`Evidence completed ${escapeDetailHtml(date)}`:'Evidence completion date unavailable'}</span><div class="catchup-evidence-actions"><button type="button" data-catchup-path="${encoded}">Add Learning</button>${evidence.length?`<button type="button" data-catchup-view="${encoded}">View Evidence</button>`:'<button type="button" disabled>Evidence unavailable</button>'}</div></div>`}).join('');
+      archDetailContent.innerHTML=`<div class="detail-card"><strong>Evia catch-up</strong><p>These are completed evidence tasks where no Learn entry is currently attached. Review the evidence and date before adding learning. Only record learning that actually happened.</p></div>${paths.length?`<div class="mapping-list">${cards}</div>`:'<div class="detail-card"><strong>No missing evidence-linked learning entries found</strong><p>Every completed evidence task currently has a Learn entry attached.</p></div>'}<button class="catchup-button" id="openOtjIdeas" type="button"><strong>Other OTJ ideas</strong><span>See eligible non-college learning areas Evia has not found in your Learn entries yet.</span></button>`;
     }
 
-    function renderCatchupEntryForm(path) {
-      archDetailContent.innerHTML=`<div class="detail-card"><strong>${escapeDetailHtml(path[path.length-1])}</strong><p>${escapeDetailHtml(path.slice(0,-1).join(' › '))}</p></div><div class="learn-catchup-form"><textarea id="catchupLearningText" placeholder="What did you learn?"></textarea><input id="catchupLearningHours" type="number" min="0" step="0.25" inputmode="decimal" placeholder="Learning hours"><button class="secondary-button" id="saveCatchupLearning" type="button">Save to Learn</button><div class="detail-muted" id="catchupLearningStatus"></div></div>`;
-      document.getElementById('saveCatchupLearning')?.addEventListener('click',()=>{
-        const text=document.getElementById('catchupLearningText').value.trim(), hours=Number(document.getElementById('catchupLearningHours').value||0), status=document.getElementById('catchupLearningStatus');
-        if(!text){status.textContent='Add what you learned before saving.';return;}
-        saveLearningReflection(text,hours,path,path[path.length-1]);
-        status.textContent='Saved to Learn.';
-        setTimeout(()=>{ archDetailStack=[]; renderLearnPage(); },250);
-      });
+    async function renderCatchupEvidence(path){
+      let entries=[];try{entries=entriesForEvidencePath(await getPortfolioEntries(),path)}catch(error){}const date=completedEvidenceDate(entries);
+      archDetailContent.innerHTML=`<div class="detail-card"><strong>${escapeDetailHtml(path[path.length-1])}</strong><p>${escapeDetailHtml(path.slice(0,-1).join(' › '))}</p><p>${date?`Evidence completed ${escapeDetailHtml(date)}`:'Evidence completion date unavailable'}</p></div><div class="evidence-gallery" id="catchupEvidenceGallery"></div><button class="catchup-button" type="button" data-catchup-path="${encodeURIComponent(JSON.stringify(path))}"><strong>Add learning from this evidence</strong><span>Only add learning that actually happened.</span></button>`;
+      const gallery=document.getElementById('catchupEvidenceGallery');if(!entries.length){gallery.innerHTML='<div class="detail-card"><strong>Evidence file unavailable</strong><p>No saved portfolio file is currently linked to this completed task.</p></div>';return}
+      for(const entry of entries){const item=document.createElement('div');item.className='evidence-gallery-item';const meta=document.createElement('div');meta.className='evidence-gallery-meta';meta.textContent=[entry.methodHeading,entry.methodLabel,entry.createdAt?new Date(entry.createdAt).toLocaleString():''].filter(Boolean).join(' · ');const preview=document.createElement('div');preview.className='evidence-gallery-preview';const mime=cleanText(entry.mimeType||entry.blob?.type).toLowerCase();if(entry.type==='text'||mime.startsWith('text/')){const text=document.createElement('div');text.className='portfolio-preview-text';text.textContent=await entry.blob.text();preview.appendChild(text)}else{const url=URL.createObjectURL(entry.blob);archPreviewUrls.push(url);if(entry.type==='photo'||mime.startsWith('image/')){const image=document.createElement('img');image.src=url;image.alt=entry.evidenceLabel||'Evidence photo';preview.appendChild(image)}else if(entry.type==='video'||mime.startsWith('video/')){const video=document.createElement('video');video.src=url;video.controls=true;video.playsInline=true;preview.appendChild(video)}else if(entry.type==='audio'||mime.startsWith('audio/')){const audio=document.createElement('audio');audio.src=url;audio.controls=true;preview.appendChild(audio)}else{const link=document.createElement('a');link.className='secondary-button';link.href=url;link.target='_blank';link.rel='noopener';link.textContent=`Open ${entry.originalFileName||entry.fileName||'evidence file'}`;preview.appendChild(link)}}item.append(meta,preview);gallery.appendChild(item)}
     }
 
-    function handleArchDetailAction(event) {
-      const targetButton=event.target.closest('[data-course-target]');
-      if(targetButton){const id=targetButton.dataset.courseTarget;pushArchView(()=>renderTargetDetail(id),id);return;}
-      const unitButton=event.target.closest('[data-nvq-unit]');
-      if(unitButton){const unit=unitButton.dataset.nvqUnit;pushArchView(()=>renderNvqUnitDetail(unit),inferredCourseMeta().unitTitles?.[unit]||`Unit ${unit}`);return;}
-      const evidenceButton=event.target.closest('[data-evidence-path]');
-      if(evidenceButton){try{goToEvidencePath(JSON.parse(decodeURIComponent(evidenceButton.dataset.evidencePath)))}catch(error){}return;}
-      if(event.target.closest('#openLearnCatchup')){pushArchView(renderCatchupPage,'Catch Up');return;}
-      const catchupButton=event.target.closest('[data-catchup-path]');
-      if(catchupButton){try{const path=JSON.parse(decodeURIComponent(catchupButton.dataset.catchupPath));pushArchView(()=>renderCatchupEntryForm(path),'Add Learning')}catch(error){} }
+    async function renderCatchupEntryForm(path){
+      let entries=[];try{entries=entriesForEvidencePath(await getPortfolioEntries(),path)}catch(error){}const date=completedEvidenceDate(entries),encoded=encodeURIComponent(JSON.stringify(path));
+      archDetailContent.innerHTML=`<div class="detail-card"><strong>${escapeDetailHtml(path[path.length-1])}</strong><p>${escapeDetailHtml(path.slice(0,-1).join(' › '))}</p><p>${date?`Evidence completed ${escapeDetailHtml(date)}`:'Evidence completion date unavailable'}</p>${entries.length?`<button class="detail-action-button" type="button" data-catchup-view="${encoded}" style="margin-top:10px">View Evidence</button>`:''}</div><div class="learn-catchup-form"><textarea id="catchupLearningText" placeholder="What did you learn?"></textarea><input id="catchupLearningHours" type="number" min="0" step="0.25" inputmode="decimal" placeholder="Learning hours"><button class="secondary-button" id="saveCatchupLearning" type="button">Save to Learn</button><div class="detail-muted" id="catchupLearningStatus"></div></div>`;
+      document.getElementById('saveCatchupLearning')?.addEventListener('click',()=>{const text=document.getElementById('catchupLearningText').value.trim(),hours=Number(document.getElementById('catchupLearningHours').value||0),status=document.getElementById('catchupLearningStatus');if(!text){status.textContent='Add what you learned before saving.';return}saveLearningReflection(text,hours,path,path[path.length-1]);status.textContent='Saved to Learn.';setTimeout(()=>{archDetailStack=[];renderLearnPage()},250)})
+    }
+
+    function handleArchDetailAction(event){
+      const targetButton=event.target.closest('[data-course-target]');if(targetButton){const id=targetButton.dataset.courseTarget;pushArchView(()=>renderTargetDetail(id),id);return}
+      const unitButton=event.target.closest('[data-nvq-unit]');if(unitButton){const unit=unitButton.dataset.nvqUnit;pushArchView(()=>renderNvqUnitDetail(unit),inferredCourseMeta().unitTitles?.[unit]||`Unit ${unit}`);return}
+      const evidenceButton=event.target.closest('[data-evidence-path]');if(evidenceButton){try{goToEvidencePath(JSON.parse(decodeURIComponent(evidenceButton.dataset.evidencePath)))}catch(error){}return}
+      if(event.target.closest('#openLearnCatchup')){pushArchView(renderCatchupPage,'Catch Up');return}
+      if(event.target.closest('#openOtjIdeas')){pushArchView(renderOtjIdeasPage,'OTJ Ideas');return}
+      const viewButton=event.target.closest('[data-catchup-view]');if(viewButton){try{const path=JSON.parse(decodeURIComponent(viewButton.dataset.catchupView));pushArchView(()=>renderCatchupEvidence(path),'Evidence')}catch(error){}return}
+      const catchupButton=event.target.closest('[data-catchup-path]');if(catchupButton){try{const path=JSON.parse(decodeURIComponent(catchupButton.dataset.catchupPath));pushArchView(()=>renderCatchupEntryForm(path),'Add Learning')}catch(error){}}
     }
 
     function loadLearningEntries() {
@@ -4033,15 +4071,8 @@
       learningEntries.unshift(entry);saveLearningEntries();updateArchBars().catch(()=>{});return entry;
     }
 
-    async function updateArchBars(){
-      const elapsed=courseProgressPercent();timeArchValue.textContent=elapsed===null?'--':`${Math.round(elapsed)}%`;
-      if(courseItems===placeholderCourse){courseArchValue.textContent='--'}else{
-        try{const leaves=courseLeaves(),entries=await getPortfolioEntries(),covered=new Set(entries.map(entry=>Array.isArray(entry.path)?entry.path.join('||'):'').filter(Boolean)),count=leaves.filter(leaf=>covered.has(leaf.path.join('||'))).length;courseArchValue.textContent=leaves.length?`${Math.round((count/leaves.length)*100)}%`:'--'}catch(error){courseArchValue.textContent='--'}
-      }
-      const attendance=combinedAttendancePercent();attendanceArchValue.textContent=attendance===null?'--':`${Math.max(0,Math.min(100,Math.round(attendance)))}%`;
-      const required=totalLearningRequirement(), college=loadAttendanceData().collegeLearningHours||0, learner=learnerLearningHours(), total=college+learner;
-      learnArchValue.textContent=required?`${Math.min(100,Math.round((total/required)*100))}%`:String(learningEntries.length||0);
-    }
+    function setArchProgress(archId,value){const arch=document.getElementById(archId),n=Number(value),ready=value!==null&&value!==undefined&&Number.isFinite(n);if(!arch)return;arch.style.setProperty('--arch-progress',String(ready?Math.max(0,Math.min(100,n)):0));arch.classList.toggle('progress-ready',ready)}
+    async function updateArchBars(){const elapsed=courseProgressPercent();timeArchValue.textContent=elapsed===null?'--':`${Math.round(elapsed)}%`;setArchProgress('timeArch',elapsed);let coursePercent=null;if(courseItems===placeholderCourse){courseArchValue.textContent='--'}else{try{const leaves=courseLeaves(),entries=await getPortfolioEntries(),covered=new Set(entries.map(entry=>Array.isArray(entry.path)?entry.path.join('||'):'').filter(Boolean)),count=leaves.filter(leaf=>covered.has(leaf.path.join('||'))).length;coursePercent=leaves.length?(count/leaves.length)*100:null;courseArchValue.textContent=coursePercent===null?'--':`${Math.round(coursePercent)}%`}catch(error){courseArchValue.textContent='--';coursePercent=null}}setArchProgress('courseArch',coursePercent);const attendance=combinedAttendancePercent();attendanceArchValue.textContent=attendance===null?'--':`${Math.max(0,Math.min(100,Math.round(attendance)))}%`;setArchProgress('attendanceArch',attendance);const required=totalLearningRequirement(),college=loadAttendanceData().collegeLearningHours||0,learner=learnerLearningHours(),total=college+learner,learnPercent=required?Math.min(100,(total/required)*100):null;learnArchValue.textContent=learnPercent!==null?`${Math.round(learnPercent)}%`:String(learningEntries.length||0);setArchProgress('learnArch',learnPercent)}
 
     async function animateEvidenceIntoPortfolio(){flyingFile.hidden=false;flyingFile.classList.remove('fly');void flyingFile.offsetWidth;flyingFile.classList.add('fly');await wait(1280);flyingFile.classList.remove('fly');flyingFile.hidden=true}
 
