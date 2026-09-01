@@ -1,14 +1,14 @@
 {
   "standardId": "EVIA-DEMO",
-  "version": "1.1",
+  "version": "1.2",
   "ksbCount": 7,
   "items": {
-    "K1": "Introduce yourself or another willing person clearly using a short spoken explanation.",
-    "K2": "Recognise when permission is appropriate before including another person in evidence.",
-    "K3": "Explain the basic rules or sequence of a simple activity.",
-    "S1": "Capture one clear and appropriate photo for a simple evidence task.",
-    "S2": "Record a short video that clearly shows a simple activity taking place.",
-    "B1": "Show consideration for other people when collecting evidence.",
-    "B2": "Reflect on the Evia experience and identify a feature that could be useful to a learner."
+    "K1": "Give a short introduction using clear spoken or written evidence.",
+    "K2": "Introduce another willing person clearly and appropriately.",
+    "K3": "Follow and explain the basic sequence or rules of a simple challenge.",
+    "S1": "Capture a clear visual sequence showing a simple activity taking place.",
+    "S2": "Create a clear spoken recording that demonstrates a simple challenge being completed.",
+    "B1": "Show consideration for other people and gain permission before recording them.",
+    "B2": "Persist with a simple challenge and aim to complete it accurately."
   }
 }
