@@ -1,0 +1,85 @@
+{
+  "evidenceRules": 1,
+  "schemaVersion": 1,
+  "principles": {
+    "oneSubmissionCanCoverManyCriteria": true,
+    "candidateCriteriaAreNotAutomaticAwards": true,
+    "demoOnly": true
+  },
+  "profiles": {
+    "resources": {
+      "id": "resources",
+      "label": "Everyday object evidence",
+      "shortLabel": "Photo + audio",
+      "oneSubmissionNote": "Use ordinary safe objects from home, an office or a classroom. Do not include confidential or personal information.",
+      "preferred": [
+        {
+          "type": "photo",
+          "label": "1 clear photo",
+          "instruction": "Choose three safe everyday objects, organise them into a sensible group and take one clear photo of the result."
+        },
+        {
+          "type": "audio",
+          "label": "1 short audio statement",
+          "instruction": "Explain what the objects are, what they are used for and why you grouped them this way."
+        }
+      ],
+      "alternatives": [
+        {
+          "label": "Video alternative",
+          "instruction": "Record one short video showing the three objects and explaining what they are used for and why you grouped them together."
+        }
+      ],
+      "capture": [
+        "Use safe, ordinary objects only.",
+        "Keep names, paperwork, addresses and confidential information out of view."
+      ]
+    },
+    "practical": {
+      "id": "practical",
+      "label": "Simple task evidence",
+      "shortLabel": "Video",
+      "oneSubmissionNote": "This activity is only to demonstrate how Evia captures practical evidence.",
+      "preferred": [
+        {
+          "type": "video",
+          "label": "1 short practical video",
+          "instruction": "Record a short video showing yourself carrying out a simple safe check, sort or tidy-up task and show the finished result."
+        }
+      ],
+      "alternatives": [
+        {
+          "label": "If video is not practical",
+          "instruction": "Use up to 3 photos showing before, during and after, plus a short audio or written explanation."
+        }
+      ],
+      "capture": [
+        "Choose a task that is safe to demonstrate.",
+        "Show the task and the finished result."
+      ]
+    },
+    "knowledge": {
+      "id": "knowledge",
+      "label": "Explanation evidence",
+      "shortLabel": "Audio or written",
+      "oneSubmissionNote": "Keep the answer short. The purpose is to demonstrate Evia rather than assess technical knowledge.",
+      "preferred": [
+        {
+          "type": "audio",
+          "label": "1 short audio statement",
+          "instruction": "Explain your answer in your own words using the activity you just completed as the example."
+        }
+      ],
+      "alternatives": [
+        {
+          "label": "Written alternative",
+          "instruction": "Write a short statement instead of recording audio."
+        }
+      ],
+      "capture": [
+        "Give a simple reason for your answer.",
+        "Use the demo activity as your example."
+      ]
+    }
+  }
+}
