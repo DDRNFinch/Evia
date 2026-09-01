@@ -1,9 +1,9 @@
-const C='evia-pwa-v23';
+const C='evia-pwa-v24';
 const UPDATE_UI_MARKER='evia-update-ui-ready-v1';
 const RELEASE_VERSION='1.0';
 const RELEASE_MARKER_URL=new URL('./__evia-visible-release-version__',self.registration.scope).href;
 const INTERNAL_RELOAD_MARKER_URL=new URL('./__evia-internal-reload__',self.registration.scope).href;
-const F=['./manifest.webmanifest','./evia-release.json','./evia-approved-features.js','./evia-approved-learning-ui.js','./evia-approved-menu-support.js','./evia-approved-epa.js','./evia-approved-targets.js','./evia-approved-target-plan-v1.js','./evia-approved-updates-stable-v1.js','./evia-approved-runtime-fixes-v1.js','./evia-ui-polish-v1.js','./evia-ui-polish-visible-v1.js','./evia-approved-settings-stable-v1.js','./evia-approved-support-preview-visual-v1.js','./evia-approved-naxos-evidence-contract-v2.js','./evia-approved-speech-landing-fix.js','./icons/evia-180.png','./icons/evia-192.png','./icons/evia-512.png'];
+const F=['./manifest.webmanifest','./evia-release.json','./evia-approved-features.js','./evia-approved-learning-ui.js','./evia-approved-menu-support.js','./evia-approved-epa.js','./evia-approved-targets.js','./evia-approved-target-plan-v1.js','./evia-approved-updates-stable-v1.js','./evia-approved-runtime-fixes-v1.js','./evia-ui-polish-v1.js','./evia-ui-polish-visible-v1.js','./evia-approved-settings-stable-v1.js','./evia-approved-support-preview-visual-v1.js','./evia-approved-naxos-evidence-contract-v2.js','./evia-approved-naxos-evidence-existing-v2.js','./evia-approved-speech-landing-fix.js','./icons/evia-180.png','./icons/evia-192.png','./icons/evia-512.png'];
 const QR_CACHE='evia-feature-lib-v1';
 const QR_LIBRARY_URL='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
 const NAXOS_CACHE='evia-naxos-offline-v1';
@@ -33,6 +33,7 @@ function injectFeatures(html){
   if(!html.includes('evia-approved-settings-stable-v1.js'))tags.push('<script src="./evia-approved-settings-stable-v1.js"></script>');
   if(!html.includes('evia-approved-support-preview-visual-v1.js'))tags.push('<script src="./evia-approved-support-preview-visual-v1.js"></script>');
   if(!html.includes('evia-approved-naxos-evidence-contract-v2.js'))tags.push('<script src="./evia-approved-naxos-evidence-contract-v2.js"></script>');
+  if(!html.includes('evia-approved-naxos-evidence-existing-v2.js'))tags.push('<script src="./evia-approved-naxos-evidence-existing-v2.js"></script>');
   if(!html.includes('evia-approved-speech-landing-fix.js'))tags.push('<script src="./evia-approved-speech-landing-fix.js"></script>');
   if(!tags.length)return html;
   const tag=tags.join('');
