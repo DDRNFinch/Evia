@@ -123,8 +123,7 @@ self.addEventListener('install',e=>{
     const prepared=htmlResponse(await index.text(),index);
     await cache.put('./index.html',prepared.clone());
     await cache.put('./',prepared.clone());
-    await cacheQrLibrary();
-    await cacheNaxosCourseGraph();
+    await Promise.allSettled([cacheQrLibrary(),cacheNaxosCourseGraph()]);
     if(installedVersion===RELEASE_VERSION)await marker.put(INTERNAL_RELOAD_MARKER_URL,new Response('1',{headers:{'content-type':'text/plain'}}));
     if(!installedVersion||installedVersion===RELEASE_VERSION) await self.skipWaiting();
   })());
