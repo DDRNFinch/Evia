@@ -48,6 +48,7 @@ const NAXOS_SEEDS=[
   'evidence-rules.json',
   'evidence-capture-contract-v2.json'
 ].map(path=>new URL(path,NAXOS_BASE).href);
+let optionalPrecachePromise=null;
 
 function injectFeatures(html){
   if(typeof html!=='string')return html;
@@ -113,17 +114,25 @@ async function cacheQrLibrary(signal){
   await qrCache.put(QR_LIBRARY_URL,response);
 }
 
-async function waitForOptionalPrecache(){
+function optionalPrecacheSignal(){
+  if(typeof AbortSignal!=='undefined'&&typeof AbortSignal.timeout==='function') return AbortSignal.timeout(OPTIONAL_PRECACHE_TIMEOUT_MS);
   const controller=new AbortController();
-  const timeout=setTimeout(()=>controller.abort(),OPTIONAL_PRECACHE_TIMEOUT_MS);
-  try{
-    await Promise.allSettled([
-      cacheQrLibrary(controller.signal),
-      cacheNaxosCourseGraph(controller.signal)
-    ]);
-  }finally{
-    clearTimeout(timeout);
-  }
+  setTimeout(()=>controller.abort(),OPTIONAL_PRECACHE_TIMEOUT_MS);
+  return controller.signal;
+}
+
+function startOptionalPrecache(){
+  if(optionalPrecachePromise) return optionalPrecachePromise;
+  const signal=optionalPrecacheSignal();
+  const work=Promise.allSettled([
+    cacheQrLibrary(signal),
+    cacheNaxosCourseGraph(signal)
+  ]);
+  optionalPrecachePromise=Promise.race([
+    work,
+    new Promise(resolve=>setTimeout(resolve,OPTIONAL_PRECACHE_TIMEOUT_MS))
+  ]);
+  return optionalPrecachePromise;
 }
 
 self.addEventListener('install',e=>{
@@ -138,7 +147,6 @@ self.addEventListener('install',e=>{
     const prepared=htmlResponse(await index.text(),index);
     await cache.put('./index.html',prepared.clone());
     await cache.put('./',prepared.clone());
-    await waitForOptionalPrecache();
     if(!installedVersion||installedVersion===RELEASE_VERSION)await marker.put(INTERNAL_RELOAD_MARKER_URL,new Response('1',{headers:{'content-type':'text/plain'}}));
     if(!installedVersion||installedVersion===RELEASE_VERSION) await self.skipWaiting();
   })());
@@ -166,6 +174,7 @@ self.addEventListener('message',e=>{
 
 self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET')return;
+  try{e.waitUntil(startOptionalPrecache())}catch{}
   if(e.request.mode==='navigate'){
     e.respondWith((async()=>{
       try{
