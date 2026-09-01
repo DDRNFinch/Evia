@@ -241,16 +241,16 @@
   function injectTourStyles(){
     if(document.getElementById('eviaDemoV1Styles'))return;
     const style=document.createElement('style');style.id='eviaDemoV1Styles';style.textContent=`
-      body.evia-demo-tour-v1 .evia-stage{position:fixed!important;left:var(--evia-demo-x,50vw)!important;top:var(--evia-demo-y,50vh)!important;transform:translate(-50%,-50%)!important;font-size:clamp(56px,9vw,76px)!important;z-index:5000!important;transition:left .72s cubic-bezier(.22,1,.36,1),top .72s cubic-bezier(.22,1,.36,1),font-size .45s ease!important}
+      body.evia-demo-tour-v1 .evia-stage{position:fixed!important;left:var(--evia-demo-x,50vw)!important;top:var(--evia-demo-y,50vh)!important;transform:translate(-50%,-50%)!important;font-size:clamp(56px,9vw,76px)!important;z-index:12030!important;transition:left .72s cubic-bezier(.22,1,.36,1),top .72s cubic-bezier(.22,1,.36,1),font-size .45s ease!important}
       body.evia-demo-tour-v1 .evia-stage.evia-demo-pointing{pointer-events:none!important}
-      #eviaDemoV1Bubble{position:fixed;left:50%;top:max(88px,calc(env(safe-area-inset-top) + 70px));transform:translateX(-50%);width:min(calc(100vw - 32px),430px);z-index:5001;border:1.5px solid rgba(245,196,0,.34);border-radius:24px;background:rgba(255,255,255,.985);box-shadow:0 16px 42px rgba(0,0,0,.10);padding:14px;display:flex;flex-direction:column;gap:8px;text-align:center;color:rgba(45,45,45,.72)}
+      #eviaDemoV1Bubble{position:fixed;left:50%;top:max(88px,calc(env(safe-area-inset-top) + 70px));transform:translateX(-50%);width:min(calc(100vw - 32px),430px);z-index:12031;border:1.5px solid rgba(245,196,0,.34);border-radius:24px;background:rgba(255,255,255,.985);box-shadow:0 16px 42px rgba(0,0,0,.10);padding:14px;display:flex;flex-direction:column;gap:8px;text-align:center;color:rgba(45,45,45,.72)}
       #eviaDemoV1Bubble.menu-side{left:20px;top:112px;transform:none;width:min(330px,calc(100vw - 116px));text-align:left}
       #eviaDemoV1Bubble strong{font-size:16px;color:rgba(45,45,45,.86)}
       #eviaDemoV1Bubble p{font-size:12.5px;line-height:1.45;margin:0}
       #eviaDemoV1Bubble button{min-height:42px;border:1.5px solid rgba(245,196,0,.34);border-radius:999px;background:rgba(250,249,242,.98);color:rgba(45,45,45,.72);font-size:12.5px;font-weight:600;padding:8px 14px;cursor:pointer}
       #eviaDemoV1Bubble input{width:100%;min-height:42px;border:1.5px solid rgba(245,196,0,.28);border-radius:15px;background:#fff;color:#333;font-size:16px;text-align:center;padding:8px 12px;outline:none}
       #eviaDemoV1Bubble .evia-demo-error{font-size:10px;min-height:12px;color:#9b3b3b}
-      .evia-demo-target-v1{position:relative!important;z-index:4999!important;box-shadow:0 0 0 3px rgba(245,196,0,.72),0 0 18px rgba(245,196,0,.42)!important;animation:eviaDemoTargetPulse 1.15s ease-in-out infinite!important}
+      .evia-demo-target-v1{position:relative!important;z-index:12029!important;box-shadow:0 0 0 3px rgba(245,196,0,.72),0 0 18px rgba(245,196,0,.42)!important;animation:eviaDemoTargetPulse 1.15s ease-in-out infinite!important}
       @keyframes eviaDemoTargetPulse{0%,100%{box-shadow:0 0 0 2px rgba(245,196,0,.55),0 0 10px rgba(245,196,0,.22)}50%{box-shadow:0 0 0 5px rgba(245,196,0,.28),0 0 22px rgba(245,196,0,.48)}}
       #eviaDemoControlsV1{border:1.5px solid rgba(245,196,0,.28);border-radius:20px;background:rgba(250,249,242,.82);padding:12px;margin-top:10px}
       #eviaDemoControlsV1 strong{font-size:13px;color:#444}#eviaDemoControlsV1 p{font-size:10.5px;line-height:1.4;color:#666;margin-top:4px}#eviaDemoControlsV1 button{margin-top:8px;min-height:38px;border:1.5px solid rgba(245,196,0,.3);border-radius:999px;background:#fff;padding:6px 12px;color:#555;font-size:11px}
@@ -279,7 +279,8 @@
       if(kind==='centre'&&document.getElementById('naxosMenu')?.classList.contains('open')&&typeof toggleNaxosMenu==='function')toggleNaxosMenu();
       if(kind==='chat'&&typeof closeChat==='function')closeChat();
       if(kind==='profile'&&typeof closePortfolio==='function')closePortfolio(false);
-      if(['targets','epa','settings'].includes(kind))document.querySelector('#eviaSupportOverlay.open .evia-support-back')?.click();
+      if(['targets','epa'].includes(kind))document.querySelector('#eviaSupportOverlay.open .evia-support-back')?.click();
+      if(kind==='settings')document.querySelector('#eviaStableSettings.open [data-stable-action="back"]')?.click();
     }catch{}
   }
   function reopenToolsMenu(){const menu=document.getElementById('eviaToolsMenu'),button=document.getElementById('eviaToolsMenuButton');if(!menu?.classList.contains('open'))button?.click()}
