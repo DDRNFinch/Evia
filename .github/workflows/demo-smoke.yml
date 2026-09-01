@@ -1,0 +1,31 @@
+name: Evia demo smoke test
+
+on:
+  push:
+    branches:
+      - evia-demo-rebuild-test
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install browser test runtime
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium webkit
+      - name: Start Evia test server
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/evia-http.log 2>&1 &
+          echo $! > /tmp/evia-http.pid
+          sleep 2
+      - name: Run Chromium and WebKit smoke tests
+        run: node tests/demo-smoke.cjs
+      - name: Show server log on failure
+        if: failure()
+        run: cat /tmp/evia-http.log || true
