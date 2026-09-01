@@ -3,6 +3,7 @@ const UPDATE_UI_MARKER='evia-update-ui-ready-v1';
 const RELEASE_VERSION='1.0';
 const RELEASE_MARKER_URL=new URL('./__evia-visible-release-version__',self.registration.scope).href;
 const INTERNAL_RELOAD_MARKER_URL=new URL('./__evia-internal-reload__',self.registration.scope).href;
+const OPTIONAL_OFFLINE_MARKER_URL=new URL('./__evia-optional-offline-v1__',self.registration.scope).href;
 
 const RUNTIME_SCRIPTS=[
   './evia-approved-features.js',
@@ -42,6 +43,7 @@ const NAXOS_BASE='https://ddrnfinch.github.io/Naxos-Mapping_Engine/';
 const NAXOS_SEEDS=[
   'course-catalog.json','ksb-manifest.json','manifest-6570-04.json','manifest.json','evidence-rules.json','evidence-capture-contract-v2.json'
 ].map(path=>new URL(path,NAXOS_BASE).href);
+let optionalOfflineCacheStarted=false;
 
 function injectFeatures(html){
   if(typeof html!=='string')return html;
@@ -105,6 +107,21 @@ async function cacheQrLibrary(){
   const qrCache=await caches.open(QR_CACHE);await qrCache.put(QR_LIBRARY_URL,response);
 }
 
+async function cacheOptionalOfflineAssets(){
+  const marker=await caches.open(UPDATE_UI_MARKER);
+  if(await marker.match(OPTIONAL_OFFLINE_MARKER_URL))return;
+  const results=await Promise.allSettled([cacheQrLibrary(),cacheNaxosCourseGraph()]);
+  if(results.every(result=>result.status==='fulfilled')){
+    await marker.put(OPTIONAL_OFFLINE_MARKER_URL,new Response('1',{headers:{'content-type':'text/plain'}}));
+  }
+}
+
+function startOptionalOfflineCache(event){
+  if(optionalOfflineCacheStarted)return;
+  optionalOfflineCacheStarted=true;
+  event.waitUntil(cacheOptionalOfflineAssets());
+}
+
 self.addEventListener('install',e=>{
   e.waitUntil((async()=>{
     const marker=await caches.open(UPDATE_UI_MARKER);
@@ -117,7 +134,6 @@ self.addEventListener('install',e=>{
     const prepared=htmlResponse(await index.text(),index);
     await cache.put(new URL('./index.html',self.registration.scope).href,prepared.clone());
     await cache.put(new URL('./',self.registration.scope).href,prepared.clone());
-    await Promise.allSettled([cacheQrLibrary(),cacheNaxosCourseGraph()]);
     if(!installedVersion||installedVersion===RELEASE_VERSION)await marker.put(INTERNAL_RELOAD_MARKER_URL,new Response('1',{headers:{'content-type':'text/plain'}}));
     if(!installedVersion||installedVersion===RELEASE_VERSION)await self.skipWaiting();
   })());
@@ -145,6 +161,7 @@ self.addEventListener('message',e=>{if(e.data?.type==='EVIA_INSTALL_UPDATE')e.wa
 
 self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET')return;
+  startOptionalOfflineCache(e);
   if(e.request.mode==='navigate'){
     e.respondWith((async()=>{
       try{
