@@ -88,7 +88,7 @@ function collectNaxosJsonReferences(value,baseUrl,out=new Set()){
   return out;
 }
 
-async function cacheNaxosCourseGraph(){
+async function cacheNaxosCourseGraph(signal){
   const cache=await caches.open(NAXOS_CACHE);
   const queue=[...NAXOS_SEEDS];
   const seen=new Set();
@@ -96,7 +96,7 @@ async function cacheNaxosCourseGraph(){
     const href=queue.shift();
     if(seen.has(href)) continue;
     seen.add(href);
-    const response=await fetch(href,{cache:'reload'});
+    const response=await fetch(href,{cache:'reload',signal});
     if(!response.ok) throw new Error(`Could not cache Naxos course data: ${href}`);
     await cache.put(href,response.clone());
     let data=null;
@@ -106,18 +106,24 @@ async function cacheNaxosCourseGraph(){
   }
 }
 
-async function cacheQrLibrary(){
-  const response=await fetch(QR_LIBRARY_URL,{mode:'cors',cache:'reload'});
+async function cacheQrLibrary(signal){
+  const response=await fetch(QR_LIBRARY_URL,{mode:'cors',cache:'reload',signal});
   if(!response.ok) throw new Error('Could not cache the offline QR library.');
   const qrCache=await caches.open(QR_CACHE);
   await qrCache.put(QR_LIBRARY_URL,response);
 }
 
-function waitForOptionalPrecache(){
-  return Promise.race([
-    Promise.allSettled([cacheQrLibrary(),cacheNaxosCourseGraph()]),
-    new Promise(resolve=>setTimeout(resolve,OPTIONAL_PRECACHE_TIMEOUT_MS))
-  ]);
+async function waitForOptionalPrecache(){
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),OPTIONAL_PRECACHE_TIMEOUT_MS);
+  try{
+    await Promise.allSettled([
+      cacheQrLibrary(controller.signal),
+      cacheNaxosCourseGraph(controller.signal)
+    ]);
+  }finally{
+    clearTimeout(timeout);
+  }
 }
 
 self.addEventListener('install',e=>{
