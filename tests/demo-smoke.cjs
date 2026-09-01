@@ -92,6 +92,9 @@ async function openCategory(page, name) {
     const labels = [...document.querySelectorAll('#pillStack .pill-label')].map((node) => node.textContent.trim());
     return labels.length > 0 && !labels.includes(category);
   }, name, { timeout: 6000 });
+  await page.waitForFunction(() => {
+    try { return pillTransitionBusy === false; } catch { return true; }
+  }, null, { timeout: 6000 });
 }
 
 async function openEvidence(page, task) {
