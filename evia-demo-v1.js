@@ -302,8 +302,12 @@
   function waitForSelector(selector,attempt=0){return new Promise(resolve=>{const el=document.querySelector(selector);if(el||attempt>40)return resolve(el);setTimeout(()=>waitForSelector(selector,attempt+1).then(resolve),100)})}
   function pointStep(step,onDone,{menu=false}={}){
     if(tourStopped)return;waitForSelector(step.selector).then(target=>{if(!target||tourStopped)return onDone();clearTarget();activeTarget=target;target.classList.add('evia-demo-target-v1');moveNear(target);setBubble(step.name,[step.prompt],{menuSide:menu});
-      const handler=()=>{target.removeEventListener('click',handler,true);clearTarget();const openDelay=step.kind==='profile'?700:step.kind==='chat'?350:260;setTimeout(()=>{if(tourStopped)return;moveSafe();setBubble(step.name,step.explain,{button:'Next',menuSide:menu,onButton:()=>{closeOpenTourPanel(step.kind);setTimeout(()=>{if(menu&&step.kind!=='settings')reopenToolsMenu();onDone()},120)}})},openDelay)};
-      target.addEventListener('click',handler,true)
+      let handled=false;
+      const handler=()=>{if(handled)return;handled=true;target.removeEventListener('pointerup',handler,true);target.removeEventListener('click',handler,true);target.removeEventListener('keydown',keyHandler,true);clearTarget();const openDelay=step.kind==='profile'?700:step.kind==='chat'?350:260;setTimeout(()=>{if(tourStopped)return;moveSafe();setBubble(step.name,step.explain,{button:'Next',menuSide:menu,onButton:()=>{closeOpenTourPanel(step.kind);setTimeout(()=>{if(menu&&step.kind!=='settings')reopenToolsMenu();onDone()},120)}})},openDelay)};
+      const keyHandler=(event)=>{if(event.key==='Enter'||event.key===' ')handler()};
+      target.addEventListener('pointerup',handler,true);
+      target.addEventListener('click',handler,true);
+      target.addEventListener('keydown',keyHandler,true)
     })
   }
   function runBottom(index=0){if(index>=bottomSteps.length)return runMenuIntro();pointStep(bottomSteps[index],()=>runBottom(index+1))}
