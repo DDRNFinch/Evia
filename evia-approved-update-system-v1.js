@@ -167,6 +167,7 @@ try{
     renderAttendPage=function(){const result=originalRenderAttendPage.apply(this,arguments);appendAttendanceActions();return result};
   }
 }catch{}
+try{attendanceArch?.addEventListener('click',appendAttendanceActions)}catch{}
 
 function renderAttendanceManualForm(){
   const data=typeof loadAttendanceData==='function'?loadAttendanceData():{college:null,workplace:null,collegeLearningHours:0};
@@ -274,6 +275,7 @@ try{
     renderLearnPage=function(){const result=originalRenderLearnPage.apply(this,arguments);enhanceLearnPage();return result};
   }
 }catch{}
+try{learnArch?.addEventListener('click',enhanceLearnPage)}catch{}
 
 function todayValue(){
   const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
