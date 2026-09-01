@@ -6,8 +6,8 @@
   "courseType": "ksb",
   "qualification": {
     "id": "EVIA-DEMO",
-    "version": "1.0",
-    "title": "Evia Demo Course — Everyday Evidence",
+    "version": "1.1",
+    "title": "Evia Demo — Meet Evia",
     "source": "Built-in Evia demonstration course — not a qualification",
     "structure": {
       "maxCategories": 5,
