@@ -1,0 +1,14 @@
+{
+  "standardId": "EVIA-DEMO",
+  "version": "1.0",
+  "ksbCount": 7,
+  "items": {
+    "K1": "Explain the purpose of everyday objects and how their use affects where they belong.",
+    "K2": "Explain a simple check that can be made before using or putting away an everyday object.",
+    "K3": "Explain how you decided whether a simple task was completed successfully.",
+    "S1": "Select and organise three safe everyday objects into a sensible group.",
+    "S2": "Carry out and show a simple check, sort or tidy-up task.",
+    "B1": "Take care of the objects and area while completing the activity.",
+    "B2": "Review the result and identify one thing that could be improved."
+  }
+}
