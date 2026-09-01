@@ -69,7 +69,10 @@ async function pillTexts(page) {
 async function openCategory(page, name) {
   await page.waitForSelector('#pillStack .pill');
   await page.locator('#pillStack .pill', { hasText: name }).first().click();
-  await page.waitForTimeout(140);
+  await page.waitForFunction((category) => {
+    const labels = [...document.querySelectorAll('#pillStack .pill-label')].map((node) => node.textContent.trim());
+    return labels.length > 0 && !labels.includes(category);
+  }, name, { timeout: 6000 });
 }
 
 async function openEvidence(page, task) {
