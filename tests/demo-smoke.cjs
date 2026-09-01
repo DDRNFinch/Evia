@@ -2,19 +2,26 @@ const assert = require('node:assert/strict');
 const { chromium, webkit } = require('playwright');
 
 const BASE = 'http://127.0.0.1:4173/';
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-async function boot(page) {
-  await page.goto(BASE, { waitUntil: 'domcontentloaded' });
-  for (let i = 0; i < 5; i += 1) {
+async function boot(context) {
+  // Evia's stable pre-demo service worker deliberately navigates the first
+  // client when it takes control. Do not issue page.reload() against that
+  // transitional page: open a fresh controlled page after the handover.
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const page = await context.newPage();
+    page.setDefaultTimeout(6000);
     try {
-      await page.waitForFunction(() => window.eviaDemoV1 && window.eviaDemoV1.ready === true, null, { timeout: 5000 });
-      await page.waitForSelector('#eviaDemoV1Bubble', { timeout: 5000 });
-      return;
+      await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 10000 });
+      await page.waitForFunction(() => window.eviaDemoV1 && window.eviaDemoV1.ready === true, null, { timeout: 7000 });
+      await page.waitForSelector('#eviaDemoV1Bubble', { timeout: 7000 });
+      return page;
     } catch (error) {
-      await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.close().catch(() => {});
+      await sleep(attempt === 0 ? 2500 : 800);
     }
   }
-  throw new Error('Clean demo module did not become ready.');
+  throw new Error('Clean demo module did not become ready after the service-worker handover.');
 }
 
 async function bubbleTitle(page, title) {
@@ -48,32 +55,30 @@ async function pillTexts(page) {
 
 async function openCategory(page, name) {
   await page.waitForSelector('#pillStack .pill');
-  const pill = page.locator('#pillStack .pill', { hasText: name }).first();
-  await pill.click();
-  await page.waitForTimeout(120);
+  await page.locator('#pillStack .pill', { hasText: name }).first().click();
+  await page.waitForTimeout(140);
 }
 
 async function openEvidence(page, task) {
-  const pill = page.locator('#pillStack .pill', { hasText: task }).first();
-  await pill.click();
+  await page.locator('#pillStack .pill', { hasText: task }).first().click();
   await page.waitForSelector('#evidenceScreen .evidence-choice', { timeout: 6000 });
   return page.locator('#evidenceScreen .evidence-choice').allTextContents();
 }
 
 async function back(page) {
   await page.locator('#backButton').click();
-  await page.waitForTimeout(120);
+  await page.waitForTimeout(140);
 }
 
 async function run(browserType, name) {
   const browser = await browserType.launch({ headless: true });
   const context = await browser.newContext({ viewport: { width: 1024, height: 768 } });
-  const page = await context.newPage();
+  let page = null;
   const errors = [];
-  page.on('pageerror', (error) => errors.push(String(error)));
 
   try {
-    await boot(page);
+    page = await boot(context);
+    page.on('pageerror', (error) => errors.push(String(error)));
 
     const state = await page.evaluate(() => ({
       meta: JSON.parse(localStorage.getItem('eviaNaxosCourseMetaV1') || '{}'),
@@ -81,8 +86,10 @@ async function run(browserType, name) {
       time: document.getElementById('timeArchValue')?.textContent,
       courseValue: document.getElementById('courseArchValue')?.textContent,
       attend: document.getElementById('attendanceArchValue')?.textContent,
-      learn: document.getElementById('learnArchValue')?.textContent
+      learn: document.getElementById('learnArchValue')?.textContent,
+      controlled: !!navigator.serviceWorker?.controller
     }));
+    assert.equal(state.controlled, true, `${name}: test page should be service-worker controlled`);
     assert.equal(state.meta.qualificationId, 'EVIA-DEMO');
     assert.equal(state.meta.version, '2.0');
     assert.deepEqual(state.course.map((row) => row.label), ['Introduction', 'Activities']);
@@ -117,12 +124,10 @@ async function run(browserType, name) {
     await bubbleTitle(page, 'Your turn');
     await page.locator('.evia-stage').click();
     await page.waitForFunction(() => document.getElementById('screen')?.classList.contains('active'), null, { timeout: 5000 });
-    let top = await pillTexts(page);
-    assert.deepEqual(top, ['Introduction', 'Activities']);
+    assert.deepEqual(await pillTexts(page), ['Introduction', 'Activities']);
 
     await openCategory(page, 'Introduction');
-    let intro = await pillTexts(page);
-    assert.deepEqual(intro, ['Say hello', 'Introduce someone']);
+    assert.deepEqual(await pillTexts(page), ['Say hello', 'Introduce someone']);
 
     let choices = await openEvidence(page, 'Say hello');
     assert.ok(choices.some((text) => /1 short audio/i.test(text)), 'Say hello should offer audio');
@@ -136,8 +141,7 @@ async function run(browserType, name) {
     await back(page);
 
     await openCategory(page, 'Activities');
-    let activities = await pillTexts(page);
-    assert.deepEqual(activities, ['Rock, Paper, Scissors', 'Red lorry, yellow lorry']);
+    assert.deepEqual(await pillTexts(page), ['Rock, Paper, Scissors', 'Red lorry, yellow lorry']);
 
     choices = await openEvidence(page, 'Rock, Paper, Scissors');
     assert.ok(choices.some((text) => /best of 3/i.test(text)), 'RPS should offer best-of-three video');
@@ -151,7 +155,7 @@ async function run(browserType, name) {
     await back(page);
 
     await context.setOffline(true);
-    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.reload({ waitUntil: 'domcontentloaded', timeout: 10000 });
     await page.waitForFunction(() => window.eviaDemoV1 && window.eviaDemoV1.ready === true, null, { timeout: 8000 });
     const offlineState = await page.evaluate(() => ({
       id: JSON.parse(localStorage.getItem('eviaNaxosCourseMetaV1') || '{}').qualificationId,
