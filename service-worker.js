@@ -24,7 +24,7 @@ const RUNTIME_SCRIPTS=[
   './evia-approved-speech-landing-fix.js',
   './evia-approved-evidence-capture-layout-v1.js',
   './evia-approved-portfolio-hub-icon-v1.js',
-  './evia-approved-update-system-v1.js',
+  './evia-approved-update-system-v1.js?v=2',
   './nisia-loader.js'
 ];
 
