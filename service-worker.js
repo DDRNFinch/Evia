@@ -39,6 +39,7 @@ const QR_CACHE='evia-feature-lib-v1';
 const QR_LIBRARY_URL='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
 const NAXOS_CACHE='evia-naxos-offline-v1';
 const NAXOS_BASE='https://ddrnfinch.github.io/Naxos-Mapping_Engine/';
+const OPTIONAL_PRECACHE_TIMEOUT_MS=15000;
 const NAXOS_SEEDS=[
   'course-catalog.json',
   'ksb-manifest.json',
@@ -112,6 +113,13 @@ async function cacheQrLibrary(){
   await qrCache.put(QR_LIBRARY_URL,response);
 }
 
+function waitForOptionalPrecache(){
+  return Promise.race([
+    Promise.allSettled([cacheQrLibrary(),cacheNaxosCourseGraph()]),
+    new Promise(resolve=>setTimeout(resolve,OPTIONAL_PRECACHE_TIMEOUT_MS))
+  ]);
+}
+
 self.addEventListener('install',e=>{
   e.waitUntil((async()=>{
     const marker=await caches.open(UPDATE_UI_MARKER);
@@ -124,7 +132,7 @@ self.addEventListener('install',e=>{
     const prepared=htmlResponse(await index.text(),index);
     await cache.put('./index.html',prepared.clone());
     await cache.put('./',prepared.clone());
-    await Promise.allSettled([cacheQrLibrary(),cacheNaxosCourseGraph()]);
+    await waitForOptionalPrecache();
     if(!installedVersion||installedVersion===RELEASE_VERSION)await marker.put(INTERNAL_RELOAD_MARKER_URL,new Response('1',{headers:{'content-type':'text/plain'}}));
     if(!installedVersion||installedVersion===RELEASE_VERSION) await self.skipWaiting();
   })());
