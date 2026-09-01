@@ -19,13 +19,5 @@ function patchChoices(){
     wrapped.__eviaThinkingPause=true;renderChatOptions=wrapped;
   }catch{}
 }
-function loadDemoCourse(){
-  if(window.__eviaDemoCourseV1||document.querySelector('script[data-evia-demo-course-v1]'))return;
-  const script=document.createElement('script');
-  script.src='./evia-demo-course-v1.js';
-  script.async=false;
-  script.dataset.eviaDemoCourseV1='1';
-  document.head.appendChild(script);
-}
-injectStyles();patchChoices();loadDemoCourse();setInterval(patchChoices,2500);window.eviaExtraThinkingTimeEnabled=enabled;
+injectStyles();patchChoices();setInterval(patchChoices,2500);window.eviaExtraThinkingTimeEnabled=enabled;
 })();
