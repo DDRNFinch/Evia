@@ -1,4 +1,4 @@
-const C='evia-pwa-v29';
+const C='evia-pwa-v30';
 const UPDATE_UI_MARKER='evia-update-ui-ready-v1';
 const RELEASE_VERSION='1.0';
 const RELEASE_MARKER_URL=new URL('./__evia-visible-release-version__',self.registration.scope).href;
@@ -124,7 +124,7 @@ self.addEventListener('install',e=>{
     await cache.put('./index.html',prepared.clone());
     await cache.put('./',prepared.clone());
     await Promise.allSettled([cacheQrLibrary(),cacheNaxosCourseGraph()]);
-    if(installedVersion===RELEASE_VERSION)await marker.put(INTERNAL_RELOAD_MARKER_URL,new Response('1',{headers:{'content-type':'text/plain'}}));
+    if(!installedVersion||installedVersion===RELEASE_VERSION)await marker.put(INTERNAL_RELOAD_MARKER_URL,new Response('1',{headers:{'content-type':'text/plain'}}));
     if(!installedVersion||installedVersion===RELEASE_VERSION) await self.skipWaiting();
   })());
 });
