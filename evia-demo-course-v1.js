@@ -4,7 +4,7 @@
   window.__eviaDemoCourseV1=true;
 
   const DEMO_ID='EVIA-DEMO';
-  const DEMO_VERSION='1.0';
+  const DEMO_VERSION='1.1';
   const DEMO_PATHS_KEY='eviaDemoCoursePathsV1';
   const DEMO_ACTIVE_KEY='eviaDemoCourseActiveV1';
   let installing=false;
@@ -14,6 +14,7 @@
   function storedMeta(){return readJson('eviaNaxosCourseMetaV1',{})||{}}
   function currentMeta(){try{if(typeof activeCourseMeta!=='undefined'&&activeCourseMeta&&typeof activeCourseMeta==='object')return activeCourseMeta}catch{}return storedMeta()}
   function isDemoMeta(meta){return String(meta?.qualificationId||meta?.qualification?.id||'').trim()===DEMO_ID}
+  function demoVersion(meta=currentMeta()){return String(meta?.version||meta?.qualification?.version||'').trim()}
   function isDemoActive(){return isDemoMeta(currentMeta())}
   function hasStoredCourse(){const raw=localStorage.getItem('eviaNaxosCourse');return raw!==null&&raw!==''}
 
@@ -172,27 +173,44 @@
     };
   }
 
-  function installDemoIfNeeded(attempt=0){
-    patchHooks();
-    if(hasStoredCourse()){
-      if(isDemoActive()){try{localStorage.setItem(DEMO_ACTIVE_KEY,'1')}catch{};rememberDemoPaths();decorateDemoCoursePage()}
-      return;
-    }
+  function finishDemoInstall(){
+    try{localStorage.setItem(DEMO_ACTIVE_KEY,'1')}catch{}
+    rememberDemoPaths();
+    try{if(typeof updateArchBars==='function')updateArchBars().catch(()=>{})}catch{}
+    setTimeout(decorateDemoCoursePage,0);
+  }
+
+  function importDemo(attempt=0,refreshExisting=false){
     if(installing)return;
     if(typeof importNaxosKsbPack!=='function'){
-      if(attempt<30)setTimeout(()=>installDemoIfNeeded(attempt+1),150);
+      if(attempt<40)setTimeout(()=>importDemo(attempt+1,refreshExisting),150);
       return;
     }
     installing=true;
-    importNaxosKsbPack(demoPointer())
-      .then(()=>{
-        try{localStorage.setItem(DEMO_ACTIVE_KEY,'1')}catch{}
-        rememberDemoPaths();
-        try{if(typeof updateArchBars==='function')updateArchBars().catch(()=>{})}catch{}
-        setTimeout(decorateDemoCoursePage,0);
+    Promise.resolve()
+      .then(async()=>{
+        if(refreshExisting){
+          await deleteDemoEvidence().catch(()=>{});
+          clearDemoCompletionPaths();
+        }
       })
+      .then(()=>importNaxosKsbPack(demoPointer()))
+      .then(finishDemoInstall)
       .catch(error=>console.warn('Evia demo course could not be prepared',error))
       .finally(()=>{installing=false});
+  }
+
+  function installDemoIfNeeded(){
+    patchHooks();
+    if(hasStoredCourse()){
+      if(!isDemoActive())return;
+      try{localStorage.setItem(DEMO_ACTIVE_KEY,'1')}catch{}
+      rememberDemoPaths();
+      if(demoVersion()!==DEMO_VERSION){importDemo(0,true);return;}
+      decorateDemoCoursePage();
+      return;
+    }
+    importDemo(0,false);
   }
 
   const observer=new MutationObserver(()=>decorateDemoCoursePage());
@@ -202,5 +220,5 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>installDemoIfNeeded(),{once:true});
   else setTimeout(()=>installDemoIfNeeded(),0);
 
-  window.eviaDemoCourse={isActive:isDemoActive,reset:resetDemo};
+  window.eviaDemoCourse={isActive:isDemoActive,reset:resetDemo,version:()=>DEMO_VERSION};
 })();
