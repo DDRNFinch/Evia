@@ -1,70 +1,60 @@
 {
   "id": "1",
-  "title": "Evia Demo",
+  "title": "Meet Evia",
   "subcategories": [
     {
       "id": "1.1",
-      "title": "Find & organise",
+      "title": "Say hello",
       "tasks": [
         {
           "id": "1.1.1",
-          "title": "Collect and organise three everyday objects",
-          "evidenceProfile": "resources",
-          "ksbTargets": ["K1", "S1", "B1"],
-          "evidenceRequirements": ["K1", "S1", "B1"],
-          "conditionalPrompt": "Use three safe everyday objects such as a pen, mug, notebook, charger or similar item."
+          "title": "Introduce yourself — or someone you're with",
+          "evidenceProfile": "demo-audio",
+          "ksbTargets": ["K1"],
+          "evidenceRequirements": ["K1"],
+          "conditionalPrompt": "Keep it short and natural. Say your name and one thing about yourself, or introduce someone who is happy to take part."
         }
       ]
     },
     {
       "id": "1.2",
-      "title": "Show a simple task",
+      "title": "Take a photo",
       "tasks": [
         {
           "id": "1.2.1",
-          "title": "Show a simple check, sort or tidy-up task",
-          "evidenceProfile": "practical",
-          "ksbTargets": ["K2", "S2"],
-          "evidenceRequirements": ["K2", "S2"],
-          "conditionalPrompt": "Choose something harmless that can be demonstrated in a home, office or classroom."
+          "title": "Take a photo of someone you're with",
+          "evidenceProfile": "demo-photo",
+          "ksbTargets": ["K2", "S1", "B1"],
+          "evidenceRequirements": ["K2", "S1", "B1"],
+          "conditionalPrompt": "Ask their permission first. If you're on your own, photograph something interesting nearby instead."
         }
       ]
     },
     {
       "id": "1.3",
-      "title": "Explain your choices",
+      "title": "Rock, paper, scissors",
       "tasks": [
         {
           "id": "1.3.1",
-          "title": "Explain how you knew the task was complete",
-          "evidenceProfile": "knowledge",
-          "ksbTargets": ["K3"],
-          "evidenceRequirements": ["K3"],
-          "conditionalPrompt": "Briefly explain what you checked and what told you the result was acceptable."
+          "title": "Challenge someone to rock, paper, scissors",
+          "evidenceProfile": "demo-video",
+          "ksbTargets": ["K3", "S2"],
+          "evidenceRequirements": ["K3", "S2"],
+          "conditionalPrompt": "Record one quick round. Best of three if you're feeling competitive. If you're alone, demonstrate the hand signs and explain the rules instead."
         }
       ]
     },
     {
       "id": "1.4",
-      "title": "Reflect & improve",
+      "title": "Your verdict",
       "tasks": [
         {
           "id": "1.4.1",
-          "title": "Write one thing you would improve next time",
-          "evidenceProfile": "knowledge",
+          "title": "Which Evia feature would help a learner most?",
+          "evidenceProfile": "demo-written",
           "ksbTargets": ["B2"],
           "evidenceRequirements": ["B2"],
-          "conditionalPrompt": "Keep it simple: say what went well and one small improvement you would make.",
-          "naxosEvidenceOverride": {
-            "profileId": "knowledge",
-            "preferred": [
-              {
-                "type": "written",
-                "label": "1 short written reflection",
-                "instruction": "Write 2–4 sentences saying what went well and one thing you would improve if you repeated the activity."
-              }
-            ]
-          }
+          "conditionalPrompt": "Write a few sentences about the feature you think would be most useful to a learner and why."
         }
       ]
     }
