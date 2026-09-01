@@ -34,7 +34,7 @@ function injectStyles(){
       object-fit:cover!important;display:block!important;border-radius:0!important;
     }
     .screen.evidence-open.evia-visual-capture-active .capture-controls{
-      position:absolute!important;left:12px!important;right:12px!important;bottom:14px!important;z-index:4!important;display:flex!important;justify-content:center!important;align-items:center!important;gap:9px!important;
+      position:absolute!important;left:12px!important;right:12px!important;bottom:14px!important;z-index:4!important;display:flex!important;justify-content:center!important;align-items:center!important;gap:9px!important;transform:none!important;
     }
     .screen.evidence-open.evia-visual-capture-active .recording-timer{
       position:absolute!important;top:14px!important;left:14px!important;z-index:4!important;
