@@ -165,6 +165,7 @@ self.addEventListener('activate',e=>{
       const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
       await Promise.all(windows.map(client=>client.navigate(client.url).catch(()=>null)));
     }
+    setTimeout(()=>{startOptionalPrecache().catch(()=>{})},2000);
   })());
 });
 
@@ -174,7 +175,6 @@ self.addEventListener('message',e=>{
 
 self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET')return;
-  try{e.waitUntil(startOptionalPrecache())}catch{}
   if(e.request.mode==='navigate'){
     e.respondWith((async()=>{
       try{
