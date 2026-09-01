@@ -234,7 +234,8 @@ async function run(browserType, name) {
     progress(`${name}: all checks passed`);
     console.log(`PASS ${name}`);
   } finally {
-    await browser.close();
+    progress(`${name}: closing browser`);
+    await Promise.race([browser.close().catch(() => {}), sleep(2000)]);
   }
 }
 
