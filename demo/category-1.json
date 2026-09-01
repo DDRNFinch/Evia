@@ -1,6 +1,6 @@
 {
   "id": "1",
-  "title": "Meet Evia",
+  "title": "Introduction",
   "subcategories": [
     {
       "id": "1.1",
@@ -8,53 +8,25 @@
       "tasks": [
         {
           "id": "1.1.1",
-          "title": "Introduce yourself — or someone you're with",
-          "evidenceProfile": "demo-audio",
+          "title": "Say hello to Evia",
+          "evidenceProfile": "demo-say-hello",
           "ksbTargets": ["K1"],
           "evidenceRequirements": ["K1"],
-          "conditionalPrompt": "Keep it short and natural. Say your name and one thing about yourself, or introduce someone who is happy to take part."
+          "conditionalPrompt": "Introduce yourself in a few natural sentences. You can record an audio introduction or write it instead."
         }
       ]
     },
     {
       "id": "1.2",
-      "title": "Take a photo",
+      "title": "Introduce someone",
       "tasks": [
         {
           "id": "1.2.1",
-          "title": "Take a photo of someone you're with",
-          "evidenceProfile": "demo-photo",
-          "ksbTargets": ["K2", "S1", "B1"],
-          "evidenceRequirements": ["K2", "S1", "B1"],
-          "conditionalPrompt": "Ask their permission first. If you're on your own, photograph something interesting nearby instead."
-        }
-      ]
-    },
-    {
-      "id": "1.3",
-      "title": "Rock, paper, scissors",
-      "tasks": [
-        {
-          "id": "1.3.1",
-          "title": "Challenge someone to rock, paper, scissors",
-          "evidenceProfile": "demo-video",
-          "ksbTargets": ["K3", "S2"],
-          "evidenceRequirements": ["K3", "S2"],
-          "conditionalPrompt": "Record one quick round. Best of three if you're feeling competitive. If you're alone, demonstrate the hand signs and explain the rules instead."
-        }
-      ]
-    },
-    {
-      "id": "1.4",
-      "title": "Your verdict",
-      "tasks": [
-        {
-          "id": "1.4.1",
-          "title": "Which Evia feature would help a learner most?",
-          "evidenceProfile": "demo-written",
-          "ksbTargets": ["B2"],
-          "evidenceRequirements": ["B2"],
-          "conditionalPrompt": "Write a few sentences about the feature you think would be most useful to a learner and why."
+          "title": "Introduce someone you're with",
+          "evidenceProfile": "demo-introduce-someone",
+          "ksbTargets": ["K2", "B1"],
+          "evidenceRequirements": ["K2", "B1"],
+          "conditionalPrompt": "Ask the person if they are happy to take part, then introduce them naturally using a short video or audio recording."
         }
       ]
     }
