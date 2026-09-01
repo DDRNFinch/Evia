@@ -4,7 +4,7 @@
   window.__eviaDemoCourseV1=true;
 
   const DEMO_ID='EVIA-DEMO';
-  const DEMO_VERSION='1.1';
+  const DEMO_VERSION='1.2';
   const DEMO_PATHS_KEY='eviaDemoCoursePathsV1';
   const DEMO_ACTIVE_KEY='eviaDemoCourseActiveV1';
   let installing=false;
