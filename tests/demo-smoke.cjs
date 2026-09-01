@@ -15,20 +15,39 @@ const watchdog = setTimeout(() => {
 }, WATCHDOG_MS);
 watchdog.unref();
 
+async function bounded(promise, timeout, label) {
+  let timer;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} timed out after ${timeout}ms`)), timeout);
+      })
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function boot(context) {
   // Evia's stable pre-demo service worker deliberately navigates the first
   // client when it takes control. Do not issue page.reload() against that
   // transitional page: open a fresh controlled page after the handover.
   for (let attempt = 0; attempt < 4; attempt += 1) {
-    const page = await context.newPage();
-    page.setDefaultTimeout(6000);
+    let page = null;
+    progress(`boot attempt ${attempt + 1}: opening page`);
     try {
+      page = await bounded(context.newPage(), 6000, 'opening a browser page');
+      page.setDefaultTimeout(6000);
       await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 10000 });
+      progress(`boot attempt ${attempt + 1}: waiting for demo readiness`);
       await page.waitForFunction(() => window.eviaDemoV1 && window.eviaDemoV1.ready === true, null, { timeout: 7000 });
       await page.waitForSelector('#eviaDemoV1Bubble', { timeout: 7000 });
+      progress(`boot attempt ${attempt + 1}: ready`);
       return page;
     } catch (error) {
-      await page.close().catch(() => {});
+      progress(`boot attempt ${attempt + 1}: retrying after ${error.message}`);
+      if (page) await Promise.race([page.close().catch(() => {}), sleep(1500)]);
       await sleep(attempt === 0 ? 2500 : 800);
     }
   }
