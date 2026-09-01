@@ -1,4 +1,4 @@
-const C='evia-pwa-v30';
+const C='evia-pwa-v31';
 const UPDATE_UI_MARKER='evia-update-ui-ready-v1';
 const RELEASE_VERSION='1.0';
 const RELEASE_MARKER_URL=new URL('./__evia-visible-release-version__',self.registration.scope).href;
@@ -30,6 +30,12 @@ const F=[
   './evia-release.json',
   ...RUNTIME_SCRIPTS,
   './nisia-sync.js',
+  './evia-demo-course-v1.js',
+  './demo/pack.json',
+  './demo/ksb-registry.json',
+  './demo/facets.json',
+  './demo/evidence-rules.json',
+  './demo/category-1.json',
   './icons/evia-180.png',
   './icons/evia-192.png',
   './icons/evia-512.png'
