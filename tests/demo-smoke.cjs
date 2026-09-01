@@ -3,6 +3,17 @@ const { chromium, webkit } = require('playwright');
 
 const BASE = 'http://127.0.0.1:4173/';
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const WATCHDOG_MS = 7 * 60 * 1000;
+let lastProgress = 'test startup';
+const progress = (message) => {
+  lastProgress = message;
+  console.log(`PROGRESS ${message}`);
+};
+const watchdog = setTimeout(() => {
+  console.error(`SMOKE WATCHDOG: no completion within ${WATCHDOG_MS / 60000} minutes; last progress: ${lastProgress}`);
+  process.exit(1);
+}, WATCHDOG_MS);
+watchdog.unref();
 
 async function boot(context) {
   // Evia's stable pre-demo service worker deliberately navigates the first
@@ -35,6 +46,7 @@ async function next(page) {
 }
 
 async function pointedStep(page, selector, title) {
+  progress(`tour ${title}: waiting for target`);
   await page.waitForSelector(`${selector}.evia-demo-target-v1`, { timeout: 6000 });
   await page.locator(selector).click();
   await bubbleTitle(page, title);
@@ -47,6 +59,7 @@ async function pointedStep(page, selector, title) {
   assert.equal(stageInfo.targetClass, false, `${title}: Evia must not receive the target highlight box`);
   assert.equal(stageInfo.bodyTour, true, `${title}: tour presentation should still be active`);
   await next(page);
+  progress(`tour ${title}: complete`);
 }
 
 async function pillTexts(page) {
@@ -77,7 +90,9 @@ async function run(browserType, name) {
   const errors = [];
 
   try {
+    progress(`${name}: booting`);
     page = await boot(context);
+    progress(`${name}: demo ready`);
     page.on('pageerror', (error) => errors.push(String(error)));
 
     const state = await page.evaluate(() => ({
@@ -121,11 +136,13 @@ async function run(browserType, name) {
     await pointedStep(page, '[data-evia-tool="epa"]', 'EPA');
     await pointedStep(page, '[data-evia-tool="settings"]', 'Settings');
 
+    progress(`${name}: guided tour complete`);
     await bubbleTitle(page, 'Your turn');
     await page.locator('.evia-stage').click();
     await page.waitForFunction(() => document.getElementById('screen')?.classList.contains('active'), null, { timeout: 5000 });
     assert.deepEqual(await pillTexts(page), ['Introduction', 'Activities']);
 
+    progress(`${name}: checking Introduction activities`);
     await openCategory(page, 'Introduction');
     assert.deepEqual(await pillTexts(page), ['Say hello', 'Introduce someone']);
 
@@ -140,6 +157,7 @@ async function run(browserType, name) {
     await back(page);
     await back(page);
 
+    progress(`${name}: checking Activities`);
     await openCategory(page, 'Activities');
     assert.deepEqual(await pillTexts(page), ['Rock, Paper, Scissors', 'Red lorry, yellow lorry']);
 
@@ -154,6 +172,7 @@ async function run(browserType, name) {
     await back(page);
     await back(page);
 
+    progress(`${name}: checking offline reopen`);
     await context.setOffline(true);
     await page.reload({ waitUntil: 'domcontentloaded', timeout: 10000 });
     await page.waitForFunction(() => window.eviaDemoV1 && window.eviaDemoV1.ready === true, null, { timeout: 8000 });
@@ -165,6 +184,7 @@ async function run(browserType, name) {
     assert.deepEqual(offlineState.labels, ['Introduction', 'Activities']);
     await context.setOffline(false);
 
+    progress(`${name}: checking genuine-course replacement`);
     await page.evaluate(() => {
       applyImportedCourse([
         { label: 'Real course area', children: [{ label: 'Real task', recommended: { label: 'Written evidence', type: 'text', details: [] }, alternative: null, requirementItems: [], requirements: '', ksbTargets: ['K1'] }] }
@@ -189,6 +209,7 @@ async function run(browserType, name) {
     assert.equal(cleaned.targets.some((row) => row.eviaDemoV1 === true), false);
 
     assert.deepEqual(errors, [], `${name} page errors: ${errors.join('\n')}`);
+    progress(`${name}: all checks passed`);
     console.log(`PASS ${name}`);
   } finally {
     await browser.close();
@@ -198,6 +219,7 @@ async function run(browserType, name) {
 (async () => {
   await run(chromium, 'Chromium');
   await run(webkit, 'WebKit');
+  clearTimeout(watchdog);
 })().catch((error) => {
   console.error(error.stack || error);
   process.exit(1);
