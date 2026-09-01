@@ -1,4 +1,4 @@
-const C='evia-pwa-v31';
+const C='evia-pwa-v32';
 const UPDATE_UI_MARKER='evia-update-ui-ready-v1';
 const RELEASE_VERSION='1.0';
 const RELEASE_MARKER_URL=new URL('./__evia-visible-release-version__',self.registration.scope).href;
@@ -22,7 +22,8 @@ const RUNTIME_SCRIPTS=[
   './evia-approved-speech-landing-fix.js',
   './evia-approved-evidence-capture-layout-v1.js',
   './evia-approved-portfolio-hub-icon-v1.js',
-  './nisia-loader.js'
+  './nisia-loader.js',
+  './evia-first-run-intro-v1.js'
 ];
 
 const F=[
