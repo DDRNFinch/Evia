@@ -1,0 +1,72 @@
+{
+  "id": "1",
+  "title": "Try Evia",
+  "subcategories": [
+    {
+      "id": "1.1",
+      "title": "Find & organise",
+      "tasks": [
+        {
+          "id": "1.1.1",
+          "title": "Collect and organise three everyday objects",
+          "evidenceProfile": "resources",
+          "ksbTargets": ["K1", "S1", "B1"],
+          "evidenceRequirements": ["K1", "S1", "B1"],
+          "conditionalPrompt": "Use three safe everyday objects such as a pen, mug, notebook, charger or similar item."
+        }
+      ]
+    },
+    {
+      "id": "1.2",
+      "title": "Show a simple task",
+      "tasks": [
+        {
+          "id": "1.2.1",
+          "title": "Show a simple check, sort or tidy-up task",
+          "evidenceProfile": "practical",
+          "ksbTargets": ["K2", "S2"],
+          "evidenceRequirements": ["K2", "S2"],
+          "conditionalPrompt": "Choose something harmless that can be demonstrated in a home, office or classroom."
+        }
+      ]
+    },
+    {
+      "id": "1.3",
+      "title": "Explain your choices",
+      "tasks": [
+        {
+          "id": "1.3.1",
+          "title": "Explain how you knew the task was complete",
+          "evidenceProfile": "knowledge",
+          "ksbTargets": ["K3"],
+          "evidenceRequirements": ["K3"],
+          "conditionalPrompt": "Briefly explain what you checked and what told you the result was acceptable."
+        }
+      ]
+    },
+    {
+      "id": "1.4",
+      "title": "Reflect & improve",
+      "tasks": [
+        {
+          "id": "1.4.1",
+          "title": "Write one thing you would improve next time",
+          "evidenceProfile": "knowledge",
+          "ksbTargets": ["B2"],
+          "evidenceRequirements": ["B2"],
+          "conditionalPrompt": "Keep it simple: say what went well and one small improvement you would make.",
+          "naxosEvidenceOverride": {
+            "profileId": "knowledge",
+            "preferred": [
+              {
+                "type": "written",
+                "label": "1 short written reflection",
+                "instruction": "Write 2–4 sentences saying what went well and one thing you would improve if you repeated the activity."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
