@@ -7,86 +7,102 @@
     "demoOnly": true
   },
   "profiles": {
-    "demo-audio": {
-      "id": "demo-audio",
+    "demo-say-hello": {
+      "id": "demo-say-hello",
       "label": "Say hello",
-      "shortLabel": "Audio",
+      "shortLabel": "Audio or text",
       "oneSubmissionNote": "This is a demonstration activity, not a qualification assessment.",
       "preferred": [
         {
           "type": "audio",
           "label": "1 short audio introduction",
-          "instruction": "Introduce yourself in a few sentences, or introduce someone who is happy to take part."
+          "instruction": "Record a short audio introducing yourself in a few natural sentences."
         }
       ],
       "alternatives": [
         {
-          "label": "Written alternative",
-          "instruction": "If you cannot record audio, write the same short introduction instead."
+          "type": "written",
+          "label": "Written / text alternative",
+          "instruction": "Write the same short introduction instead if you would rather type than record audio."
         }
       ],
       "capture": [
-        "Keep the introduction brief and natural.",
+        "Keep the introduction short and natural.",
         "Do not include private information you would not normally share."
       ]
     },
-    "demo-photo": {
-      "id": "demo-photo",
-      "label": "Take a photo",
-      "shortLabel": "Photo",
-      "oneSubmissionNote": "This demonstrates how Evia captures photo evidence.",
-      "preferred": [
-        {
-          "type": "photo",
-          "label": "1 clear photo",
-          "instruction": "Take one clear photo of someone who has agreed to be included. If you are alone, take a photo of something interesting nearby instead."
-        }
-      ],
-      "alternatives": [],
-      "capture": [
-        "Ask permission before photographing another person.",
-        "Keep confidential paperwork, screens and personal information out of view."
-      ]
-    },
-    "demo-video": {
-      "id": "demo-video",
-      "label": "Rock, paper, scissors",
-      "shortLabel": "Video",
-      "oneSubmissionNote": "This demonstrates how Evia captures short practical video evidence.",
+    "demo-introduce-someone": {
+      "id": "demo-introduce-someone",
+      "label": "Introduce someone",
+      "shortLabel": "Video or audio",
+      "oneSubmissionNote": "This demonstrates how Evia can capture spoken evidence involving another willing person.",
       "preferred": [
         {
           "type": "video",
-          "label": "1 short video",
-          "instruction": "Record one quick round of rock, paper, scissors. If you are alone, demonstrate the three hand signs and explain the rules instead."
-        }
-      ],
-      "alternatives": [],
-      "capture": [
-        "Keep the video short.",
-        "Make sure everyone being recorded is happy to take part."
-      ]
-    },
-    "demo-written": {
-      "id": "demo-written",
-      "label": "Your verdict",
-      "shortLabel": "Written",
-      "oneSubmissionNote": "There is no right answer. The point is to try Evia's written evidence workflow.",
-      "preferred": [
-        {
-          "type": "written",
-          "label": "1 short written response",
-          "instruction": "Write a few sentences saying which Evia feature you think would be most useful to a learner and why."
+          "label": "1 short video introduction",
+          "instruction": "With their permission, record a short video introducing someone you are with."
         }
       ],
       "alternatives": [
         {
+          "type": "audio",
           "label": "Audio alternative",
-          "instruction": "Record a short audio response instead if you would rather speak than type."
+          "instruction": "With their permission, make a short audio recording introducing them instead."
         }
       ],
       "capture": [
-        "Choose one feature that stood out to you.",
-        "Give a simple reason for your choice."
+        "Ask the person if they are happy to take part before recording.",
+        "Keep the introduction friendly and brief.",
+        "Avoid sharing private or confidential information."
+      ]
+    },
+    "demo-rock-paper-scissors": {
+      "id": "demo-rock-paper-scissors",
+      "label": "Rock, Paper, Scissors",
+      "shortLabel": "Video or 3 photos",
+      "oneSubmissionNote": "This demonstrates how Evia can capture a short practical activity using different visual evidence methods.",
+      "preferred": [
+        {
+          "type": "video",
+          "label": "1 short video — best of 3",
+          "instruction": "Record a best-of-three game of rock, paper, scissors. If another person is in the video, make sure they are happy to take part."
+        }
+      ],
+      "alternatives": [
+        {
+          "type": "photo",
+          "label": "3 photos",
+          "instruction": "Take 3 photos showing the three rounds instead of recording a video."
+        }
+      ],
+      "capture": [
+        "Show enough of each round for the activity to be clear.",
+        "Keep the video short if you choose video.",
+        "Ask permission before recording another person."
+      ]
+    },
+    "demo-red-lorry": {
+      "id": "demo-red-lorry",
+      "label": "Red lorry, yellow lorry",
+      "shortLabel": "Audio or video",
+      "oneSubmissionNote": "This is a light demonstration of Evia's audio and video evidence capture.",
+      "preferred": [
+        {
+          "type": "audio",
+          "label": "1 audio recording",
+          "instruction": "Record yourself saying 'red lorry, yellow lorry' five times in a row without going wrong."
+        }
+      ],
+      "alternatives": [
+        {
+          "type": "video",
+          "label": "1 video recording",
+          "instruction": "Record a video of yourself saying 'red lorry, yellow lorry' five times in a row instead."
+        }
+      ],
+      "capture": [
+        "Say the phrase five times in one recording.",
+        "If you make a mistake, have another go until you are happy with it."
       ]
     }
   }
