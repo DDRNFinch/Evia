@@ -3,6 +3,7 @@
 
   const ROOT_ID = 'archDetailContent';
   const TITLE_ID = 'archDetailTitle';
+  const PANEL_ID = 'archDetailPanel';
   let applying = false;
   let queued = false;
 
@@ -87,7 +88,15 @@
         margin:0!important;
       }
       #${ROOT_ID}.evia-learn-final-v5 .learn-action-count{display:none!important}
-      #${ROOT_ID}.evia-attend-final-v5 [data-evia-v5-nisia]{display:none!important}
+
+      #${PANEL_ID}.evia-attend-no-nisia #uploadPortfolio,
+      #${PANEL_ID}.evia-attend-no-nisia [id*="nisia" i],
+      #${PANEL_ID}.evia-attend-no-nisia [class*="nisia" i],
+      #${PANEL_ID}.evia-attend-no-nisia [data-action*="nisia" i],
+      #${PANEL_ID}.evia-attend-no-nisia [data-evia-action*="nisia" i],
+      #${PANEL_ID}.evia-attend-no-nisia [data-nisia],
+      #${PANEL_ID}.evia-attend-no-nisia [data-evia-v5-nisia]{display:none!important}
+
       @media(max-width:390px){
         #${ROOT_ID}.evia-learn-final-v5 #openManualLearning,
         #${ROOT_ID}.evia-learn-final-v5 #openLearnCatchup,
@@ -97,40 +106,63 @@
     document.head.appendChild(style);
   }
 
-  function cleanEmptyAncestors(node, root) {
+  function cleanEmptyAncestors(node, boundary) {
     let current = node;
-    for (let i = 0; i < 3 && current && current !== root; i += 1) {
+    for (let i = 0; i < 4 && current && current !== boundary; i += 1) {
       const parent = current.parentElement;
       if (!current.querySelector('button,[role="button"],input,textarea,select,a[href]') && !norm(current)) current.remove();
       current = parent;
     }
   }
 
-  function removeNisiaFromAttend(root) {
+  function attendIsOpen() {
+    const title = norm(document.getElementById(TITLE_ID));
+    const panel = document.getElementById(PANEL_ID);
+    return title === 'Attend' && Boolean(panel?.classList.contains('open'));
+  }
+
+  function isNisiaConnectText(value) {
+    const text = String(value || '').replace(/\s+/g, ' ').trim();
+    if (!text) return false;
+    return /\bnisia\b/i.test(text)
+      || /^connect\s+or\s+sync$/i.test(text)
+      || /^connect\s+nisia$/i.test(text)
+      || /^sync\s+with\s+nisia$/i.test(text);
+  }
+
+  function removeNisiaFromAttend() {
+    if (!attendIsOpen()) return;
+    const panel = document.getElementById(PANEL_ID);
+    const root = document.getElementById(ROOT_ID);
+    if (!panel || !root) return;
+
+    panel.classList.add('evia-attend-no-nisia');
     const removedParents = [];
-    const interactive = [...root.querySelectorAll('button,[role="button"],a,[tabindex]')];
-    interactive.forEach((node) => {
-      if (!/\bnisia\b/i.test(norm(node))) return;
-      removedParents.push(node.parentElement);
-      node.remove();
-    });
 
-    [...root.querySelectorAll('*')].forEach((node) => {
-      if (!node.isConnected) return;
+    const candidates = [...panel.querySelectorAll('button,[role="button"],a[href],[tabindex],#uploadPortfolio,[id*="nisia" i],[class*="nisia" i],[data-nisia]')];
+    candidates.forEach((node) => {
       const value = norm(node);
-      if (!/^nisia(?:\s+(?:connect|sync|connect\s+or\s+sync|connect\s+nisia|sync\s+with\s+nisia))?$/i.test(value)) return;
-      if (node.children.length > 3) return;
+      const attributeMatch = node.id?.toLowerCase().includes('nisia')
+        || [...node.classList].some((name) => name.toLowerCase().includes('nisia'))
+        || node.hasAttribute('data-nisia')
+        || String(node.getAttribute('data-action') || '').toLowerCase().includes('nisia')
+        || String(node.getAttribute('data-evia-action') || '').toLowerCase().includes('nisia');
+      if (!attributeMatch && !isNisiaConnectText(value)) return;
       removedParents.push(node.parentElement);
       node.remove();
     });
 
-    const upload = root.querySelector('#uploadPortfolio');
-    if (upload) {
-      removedParents.push(upload.parentElement);
-      upload.remove();
-    }
+    [...panel.querySelectorAll('div,section,span,p')].forEach((node) => {
+      if (!node.isConnected || node === root || node === panel) return;
+      const value = norm(node);
+      if (!isNisiaConnectText(value)) return;
+      if (node.querySelector('#eviaAttendanceManual,#eviaAttendanceQr')) return;
+      if (node.children.length > 4) return;
+      removedParents.push(node.parentElement);
+      node.remove();
+    });
 
-    removedParents.forEach((parent) => cleanEmptyAncestors(parent, root));
+    removedParents.forEach((parent) => cleanEmptyAncestors(parent, panel));
   }
 
   function findLearnControl(root, id, pattern) {
@@ -180,6 +212,7 @@
     queued = false;
     if (applying) return;
     const root = document.getElementById(ROOT_ID);
+    const panel = document.getElementById(PANEL_ID);
     const title = norm(document.getElementById(TITLE_ID));
     if (!root) return;
     applying = true;
@@ -187,13 +220,16 @@
       if (title === 'Attend') {
         root.classList.add('evia-attend-final-v5');
         root.classList.remove('evia-learn-final-v5');
-        removeNisiaFromAttend(root);
+        panel?.classList.add('evia-attend-no-nisia');
+        removeNisiaFromAttend();
       } else if (title === 'Learn') {
         root.classList.add('evia-learn-final-v5');
         root.classList.remove('evia-attend-final-v5');
+        panel?.classList.remove('evia-attend-no-nisia');
         fixLearn(root);
       } else {
         root.classList.remove('evia-attend-final-v5','evia-learn-final-v5');
+        panel?.classList.remove('evia-attend-no-nisia');
       }
     } finally {
       applying = false;
@@ -208,15 +244,15 @@
 
   function boot() {
     injectStyles();
-    const root = document.getElementById(ROOT_ID);
-    const title = document.getElementById(TITLE_ID);
-    const target = root?.parentElement || document.body;
     const observer = new MutationObserver(queue);
-    observer.observe(target, { childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:['class','style'] });
-    if (title && title !== target && !target.contains(title)) observer.observe(title, { childList:true, subtree:true, characterData:true });
+    observer.observe(document.documentElement, { childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:['class','style','id'] });
     document.addEventListener('click', (event) => {
       if (event.target.closest('#attendanceArch,#learnArch,.arch-detail-back,.back-button')) setTimeout(queue, 0);
     }, true);
+    setInterval(() => {
+      if (attendIsOpen()) removeNisiaFromAttend();
+      else if (norm(document.getElementById(TITLE_ID)) === 'Learn') fixLearn(document.getElementById(ROOT_ID));
+    }, 250);
     queue();
     window.__eviaAttendLearnFinalV5 = true;
   }
