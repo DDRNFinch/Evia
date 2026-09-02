@@ -155,19 +155,18 @@
         leaf(
           'B2 · Find Someone Who…',
           {
-            label: 'Photo + written',
+            label: 'Photo + audio or written',
             type: 'camera',
             details: [
-              { displayType: 'Photo', label: '1 photo', instruction: `Take a photo of a colleague who ${colleaguePrompt}.` },
-              { displayType: 'Written', label: 'Short written answer', instruction: 'Write one short line explaining why they fit the challenge.' }
+              { displayType: 'Photo', label: '1 photo', instruction: `With colleagues, take a photo of a colleague who ${colleaguePrompt}. If you are on your own, ${soloPrompt} and take a photo of it.` },
+              { displayType: 'Audio or written', label: 'Audio or written', instruction: 'Explain in one short line or audio clip why your choice fits the challenge.' }
             ]
           },
           {
-            label: 'Solo: photo + audio',
-            type: 'camera',
+            label: 'Witness verification',
+            type: 'witness',
             details: [
-              { displayType: 'Photo', label: '1 photo', instruction: `If you are on your own, ${soloPrompt} and take a photo of it.` },
-              { displayType: 'Audio', label: 'Short audio', instruction: 'Explain why your choice fits the challenge.' }
+              { displayType: 'Witness testimony', label: 'Witness testimony', instruction: 'Ask someone in the room to verify your answer using witness evidence.' }
             ]
           },
           `With colleagues: find someone who ${colleaguePrompt}. On your own: ${soloPrompt}.`,
