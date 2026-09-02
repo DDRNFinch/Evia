@@ -488,6 +488,33 @@
     } catch {}
   }
 
+  function installCompletionSyncHook() {
+    try {
+      if (typeof markEvidencePathComplete === 'function' && !markEvidencePathComplete.__nisiaCompletionSync) {
+        const originalMark = markEvidencePathComplete;
+        const wrappedMark = function() {
+          const result = originalMark.apply(this, arguments);
+          queueMicrotask(() => syncNewEvidence({ force: true }).catch(() => {}));
+          return result;
+        };
+        wrappedMark.__nisiaCompletionSync = true;
+        markEvidencePathComplete = wrappedMark;
+      }
+    } catch {}
+    try {
+      if (typeof clearEvidencePathComplete === 'function' && !clearEvidencePathComplete.__nisiaCompletionSync) {
+        const originalClear = clearEvidencePathComplete;
+        const wrappedClear = function() {
+          const result = originalClear.apply(this, arguments);
+          queueMicrotask(() => syncNewEvidence({ force: true }).catch(() => {}));
+          return result;
+        };
+        wrappedClear.__nisiaCompletionSync = true;
+        clearEvidencePathComplete = wrappedClear;
+      }
+    } catch {}
+  }
+
   function createModal() {
     const overlay = document.createElement('div');
     overlay.id = 'eviaNisiaModal';
@@ -588,6 +615,7 @@
   }
 
   async function boot() {
+    installCompletionSyncHook();
     installPairingQrHandler();
     bindConnectionButton();
     const observer = new MutationObserver(() => bindConnectionButton());
