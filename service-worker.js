@@ -16,7 +16,7 @@ const RUNTIME_SCRIPTS=[
   './evia-sw-update-hardening-v1.js',
   './evia-approved-runtime-fixes-v1.js',
   './evia-ui-polish-v1.js',
-  './evia-ui-polish-visible-v1.js',
+  './evia-ui-polish-visible-v1.js?v=2',
   './evia-approved-settings-stable-v1.js',
   './evia-approved-support-preview-visual-v1.js',
   './evia-approved-naxos-evidence-contract-v2.js',
