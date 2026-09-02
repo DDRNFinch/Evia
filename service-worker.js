@@ -1,4 +1,4 @@
-const C='evia-pwa-v45';
+const C='evia-pwa-v46';
 const UPDATE_UI_MARKER='evia-update-ui-ready-v1';
 const RELEASE_VERSION='1.0';
 const RELEASE_MARKER_URL=new URL('./__evia-visible-release-version__',self.registration.scope).href;
@@ -32,13 +32,15 @@ const RUNTIME_SCRIPTS=[
 ];
 
 const F=[
-  './manifest.webmanifest',
+  './manifest.webmanifest?v=46',
   './evia-release.json',
   ...RUNTIME_SCRIPTS,
   './nisia-sync.js',
-  './icons/evia-180.png',
-  './icons/evia-192.png',
-  './icons/evia-512.png'
+  './icons/evia-180.png?v=46',
+  './icons/evia-192.png?v=46',
+  './icons/evia-512.png?v=46',
+  './icons/evia-maskable-192.png?v=46',
+  './icons/evia-maskable-512.png?v=46'
 ];
 const QR_CACHE='evia-feature-lib-v1';
 const QR_LIBRARY_URL='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
@@ -155,7 +157,7 @@ self.addEventListener('activate',e=>{
       await marker.delete(INTERNAL_RELOAD_MARKER_URL);
       const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
       await Promise.all(windows.map(client=>{
-        try{const url=new URL(client.url);url.searchParams.set('__evia_refresh','45');return client.navigate(url.href).catch(()=>null)}catch{return null}
+        try{const url=new URL(client.url);url.searchParams.set('__evia_refresh','46');return client.navigate(url.href).catch(()=>null)}catch{return null}
       }));
     }
   })());
