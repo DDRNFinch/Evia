@@ -1498,6 +1498,7 @@
       }
     }
   </style>
+  <script src="./evia-demo-v1.js?v=1"></script>
 </head>
 <body>
   <main class="screen" id="screen" aria-label="Evia home">
@@ -3273,6 +3274,7 @@
     }
 
     function applyImportedCourse(items, title = '', meta = {}) {
+      try { window.__eviaDemo?.prepareForFullMode?.('course'); } catch {}
       courseItems = items.slice(0, 5);
       activeCourseTitle = cleanText(title);
       saveCourse(courseItems, activeCourseTitle);
