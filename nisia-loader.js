@@ -3,7 +3,7 @@
 
   const AUTH_STORAGE_KEY = 'nisia-evia-auth-v1';
   const SUPABASE_SCRIPT = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-  const NISIA_SYNC_SCRIPT = './nisia-sync.js?v=2';
+  const NISIA_SYNC_SCRIPT = './nisia-sync.js?v=3';
 
   let activationPromise = null;
   let boundButton = null;
@@ -12,6 +12,16 @@
     try {
       const raw = localStorage.getItem(AUTH_STORAGE_KEY);
       return Boolean(raw && raw !== 'null' && raw !== '{}' && raw !== 'undefined');
+    } catch {
+      return false;
+    }
+  }
+
+  async function ensurePersistentStorage() {
+    if (!navigator.storage?.persist) return false;
+    try {
+      if (navigator.storage.persisted && await navigator.storage.persisted()) return true;
+      return await navigator.storage.persist();
     } catch {
       return false;
     }
@@ -109,6 +119,7 @@
   }
 
   function boot() {
+    ensurePersistentStorage().catch(() => {});
     bindConnectionButton();
     const observer = new MutationObserver(bindConnectionButton);
     observer.observe(document.documentElement, { childList: true, subtree: true });
