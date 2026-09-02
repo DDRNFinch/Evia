@@ -2,21 +2,25 @@
   "name": "Evia",
   "short_name": "Evia",
   "description": "Learner assistant",
+  "id": "/Evia/",
   "start_url": "/Evia/",
   "scope": "/Evia/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#ffffff",
   "theme_color": "#f5c400",
   "icons": [
     {
       "src": "/Evia/icons/evia-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/Evia/icons/evia-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }
