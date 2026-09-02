@@ -3241,7 +3241,7 @@
       const items=buildNaxosNvqCourse(categories,evidenceRules);
       if(!items.length)throw new Error('The Naxos NVQ pack contains no course structure.');
       const meta=buildNvqCourseMeta(pack,items,categories,requiredTargets);
-      applyImportedCourse(items,cleanText(pack?.qualification?.title),meta);
+      await applyImportedCourse(items,cleanText(pack?.qualification?.title),meta);
       updateArchBars().catch(()=>{});
       closeScanner(false);
     }
@@ -3268,13 +3268,13 @@
       const items = buildNaxosKsbCourse(customisedCategories, registry, evidenceRules);
       if (!items.length) throw new Error('The Naxos KSB pack contains no course structure.');
       const meta = buildKsbCourseMeta(pack, registry, items);
-      applyImportedCourse(items, cleanText(pack?.qualification?.title), meta);
+      await applyImportedCourse(items, cleanText(pack?.qualification?.title), meta);
       updateArchBars().catch(() => {});
       closeScanner(false);
     }
 
-    function applyImportedCourse(items, title = '', meta = {}) {
-      try { window.__eviaDemo?.prepareForFullMode?.('course'); } catch {}
+    async function applyImportedCourse(items, title = '', meta = {}) {
+      try { await window.__eviaDemo?.prepareForFullMode?.('course'); } catch {}
       courseItems = items.slice(0, 5);
       activeCourseTitle = cleanText(title);
       saveCourse(courseItems, activeCourseTitle);
@@ -3302,8 +3302,10 @@
       }
       const items = parseNaxosPayload(rawValue);
       if (items) {
-        applyImportedCourse(items,'',{});
-        closeScanner(false);
+        applyImportedCourse(items,'',{}).then(() => closeScanner(false)).catch((error) => {
+          console.error('Could not apply scanned course', error);
+          scannerStatus.textContent = 'Could not load that course.';
+        });
         return true;
       }
       scannerStatus.textContent = 'That QR code is not a valid Naxos course code.';
