@@ -62,3 +62,5 @@ for expected in ['developerConnectionStatus', 'developerResetConnection', 'windo
         raise SystemExit(f'Missing developer API marker: {expected}')
 path.write_text(text, encoding='utf-8')
 print('Approved Nisia developer API inserted')
+
+# trigger verification workflow
