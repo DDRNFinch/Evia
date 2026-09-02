@@ -1,0 +1,51 @@
+name: Sequence approved Evia demo transition
+on:
+  push:
+    paths:
+      - '.github/patch-approved-demo-transition-sequence.py'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check current import shape
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          if s.count('applyImportedCourse(') != 4:
+              raise SystemExit(f'Expected exactly 4 applyImportedCourse occurrences; found {s.count("applyImportedCourse(")}')
+          PY
+      - run: python .github/patch-approved-demo-transition-sequence.py
+      - name: Verify exact sequencing
+        run: |
+          node --check service-worker.js
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          sw=Path('service-worker.js').read_text(encoding='utf-8')
+          checks = [
+            'await applyImportedCourse(items,cleanText(pack?.qualification?.title),meta);',
+            "await applyImportedCourse(items, cleanText(pack?.qualification?.title), meta);",
+            "async function applyImportedCourse(items, title = '', meta = {}) {",
+            "await window.__eviaDemo?.prepareForFullMode?.('course');",
+            "applyImportedCourse(items,'',{}).then(() => closeScanner(false)).catch((error) => {"
+          ]
+          for value in checks:
+              if s.count(value) != 1:
+                  raise SystemExit(f'Expected exactly one sequencing marker: {value} ; found {s.count(value)}')
+          if "const C='evia-pwa-v54';" not in sw or "__evia_refresh','54'" not in sw:
+              raise SystemExit('Service-worker delivery markers were not advanced to v54')
+          print('Verified demo cleanup completes before every real-course apply path')
+          PY
+      - name: Commit only approved sequencing correction
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html service-worker.js
+          git rm .github/patch-approved-demo-transition-sequence.py .github/workflows/sequence-approved-demo-transition.yml
+          git diff --cached --quiet && exit 0
+          git commit -m "Sequence Evia demo to full transition"
+          git push
