@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f5c400">
+  <link rel="manifest" href="/Evia/manifest.webmanifest">
+  <title>Evia PWA Check</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f7f7f7;color:#171717}.wrap{max-width:760px;margin:auto;padding:24px 16px 48px}h1{font-size:28px;margin:0 0 8px}p{line-height:1.45}.card{background:#fff;border-radius:18px;padding:16px;margin:12px 0;box-shadow:0 3px 18px rgba(0,0,0,.06)}.row{display:grid;grid-template-columns:28px 1fr;gap:10px;padding:10px 0;border-bottom:1px solid #eee}.row:last-child{border-bottom:0}.status{font-weight:800}.pass{color:#16803d}.fail{color:#b42318}.warn{color:#9a6700}.pending{color:#666}.detail{font-size:13px;color:#666;word-break:break-word;margin-top:3px}.actions{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}button{border:0;border-radius:999px;padding:12px 18px;font-weight:700;background:#f5c400;color:#181818}button.secondary{background:#ececec;color:#222}.small{font-size:13px;color:#666}.summary{font-weight:800;font-size:18px}
+  </style>
+</head>
+<body><main class="wrap">
+  <h1>Evia PWA diagnostic</h1>
+  <p>This page does not change Evia. It checks what Chrome can actually see.</p>
+  <div class="actions"><button id="run">Run checks</button><button class="secondary" id="reload">Reload page</button></div>
+  <div id="summary" class="card summary">Waiting to run…</div>
+  <div id="results" class="card"></div>
+  <p class="small">After the checks finish, take one screenshot showing the full results and send it back.</p>
+</main>
+<script>
+const APP='Evia',BASE='/Evia/',MANIFEST=BASE+'manifest.webmanifest',SW=BASE+'service-worker.js';
+const results=document.getElementById('results'),summary=document.getElementById('summary');
+let promptSeen=false;
+window.addEventListener('beforeinstallprompt',e=>{promptSeen=true;e.preventDefault();renderPrompt();});
+function icon(s){return s==='pass'?'✓':s==='fail'?'✕':s==='warn'?'!':'…'}
+function row(label,status,detail=''){const d=document.createElement('div');d.className='row';d.dataset.label=label;d.innerHTML=`<div class="status ${status}">${icon(status)}</div><div><strong>${label}</strong>${detail?`<div class="detail">${detail}</div>`:''}</div>`;return d}
+function add(label,status,detail=''){results.appendChild(row(label,status,detail))}
+function renderPrompt(){const old=[...results.children].find(x=>x.dataset.label==='beforeinstallprompt');if(old)old.replaceWith(row('beforeinstallprompt','pass','Chrome fired the install-prompt event on this page.'))}
+async function imageCheck(url,expected){return new Promise(resolve=>{const im=new Image();im.onload=()=>resolve({ok:im.naturalWidth===expected&&im.naturalHeight===expected,w:im.naturalWidth,h:im.naturalHeight});im.onerror=()=>resolve({ok:false,error:'Image failed to load'});im.src=url+'?diag='+Date.now()})}
+async function run(){results.innerHTML='';summary.textContent='Running…';let fails=0,warns=0;const mark=(l,s,d='')=>{add(l,s,d);if(s==='fail')fails++;if(s==='warn')warns++};
+mark('Secure context',window.isSecureContext?'pass':'fail',location.protocol+'//'+location.host);
+mark('Current URL in app scope',location.pathname.startsWith(BASE)?'pass':'fail',location.href);
+let manifest=null;try{const r=await fetch(MANIFEST+'?diag='+Date.now(),{cache:'no-store'});const ct=r.headers.get('content-type')||'';manifest=await r.json();mark('Manifest fetch',r.ok?'pass':'fail',`HTTP ${r.status} · ${ct}`);mark('Manifest start_url',manifest.start_url===BASE?'pass':'warn',String(manifest.start_url));mark('Manifest scope',manifest.scope===BASE?'pass':'warn',String(manifest.scope));mark('Manifest display',manifest.display&&manifest.display!=='browser'?'pass':'fail',String(manifest.display));mark('Manifest app id',manifest.id===BASE?'pass':'warn',manifest.id?'id = '+manifest.id:'No explicit id');}catch(e){mark('Manifest fetch','fail',String(e))}
+const i192=await imageCheck(BASE+'icons/evia-192.png',192);mark('192px icon',i192.ok?'pass':'fail',i192.error||`${i192.w} × ${i192.h}`);
+const i512=await imageCheck(BASE+'icons/evia-512.png',512);mark('512px icon',i512.ok?'pass':'fail',i512.error||`${i512.w} × ${i512.h}`);
+if(!('serviceWorker' in navigator)){mark('Service worker support','fail','navigator.serviceWorker is unavailable');}
+else{
+  mark('Service worker support','pass','Available in this browser');
+  let reg=null;try{reg=await navigator.serviceWorker.register(SW,{scope:BASE});mark('Service worker registration','pass',`scope: ${reg.scope}`);}catch(e){mark('Service worker registration','fail',String(e))}
+  if(reg){const worker=reg.active||reg.waiting||reg.installing;mark('Service worker state',worker&&worker.state==='activated'?'pass':worker?'warn':'fail',worker?worker.state:'No worker');}
+  try{const ready=await Promise.race([navigator.serviceWorker.ready,new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timed out waiting for ready')),5000))]);mark('Service worker ready','pass',ready.scope);}catch(e){mark('Service worker ready','fail',String(e))}
+  mark('Page controlled by service worker',navigator.serviceWorker.controller?'pass':'fail',navigator.serviceWorker.controller?.scriptURL||'No controller. Reload once after registration, then run checks again.');
+}
+mark('Standalone display right now',matchMedia('(display-mode: standalone)').matches?'pass':'warn',matchMedia('(display-mode: standalone)').matches?'Already running standalone':'Currently running in browser');
+mark('beforeinstallprompt',promptSeen?'pass':'warn',promptSeen?'Chrome fired the install-prompt event on this page.':'Not seen yet on this page. This alone is not conclusive.');
+summary.textContent=fails?`${fails} failing check${fails===1?'':'s'}${warns?` · ${warns} warning${warns===1?'':'s'}`:''}`:`No hard failures${warns?` · ${warns} warning${warns===1?'':'s'}`:''}`;
+}
+document.getElementById('run').onclick=run;document.getElementById('reload').onclick=()=>location.reload();window.addEventListener('load',run);
+</script></body></html>
