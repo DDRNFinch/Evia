@@ -1,0 +1,37 @@
+name: Align approved Evia demo B2
+on:
+  push:
+    paths:
+      - '.github/patch-approved-demo-b2.py'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python .github/patch-approved-demo-b2.py
+      - run: node --check evia-demo-v1.js && node --check service-worker.js
+      - name: Verify approved B2 evidence routes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          demo=Path('evia-demo-v1.js').read_text(encoding='utf-8')
+          index=Path('index.html').read_text(encoding='utf-8')
+          sw=Path('service-worker.js').read_text(encoding='utf-8')
+          for marker in ['B2 · Find Someone Who…','Photo + audio or written','Witness verification','type: \'witness\'']:
+              if marker not in demo: raise SystemExit(f'Missing B2 marker: {marker}')
+          if index.count('./evia-demo-v1.js?v=2') != 1: raise SystemExit('index demo v2 reference missing or duplicated')
+          if "'./evia-demo-v1.js?v=2'" not in sw: raise SystemExit('service worker demo v2 reference missing')
+          if "const C='evia-pwa-v55';" not in sw or "__evia_refresh','55'" not in sw: raise SystemExit('v55 delivery markers missing')
+          print('Verified B2 group/solo route plus witness alternative')
+          PY
+      - name: Commit only approved demo alignment
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add evia-demo-v1.js index.html service-worker.js
+          git rm .github/patch-approved-demo-b2.py .github/workflows/align-approved-demo-b2.yml
+          git diff --cached --quiet && exit 0
+          git commit -m "Add witness route to Evia demo"
+          git push
