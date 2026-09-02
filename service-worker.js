@@ -1,9 +1,9 @@
-const C='evia-pwa-v39';
+const C='evia-pwa-v40';
 const UPDATE_UI_MARKER='evia-update-ui-ready-v1';
 const RELEASE_VERSION='1.0';
 const RELEASE_MARKER_URL=new URL('./__evia-visible-release-version__',self.registration.scope).href;
 const INTERNAL_RELOAD_MARKER_URL=new URL('./__evia-internal-reload__',self.registration.scope).href;
-const OPTIONAL_OFFLINE_MARKER_URL=new URL('./__evia-optional-offline-v1__',self.registration.scope).href;
+const OPTIONAL_OFFLINE_MARKER_URL=new URL('./__evia-optional-offline-v2__',self.registration.scope).href;
 
 const RUNTIME_SCRIPTS=[
   './evia-approved-features.js',
@@ -25,6 +25,7 @@ const RUNTIME_SCRIPTS=[
   './evia-approved-evidence-capture-layout-v1.js',
   './evia-approved-portfolio-hub-icon-v1.js',
   './evia-approved-update-system-v1.js?v=2',
+  './evia-approved-ux-cleanup-v1.js',
   './nisia-loader.js'
 ];
 
@@ -39,10 +40,10 @@ const F=[
 ];
 const QR_CACHE='evia-feature-lib-v1';
 const QR_LIBRARY_URL='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
-const NAXOS_CACHE='evia-naxos-offline-v1';
+const NAXOS_CACHE='evia-naxos-offline-v2';
 const NAXOS_BASE='https://ddrnfinch.github.io/Naxos-Mapping_Engine/';
 const NAXOS_SEEDS=[
-  'course-catalog.json','ksb-manifest.json','manifest-6570-04.json','manifest.json','evidence-rules.json','evidence-capture-contract-v2.json'
+  'course-catalog.json','ksb-manifest.json','manifest-6570-04.json','manifest.json','evidence-rules.json','evidence-capture-contract-v2.json','assessment-plans.json'
 ].map(path=>new URL(path,NAXOS_BASE).href);
 let optionalOfflineCacheStarted=false;
 
@@ -152,7 +153,7 @@ self.addEventListener('activate',e=>{
       await marker.delete(INTERNAL_RELOAD_MARKER_URL);
       const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
       await Promise.all(windows.map(client=>{
-        try{const url=new URL(client.url);url.searchParams.set('__evia_refresh','39');return client.navigate(url.href).catch(()=>null)}catch{return null}
+        try{const url=new URL(client.url);url.searchParams.set('__evia_refresh','40');return client.navigate(url.href).catch(()=>null)}catch{return null}
       }));
     }
   })());
