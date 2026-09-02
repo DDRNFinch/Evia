@@ -259,7 +259,7 @@
 
   function clearPortfolio() {
     return new Promise((resolve) => {
-      if (!('indexedDB' in window)) return resolve();
+      if (!window.indexedDB?.open) return resolve();
       const request = indexedDB.open('EviaPortfolio', 1);
       request.onupgradeneeded = () => {
         const db = request.result;
