@@ -1,0 +1,34 @@
+name: Apply approved Evia developer runtime
+
+on:
+  push:
+    paths:
+      - '.github/patch-approved-developer-runtime.py'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Developer Mode syntax
+        run: node --check evia-developer-mode-v1.js
+      - name: Apply exact runtime cache patch
+        run: python .github/patch-approved-developer-runtime.py
+      - name: Verify service worker syntax and references
+        run: |
+          node --check service-worker.js
+          grep -F "./evia-developer-mode-v1.js?v=1" service-worker.js
+          grep -F "./nisia-sync.js?v=4" service-worker.js
+          grep -F "evia-pwa-v52" service-worker.js
+      - name: Commit only approved runtime change
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add service-worker.js
+          git rm .github/patch-approved-developer-runtime.py .github/workflows/apply-approved-developer-runtime.yml
+          git diff --cached --quiet && exit 0
+          git commit -m "Load Evia developer mode"
+          git push
