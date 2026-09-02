@@ -1,0 +1,76 @@
+name: Apply approved Evia demo first install
+
+on:
+  push:
+    paths:
+      - '.github/patch-approved-demo-first-install.py'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify demo JavaScript syntax
+        run: node --check evia-demo-v1.js
+      - name: Verify demo seed behaviour
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const vm = require('vm');
+          class Store {
+            constructor(init={}) { this.m = new Map(Object.entries(init)); }
+            get length(){ return this.m.size; }
+            key(i){ return [...this.m.keys()][i] ?? null; }
+            getItem(k){ return this.m.has(k) ? this.m.get(k) : null; }
+            setItem(k,v){ this.m.set(k,String(v)); }
+            removeItem(k){ this.m.delete(k); }
+          }
+          const source = fs.readFileSync('evia-demo-v1.js','utf8');
+          function context(init={}) {
+            const c = { console, Math, Promise, JSON, Date, setTimeout, clearTimeout, setInterval, clearInterval };
+            c.window = c; c.navigator = {}; c.indexedDB = undefined;
+            c.localStorage = new Store(init); c.sessionStorage = new Store();
+            c.document = { readyState:'loading', addEventListener(){}, getElementById(){ return null; } };
+            vm.createContext(c); vm.runInContext(source,c); return c;
+          }
+          const fresh = context();
+          const course = JSON.parse(fresh.localStorage.getItem('eviaNaxosCourse'));
+          const leaves = course.flatMap(group => group.children || []);
+          if (fresh.localStorage.getItem('eviaDemoModeV1') !== '1') throw new Error('Fresh Evia did not enter demo mode');
+          if (leaves.length !== 6) throw new Error(`Expected 6 demo areas, found ${leaves.length}`);
+          if (course.length !== 3 || course.some(group => (group.children || []).length !== 2)) throw new Error('Demo is not 2-2-2');
+          const real = context({ eviaNaxosCourse:'[{"label":"Real course"}]' });
+          if (real.localStorage.getItem('eviaDemoModeV1')) throw new Error('Existing real course was incorrectly changed to demo');
+          if (real.localStorage.getItem('eviaNaxosCourse') !== '[{"label":"Real course"}]') throw new Error('Existing real course was overwritten');
+          console.log('Verified fresh demo seed and real-course protection');
+          NODE
+      - name: Apply exact demo integration patch
+        run: python .github/patch-approved-demo-first-install.py
+      - name: Verify integration
+        run: |
+          node --check service-worker.js
+          python - <<'PY'
+          from pathlib import Path
+          html = Path('index.html').read_text(encoding='utf-8')
+          sw = Path('service-worker.js').read_text(encoding='utf-8')
+          if html.count('<script src="./evia-demo-v1.js?v=1"></script>') != 1:
+              raise SystemExit('Demo bootstrap script is not present exactly once in index.html')
+          if html.count("window.__eviaDemo?.prepareForFullMode?.('course')") != 1:
+              raise SystemExit('Real-course transition hook is not present exactly once')
+          for marker in ["const C='evia-pwa-v53';", "'./evia-demo-v1.js?v=1'", "__evia_refresh','53"]:
+              if marker not in sw:
+                  raise SystemExit(f'Missing service worker marker: {marker}')
+          print('Verified first-load demo and real-course transition integration')
+          PY
+      - name: Commit only approved demo integration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html service-worker.js
+          git rm .github/patch-approved-demo-first-install.py .github/workflows/apply-approved-demo-first-install.yml
+          git diff --cached --quiet && exit 0
+          git commit -m "Start fresh Evia in demo mode"
+          git push
