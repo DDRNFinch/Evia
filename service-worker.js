@@ -1,4 +1,4 @@
-const C='evia-pwa-v46';
+const C='evia-pwa-v47';
 const UPDATE_UI_MARKER='evia-update-ui-ready-v1';
 const RELEASE_VERSION='1.0';
 const RELEASE_MARKER_URL=new URL('./__evia-visible-release-version__',self.registration.scope).href;
@@ -32,15 +32,13 @@ const RUNTIME_SCRIPTS=[
 ];
 
 const F=[
-  './manifest.webmanifest?v=46',
+  './manifest.webmanifest?v=47',
   './evia-release.json',
   ...RUNTIME_SCRIPTS,
   './nisia-sync.js',
-  './icons/evia-180.png?v=46',
-  './icons/evia-192.png?v=46',
-  './icons/evia-512.png?v=46',
-  './icons/evia-maskable-192.png?v=46',
-  './icons/evia-maskable-512.png?v=46'
+  './icons/evia-180.png?v=47',
+  './icons/evia-192.png?v=47',
+  './icons/evia-512.png?v=47'
 ];
 const QR_CACHE='evia-feature-lib-v1';
 const QR_LIBRARY_URL='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
@@ -157,7 +155,7 @@ self.addEventListener('activate',e=>{
       await marker.delete(INTERNAL_RELOAD_MARKER_URL);
       const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
       await Promise.all(windows.map(client=>{
-        try{const url=new URL(client.url);url.searchParams.set('__evia_refresh','46');return client.navigate(url.href).catch(()=>null)}catch{return null}
+        try{const url=new URL(client.url);url.searchParams.set('__evia_refresh','47');return client.navigate(url.href).catch(()=>null)}catch{return null}
       }));
     }
   })());
@@ -168,6 +166,25 @@ self.addEventListener('message',e=>{if(e.data?.type==='EVIA_INSTALL_UPDATE')e.wa
 self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET')return;
   startOptionalOfflineCache(e);
+  const requestUrl=new URL(e.request.url);
+  const isInstallMetadata=requestUrl.origin===self.location.origin&&(
+    requestUrl.pathname.endsWith('/manifest.webmanifest')||
+    requestUrl.pathname.endsWith('/icons/evia-180.png')||
+    requestUrl.pathname.endsWith('/icons/evia-192.png')||
+    requestUrl.pathname.endsWith('/icons/evia-512.png')
+  );
+  if(isInstallMetadata){
+    e.respondWith((async()=>{
+      try{
+        const response=await fetch(e.request,{cache:'no-store'});
+        if(response&&response.ok){const cache=await caches.open(C);await cache.put(e.request,response.clone())}
+        return response;
+      }catch{
+        return (await caches.match(e.request,{ignoreSearch:true}))||Response.error();
+      }
+    })());
+    return;
+  }
   if(e.request.mode==='navigate'){
     e.respondWith((async()=>{
       try{
