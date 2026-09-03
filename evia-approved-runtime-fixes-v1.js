@@ -23,6 +23,35 @@ injectStyles();patchChoices();setInterval(patchChoices,2500);window.eviaExtraThi
 })();
 
 (()=>{'use strict';
+const LETTERS=['A','B','C','D'];
+const LETTER_ACTIONS=new Set(['test-answer','check-wellbeing','check-confidence']);
+function isLetterChoice(options){
+  return Array.isArray(options)&&options.length===4&&options.every(option=>LETTER_ACTIONS.has(String(option?.action||'')));
+}
+function alreadyLetterChoices(options){
+  return Array.isArray(options)&&options.length===4&&options.every((option,index)=>String(option?.label||'').trim()===LETTERS[index]);
+}
+function formatChoicePrompt(text,options){
+  const prompt=String(text??'').trim();
+  const choices=options.map((option,index)=>`${LETTERS[index]}. ${String(option?.label??'').trim()}`);
+  return [prompt,choices.join('\n')].filter(Boolean).join('\n\n');
+}
+function patchChatSay(){
+  try{
+    if(typeof chatSay!=='function'||chatSay.__eviaLetterChoices)return;
+    const original=chatSay;
+    const wrapped=function(text,options=[]){
+      if(!isLetterChoice(options)||alreadyLetterChoices(options))return original.apply(this,arguments);
+      const letterOptions=options.map((option,index)=>({...option,label:LETTERS[index]}));
+      return original.call(this,formatChoicePrompt(text,options),letterOptions);
+    };
+    wrapped.__eviaLetterChoices=true;chatSay=wrapped;
+  }catch{}
+}
+patchChatSay();setInterval(patchChatSay,2500);
+})();
+
+(()=>{'use strict';
 function isIPhone(){return /iPhone|iPod/i.test(String(navigator.userAgent||''))}
 function loadImage(file){
   return new Promise((resolve,reject)=>{
