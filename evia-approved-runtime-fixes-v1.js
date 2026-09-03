@@ -66,6 +66,44 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 
 (()=>{'use strict';
+function injectChatLayoutStyles(){
+  if(document.getElementById('eviaFullscreenChatStyles'))return;
+  const style=document.createElement('style');
+  style.id='eviaFullscreenChatStyles';
+  style.textContent='html.evia-chat-open #backButton,html.evia-chat-open #chatExitButton{display:none!important}#chatPanel{padding:0!important;align-items:stretch!important;justify-content:stretch!important}#chatPanel .chat-card{width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;min-height:0!important;border:0!important;border-radius:0!important}#chatPanel .chat-header{min-height:56px!important;padding:0 12px!important;display:grid!important;grid-template-columns:minmax(72px,1fr) auto minmax(72px,1fr)!important;align-items:center!important;gap:8px!important;flex:0 0 auto!important}#chatPanel .evia-chat-title{text-align:center;font-size:15px;font-weight:600;color:rgba(45,45,45,.78)}#chatPanel .evia-chat-header-button{min-height:38px;border:1.5px solid rgba(245,196,0,.38);border-radius:999px;background:rgba(250,249,242,.97);color:rgba(45,45,45,.68);padding:0 14px;cursor:pointer;font:inherit}#chatPanel .evia-chat-header-back{justify-self:start}#chatPanel .evia-chat-header-exit{justify-self:end}#chatPanel .evia-chat-header-back[hidden]{visibility:hidden;display:block!important}#chatPanel .chat-scroll{padding-bottom:max(16px,env(safe-area-inset-bottom))!important}';
+  document.head.appendChild(style);
+}
+function startChatLayout(){
+  try{
+    const panel=document.getElementById('chatPanel');
+    const header=panel?.querySelector('.chat-header');
+    const originalBack=document.getElementById('backButton');
+    const originalExit=document.getElementById('chatExitButton');
+    if(!panel||!header||!originalBack||!originalExit)return;
+    injectChatLayoutStyles();
+    if(!header.querySelector('.evia-chat-title')){
+      header.textContent='';
+      const back=document.createElement('button');
+      back.type='button';back.className='evia-chat-header-button evia-chat-header-back';back.textContent='Back';back.setAttribute('aria-label','Back');
+      const title=document.createElement('div');title.className='evia-chat-title';title.textContent='Evia';
+      const exit=document.createElement('button');
+      exit.type='button';exit.className='evia-chat-header-button evia-chat-header-exit';exit.textContent='Exit';exit.setAttribute('aria-label','Exit chat');
+      back.addEventListener('click',()=>originalBack.click());
+      exit.addEventListener('click',()=>originalExit.click());
+      header.append(back,title,exit);
+      const syncBack=()=>{back.hidden=!originalBack.classList.contains('show')};
+      new MutationObserver(syncBack).observe(originalBack,{attributes:true,attributeFilter:['class','style']});
+      syncBack();
+    }
+    const syncOpen=()=>document.documentElement.classList.toggle('evia-chat-open',panel.classList.contains('open'));
+    new MutationObserver(syncOpen).observe(panel,{attributes:true,attributeFilter:['class']});
+    syncOpen();
+  }catch{}
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startChatLayout,{once:true});else startChatLayout();
+})();
+
+(()=>{'use strict';
 function isIPhone(){return /iPhone|iPod/i.test(String(navigator.userAgent||''))}
 function loadImage(file){
   return new Promise((resolve,reject)=>{
