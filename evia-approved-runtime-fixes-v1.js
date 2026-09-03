@@ -104,6 +104,107 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 
 (()=>{'use strict';
+const ITEMS=[
+  ['Chat with Evia','tool','chat'],
+  ['Targets','tool','targets'],
+  ['My Portfolio','naxos','portfolio'],
+  ['Send QR Code','naxos','send'],
+  ['Scan QR Code','naxos','scan'],
+  ['Learner Profile','tool','profile'],
+  ['Settings','tool','settings']
+];
+function injectLauncherStyles(){
+  if(document.getElementById('eviaPlusLauncherStyles'))return;
+  const style=document.createElement('style');
+  style.id='eviaPlusLauncherStyles';
+  style.textContent='#eviaToolsMenuButton,#eviaToolsMenu,#naxosMenu{display:none!important}#naxosArch{background:transparent!important;border:0!important;box-shadow:none!important;display:grid!important;place-items:center!important;padding:0!important;overflow:visible!important}#naxosArch .evia-plus-glyph{display:block;color:rgba(245,196,0,.78);font-size:42px;font-weight:300;line-height:1;transform:rotate(0deg);transform-origin:center;transition:transform 360ms cubic-bezier(.22,1,.36,1),opacity 220ms ease}#naxosArch.evia-launcher-open .evia-plus-glyph{transform:rotate(45deg)}.evia-plus-menu{position:absolute;left:50%;bottom:calc(max(62px,env(safe-area-inset-bottom) + 62px) + 10px);width:min(calc(100vw - 40px),460px);max-height:calc(100dvh - 180px);overflow-y:auto;transform:translateX(-50%);display:flex;flex-direction:column;gap:10px;z-index:18;pointer-events:none;padding:2px 0}.evia-plus-menu::-webkit-scrollbar{display:none}.evia-plus-pill{width:100%;min-height:52px;height:auto;border-radius:999px;border:1.5px solid rgba(245,196,0,.35);background:rgba(250,249,242,.97);box-shadow:0 8px 20px rgba(0,0,0,.05),inset 0 0 0 1px rgba(255,255,255,.72);display:flex;align-items:center;justify-content:center;padding:10px 18px;color:rgba(45,45,45,.62);font-size:14px;line-height:1.25;cursor:pointer;opacity:0;transform:translateY(22px);transition:opacity 280ms ease,transform 480ms cubic-bezier(.22,1,.36,1);transition-delay:0ms}.evia-plus-menu.open{pointer-events:auto}.evia-plus-menu.open .evia-plus-pill{opacity:1;transform:translateY(0);transition-delay:var(--evia-launch-delay,0ms)}#screen.evia-launcher-open .evia-stage{top:calc(max(18px,env(safe-area-inset-top)) + 28px)!important;font-size:clamp(61.875px,17.25vw,82.5px)!important}#screen.evia-launcher-open .evia-speech{top:calc(max(18px,env(safe-area-inset-top)) + 88px)!important}#screen.evia-launcher-open .pill-stack{opacity:0!important;visibility:hidden!important;pointer-events:none!important}html.evia-reduce-motion #naxosArch .evia-plus-glyph,html.evia-reduce-motion .evia-plus-pill{transition:none!important}';
+  document.head.appendChild(style);
+}
+function startLauncher(){
+  try{
+    const screen=document.getElementById('screen');
+    const arch=document.getElementById('naxosArch');
+    const oldNaxos=document.getElementById('naxosMenu');
+    if(!screen||!arch||!oldNaxos)return;
+    injectLauncherStyles();
+    arch.innerHTML='<span class="evia-plus-glyph" aria-hidden="true">+</span>';
+    arch.setAttribute('aria-label','Open Evia menu');
+    arch.setAttribute('aria-expanded','false');
+    const menu=document.createElement('div');
+    menu.className='evia-plus-menu';menu.id='eviaPlusMenu';menu.setAttribute('aria-label','Evia menu');
+    ITEMS.forEach((item,index)=>{
+      const button=document.createElement('button');button.type='button';button.className='evia-plus-pill';button.textContent=item[0];
+      button.style.setProperty('--evia-launch-delay',`${(ITEMS.length-1-index)*55}ms`);
+      button.addEventListener('click',()=>{
+        closeLauncher();
+        const source=item[1]==='tool'?document.querySelector(`[data-evia-tool="${item[2]}"]`):document.querySelector(`[data-naxos-action="${item[2]}"]`);
+        if(source instanceof HTMLElement)source.click();
+      });
+      menu.appendChild(button);
+    });
+    screen.appendChild(menu);
+    function openLauncher(){
+      menu.classList.add('open');arch.classList.add('evia-launcher-open');screen.classList.add('evia-launcher-open');arch.setAttribute('aria-expanded','true');
+    }
+    function closeLauncher(){
+      menu.classList.remove('open');arch.classList.remove('evia-launcher-open');screen.classList.remove('evia-launcher-open');arch.setAttribute('aria-expanded','false');
+    }
+    function toggleLauncher(){menu.classList.contains('open')?closeLauncher():openLauncher()}
+    arch.addEventListener('click',event=>{event.preventDefault();event.stopImmediatePropagation();toggleLauncher()},{capture:true});
+    new MutationObserver(()=>{
+      if(oldNaxos.classList.contains('open')){oldNaxos.classList.remove('open');openLauncher()}
+    }).observe(oldNaxos,{attributes:true,attributeFilter:['class']});
+    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&menu.classList.contains('open'))closeLauncher()});
+    window.EviaPlusLauncher={open:openLauncher,close:closeLauncher,toggle:toggleLauncher};
+  }catch(error){console.warn('Evia plus launcher could not start',error)}
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startLauncher,{once:true});else startLauncher();
+})();
+
+(()=>{'use strict';
+function reducedMotion(){return document.documentElement.classList.contains('evia-reduce-motion')||Boolean(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)}
+function injectChatMotionStyles(){
+  if(document.getElementById('eviaSmoothChatStyles'))return;
+  const style=document.createElement('style');style.id='eviaSmoothChatStyles';
+  style.textContent='@keyframes eviaChatEnter{from{opacity:.35;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}.chat-row.evia-chat-enter,.evia-inline-chat-options.evia-chat-enter{animation:eviaChatEnter 340ms cubic-bezier(.22,1,.36,1) both}html.evia-reduce-motion .chat-row.evia-chat-enter,html.evia-reduce-motion .evia-inline-chat-options.evia-chat-enter{animation:none!important}';
+  document.head.appendChild(style);
+}
+function patchSmoothScroll(){
+  try{
+    if(typeof scrollChatBottom!=='function'||scrollChatBottom.__eviaSmooth)return;
+    const original=scrollChatBottom;
+    const wrapped=function(){
+      requestAnimationFrame(()=>{
+        try{
+          if(typeof chatScroll==='undefined'||!chatScroll)return original.apply(this,arguments);
+          const top=chatScroll.scrollHeight;
+          if(reducedMotion()||chatScroll.children.length<=1)chatScroll.scrollTop=top;
+          else if(typeof chatScroll.scrollTo==='function')chatScroll.scrollTo({top,behavior:'smooth'});
+          else chatScroll.scrollTop=top;
+        }catch{try{original.apply(this,arguments)}catch{}}
+      });
+    };
+    wrapped.__eviaSmooth=true;scrollChatBottom=wrapped;
+  }catch{}
+}
+function watchChatEntries(){
+  try{
+    if(typeof chatScroll==='undefined'||!chatScroll||chatScroll.__eviaEntryWatch)return;
+    chatScroll.__eviaEntryWatch=true;
+    new MutationObserver(records=>{
+      records.forEach(record=>record.addedNodes.forEach(node=>{
+        if(!(node instanceof HTMLElement))return;
+        if(node.classList.contains('chat-row')||node.classList.contains('evia-inline-chat-options'))node.classList.add('evia-chat-enter');
+      }));
+    }).observe(chatScroll,{childList:true});
+  }catch{}
+}
+function startChatMotion(){injectChatMotionStyles();patchSmoothScroll();watchChatEntries()}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startChatMotion,{once:true});else startChatMotion();
+setInterval(patchSmoothScroll,2500);
+})();
+
+(()=>{'use strict';
 function isIPhone(){return /iPhone|iPod/i.test(String(navigator.userAgent||''))}
 function loadImage(file){
   return new Promise((resolve,reject)=>{
