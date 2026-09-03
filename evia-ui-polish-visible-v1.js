@@ -6,9 +6,58 @@ style.id=ID;
 style.textContent=`
 /* Visible refinement layer: same Evia layout, clearer hierarchy and surfaces. */
 :root{--evia-yellow:#f2c94c!important}
-.evia-float::before{background:radial-gradient(circle at center,rgba(242,201,76,.12),rgba(242,201,76,.04) 46%,rgba(242,201,76,0) 74%)!important;filter:blur(.045em)!important;transform:scale(1.07)!important}
-.evia-body{filter:drop-shadow(0 7px 12px rgba(194,151,26,.15))!important}
-.eye{border-color:#f2c94c!important}
+/* Sam-inspired Evia avatar shell only. Evia movement, shrink-to-top and expression logic remain unchanged. */
+.evia-float{isolation:isolate}
+.evia-float::before{
+  inset:-.58em!important;
+  background:
+    radial-gradient(circle at 40% 46%,rgba(255,220,84,.48) 0%,rgba(250,208,70,.25) 22%,rgba(242,201,76,.08) 46%,rgba(242,201,76,0) 68%),
+    radial-gradient(circle at 66% 58%,rgba(255,230,120,.35) 0%,rgba(255,226,100,.12) 27%,rgba(255,226,100,0) 55%)!important;
+  filter:blur(.10em)!important;
+  transform:scale(1)!important;
+  opacity:.78!important
+}
+.evia-float::after{
+  content:"";position:absolute;inset:-.32em;border-radius:50%;pointer-events:none;z-index:0;
+  background:radial-gradient(circle,rgba(255,223,95,.48) 0%,rgba(250,213,77,.24) 34%,rgba(242,201,76,.08) 58%,rgba(242,201,76,0) 76%);
+  filter:blur(.07em);opacity:.8;animation:glowPulse 5.2s ease-in-out infinite
+}
+.evia-character::before{
+  content:"";position:absolute;inset:-.82em;border-radius:50%;pointer-events:none;z-index:-1;opacity:.62;
+  background:
+    radial-gradient(circle at 28% 38%,rgba(255,220,84,.18) 0%,rgba(255,220,84,.07) 13%,transparent 29%),
+    radial-gradient(circle at 73% 31%,rgba(255,237,154,.16) 0%,rgba(255,237,154,.055) 12%,transparent 27%),
+    radial-gradient(circle at 68% 72%,rgba(242,201,76,.15) 0%,rgba(242,201,76,.05) 14%,transparent 30%),
+    radial-gradient(circle at 39% 76%,rgba(255,228,116,.11) 0%,rgba(255,228,116,.035) 13%,transparent 28%);
+  filter:blur(.065em);animation:glowPulse 8.8s ease-in-out infinite
+}
+.evia-character::after{
+  content:"";position:absolute;inset:-.28em;border-radius:50%;pointer-events:none;z-index:0;opacity:.46;
+  background:radial-gradient(circle,transparent 48%,rgba(242,201,76,.10) 56%,rgba(242,201,76,.035) 61%,transparent 68%);
+  filter:blur(.012em);animation:glowPulse 7.4s ease-in-out infinite
+}
+.evia-body{
+  border:1px solid rgba(163,123,0,.18)!important;
+  background:radial-gradient(circle at 50% 43%,rgba(255,255,255,1) 0%,rgba(255,255,248,1) 36%,rgba(255,247,195,.99) 61%,rgba(255,222,92,.99) 80%,rgba(242,201,76,1) 100%)!important;
+  box-shadow:0 0 .05em rgba(255,231,112,1),0 0 .11em rgba(250,215,80,.98),0 0 .21em rgba(242,201,76,.72),0 0 .35em rgba(220,177,34,.32)!important;
+  filter:none!important;overflow:hidden
+}
+.evia-body::before{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;
+  background:radial-gradient(circle at 48% 35%,rgba(255,255,255,.94) 0%,rgba(255,255,255,.32) 27%,rgba(255,255,255,0) 54%);mix-blend-mode:screen
+}
+.evia-body::after{
+  content:"";position:absolute;inset:7%;border-radius:50%;pointer-events:none;z-index:0;
+  box-shadow:inset 0 -.04em .08em rgba(218,174,36,.14),inset 0 .03em .08em rgba(255,255,255,.52)
+}
+.eyes{position:relative;z-index:2;width:82%!important;height:46%!important;gap:12%!important}
+.eye{
+  position:relative;width:42%!important;height:auto!important;aspect-ratio:1;border-radius:50%!important;
+  border:1.5px solid rgba(145,109,0,.24)!important;background:rgba(255,255,255,.10)!important;
+  box-shadow:0 0 .018em rgba(255,221,83,.20),inset 0 0 .018em rgba(255,255,255,.30)!important;
+  flex:0 0 auto!important
+}
+@media (prefers-reduced-motion:reduce){.evia-float::after,.evia-character::before,.evia-character::after{animation:none!important}}
 .evia-menu-button{border-color:rgba(242,201,76,.34)!important}
 .evia-menu-button svg path,.evia-tool-icon svg path,.evia-tool-icon svg circle,.evia-support-back svg path,.evia-support-back svg circle{stroke:#f2c94c!important}
 .evia-menu-mini,.evia-menu-mini-eye{border-color:#f2c94c!important}.evia-menu-mini{box-shadow:0 0 8px rgba(242,201,76,.10)!important}
