@@ -23,32 +23,46 @@ injectStyles();patchChoices();setInterval(patchChoices,2500);window.eviaExtraThi
 })();
 
 (()=>{'use strict';
-const LETTERS=['A','B','C','D'];
-const LETTER_ACTIONS=new Set(['test-answer','check-wellbeing','check-confidence']);
-function isLetterChoice(options){
-  return Array.isArray(options)&&options.length===4&&options.every(option=>LETTER_ACTIONS.has(String(option?.action||'')));
+const INLINE_CLASS='evia-inline-chat-options';
+function clearInlineChoices(){document.querySelectorAll(`.${INLINE_CLASS}`).forEach(node=>node.remove())}
+function injectInlineChoiceStyles(){
+  if(document.getElementById('eviaInlineChatChoiceStyles'))return;
+  const style=document.createElement('style');
+  style.id='eviaInlineChatChoiceStyles';
+  style.textContent='#chatOptions{display:none!important}.evia-inline-chat-options{width:calc(100% - 40px);margin-left:40px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0 0 2px;align-self:stretch}.evia-inline-chat-options .chat-option{width:100%}';
+  document.head.appendChild(style);
 }
-function alreadyLetterChoices(options){
-  return Array.isArray(options)&&options.length===4&&options.every((option,index)=>String(option?.label||'').trim()===LETTERS[index]);
+function renderInlineChoices(){
+  clearInlineChoices();
+  if(typeof chatOptions==='undefined'||typeof chatScroll==='undefined'||!chatOptions||!chatScroll||!chatOptions.children.length)return;
+  const inline=document.createElement('div');
+  inline.className=INLINE_CLASS;
+  Array.from(chatOptions.children).forEach(source=>{
+    if(!(source instanceof HTMLButtonElement))return;
+    const clone=source.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.addEventListener('click',()=>{
+      if(clone.disabled)return;
+      inline.querySelectorAll('button').forEach(button=>{button.disabled=true});
+      inline.remove();
+      source.click();
+    });
+    inline.appendChild(clone);
+  });
+  if(!inline.children.length)return;
+  chatScroll.appendChild(inline);
+  if(typeof scrollChatBottom==='function')scrollChatBottom();
 }
-function formatChoicePrompt(text,options){
-  const prompt=String(text??'').trim();
-  const choices=options.map((option,index)=>`${LETTERS[index]}. ${String(option?.label??'').trim()}`);
-  return [prompt,choices.join('\n')].filter(Boolean).join('\n\n');
-}
-function patchChatSay(){
+function startInlineChoices(){
   try{
-    if(typeof chatSay!=='function'||chatSay.__eviaLetterChoices)return;
-    const original=chatSay;
-    const wrapped=function(text,options=[]){
-      if(!isLetterChoice(options)||alreadyLetterChoices(options))return original.apply(this,arguments);
-      const letterOptions=options.map((option,index)=>({...option,label:LETTERS[index]}));
-      return original.call(this,formatChoicePrompt(text,options),letterOptions);
-    };
-    wrapped.__eviaLetterChoices=true;chatSay=wrapped;
+    if(typeof chatOptions==='undefined'||typeof chatScroll==='undefined'||!chatOptions||!chatScroll)return;
+    injectInlineChoiceStyles();
+    const observer=new MutationObserver(renderInlineChoices);
+    observer.observe(chatOptions,{childList:true});
+    renderInlineChoices();
   }catch{}
 }
-patchChatSay();setInterval(patchChatSay,2500);
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startInlineChoices,{once:true});else startInlineChoices();
 })();
 
 (()=>{'use strict';
