@@ -40,7 +40,8 @@ const scripts=[
   './evia-approved-menu-epa-practice-v1.js',
   './evia-approved-demo-teach-test-v1.js',
   './evia-approved-epa-ui-fix-v1.js?v=2',
-  './evia-approved-epa-zone-v2.js'
+  './evia-approved-epa-zone-v2.js',
+  './evia-approved-epa-mcq-bank-fix-v1.js'
 ];
 Object.defineProperty(globalThis,'EVIA_RUNTIME_SCRIPTS',{value:Object.freeze(scripts.slice()),writable:false,configurable:false});
 })();
