@@ -1,9 +1,9 @@
-const C='evia-pwa-v71';
+const C='evia-pwa-v72';
 const UPDATE_UI_MARKER='evia-update-ui-ready-v1';
 const RELEASE_VERSION='1.0';
 const RELEASE_MARKER_URL=new URL('./__evia-visible-release-version__',self.registration.scope).href;
 const INTERNAL_RELOAD_MARKER_URL=new URL('./__evia-internal-reload__',self.registration.scope).href;
-const OPTIONAL_OFFLINE_MARKER_URL=new URL('./__evia-optional-offline-v3__',self.registration.scope).href;
+const OPTIONAL_OFFLINE_MARKER_URL=new URL('./__evia-optional-offline-v4__',self.registration.scope).href;
 
 const RUNTIME_SCRIPTS=[
   './evia-demo-v1.js?v=2',
@@ -38,7 +38,8 @@ const RUNTIME_SCRIPTS=[
   './evia-approved-attend-learn-final-v5.js?v=2',
   './evia-approved-progress-rings-completion-v1.js',
   './evia-approved-media-ring-completion-fix-v1.js',
-  './evia-approved-capture-controls-rings-v2.js'
+  './evia-approved-capture-controls-rings-v2.js',
+  './evia-approved-naxos-question-bank-v1.js'
 ];
 
 const F=[
@@ -53,10 +54,11 @@ const F=[
 const QR_CACHE='evia-feature-lib-v1';
 const QR_LIBRARY_URL='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
 const PDF_LIBRARY_URL='https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js';
-const NAXOS_CACHE='evia-naxos-offline-v2';
+const NAXOS_CACHE='evia-naxos-offline-v3';
 const NAXOS_BASE='https://ddrnfinch.github.io/Naxos-Mapping_Engine/';
 const NAXOS_SEEDS=[
-  'course-catalog.json','ksb-manifest.json','manifest-6570-04.json','manifest.json','evidence-rules.json','evidence-capture-contract-v2.json','assessment-plans.json'
+  'course-catalog.json','ksb-manifest.json','manifest-6570-04.json','manifest.json','evidence-rules.json','evidence-capture-contract-v2.json','assessment-plans.json',
+  'question-banks/manifest.json','question-banks/question-bank-engine-v1.js'
 ].map(path=>new URL(path,NAXOS_BASE).href);
 let optionalOfflineCacheStarted=false;
 
@@ -168,7 +170,7 @@ self.addEventListener('activate',e=>{
       await marker.delete(INTERNAL_RELOAD_MARKER_URL);
       const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
       await Promise.all(windows.map(client=>{
-        try{const url=new URL(client.url);url.searchParams.set('__evia_refresh','71');return client.navigate(url.href).catch(()=>null)}catch{return null}
+        try{const url=new URL(client.url);url.searchParams.set('__evia_refresh','72');return client.navigate(url.href).catch(()=>null)}catch{return null}
       }));
     }
   })());
