@@ -1,0 +1,94 @@
+name: EPA live path diagnostic
+
+on:
+  push:
+    branches:
+      - epa-live-path-fix
+    paths:
+      - '.github/workflows/epa-live-diagnostic.yml'
+      - 'cloudflare-ai/**'
+      - 'evia-approved-epa-zone-v2.js'
+
+permissions:
+  contents: read
+
+jobs:
+  real-st0095-path:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Exercise real ST0095 EPA requests against live Worker
+        run: |
+          node - <<'NODE'
+          const worker = 'https://evia-teach-test.finchyisnow.workers.dev/v1/epa-discussion';
+          const origin = 'https://ddrnfinch.github.io';
+          const registryUrl = 'https://raw.githubusercontent.com/DDRNFinch/Naxos-Mapping_Engine/main/packs/ST0095/ksb-registry.json';
+          const planUrl = 'https://raw.githubusercontent.com/DDRNFinch/Naxos-Mapping_Engine/main/assessment-plans.json';
+
+          const [registryRes, planRes] = await Promise.all([fetch(registryUrl), fetch(planUrl)]);
+          if (!registryRes.ok || !planRes.ok) throw new Error(`Naxos fetch failed: registry=${registryRes.status}, plan=${planRes.status}`);
+          const registry = await registryRes.json();
+          const plans = await planRes.json();
+          const plan = plans?.courses?.ST0095;
+          if (!plan) throw new Error('ST0095 assessment plan missing');
+
+          const criteria = Object.entries(registry.items || {}).map(([code, wording]) => ({
+            code,
+            label: String(wording),
+            path: '',
+            requirement: String(wording)
+          }));
+          if (criteria.length !== 59) throw new Error(`Expected 59 ST0095 criteria, got ${criteria.length}`);
+
+          const course = {
+            courseId: 'ST0095',
+            courseTitle: 'Bricklayer — ST0095 v1.2',
+            courseType: 'ksb',
+            level: '2',
+            criteria
+          };
+          const methods = Array.isArray(plan.methods) ? plan.methods : [];
+          const discussion = methods.find(x => /interview|discussion/i.test(x?.title || ''));
+          const practical = methods.find(x => /practical/i.test(x?.title || ''));
+          const mcqMethod = methods.find(x => /multiple[- ]choice|test/i.test(x?.title || ''));
+
+          async function post(label, body) {
+            const started = Date.now();
+            const response = await fetch(worker, {
+              method: 'POST',
+              headers: { 'content-type': 'application/json', origin },
+              body: JSON.stringify(body)
+            });
+            const raw = await response.text();
+            console.log(`--- ${label} ---`);
+            console.log('status:', response.status, 'elapsedMs:', Date.now() - started, 'bytes:', raw.length);
+            console.log('body:', raw.slice(0, 3000));
+            let data;
+            try { data = JSON.parse(raw); } catch { throw new Error(`${label}: non-JSON response`); }
+            if (!response.ok || data?.ok !== true) throw new Error(`${label}: ${data?.error || `HTTP ${response.status}`}`);
+            return data;
+          }
+
+          const common = { course, evidence: [], focus: [] };
+          const interviewResult = await post('interview question', {
+            action: 'question', practiceType: 'discussion', assessmentMethod: discussion,
+            ...common, previousQuestions: []
+          });
+          if (!String(interviewResult.question || '').trim()) throw new Error('Interview returned no question');
+
+          const practicalResult = await post('practical question', {
+            action: 'question', practiceType: 'practical', assessmentMethod: practical,
+            ...common, previousQuestions: []
+          });
+          if (!String(practicalResult.question || '').trim()) throw new Error('Practical returned no question');
+
+          const mcqResult = await post('MCQ set', {
+            action: 'mcq', practiceType: 'mcq', assessmentMethod: mcqMethod,
+            ...common, count: 5
+          });
+          if (!Array.isArray(mcqResult.questions) || mcqResult.questions.length !== 5) {
+            throw new Error(`MCQ returned ${Array.isArray(mcqResult.questions) ? mcqResult.questions.length : 0} questions`);
+          }
+
+          console.log('REAL_ST0095_EPA_PATH_OK');
+          NODE
