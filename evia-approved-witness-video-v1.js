@@ -29,7 +29,7 @@ async function openWitnessVideo(step,sessionId){
   const render=()=>{if(progress)progress.textContent=`${index+1} of ${prompts.length}`;if(prompt)prompt.textContent=prompts[index];actions.innerHTML='';let live=false;try{live=recorder&&recorder.state==='recording'}catch{};if(!live)return;const b=document.createElement('button');b.type='button';b.className='capture-button';b.textContent=index>=prompts.length-1?'Finish witness video':'Next';b.onclick=()=>{if(index>=prompts.length-1){b.disabled=true;try{if(recorder&&recorder.state!=='inactive')recorder.stop()}catch{};return}index+=1;markers.push({promptIndex:index+1,prompt:prompts[index],offsetMs:Math.max(0,Date.now()-startedAt),timestamp:offset(Date.now()-startedAt)});render()};actions.appendChild(b)};
   render();try{updateBackButton();fitUiText()}catch{}
   try{
-    captureStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'user'},width:{ideal:1280},height:{ideal:1280},aspectRatio:{ideal:1},frameRate:{ideal:24,max:30}},audio:{channelCount:{ideal:1},echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+    captureStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{exact:'user'},width:{ideal:1280},height:{ideal:1280},aspectRatio:{ideal:1},frameRate:{ideal:24,max:30}},audio:{channelCount:{ideal:1},echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
     if(sessionId!==captureSessionId){try{stopCapture()}catch{};return}
     video.srcObject=captureStream;await video.play();try{showCaptureStatus('Front camera ready.')}catch{}
     start.addEventListener('click',()=>{
