@@ -1,5 +1,5 @@
 name = "evia-teach-test"
-main = "worker-v2.js"
+main = "worker-v3.js"
 compatibility_date = "2026-09-04"
 
 [ai]
