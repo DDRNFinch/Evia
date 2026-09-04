@@ -67,11 +67,11 @@ function ensureAskForm(){
   card.insertBefore(form,options);
   form.addEventListener('submit',async event=>{
     event.preventDefault();
-    const input=form.querySelector('#eviaAiAskInput'),text=clean(input?.value);if(!text||!askMode)return;
+    const input=form.querySelector('#eviaAiAskInput'),text=clean(input?.value),mode=askMode;if(!text||!mode)return;
     try{chatNavStack.push(captureChatSnapshot())}catch{}
     try{appendUserBubble(text)}catch{}
     hideAskInput();
-    if(askMode==='test')await startAskedTest(text);
+    if(mode==='test')await startAskedTest(text);
     else await startAskedTeach(text)
   });
   return form
