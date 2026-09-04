@@ -18,14 +18,23 @@ function cleanRuntimePath(value) {
 }
 
 async function bootControlled(context, installerPage) {
+  const workerStarted = context.serviceWorkers().length
+    ? Promise.resolve(context.serviceWorkers()[0])
+    : context.waitForEvent('serviceworker', { timeout: 15000 }).catch(() => null);
+
   await installerPage.goto('/', { waitUntil: 'load' });
   await expect(installerPage.locator('#eviaStage')).toBeVisible();
 
-  await expect.poll(async () => installerPage.evaluate(async () => {
-    if (!('serviceWorker' in navigator)) return false;
-    const registration = await navigator.serviceWorker.getRegistration();
-    return Boolean(registration?.active);
-  }).catch(() => false), { timeout: 20000, intervals: [100, 250, 500, 1000] }).toBeTruthy();
+  const firstWorker = await workerStarted;
+  expect(firstWorker || context.serviceWorkers()[0], 'Evia service worker did not start').toBeTruthy();
+
+  await expect.poll(async () => {
+    for (const worker of context.serviceWorkers()) {
+      const state = await worker.evaluate(() => self.registration?.active?.state || self.registration?.waiting?.state || self.registration?.installing?.state || '').catch(() => '');
+      if (state === 'activated') return state;
+    }
+    return '';
+  }, { timeout: 20000, intervals: [100, 250, 500, 1000] }).toBe('activated');
 
   const app = await context.newPage();
   await app.goto('/?__evia_smoke=1', { waitUntil: 'domcontentloaded' });
