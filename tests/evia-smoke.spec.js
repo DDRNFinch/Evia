@@ -17,38 +17,35 @@ function cleanRuntimePath(value) {
   return String(value || '').replace(/^\.\//, '').split('?')[0];
 }
 
-async function bootControlled(page) {
-  await page.goto('/', { waitUntil: 'load' });
-  await expect(page.locator('#eviaStage')).toBeVisible();
+async function bootControlled(context, installerPage) {
+  await installerPage.goto('/', { waitUntil: 'load' });
+  await expect(installerPage.locator('#eviaStage')).toBeVisible();
 
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    try {
-      await page.evaluate(async () => {
-        if ('serviceWorker' in navigator) await navigator.serviceWorker.ready;
-      });
-      break;
-    } catch (error) {
-      await page.waitForLoadState('load').catch(() => {});
-    }
-  }
+  await expect.poll(async () => installerPage.evaluate(async () => {
+    if (!('serviceWorker' in navigator)) return false;
+    const registration = await navigator.serviceWorker.getRegistration();
+    return Boolean(registration?.active);
+  }).catch(() => false), { timeout: 20000, intervals: [100, 250, 500, 1000] }).toBeTruthy();
 
-  await page.reload({ waitUntil: 'load' });
-  await expect(page.locator('#eviaStage')).toBeVisible();
-  await page.waitForFunction(() => Boolean(navigator.serviceWorker && navigator.serviceWorker.controller), null, { timeout: 15000 });
+  const app = await context.newPage();
+  await app.goto('/?__evia_smoke=1', { waitUntil: 'domcontentloaded' });
+  await expect(app.locator('#eviaStage')).toBeVisible();
+  await app.waitForFunction(() => Boolean(navigator.serviceWorker && navigator.serviceWorker.controller), null, { timeout: 10000 });
+  return app;
 }
 
-function trackPageErrors(page) {
-  const errors = [];
+function trackPageErrors(page, errors = []) {
   page.on('pageerror', (error) => errors.push(error.message));
   return errors;
 }
 
-test('cold launch activates the complete approved runtime without uncaught errors', async ({ page }) => {
+test('cold launch activates the complete approved runtime without uncaught errors', async ({ page, context }) => {
   const errors = trackPageErrors(page);
-  await bootControlled(page);
+  const app = await bootControlled(context, page);
+  trackPageErrors(app, errors);
 
   const expected = runtimeScripts().map(cleanRuntimePath);
-  const loaded = await page.locator('script[src]').evaluateAll((nodes) => nodes.map((node) => {
+  const loaded = await app.locator('script[src]').evaluateAll((nodes) => nodes.map((node) => {
     try { return new URL(node.src).pathname.split('/').pop(); } catch { return ''; }
   }).filter(Boolean));
 
@@ -56,43 +53,46 @@ test('cold launch activates the complete approved runtime without uncaught error
     expect(loaded, `${script} was not present after the controlled reload`).toContain(script.split('/').pop());
   }
 
-  await expect(page.locator('.bottom-arches .status-arch')).toHaveCount(4);
-  await expect(page.locator('.bottom-arches .status-arch .arch-progress-svg')).toHaveCount(4);
+  await expect(app.locator('.bottom-arches .status-arch')).toHaveCount(4);
+  await expect(app.locator('.bottom-arches .status-arch .arch-progress-svg')).toHaveCount(4);
   expect(errors).toEqual([]);
 });
 
-test('core learner surfaces open: evidence, Learn, portfolio and chat', async ({ page }) => {
+test('core learner surfaces open: evidence, Learn, portfolio and chat', async ({ page, context }) => {
   const errors = trackPageErrors(page);
-  await bootControlled(page);
+  const app = await bootControlled(context, page);
+  trackPageErrors(app, errors);
 
-  const evidenceApi = await page.evaluate(() => typeof goToEvidencePath === 'function');
+  const evidenceApi = await app.evaluate(() => typeof goToEvidencePath === 'function');
   expect(evidenceApi).toBeTruthy();
-  await page.evaluate(async () => { await goToEvidencePath(['Knowledge', 'K1 · Stationery Detective']); });
-  await expect(page.locator('#evidenceScreen')).toBeVisible();
-  await expect(page.locator('.evidence-choice')).toHaveCount(2);
-  await expect(page.locator('#evidenceRequirements')).toBeVisible();
+  await app.evaluate(async () => { await goToEvidencePath(['Knowledge', 'K1 · Stationery Detective']); });
+  await expect(app.locator('#evidenceScreen')).toBeVisible();
+  await expect(app.locator('.evidence-choice')).toHaveCount(2);
+  await expect(app.locator('#evidenceRequirements')).toBeVisible();
 
-  await page.reload({ waitUntil: 'load' });
-  await page.locator('#learnArch').click();
-  await expect(page.locator('#archDetailPanel')).toHaveAttribute('aria-hidden', 'false');
-  await expect(page.locator('#archDetailContent')).toContainText(/Learning|Learn|hours/i);
+  await app.evaluate(() => { if (typeof closeEvidence === 'function') closeEvidence(); });
+  await app.locator('#learnArch').click();
+  await expect(app.locator('#archDetailPanel')).toHaveAttribute('aria-hidden', 'false');
+  await expect(app.locator('#archDetailContent')).toContainText(/Learning|Learn|hours/i);
 
-  await page.reload({ waitUntil: 'load' });
-  await page.evaluate(async () => { if (typeof openPortfolio === 'function') await openPortfolio(); });
-  await expect(page.locator('#portfolioPanel')).toHaveAttribute('aria-hidden', 'false');
+  await app.evaluate(() => {
+    if (typeof closeArchDetail === 'function') closeArchDetail();
+  });
+  await app.evaluate(async () => { if (typeof openPortfolio === 'function') await openPortfolio(); });
+  await expect(app.locator('#portfolioPanel')).toHaveAttribute('aria-hidden', 'false');
 
-  await page.reload({ waitUntil: 'load' });
-  await page.evaluate(() => { if (typeof openChat === 'function') openChat(); });
-  await expect(page.locator('#chatPanel')).toHaveAttribute('aria-hidden', 'false');
-  await expect(page.locator('#chatOptions')).not.toBeEmpty();
+  await app.evaluate(() => { if (typeof closePortfolio === 'function') closePortfolio(false); });
+  await app.evaluate(() => { if (typeof openChat === 'function') openChat(); });
+  await expect(app.locator('#chatPanel')).toHaveAttribute('aria-hidden', 'false');
+  await expect(app.locator('#chatOptions')).not.toBeEmpty();
 
   expect(errors).toEqual([]);
 });
 
-test('Ask Evia works inside both Teach Me and Test Me with a controlled AI response', async ({ page }) => {
+test('Ask Evia works inside both Teach Me and Test Me with a controlled AI response', async ({ page, context }) => {
   const errors = trackPageErrors(page);
 
-  await page.addInitScript(() => {
+  await context.addInitScript(() => {
     localStorage.clear();
     const course = [{
       label: 'Health and safety',
@@ -117,7 +117,7 @@ test('Ask Evia works inside both Teach Me and Test Me with a controlled AI respo
     localStorage.setItem('eviaNaxosCourseMetaV1', JSON.stringify(meta));
   });
 
-  await page.route('https://evia-teach-test.finchyisnow.workers.dev/v1/teach-test', async (route) => {
+  await context.route('https://evia-teach-test.finchyisnow.workers.dev/v1/teach-test', async (route) => {
     const request = route.request();
     let body = {};
     try { body = request.postDataJSON(); } catch {}
@@ -161,36 +161,38 @@ test('Ask Evia works inside both Teach Me and Test Me with a controlled AI respo
     });
   });
 
-  await bootControlled(page);
-  await page.evaluate(async () => { openChat(); await startTeachMe(); });
-  const teachAsk = page.locator('#chatOptions [data-chat-action="ai-ask-teach"]');
+  const app = await bootControlled(context, page);
+  trackPageErrors(app, errors);
+  await app.evaluate(async () => { openChat(); await startTeachMe(); });
+  const teachAsk = app.locator('#chatOptions [data-chat-action="ai-ask-teach"]');
   await expect(teachAsk).toBeVisible();
   await teachAsk.click();
-  await expect(page.locator('#eviaAiAskForm')).toHaveClass(/open/);
-  await page.locator('#eviaAiAskInput').fill('cavity trays');
-  await page.locator('#eviaAiAskForm button[type="submit"]').click();
-  await expect(page.locator('#chatScroll')).toContainText('Controlled teaching point three.', { timeout: 15000 });
+  await expect(app.locator('#eviaAiAskForm')).toHaveClass(/open/);
+  await app.locator('#eviaAiAskInput').fill('cavity trays');
+  await app.locator('#eviaAiAskForm button[type="submit"]').click();
+  await expect(app.locator('#chatScroll')).toContainText('Controlled teaching point three.', { timeout: 15000 });
 
-  await page.evaluate(async () => { await startTestMe(); });
-  const testAsk = page.locator('#chatOptions [data-chat-action="ai-ask-test"]');
+  await app.evaluate(async () => { await startTestMe(); });
+  const testAsk = app.locator('#chatOptions [data-chat-action="ai-ask-test"]');
   await expect(testAsk).toBeVisible();
   await testAsk.click();
-  await page.locator('#eviaAiAskInput').fill('cavity trays');
-  await page.locator('#eviaAiAskForm button[type="submit"]').click();
-  await expect(page.locator('#chatScroll')).toContainText('Smoke test question 1?', { timeout: 15000 });
+  await app.locator('#eviaAiAskInput').fill('cavity trays');
+  await app.locator('#eviaAiAskForm button[type="submit"]').click();
+  await expect(app.locator('#chatScroll')).toContainText('Smoke test question 1?', { timeout: 15000 });
 
   expect(errors).toEqual([]);
 });
 
 test('installed Evia reloads while offline', async ({ page, context }) => {
   const errors = trackPageErrors(page);
-  await bootControlled(page);
+  const app = await bootControlled(context, page);
+  trackPageErrors(app, errors);
 
   await context.setOffline(true);
   try {
-    await page.reload({ waitUntil: 'domcontentloaded' });
-    await expect(page.locator('#eviaStage')).toBeVisible();
-    await expect(page.locator('.bottom-arches .status-arch')).toHaveCount(4);
+    await app.reload({ waitUntil: 'domcontentloaded' });
+    await expect(app.locator('#eviaStage')).toBeVisible();
+    await expect(app.locator('.bottom-arches .status-arch')).toHaveCount(4);
   } finally {
     await context.setOffline(false);
   }
