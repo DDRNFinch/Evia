@@ -5,6 +5,9 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 
 test('EPA physically reuses the same homepage Evia DOM instance', async ({ page }) => {
+  // This test verifies the DOM identity hand-off only. Prevent the PWA updater from
+  // navigating the page mid-assertion when a cache version changes.
+  await page.route('**/service-worker.js', route => route.abort());
   await page.goto('/');
   await expect(page.locator('#eviaStage > .evia-float')).toHaveCount(1);
 
