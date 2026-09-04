@@ -1,4 +1,4 @@
-const C='evia-pwa-v67';
+const C='evia-pwa-v68';
 const UPDATE_UI_MARKER='evia-update-ui-ready-v1';
 const RELEASE_VERSION='1.0';
 const RELEASE_MARKER_URL=new URL('./__evia-visible-release-version__',self.registration.scope).href;
@@ -35,7 +35,8 @@ const RUNTIME_SCRIPTS=[
   './evia-approved-ux-cleanup-v3.js?v=2',
   './nisia-loader.js?v=3',
   './evia-approved-attend-learn-render-v4.js?v=1',
-  './evia-approved-attend-learn-final-v5.js?v=2'
+  './evia-approved-attend-learn-final-v5.js?v=2',
+  './evia-approved-progress-rings-completion-v1.js'
 ];
 
 const F=[
@@ -165,7 +166,7 @@ self.addEventListener('activate',e=>{
       await marker.delete(INTERNAL_RELOAD_MARKER_URL);
       const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
       await Promise.all(windows.map(client=>{
-        try{const url=new URL(client.url);url.searchParams.set('__evia_refresh','67');return client.navigate(url.href).catch(()=>null)}catch{return null}
+        try{const url=new URL(client.url);url.searchParams.set('__evia_refresh','68');return client.navigate(url.href).catch(()=>null)}catch{return null}
       }));
     }
   })());
