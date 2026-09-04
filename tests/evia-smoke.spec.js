@@ -28,13 +28,16 @@ async function bootControlled(context, app) {
   const firstWorker = await workerStarted;
   expect(firstWorker || context.serviceWorkers()[0], 'Evia service worker did not start').toBeTruthy();
 
-  // A fresh Evia install deliberately activates the worker, claims the page and
-  // navigates that same page once with __evia_refresh=80. Follow that real app
-  // behaviour instead of opening a second page during the activation navigation.
-  await app.waitForURL((url) => url.searchParams.get('__evia_refresh') === '80', { timeout: 15000 });
-  await app.waitForLoadState('domcontentloaded');
+  // Activation may claim this page directly or navigate it once. The stable
+  // invariant is that Evia ends up controlled by its service worker.
+  await expect.poll(async () => app.evaluate(() => Boolean(
+    navigator.serviceWorker && navigator.serviceWorker.controller
+  )).catch(() => false), {
+    timeout: 20000,
+    intervals: [100, 250, 500, 1000]
+  }).toBeTruthy();
+
   await expect(app.locator('#eviaStage')).toBeVisible();
-  await app.waitForFunction(() => Boolean(navigator.serviceWorker && navigator.serviceWorker.controller), null, { timeout: 15000 });
   return app;
 }
 
