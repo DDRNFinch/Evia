@@ -17,19 +17,22 @@ function cleanRuntimePath(value) {
   return String(value || '').replace(/^\.\//, '').split('?')[0];
 }
 
-async function bootControlled(context, installerPage) {
+async function bootControlled(context, app) {
   const workerStarted = context.serviceWorkers().length
     ? Promise.resolve(context.serviceWorkers()[0])
     : context.waitForEvent('serviceworker', { timeout: 15000 }).catch(() => null);
 
-  await installerPage.goto('/', { waitUntil: 'load' });
-  await expect(installerPage.locator('#eviaStage')).toBeVisible();
+  await app.goto('/?__evia_smoke=1', { waitUntil: 'domcontentloaded' });
+  await expect(app.locator('#eviaStage')).toBeVisible();
 
   const firstWorker = await workerStarted;
   expect(firstWorker || context.serviceWorkers()[0], 'Evia service worker did not start').toBeTruthy();
 
-  const app = await context.newPage();
-  await app.goto('/?__evia_smoke=1', { waitUntil: 'domcontentloaded' });
+  // A fresh Evia install deliberately activates the worker, claims the page and
+  // navigates that same page once with __evia_refresh=80. Follow that real app
+  // behaviour instead of opening a second page during the activation navigation.
+  await app.waitForURL((url) => url.searchParams.get('__evia_refresh') === '80', { timeout: 15000 });
+  await app.waitForLoadState('domcontentloaded');
   await expect(app.locator('#eviaStage')).toBeVisible();
   await app.waitForFunction(() => Boolean(navigator.serviceWorker && navigator.serviceWorker.controller), null, { timeout: 15000 });
   return app;
@@ -43,7 +46,6 @@ function trackPageErrors(page, errors = []) {
 test('cold launch activates the complete approved runtime without uncaught errors', async ({ page, context }) => {
   const errors = trackPageErrors(page);
   const app = await bootControlled(context, page);
-  trackPageErrors(app, errors);
 
   const expected = runtimeScripts().map(cleanRuntimePath);
   const loaded = await app.locator('script[src]').evaluateAll((nodes) => nodes.map((node) => {
@@ -62,7 +64,6 @@ test('cold launch activates the complete approved runtime without uncaught error
 test('core learner surfaces open: evidence, Learn, portfolio and chat', async ({ page, context }) => {
   const errors = trackPageErrors(page);
   const app = await bootControlled(context, page);
-  trackPageErrors(app, errors);
 
   const evidenceApi = await app.evaluate(() => typeof goToEvidencePath === 'function');
   expect(evidenceApi).toBeTruthy();
@@ -163,7 +164,6 @@ test('Ask Evia works inside both Teach Me and Test Me with a controlled AI respo
   });
 
   const app = await bootControlled(context, page);
-  trackPageErrors(app, errors);
   await app.evaluate(async () => { openChat(); await startTeachMe(); });
   const teachAsk = app.locator('#chatOptions [data-chat-action="ai-ask-teach"]');
   await expect(teachAsk).toBeVisible();
@@ -187,7 +187,6 @@ test('Ask Evia works inside both Teach Me and Test Me with a controlled AI respo
 test('installed Evia reloads while offline', async ({ page, context }) => {
   const errors = trackPageErrors(page);
   const app = await bootControlled(context, page);
-  trackPageErrors(app, errors);
 
   await context.setOffline(true);
   try {
