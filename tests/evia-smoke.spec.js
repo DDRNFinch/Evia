@@ -28,16 +28,27 @@ async function bootControlled(context, app) {
   const firstWorker = await workerStarted;
   expect(firstWorker || context.serviceWorkers()[0], 'Evia service worker did not start').toBeTruthy();
 
-  // Activation may claim this page directly or navigate it once. The stable
-  // invariant is that Evia ends up controlled by its service worker.
+  // navigator.serviceWorker.ready resolves only when this origin has an active
+  // worker. Reload after that point so the smoke page is definitely controlled,
+  // regardless of whether Evia's one-time install navigation is exposed by CI.
+  const ready = await app.evaluate(async () => {
+    if (!navigator.serviceWorker) return false;
+    return Promise.race([
+      navigator.serviceWorker.ready.then((registration) => Boolean(registration.active)),
+      new Promise((resolve) => setTimeout(() => resolve(false), 20000))
+    ]);
+  });
+  expect(ready, 'Evia service worker did not become active').toBeTruthy();
+
+  await app.reload({ waitUntil: 'domcontentloaded' });
+  await expect(app.locator('#eviaStage')).toBeVisible();
   await expect.poll(async () => app.evaluate(() => Boolean(
     navigator.serviceWorker && navigator.serviceWorker.controller
   )).catch(() => false), {
-    timeout: 20000,
+    timeout: 10000,
     intervals: [100, 250, 500, 1000]
   }).toBeTruthy();
 
-  await expect(app.locator('#eviaStage')).toBeVisible();
   return app;
 }
 
