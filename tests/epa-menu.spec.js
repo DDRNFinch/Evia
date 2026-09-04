@@ -54,7 +54,7 @@ test('plus menu is consolidated and EPA practice follows the course assessment p
   await app.locator('#naxosArch').click();
   const menu = app.locator('#eviaPlusMenu .evia-plus-pill');
   await expect(menu).toHaveCount(5);
-  await expect(menu).toHaveAllTextContents(['Chat with Evia','Targets','EPA Practice','Share & Scan','Profile & Settings']);
+  expect(await menu.allTextContents()).toEqual(['Chat with Evia','Targets','EPA Practice','Share & Scan','Profile & Settings']);
 
   await menu.filter({ hasText:'Share & Scan' }).click();
   await expect(app.locator('#eviaSupportTitle')).toHaveText('Share & Scan');
