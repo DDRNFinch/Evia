@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - technical-consolidation-v80
+      - epa-menu-v81
   pull_request:
     branches:
       - main
@@ -31,6 +32,9 @@ jobs:
 
       - name: Install test dependencies
         run: npm install --no-audit --no-fund
+
+      - name: Check EPA worker syntax
+        run: node --check cloudflare-ai/worker-v3.js
 
       - name: Run Evia smoke tests
         run: npm run test:smoke
