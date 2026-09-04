@@ -1,0 +1,59 @@
+name: Deploy Evia Cloudflare AI worker
+
+on:
+  push:
+    branches:
+      - epa-zone-v82
+      - main
+    paths:
+      - 'cloudflare-ai/**'
+      - '.github/workflows/cloudflare-epa-worker.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: evia-cloudflare-worker
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Deploy Evia Workers AI backend
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: cloudflare-ai
+          command: deploy
+
+      - name: Verify deployed EPA model
+        run: |
+          node - <<'NODE'
+          const url = 'https://evia-teach-test.finchyisnow.workers.dev/health';
+          const expected = '@cf/nvidia/nemotron-3-120b-a12b';
+          let last = '';
+          for (let i = 0; i < 12; i++) {
+            try {
+              const response = await fetch(url, { cache: 'no-store' });
+              last = await response.text();
+              if (response.ok) {
+                const data = JSON.parse(last);
+                if (data.epaModel === expected) {
+                  console.log('Verified EPA model:', data.epaModel);
+                  process.exit(0);
+                }
+              }
+            } catch (error) {
+              last = String(error);
+            }
+            await new Promise(resolve => setTimeout(resolve, 5000));
+          }
+          console.error('EPA Worker verification failed:', last);
+          process.exit(1);
+          NODE
