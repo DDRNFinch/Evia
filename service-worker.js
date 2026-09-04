@@ -1,54 +1,18 @@
-const C='evia-pwa-v79';
+importScripts('./evia-runtime-manifest.js');
+
+const C='evia-pwa-v80';
 const UPDATE_UI_MARKER='evia-update-ui-ready-v1';
 const RELEASE_VERSION='1.0';
 const RELEASE_MARKER_URL=new URL('./__evia-visible-release-version__',self.registration.scope).href;
 const INTERNAL_RELOAD_MARKER_URL=new URL('./__evia-internal-reload__',self.registration.scope).href;
 const OPTIONAL_OFFLINE_MARKER_URL=new URL('./__evia-optional-offline-v5__',self.registration.scope).href;
-
-const RUNTIME_SCRIPTS=[
-  './evia-demo-v1.js?v=2',
-  './evia-approved-features.js',
-  './evia-approved-learning-ui.js',
-  './evia-approved-menu-support.js',
-  './evia-approved-epa.js',
-  './evia-approved-targets.js',
-  './evia-approved-target-plan-v1.js',
-  './evia-approved-updates-stable-v1.js',
-  './evia-sw-update-hardening-v1.js',
-  './evia-approved-runtime-fixes-v1.js',
-  './evia-ui-polish-v1.js',
-  './evia-ui-polish-visible-v1.js?v=2',
-  './evia-approved-settings-stable-v1.js',
-  './evia-developer-mode-v1.js?v=1',
-  './evia-approved-support-preview-visual-v1.js',
-  './evia-approved-naxos-evidence-contract-v2.js',
-  './evia-approved-naxos-activity-prompts-v1.js',
-  './evia-approved-naxos-evidence-existing-v2.js',
-  './evia-approved-speech-landing-fix.js',
-  './evia-approved-evidence-capture-layout-v1.js?v=2',
-  './evia-approved-guided-capture-v1.js',
-  './evia-approved-witness-video-v1.js',
-  './evia-approved-time-monthly-packs-v1.js',
-  './evia-approved-portfolio-hub-icon-v1.js',
-  './evia-approved-update-system-v1.js?v=2',
-  './evia-approved-ux-cleanup-v1.js?v=2',
-  './evia-approved-ux-cleanup-v3.js?v=2',
-  './nisia-loader.js?v=3',
-  './evia-approved-attend-learn-render-v4.js?v=1',
-  './evia-approved-attend-learn-final-v5.js?v=2',
-  './evia-approved-progress-rings-completion-v1.js',
-  './evia-approved-media-ring-completion-fix-v1.js',
-  './evia-approved-capture-controls-rings-v3.js',
-  './evia-approved-naxos-question-bank-v1.js',
-  './evia-ai-config-v1.js',
-  './evia-approved-ai-teach-test-v1.js',
-  './evia-approved-ai-ask-v1.js',
-  './evia-approved-demo-teach-test-v1.js'
-];
+const RUNTIME_SCRIPTS=Array.isArray(globalThis.EVIA_RUNTIME_SCRIPTS)?[...globalThis.EVIA_RUNTIME_SCRIPTS]:[];
+if(!RUNTIME_SCRIPTS.length)throw new Error('Evia runtime manifest is unavailable.');
 
 const F=[
   './manifest.webmanifest?v=50',
   './evia-release.json',
+  './evia-runtime-manifest.js',
   ...RUNTIME_SCRIPTS,
   './nisia-sync.js?v=4',
   './icons/evia-180.png?v=50',
@@ -174,7 +138,7 @@ self.addEventListener('activate',e=>{
       await marker.delete(INTERNAL_RELOAD_MARKER_URL);
       const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
       await Promise.all(windows.map(client=>{
-        try{const url=new URL(client.url);url.searchParams.set('__evia_refresh','79');return client.navigate(url.href).catch(()=>null)}catch{return null}
+        try{const url=new URL(client.url);url.searchParams.set('__evia_refresh','80');return client.navigate(url.href).catch(()=>null)}catch{return null}
       }));
     }
   })());
