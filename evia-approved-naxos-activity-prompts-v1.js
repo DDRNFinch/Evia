@@ -145,5 +145,30 @@ try{
     wrapped.__eviaActivityPrompts=true;applyNvqPatch=wrapped;
   }
 }catch{}
-window.EviaNaxosActivityPrompts=Object.freeze({version:VERSION,derive,promptList});
+function inferProfileFromNode(node){
+  const text=clean(`${node?.recommended?.label||''} ${node?.recommended?.methodLabel||''} ${node?.recommended?.details?.map?.(x=>`${x?.displayType||''} ${x?.label||''}`).join(' ')||''} ${node?.label||''}`).toLowerCase();
+  if(/witness|communication/.test(text))return'communication';
+  if(/safety/.test(text))return'safety';
+  if(/photo|material|tool|resource/.test(text))return'resources';
+  if(/video/.test(text))return'practical';
+  if(/quality|check|tolerance/.test(text))return'quality';
+  if(/programme|progress|schedule/.test(text))return'programme';
+  return'knowledge';
+}
+function migrateExistingCourse(){
+  let items=[];try{items=JSON.parse(localStorage.getItem('eviaNaxosCourse')||'[]')}catch{}
+  if(!Array.isArray(items)||!items.length)return;
+  let changed=false;
+  const walk=nodes=>(Array.isArray(nodes)?nodes:[]).forEach(node=>{
+    if(Array.isArray(node?.children)&&node.children.length){walk(node.children);return}
+    if(!node||typeof node!=='object'||Number(node.activityPromptsVersion||0)>=VERSION)return;
+    const prompts=derive(clean(node.label), '', inferProfileFromNode(node));
+    if(prompts.length){node.requirementItems=prompts;node.requirements=prompts.join('\n');node.activityPromptsVersion=VERSION;changed=true}
+  });
+  walk(items);if(!changed)return;
+  try{localStorage.setItem('eviaNaxosCourse',JSON.stringify(items))}catch{}
+  try{courseItems=items}catch{}
+}
+setTimeout(migrateExistingCourse,0);
+window.EviaNaxosActivityPrompts=Object.freeze({version:VERSION,derive,promptList,migrateExistingCourse});
 })();
