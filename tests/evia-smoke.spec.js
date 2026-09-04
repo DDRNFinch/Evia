@@ -17,22 +17,21 @@ function cleanRuntimePath(value) {
   return String(value || '').replace(/^\.\//, '').split('?')[0];
 }
 
-async function bootControlled(context, app) {
+async function bootControlled(context, installerPage) {
   const workerStarted = context.serviceWorkers().length
     ? Promise.resolve(context.serviceWorkers()[0])
     : context.waitForEvent('serviceworker', { timeout: 15000 }).catch(() => null);
 
-  await app.goto('/?__evia_smoke=1', { waitUntil: 'domcontentloaded' });
-  await expect(app.locator('#eviaStage')).toBeVisible();
+  await installerPage.goto('/?__evia_smoke=1', { waitUntil: 'domcontentloaded' });
+  await expect(installerPage.locator('#eviaStage')).toBeVisible();
 
   const firstWorker = await workerStarted;
   expect(firstWorker || context.serviceWorkers()[0], 'Evia service worker did not start').toBeTruthy();
 
-  // navigator.serviceWorker.ready resolves only when this origin has an active
-  // worker. Evia then performs its own one-time activation navigation, so wait
-  // for that navigation to leave the page controlled instead of racing it with
-  // an additional Playwright reload.
-  const ready = await app.evaluate(async () => {
+  // Establish the active worker on the initial installer page. A new page opened
+  // afterwards must then be controlled from its first navigation, avoiding any
+  // race with Evia's own one-time activation navigation of the installer page.
+  const ready = await installerPage.evaluate(async () => {
     if (!navigator.serviceWorker) return false;
     return Promise.race([
       navigator.serviceWorker.ready.then((registration) => Boolean(registration.active)),
@@ -41,13 +40,15 @@ async function bootControlled(context, app) {
   });
   expect(ready, 'Evia service worker did not become active').toBeTruthy();
 
+  const app = await context.newPage();
+  await app.goto('/?__evia_smoke=1', { waitUntil: 'domcontentloaded' });
+  await expect(app.locator('#eviaStage')).toBeVisible();
   await expect.poll(async () => app.evaluate(() => Boolean(
     navigator.serviceWorker && navigator.serviceWorker.controller
   )).catch(() => false), {
-    timeout: 20000,
+    timeout: 10000,
     intervals: [100, 250, 500, 1000]
   }).toBeTruthy();
-  await expect(app.locator('#eviaStage')).toBeVisible();
 
   return app;
 }
@@ -60,6 +61,7 @@ function trackPageErrors(page, errors = []) {
 test('cold launch activates the complete approved runtime without uncaught errors', async ({ page, context }) => {
   const errors = trackPageErrors(page);
   const app = await bootControlled(context, page);
+  trackPageErrors(app, errors);
 
   const expected = runtimeScripts().map(cleanRuntimePath);
   const loaded = await app.locator('script[src]').evaluateAll((nodes) => nodes.map((node) => {
@@ -78,6 +80,7 @@ test('cold launch activates the complete approved runtime without uncaught error
 test('core learner surfaces open: evidence, Learn, portfolio and chat', async ({ page, context }) => {
   const errors = trackPageErrors(page);
   const app = await bootControlled(context, page);
+  trackPageErrors(app, errors);
 
   const evidenceApi = await app.evaluate(() => typeof goToEvidencePath === 'function');
   expect(evidenceApi).toBeTruthy();
@@ -178,6 +181,7 @@ test('Ask Evia works inside both Teach Me and Test Me with a controlled AI respo
   });
 
   const app = await bootControlled(context, page);
+  trackPageErrors(app, errors);
   await app.evaluate(async () => { openChat(); await startTeachMe(); });
   const teachAsk = app.locator('#chatOptions [data-chat-action="ai-ask-teach"]');
   await expect(teachAsk).toBeVisible();
@@ -201,6 +205,7 @@ test('Ask Evia works inside both Teach Me and Test Me with a controlled AI respo
 test('installed Evia reloads while offline', async ({ page, context }) => {
   const errors = trackPageErrors(page);
   const app = await bootControlled(context, page);
+  trackPageErrors(app, errors);
 
   await context.setOffline(true);
   try {
