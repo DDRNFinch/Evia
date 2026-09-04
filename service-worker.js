@@ -1,9 +1,9 @@
-const C='evia-pwa-v66';
+const C='evia-pwa-v67';
 const UPDATE_UI_MARKER='evia-update-ui-ready-v1';
 const RELEASE_VERSION='1.0';
 const RELEASE_MARKER_URL=new URL('./__evia-visible-release-version__',self.registration.scope).href;
 const INTERNAL_RELOAD_MARKER_URL=new URL('./__evia-internal-reload__',self.registration.scope).href;
-const OPTIONAL_OFFLINE_MARKER_URL=new URL('./__evia-optional-offline-v2__',self.registration.scope).href;
+const OPTIONAL_OFFLINE_MARKER_URL=new URL('./__evia-optional-offline-v3__',self.registration.scope).href;
 
 const RUNTIME_SCRIPTS=[
   './evia-demo-v1.js?v=2',
@@ -28,6 +28,7 @@ const RUNTIME_SCRIPTS=[
   './evia-approved-evidence-capture-layout-v1.js?v=2',
   './evia-approved-guided-capture-v1.js',
   './evia-approved-witness-video-v1.js',
+  './evia-approved-time-monthly-packs-v1.js',
   './evia-approved-portfolio-hub-icon-v1.js',
   './evia-approved-update-system-v1.js?v=2',
   './evia-approved-ux-cleanup-v1.js?v=2',
@@ -48,6 +49,7 @@ const F=[
 ];
 const QR_CACHE='evia-feature-lib-v1';
 const QR_LIBRARY_URL='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+const PDF_LIBRARY_URL='https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js';
 const NAXOS_CACHE='evia-naxos-offline-v2';
 const NAXOS_BASE='https://ddrnfinch.github.io/Naxos-Mapping_Engine/';
 const NAXOS_SEEDS=[
@@ -112,15 +114,17 @@ async function cacheNaxosCourseGraph(){
   }
 }
 
-async function cacheQrLibrary(){
-  const response=await fetch(QR_LIBRARY_URL,{mode:'cors',cache:'reload'});if(!response.ok)throw new Error('Could not cache the offline QR library.');
-  const qrCache=await caches.open(QR_CACHE);await qrCache.put(QR_LIBRARY_URL,response);
+async function cacheFeatureLibrary(url,label){
+  const response=await fetch(url,{mode:'cors',cache:'reload'});if(!response.ok)throw new Error(`Could not cache the offline ${label}.`);
+  const cache=await caches.open(QR_CACHE);await cache.put(url,response);
 }
+async function cacheQrLibrary(){return cacheFeatureLibrary(QR_LIBRARY_URL,'QR library')}
+async function cachePdfLibrary(){return cacheFeatureLibrary(PDF_LIBRARY_URL,'PDF library')}
 
 async function cacheOptionalOfflineAssets(){
   const marker=await caches.open(UPDATE_UI_MARKER);
   if(await marker.match(OPTIONAL_OFFLINE_MARKER_URL))return;
-  const results=await Promise.allSettled([cacheQrLibrary(),cacheNaxosCourseGraph()]);
+  const results=await Promise.allSettled([cacheQrLibrary(),cachePdfLibrary(),cacheNaxosCourseGraph()]);
   if(results.every(result=>result.status==='fulfilled')){
     await marker.put(OPTIONAL_OFFLINE_MARKER_URL,new Response('1',{headers:{'content-type':'text/plain'}}));
   }
@@ -161,7 +165,7 @@ self.addEventListener('activate',e=>{
       await marker.delete(INTERNAL_RELOAD_MARKER_URL);
       const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
       await Promise.all(windows.map(client=>{
-        try{const url=new URL(client.url);url.searchParams.set('__evia_refresh','66');return client.navigate(url.href).catch(()=>null)}catch{return null}
+        try{const url=new URL(client.url);url.searchParams.set('__evia_refresh','67');return client.navigate(url.href).catch(()=>null)}catch{return null}
       }));
     }
   })());
