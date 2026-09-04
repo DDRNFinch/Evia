@@ -1,9 +1,9 @@
-const C='evia-pwa-v72';
+const C='evia-pwa-v73';
 const UPDATE_UI_MARKER='evia-update-ui-ready-v1';
 const RELEASE_VERSION='1.0';
 const RELEASE_MARKER_URL=new URL('./__evia-visible-release-version__',self.registration.scope).href;
 const INTERNAL_RELOAD_MARKER_URL=new URL('./__evia-internal-reload__',self.registration.scope).href;
-const OPTIONAL_OFFLINE_MARKER_URL=new URL('./__evia-optional-offline-v4__',self.registration.scope).href;
+const OPTIONAL_OFFLINE_MARKER_URL=new URL('./__evia-optional-offline-v5__',self.registration.scope).href;
 
 const RUNTIME_SCRIPTS=[
   './evia-demo-v1.js?v=2',
@@ -52,13 +52,13 @@ const F=[
   './icons/evia-512.png?v=50'
 ];
 const QR_CACHE='evia-feature-lib-v1';
+const QUESTION_CACHE='evia-question-bank-v1';
 const QR_LIBRARY_URL='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
 const PDF_LIBRARY_URL='https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js';
 const NAXOS_CACHE='evia-naxos-offline-v3';
 const NAXOS_BASE='https://ddrnfinch.github.io/Naxos-Mapping_Engine/';
 const NAXOS_SEEDS=[
-  'course-catalog.json','ksb-manifest.json','manifest-6570-04.json','manifest.json','evidence-rules.json','evidence-capture-contract-v2.json','assessment-plans.json',
-  'question-banks/manifest.json','question-banks/question-bank-engine-v1.js'
+  'course-catalog.json','ksb-manifest.json','manifest-6570-04.json','manifest.json','evidence-rules.json','evidence-capture-contract-v2.json','assessment-plans.json'
 ].map(path=>new URL(path,NAXOS_BASE).href);
 let optionalOfflineCacheStarted=false;
 
@@ -129,7 +129,7 @@ async function cachePdfLibrary(){return cacheFeatureLibrary(PDF_LIBRARY_URL,'PDF
 async function cacheOptionalOfflineAssets(){
   const marker=await caches.open(UPDATE_UI_MARKER);
   if(await marker.match(OPTIONAL_OFFLINE_MARKER_URL))return;
-  const results=await Promise.allSettled([cacheQrLibrary(),cachePdfLibrary(),cacheNaxosCourseGraph()]);
+  const results=await Promise.allSettled([cacheQrLibrary(),cachePdfLibrary()]);
   if(results.every(result=>result.status==='fulfilled')){
     await marker.put(OPTIONAL_OFFLINE_MARKER_URL,new Response('1',{headers:{'content-type':'text/plain'}}));
   }
@@ -161,7 +161,7 @@ self.addEventListener('install',e=>{
 self.addEventListener('activate',e=>{
   e.waitUntil((async()=>{
     const keys=await caches.keys();
-    await Promise.all(keys.filter(key=>key!==C&&key!==QR_CACHE&&key!==NAXOS_CACHE&&key!==UPDATE_UI_MARKER).map(key=>caches.delete(key)));
+    await Promise.all(keys.filter(key=>key!==C&&key!==QR_CACHE&&key!==QUESTION_CACHE&&key!==NAXOS_CACHE&&key!==UPDATE_UI_MARKER).map(key=>caches.delete(key)));
     const marker=await caches.open(UPDATE_UI_MARKER);
     const internalReload=await marker.match(INTERNAL_RELOAD_MARKER_URL);
     await marker.put(RELEASE_MARKER_URL,new Response(RELEASE_VERSION,{headers:{'content-type':'text/plain'}}));
@@ -170,7 +170,7 @@ self.addEventListener('activate',e=>{
       await marker.delete(INTERNAL_RELOAD_MARKER_URL);
       const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
       await Promise.all(windows.map(client=>{
-        try{const url=new URL(client.url);url.searchParams.set('__evia_refresh','72');return client.navigate(url.href).catch(()=>null)}catch{return null}
+        try{const url=new URL(client.url);url.searchParams.set('__evia_refresh','73');return client.navigate(url.href).catch(()=>null)}catch{return null}
       }));
     }
   })());
