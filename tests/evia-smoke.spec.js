@@ -198,7 +198,7 @@ test('Ask Evia works inside both Teach Me and Test Me with a controlled AI respo
 
   const app = await bootControlled(context, page);
   await app.evaluate(async () => { openChat(); await startTeachMe(); });
-  const teachAsk = app.locator('#chatOptions [data-chat-action="ai-ask-teach"]');
+  const teachAsk = app.locator('.evia-inline-chat-options [data-chat-action="ai-ask-teach"]');
   await expect(teachAsk).toBeVisible();
   await teachAsk.click();
   await expect(app.locator('#eviaAiAskForm')).toHaveClass(/open/);
@@ -207,7 +207,7 @@ test('Ask Evia works inside both Teach Me and Test Me with a controlled AI respo
   await expect(app.locator('#chatScroll')).toContainText('Controlled teaching point three.', { timeout: 15000 });
 
   await app.evaluate(async () => { await startTestMe(); });
-  const testAsk = app.locator('#chatOptions [data-chat-action="ai-ask-test"]');
+  const testAsk = app.locator('.evia-inline-chat-options [data-chat-action="ai-ask-test"]');
   await expect(testAsk).toBeVisible();
   await testAsk.click();
   await app.locator('#eviaAiAskInput').fill('cavity trays');
