@@ -17,6 +17,19 @@ function cleanRuntimePath(value) {
   return String(value || '').replace(/^\.\//, '').split('?')[0];
 }
 
+async function gotoAfterActivation(page, url) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 5000 });
+      return;
+    } catch (error) {
+      if (!/ERR_ABORTED|frame was detached/i.test(String(error))) throw error;
+      await page.waitForTimeout(500);
+    }
+  }
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 10000 });
+}
+
 async function bootControlled(context, installerPage) {
   const workerStarted = context.serviceWorkers().length
     ? Promise.resolve(context.serviceWorkers()[0])
@@ -28,9 +41,10 @@ async function bootControlled(context, installerPage) {
   const firstWorker = await workerStarted;
   expect(firstWorker || context.serviceWorkers()[0], 'Evia service worker did not start').toBeTruthy();
 
-  // Establish the active worker on the initial installer page. A new page opened
-  // afterwards must then be controlled from its first navigation, avoiding any
-  // race with Evia's own one-time activation navigation of the installer page.
+  // Establish the active worker on the initial installer page. Evia may still
+  // perform its one-time activation navigation while a second page is opening,
+  // so the smoke harness tolerates that expected ERR_ABORTED and retries after
+  // the activation navigation has settled. Application code is not bypassed.
   const ready = await installerPage.evaluate(async () => {
     if (!navigator.serviceWorker) return false;
     return Promise.race([
@@ -41,7 +55,7 @@ async function bootControlled(context, installerPage) {
   expect(ready, 'Evia service worker did not become active').toBeTruthy();
 
   const app = await context.newPage();
-  await app.goto('/?__evia_smoke=1', { waitUntil: 'domcontentloaded' });
+  await gotoAfterActivation(app, '/?__evia_smoke=1');
   await expect(app.locator('#eviaStage')).toBeVisible();
   await expect.poll(async () => app.evaluate(() => Boolean(
     navigator.serviceWorker && navigator.serviceWorker.controller
