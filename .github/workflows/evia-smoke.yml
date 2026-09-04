@@ -35,7 +35,7 @@ jobs:
         run: npm install --no-audit --no-fund
 
       - name: Check EPA worker syntax
-        run: node --check cloudflare-ai/worker-v4.js
+        run: node --check cloudflare-ai/worker-v5.js
 
       - name: Run Evia smoke tests
         run: npm run test:smoke
