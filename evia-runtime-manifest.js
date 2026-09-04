@@ -38,7 +38,8 @@ const scripts=[
   './evia-approved-ai-teach-test-v1.js',
   './evia-approved-ai-ask-v1.js',
   './evia-approved-menu-epa-practice-v1.js',
-  './evia-approved-demo-teach-test-v1.js'
+  './evia-approved-demo-teach-test-v1.js',
+  './evia-approved-epa-zone-v2.js'
 ];
 Object.defineProperty(globalThis,'EVIA_RUNTIME_SCRIPTS',{value:Object.freeze(scripts.slice()),writable:false,configurable:false});
 })();
