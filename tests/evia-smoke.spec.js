@@ -17,35 +17,31 @@ function cleanRuntimePath(value) {
   return String(value || '').replace(/^\.\//, '').split('?')[0];
 }
 
-async function gotoAfterActivation(page, url) {
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    try {
-      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 5000 });
-      return;
-    } catch (error) {
-      if (!/ERR_ABORTED|frame was detached/i.test(String(error))) throw error;
-      await page.waitForTimeout(500);
-    }
-  }
-  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 10000 });
-}
+async function bootControlled(context, app) {
+  // Seed a different prior release marker so CI exercises Evia's normal
+  // update/activation path without triggering the one-time first-install
+  // client.navigate() while Playwright itself is navigating the smoke page.
+  // No application or service-worker code is bypassed or replaced.
+  await app.goto('/evia-release.json', { waitUntil: 'domcontentloaded' });
+  await app.evaluate(async () => {
+    const marker = await caches.open('evia-update-ui-ready-v1');
+    const releaseUrl = new URL('/__evia-visible-release-version__', location.origin).href;
+    await marker.put(releaseUrl, new Response('__smoke_previous_release__', {
+      headers: { 'content-type': 'text/plain' }
+    }));
+  });
 
-async function bootControlled(context, installerPage) {
   const workerStarted = context.serviceWorkers().length
     ? Promise.resolve(context.serviceWorkers()[0])
     : context.waitForEvent('serviceworker', { timeout: 15000 }).catch(() => null);
 
-  await installerPage.goto('/?__evia_smoke=1', { waitUntil: 'domcontentloaded' });
-  await expect(installerPage.locator('#eviaStage')).toBeVisible();
+  await app.goto('/?__evia_smoke=1', { waitUntil: 'domcontentloaded' });
+  await expect(app.locator('#eviaStage')).toBeVisible();
 
   const firstWorker = await workerStarted;
   expect(firstWorker || context.serviceWorkers()[0], 'Evia service worker did not start').toBeTruthy();
 
-  // Establish the active worker on the initial installer page. Evia may still
-  // perform its one-time activation navigation while a second page is opening,
-  // so the smoke harness tolerates that expected ERR_ABORTED and retries after
-  // the activation navigation has settled. Application code is not bypassed.
-  const ready = await installerPage.evaluate(async () => {
+  const ready = await app.evaluate(async () => {
     if (!navigator.serviceWorker) return false;
     return Promise.race([
       navigator.serviceWorker.ready.then((registration) => Boolean(registration.active)),
@@ -54,8 +50,16 @@ async function bootControlled(context, installerPage) {
   });
   expect(ready, 'Evia service worker did not become active').toBeTruthy();
 
-  const app = await context.newPage();
-  await gotoAfterActivation(app, '/?__evia_smoke=1');
+  await expect.poll(async () => app.evaluate(() => Boolean(
+    navigator.serviceWorker && navigator.serviceWorker.controller
+  )).catch(() => false), {
+    timeout: 10000,
+    intervals: [100, 250, 500, 1000]
+  }).toBeTruthy();
+
+  // Reload once through the active worker so the test validates the actual
+  // service-worker HTML/runtime injection path used by installed Evia.
+  await app.reload({ waitUntil: 'domcontentloaded' });
   await expect(app.locator('#eviaStage')).toBeVisible();
   await expect.poll(async () => app.evaluate(() => Boolean(
     navigator.serviceWorker && navigator.serviceWorker.controller
@@ -75,7 +79,6 @@ function trackPageErrors(page, errors = []) {
 test('cold launch activates the complete approved runtime without uncaught errors', async ({ page, context }) => {
   const errors = trackPageErrors(page);
   const app = await bootControlled(context, page);
-  trackPageErrors(app, errors);
 
   const expected = runtimeScripts().map(cleanRuntimePath);
   const loaded = await app.locator('script[src]').evaluateAll((nodes) => nodes.map((node) => {
@@ -94,7 +97,6 @@ test('cold launch activates the complete approved runtime without uncaught error
 test('core learner surfaces open: evidence, Learn, portfolio and chat', async ({ page, context }) => {
   const errors = trackPageErrors(page);
   const app = await bootControlled(context, page);
-  trackPageErrors(app, errors);
 
   const evidenceApi = await app.evaluate(() => typeof goToEvidencePath === 'function');
   expect(evidenceApi).toBeTruthy();
@@ -195,7 +197,6 @@ test('Ask Evia works inside both Teach Me and Test Me with a controlled AI respo
   });
 
   const app = await bootControlled(context, page);
-  trackPageErrors(app, errors);
   await app.evaluate(async () => { openChat(); await startTeachMe(); });
   const teachAsk = app.locator('#chatOptions [data-chat-action="ai-ask-teach"]');
   await expect(teachAsk).toBeVisible();
@@ -219,7 +220,6 @@ test('Ask Evia works inside both Teach Me and Test Me with a controlled AI respo
 test('installed Evia reloads while offline', async ({ page, context }) => {
   const errors = trackPageErrors(page);
   const app = await bootControlled(context, page);
-  trackPageErrors(app, errors);
 
   await context.setOffline(true);
   try {
