@@ -3,32 +3,6 @@ const STYLE_ID='eviaMediaRingCompletionFixV1Styles';
 const SVG_NS='http://www.w3.org/2000/svg';
 const YELLOW='#f5c400';
 function clean(v){return String(v??'').trim()}
-function ringValue(button){const n=Number(button?.style?.getPropertyValue('--arch-progress'));return Number.isFinite(n)?Math.max(0,Math.min(100,n)):0}
-function ensureRingMarker(button){
-  const svg=button?.querySelector('.arch-progress-svg');if(!svg)return null;
-  button.querySelector('.evia-ring-dot-orbit')?.setAttribute('hidden','');
-  let group=svg.querySelector('.evia-ring-marker-group');
-  if(!group){
-    group=document.createElementNS(SVG_NS,'g');group.setAttribute('class','evia-ring-marker-group');
-    const marker=document.createElementNS(SVG_NS,'circle');marker.setAttribute('class','evia-ring-marker');marker.setAttribute('cx','93');marker.setAttribute('cy','50');marker.setAttribute('r','5.4');
-    group.appendChild(marker);svg.appendChild(group);
-  }
-  return group;
-}
-function syncRingMarker(button){
-  const group=ensureRingMarker(button);if(!group)return;
-  const p=ringValue(button),angle=(p*3.6)-90;
-  group.style.transform=`rotate(${angle}deg)`;
-  group.style.opacity=(p>0&&button.classList.contains('progress-ready'))?'1':'0';
-}
-function installRingMarkers(){
-  document.querySelectorAll('.bottom-arches .status-arch').forEach(button=>{
-    syncRingMarker(button);
-    if(button.dataset.eviaExactRingMarker)return;
-    button.dataset.eviaExactRingMarker='1';
-    new MutationObserver(()=>syncRingMarker(button)).observe(button,{attributes:true,attributeFilter:['style','class']});
-  });
-}
 function dockGuidedControl(){
   const next=document.querySelector('#evidenceTop .evia-guided-next');if(!next)return;
   const videoToggle=document.getElementById('recordToggle');
@@ -57,9 +31,7 @@ function ensureCompletionVisual(){
 function injectStyles(){
   if(document.getElementById(STYLE_ID))return;
   const style=document.createElement('style');style.id=STYLE_ID;style.textContent=`
-    .evia-ring-dot-orbit{display:none!important}
-    .bottom-arches .evia-ring-marker-group{transform-box:view-box;transform-origin:50px 50px;transition:transform 900ms cubic-bezier(.22,1,.36,1),opacity 180ms ease;pointer-events:none}
-    .bottom-arches .evia-ring-marker{fill:${YELLOW};stroke:#fff;stroke-width:3.2;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 3px rgba(245,196,0,.22))}
+    .evia-ring-dot-orbit,.bottom-arches .evia-ring-marker-group{display:none!important}
     #evidenceTop .evia-guided-actions{min-height:0!important;margin-top:0!important}
     #evidenceTop .capture-controls .evia-guided-next{position:relative!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;margin:0!important;min-width:150px!important;z-index:5!important}
     #evidenceTop .audio-panel>.evia-guided-next{position:relative!important;margin:0!important;min-width:150px!important;z-index:5!important}
@@ -79,7 +51,6 @@ function injectStyles(){
     @keyframes eviaCompletionSweepFix{0%,28%{stroke-dasharray:0 100;opacity:0}32%{opacity:1}62%,100%{stroke-dasharray:100 100;opacity:1}}
     @keyframes eviaCompletionFillFix{0%,56%{opacity:0;transform:scale(.84)}68%,100%{opacity:1;transform:scale(1)}}
     @keyframes eviaCompletionTickFix{0%,65%{opacity:0;stroke-dashoffset:100}70%{opacity:1}90%,100%{opacity:1;stroke-dashoffset:0}}
-    html.evia-reduce-motion .bottom-arches .evia-ring-marker-group{transition:none!important}
     html.evia-reduce-motion .flying-file.evia-final-download,html.evia-reduce-motion .flying-file.evia-final-download .evia-complete-arrow,html.evia-reduce-motion .flying-file.evia-final-download .evia-complete-sweep,html.evia-reduce-motion .flying-file.evia-final-download .evia-complete-fill,html.evia-reduce-motion .flying-file.evia-final-download .evia-complete-tick{animation:none!important}
     html.evia-reduce-motion .flying-file.evia-final-download{opacity:1!important}
     html.evia-reduce-motion .flying-file.evia-final-download .evia-complete-arrow{opacity:0!important}
@@ -88,7 +59,7 @@ function injectStyles(){
     html.evia-reduce-motion .flying-file.evia-final-download .evia-complete-tick{opacity:1!important;stroke-dashoffset:0!important}
   `;document.head.appendChild(style);
 }
-function sync(){installRingMarkers();dockGuidedControl();ensureCompletionVisual()}
+function sync(){dockGuidedControl();ensureCompletionVisual()}
 function boot(){injectStyles();sync();const root=document.getElementById('screen')||document.body;new MutationObserver(()=>requestAnimationFrame(sync)).observe(root,{childList:true,subtree:true});window.addEventListener('resize',()=>requestAnimationFrame(sync))}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
