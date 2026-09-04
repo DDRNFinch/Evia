@@ -1,0 +1,10 @@
+name = "evia-teach-test"
+main = "worker.js"
+compatibility_date = "2026-09-04"
+
+[ai]
+binding = "AI"
+
+[vars]
+ALLOWED_ORIGIN = "https://ddrnfinch.github.io"
+MODEL = "@cf/meta/llama-3.1-8b-instruct-fast"
