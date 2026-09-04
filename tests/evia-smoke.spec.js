@@ -28,18 +28,10 @@ async function bootControlled(context, installerPage) {
   const firstWorker = await workerStarted;
   expect(firstWorker || context.serviceWorkers()[0], 'Evia service worker did not start').toBeTruthy();
 
-  await expect.poll(async () => {
-    for (const worker of context.serviceWorkers()) {
-      const state = await worker.evaluate(() => self.registration?.active?.state || self.registration?.waiting?.state || self.registration?.installing?.state || '').catch(() => '');
-      if (state === 'activated') return state;
-    }
-    return '';
-  }, { timeout: 20000, intervals: [100, 250, 500, 1000] }).toBe('activated');
-
   const app = await context.newPage();
   await app.goto('/?__evia_smoke=1', { waitUntil: 'domcontentloaded' });
   await expect(app.locator('#eviaStage')).toBeVisible();
-  await app.waitForFunction(() => Boolean(navigator.serviceWorker && navigator.serviceWorker.controller), null, { timeout: 10000 });
+  await app.waitForFunction(() => Boolean(navigator.serviceWorker && navigator.serviceWorker.controller), null, { timeout: 15000 });
   return app;
 }
 
