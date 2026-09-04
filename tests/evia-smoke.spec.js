@@ -32,10 +32,9 @@ async function bootControlled(page) {
     }
   }
 
-  await page.waitForFunction(() => Boolean(navigator.serviceWorker && navigator.serviceWorker.controller), null, { timeout: 25000 });
   await page.reload({ waitUntil: 'load' });
   await expect(page.locator('#eviaStage')).toBeVisible();
-  await page.waitForFunction(() => Boolean(navigator.serviceWorker && navigator.serviceWorker.controller));
+  await page.waitForFunction(() => Boolean(navigator.serviceWorker && navigator.serviceWorker.controller), null, { timeout: 15000 });
 }
 
 function trackPageErrors(page) {
