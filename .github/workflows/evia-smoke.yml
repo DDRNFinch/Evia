@@ -32,9 +32,6 @@ jobs:
       - name: Install test dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
-
       - name: Run Evia smoke tests
         run: npm run test:smoke
 
