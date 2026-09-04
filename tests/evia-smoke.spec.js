@@ -29,8 +29,9 @@ async function bootControlled(context, app) {
   expect(firstWorker || context.serviceWorkers()[0], 'Evia service worker did not start').toBeTruthy();
 
   // navigator.serviceWorker.ready resolves only when this origin has an active
-  // worker. Reload after that point so the smoke page is definitely controlled,
-  // regardless of whether Evia's one-time install navigation is exposed by CI.
+  // worker. Evia then performs its own one-time activation navigation, so wait
+  // for that navigation to leave the page controlled instead of racing it with
+  // an additional Playwright reload.
   const ready = await app.evaluate(async () => {
     if (!navigator.serviceWorker) return false;
     return Promise.race([
@@ -40,14 +41,13 @@ async function bootControlled(context, app) {
   });
   expect(ready, 'Evia service worker did not become active').toBeTruthy();
 
-  await app.reload({ waitUntil: 'domcontentloaded' });
-  await expect(app.locator('#eviaStage')).toBeVisible();
   await expect.poll(async () => app.evaluate(() => Boolean(
     navigator.serviceWorker && navigator.serviceWorker.controller
   )).catch(() => false), {
-    timeout: 10000,
+    timeout: 20000,
     intervals: [100, 250, 500, 1000]
   }).toBeTruthy();
+  await expect(app.locator('#eviaStage')).toBeVisible();
 
   return app;
 }
