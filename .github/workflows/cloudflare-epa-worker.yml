@@ -1,9 +1,8 @@
-name: Deploy Evia Cloudflare AI worker
+name: Verify Evia Cloudflare AI worker
 
 on:
   push:
     branches:
-      - epa-zone-v82
       - main
     paths:
       - 'cloudflare-ai/**'
@@ -13,39 +12,29 @@ permissions:
   contents: read
 
 concurrency:
-  group: evia-cloudflare-worker
-  cancel-in-progress: false
+  group: evia-cloudflare-worker-verify
+  cancel-in-progress: true
 
 jobs:
-  deploy:
+  verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 6
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Deploy Evia Workers AI backend
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: cloudflare-ai
-          command: deploy
-
-      - name: Verify deployed EPA model
+      - name: Verify Cloudflare-connected deployment
         run: |
           node - <<'NODE'
           const url = 'https://evia-teach-test.finchyisnow.workers.dev/health';
           const expected = '@cf/nvidia/nemotron-3-120b-a12b';
           let last = '';
-          for (let i = 0; i < 12; i++) {
+          for (let i = 0; i < 48; i++) {
             try {
               const response = await fetch(url, { cache: 'no-store' });
               last = await response.text();
               if (response.ok) {
                 const data = JSON.parse(last);
                 if (data.epaModel === expected) {
-                  console.log('Verified EPA model:', data.epaModel);
+                  console.log('Verified Cloudflare EPA model:', data.epaModel);
+                  console.log('Fallback model:', data.epaFallbackModel || 'not reported');
                   process.exit(0);
                 }
               }
@@ -54,6 +43,6 @@ jobs:
             }
             await new Promise(resolve => setTimeout(resolve, 5000));
           }
-          console.error('EPA Worker verification failed:', last);
+          console.error('Cloudflare-connected EPA deployment was not verified:', last);
           process.exit(1);
           NODE
