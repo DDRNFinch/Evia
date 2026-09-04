@@ -138,11 +138,19 @@ try{
     wrapped.__eviaActivityPrompts=true;applyNaxosKsbCustomisations=wrapped;
   }
 }catch{}
+function reapplyNvqPromptPatch(pointer){
+  const patch=pointer?.nvqPatchV2;if(!patch||(!Array.isArray(patch.p)&&!Array.isArray(patch.pc)))return;
+  let items=[];try{items=JSON.parse(localStorage.getItem('eviaNaxosCourse')||'[]')}catch{}
+  if(!Array.isArray(items)||!items.length)return;
+  applyPromptRowsToNvq(items,patch);
+  try{localStorage.setItem('eviaNaxosCourse',JSON.stringify(items))}catch{}
+  try{courseItems=items}catch{}
+}
 try{
-  if(typeof applyNvqPatch==='function'&&!applyNvqPatch.__eviaActivityPrompts){
-    const original=applyNvqPatch;
-    const wrapped=function(items,patch){const result=original.apply(this,arguments);return applyPromptRowsToNvq(result,patch)};
-    wrapped.__eviaActivityPrompts=true;applyNvqPatch=wrapped;
+  if(typeof importNaxosNvqPack==='function'&&!importNaxosNvqPack.__eviaActivityPrompts){
+    const original=importNaxosNvqPack;
+    const wrapped=async function(pointer){const result=await original.apply(this,arguments);reapplyNvqPromptPatch(pointer);return result};
+    wrapped.__eviaActivityPrompts=true;importNaxosNvqPack=wrapped;
   }
 }catch{}
 function inferProfileFromNode(node){
@@ -170,5 +178,5 @@ function migrateExistingCourse(){
   try{courseItems=items}catch{}
 }
 setTimeout(migrateExistingCourse,0);
-window.EviaNaxosActivityPrompts=Object.freeze({version:VERSION,derive,promptList,migrateExistingCourse});
+window.EviaNaxosActivityPrompts=Object.freeze({version:VERSION,derive,promptList,migrateExistingCourse,reapplyNvqPromptPatch});
 })();
