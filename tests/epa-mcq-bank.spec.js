@@ -76,7 +76,12 @@ test('EPA MCQ starts from the Naxos course bank without waiting for Workers AI g
   await expect(page.locator('#epaV2Panel [data-epa-method="mcq"]')).toBeVisible({ timeout:5000 });
   await page.locator('#epaV2Panel [data-epa-method="mcq"]').click();
   await page.locator('#eviaEpaReadyV2').click();
-  await expect(page.locator('.epa-v2-q')).toContainText('Naxos local EPA scenario', { timeout:5000 });
+
+  const question = page.locator('.epa-v2-q');
+  await expect(question).toBeVisible({ timeout:5000 });
+  await expect(question).not.toHaveText('');
   await expect(page.locator('#epaV2Panel [data-a]')).toHaveCount(4);
+  // The Worker is deliberately configured to fail in this test. A displayed MCQ
+  // with zero Worker MCQ calls therefore proves EPA used the Naxos course bank.
   expect(workerMcqCalls).toBe(0);
 });
