@@ -163,6 +163,32 @@ function inferProfileFromNode(node){
   if(/programme|progress|schedule/.test(text))return'programme';
   return'knowledge';
 }
+const LEGACY_GENERIC=[
+  /^select only the information sources genuinely used today\.?$/i,
+  /^for each selected source:/i,
+  /^do not include confidential project information/i,
+  /^show the task itself, not just the finished result\.?$/i,
+  /^show at least one measurement, check or quality decision where relevant\.?$/i,
+  /^explain any criterion that cannot be seen directly\.?$/i,
+  /^make the hidden detail clearly visible before it is covered\.?$/i,
+  /^show position, fixing\/bed\/joint and any spacing or continuity requirement relevant to the task\.?$/i,
+  /^include a wider view so the detail can be identified in the work\.?$/i,
+  /^answer the whole prompt, not just a yes\/no response\.?$/i,
+  /^use a real workplace example where possible\.?$/i,
+  /^the same response may satisfy equivalent criteria in several active units\.?$/i,
+  /^only claim ppe, rpe, lev, access or other controls/i,
+  /^include changed conditions or reporting where the task requires it\.?$/i,
+  /^name the actual resource or tool used\.?$/i,
+  /^link suitability and checks to the specification or task requirement\.?$/i,
+  /^show the check, not only the finished work\.?$/i,
+  /^record the outcome and any correction made\.?$/i,
+  /^give the estimated\/allocated time where the criterion requires it\.?$/i,
+  /^state whether the task was completed within that time and explain any change\.?$/i,
+  /^identify who was involved and why the communication was needed\.?$/i,
+  /^explain the information\/advice given and the result\.?$/i,
+  /^where a performance criterion requires real communication/i
+];
+function legacyGenericPrompt(value){const text=clean(value);return LEGACY_GENERIC.some(rule=>rule.test(text))}
 function migrateExistingCourse(){
   let items=[];try{items=JSON.parse(localStorage.getItem('eviaNaxosCourse')||'[]')}catch{}
   if(!Array.isArray(items)||!items.length)return;
@@ -170,7 +196,10 @@ function migrateExistingCourse(){
   const walk=nodes=>(Array.isArray(nodes)?nodes:[]).forEach(node=>{
     if(Array.isArray(node?.children)&&node.children.length){walk(node.children);return}
     if(!node||typeof node!=='object'||Number(node.activityPromptsVersion||0)>=VERSION)return;
-    const prompts=derive(clean(node.label), '', inferProfileFromNode(node));
+    const existing=Array.isArray(node.requirementItems)?node.requirementItems.map(clean).filter(Boolean):[];
+    if(!existing.some(legacyGenericPrompt))return;
+    const specific=existing.find(item=>!legacyGenericPrompt(item))||'';
+    const prompts=derive(clean(node.label),specific,inferProfileFromNode(node));
     if(prompts.length){node.requirementItems=prompts;node.requirements=prompts.join('\n');node.activityPromptsVersion=VERSION;changed=true}
   });
   walk(items);if(!changed)return;
