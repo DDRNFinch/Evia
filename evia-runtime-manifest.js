@@ -23,6 +23,7 @@ const scripts=[
   './evia-approved-guided-capture-v1.js',
   './evia-approved-witness-video-v1.js',
   './evia-approved-time-monthly-packs-v1.js',
+  './evia-approved-time-evidence-edit-v1.js',
   './evia-approved-portfolio-hub-icon-v1.js',
   './evia-approved-update-system-v1.js?v=2',
   './evia-approved-ux-cleanup-v1.js?v=2',
