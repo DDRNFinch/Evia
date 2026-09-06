@@ -107,10 +107,10 @@ test('EPA Practice opens as a dedicated guided zone and keeps consolidated utili
   });
   await app.locator('#timeArch').click();
   await expect(app.locator('#archDetailContent')).toHaveClass(/evia-time-timeline-v1/, { timeout:5000 });
-  const reportEvent = app.locator('.evia-timeline-event.learner.epa').filter({ hasText:'EPA Practice - Interview' }).first();
+  const reportEvent = app.locator('.evia-time-activity-card.epa').filter({ hasText:'EPA Practice - Interview' }).first();
   await expect(reportEvent).toBeVisible({ timeout:5000 });
-  await reportEvent.locator('.evia-timeline-event-button').click();
-  await expect(reportEvent.locator('.evia-timeline-event-detail')).toContainText('Clear sequence');
+  await reportEvent.locator('.evia-time-activity-button').click();
+  await expect(reportEvent.locator('.evia-time-activity-detail')).toContainText('Clear sequence');
 
   expect(errors).toEqual([]);
 });

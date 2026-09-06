@@ -1,76 +1,85 @@
 const { test, expect } = require('@playwright/test');
 const fs = require('node:fs');
 
-const HARNESS = '<!doctype html><html><head></head><body>\n<button id="timeArch" type="button">Time</button>\n<button id="backButton" type="button">Back</button>\n<div id="archDetailPanel" aria-hidden="true"><div class="arch-detail-card"><div id="archDetailTitle" class="arch-detail-title"></div><div id="archDetailContent" class="arch-detail-content"></div></div></div>\n<div id="portfolioPanel" aria-hidden="true"></div>\n<div id="portfolioViewer"><div class="portfolio-viewer-actions"></div></div>\n<div id="portfolioTitle"></div>\n<button id="portfolioDeleteEvidence" type="button">Delete</button>\n<script>\nwindow.learnerProfile={startDate:\'2026-01-01\',endDate:\'2026-12-31\'};\nwindow.learningEntries=[{id:\'learn-1\',hours:60,learningDate:\'2026-09-03T12:00:00\',activityTitle:\'Workshop learning\'}];\nwindow.completedEvidencePaths=new Set();window.activeCourseTitle=\'Test course\';window.archDetailStack=[];\nwindow.courseProgressPercent=()=>55;window.completedCourseProgress=()=>({completed:42,total:100,percent:42});\nwindow.totalLearningRequirement=()=>100;window.learnerLearningHours=()=>60;window.loadAttendanceData=()=>({collegeLearningHours:10});\nwindow.courseLeaves=()=>Array.from({length:100});window.officialLearnerProfile=()=>({});window.inferredCourseMeta=()=>({courseType:\'standard\'});window.courseMetaMappings=()=>({});window.evidencePathKey=path=>JSON.stringify(path||[]);\nwindow.getPortfolioEntries=async()=>[{id:\'evidence-1\',createdAt:\'2026-09-04T12:00:00\',type:\'text\',mimeType:\'text/plain\',fileName:\'safe-working.txt\',path:[\'Health and safety\',\'K1\'],evidenceLabel:\'Safe working\',methodHeading:\'Written\',methodLabel:\'Reflection\'}];\nwindow.openArchShell=title=>{document.getElementById(\'archDetailTitle\').textContent=title;const p=document.getElementById(\'archDetailPanel\');p.classList.add(\'open\');p.setAttribute(\'aria-hidden\',\'false\')};\nwindow.closeArchDetail=()=>{const p=document.getElementById(\'archDetailPanel\');p.classList.remove(\'open\');p.setAttribute(\'aria-hidden\',\'true\')};window.updateBackButton=()=>{};\nwindow.openPortfolio=async()=>{const p=document.getElementById(\'portfolioPanel\');p.classList.add(\'open\');p.setAttribute(\'aria-hidden\',\'false\')};window.openEvidenceViewer=async entry=>{window.__openedEvidence=entry.id};\nwindow.closePortfolio=()=>{const p=document.getElementById(\'portfolioPanel\');p.classList.remove(\'open\');p.setAttribute(\'aria-hidden\',\'true\')};window.deleteActiveEvidence=async()=>{};\n</script></body></html>';
+const HARNESS = '<!doctype html><html><head></head><body>\n<button id="timeArch" type="button">Time</button>\n<button id="backButton" type="button">Back</button>\n<div id="archDetailPanel" aria-hidden="true"><div class="arch-detail-card"><div id="archDetailTitle" class="arch-detail-title"></div><div id="archDetailContent" class="arch-detail-content"></div></div></div>\n<div id="portfolioPanel" aria-hidden="true"></div>\n<div id="portfolioViewer"><div class="portfolio-viewer-actions"></div></div>\n<div id="portfolioTitle"></div>\n<button id="portfolioEditEvidence" type="button">Edit</button>\n<button id="portfolioDeleteEvidence" type="button">Delete</button>\n<button id="downloadPortfolio" type="button">Download ZIP</button>\n<script>\nwindow.learnerProfile={startDate:\'2026-01-01\',endDate:\'2026-12-31\'};\nwindow.learningEntries=[];\nwindow.completedEvidencePaths=new Set();window.activeCourseTitle=\'Test course\';window.archDetailStack=[];\nwindow.courseProgressPercent=()=>55;window.completedCourseProgress=()=>({completed:42,total:100,percent:42});\nwindow.totalLearningRequirement=()=>100;window.learnerLearningHours=()=>0;window.loadAttendanceData=()=>({collegeLearningHours:0});\nwindow.courseLeaves=()=>Array.from({length:100});window.officialLearnerProfile=()=>({});window.inferredCourseMeta=()=>({courseType:\'standard\'});window.courseMetaMappings=()=>({});window.evidencePathKey=path=>JSON.stringify(path||[]);\nwindow.getPortfolioEntries=async()=>[\n{id:\'sep-1\',createdAt:\'2026-09-02T12:00:00\',type:\'text\',mimeType:\'text/plain\',fileName:\'rams.txt\',path:[\'Health and safety\',\'K1\'],evidenceLabel:\'Follow RAMS, induction or toolbox information\'},\n{id:\'sep-2\',createdAt:\'2026-09-05T09:00:00\',type:\'photo\',mimeType:\'image/jpeg\',fileName:\'bond.jpg\',path:[\'Brickwork\',\'S1\'],evidenceLabel:\'Build a different bond or broken bond detail\'},\n{id:\'sep-3\',createdAt:\'2026-09-05T10:00:00\',type:\'text\',mimeType:\'text/plain\',fileName:\'sealant.txt\',path:[\'Health and safety\',\'K2\'],evidenceLabel:\'Apply sealant and manage paints or chemicals safely\'},\n{id:\'sep-4\',createdAt:\'2026-09-06T11:00:00\',type:\'text\',mimeType:\'text/plain\',fileName:\'plaster.txt\',path:[\'Repairs\',\'S2\'],evidenceLabel:\'Prepare and repair a plaster defect\'},\n{id:\'after-end\',createdAt:\'2027-01-06T11:00:00\',type:\'text\',mimeType:\'text/plain\',fileName:\'late.txt\',path:[\'Completion\',\'K3\'],evidenceLabel:\'Evidence after planned end date\'}\n];\nwindow.openArchShell=title=>{document.getElementById(\'archDetailTitle\').textContent=title;const p=document.getElementById(\'archDetailPanel\');p.classList.add(\'open\');p.setAttribute(\'aria-hidden\',\'false\')};\nwindow.closeArchDetail=()=>{const p=document.getElementById(\'archDetailPanel\');p.classList.remove(\'open\');p.setAttribute(\'aria-hidden\',\'true\')};window.updateBackButton=()=>{};\nwindow.openPortfolio=async()=>{const p=document.getElementById(\'portfolioPanel\');p.classList.add(\'open\');p.setAttribute(\'aria-hidden\',\'false\')};window.openEvidenceViewer=async entry=>{window.__openedEvidence=entry.id};\nwindow.closePortfolio=()=>{const p=document.getElementById(\'portfolioPanel\');p.classList.remove(\'open\');p.setAttribute(\'aria-hidden\',\'true\')};window.deleteActiveEvidence=async()=>{};\nwindow.downloadPortfolioZip=async()=>{window.__portfolioDownloaded=true};\nwindow.createZip=async()=>new Blob([\'zip\'],{type:\'application/zip\'});\n</script></body></html>';
 
 async function openHarness(browser) {
   const context = await browser.newContext({ serviceWorkers: 'block' });
   await context.route('http://127.0.0.1:4173/time-harness', route => route.fulfill({ status: 200, contentType: 'text/html', body: HARNESS }));
   const page = await context.newPage();
   await page.goto('http://127.0.0.1:4173/time-harness', { waitUntil: 'domcontentloaded' });
-  await page.addScriptTag({ url: 'http://127.0.0.1:4173/evia-approved-time-monthly-packs-v1.js?v=4' });
+  await page.addScriptTag({ url: 'http://127.0.0.1:4173/evia-approved-time-monthly-packs-v1.js?v=5' });
   await expect.poll(async () => page.evaluate(() => Boolean(window.EviaMonthlyPacks?.renderTimeTimeline))).toBeTruthy();
-  await page.evaluate(() => localStorage.setItem('eviaEpaPracticeReportsV1', JSON.stringify([{id:'epa-test-1',completedAt:'2026-09-05T12:00:00',type:'discussion',overall:'strong',strongAreas:['Explains checks clearly'],weakAreas:['Add more tolerances'],evidenceToRevisit:['Safe working'],nextActions:['Practise one follow-up'],itemCount:2}])));
   await page.evaluate(() => document.getElementById('timeArch').click());
   await expect(page.locator('.evia-time-screen')).toBeVisible();
   return { context, page };
 }
 
-test('Time renders and closes as the approved full-page three-line timeline', async ({ browser }) => {
+test('Time is a month-by-month evidence browser with a 70 percent month carousel', async ({ browser }) => {
   const { context, page } = await openHarness(browser);
   await expect(page.locator('#archDetailPanel')).toHaveClass(/evia-time-fullscreen/);
-  await expect(page.locator('[data-evia-time-close]')).toBeVisible();
-  await expect(page.locator('.evia-time-key')).toContainText('Course');
-  await expect(page.locator('.evia-time-key')).toContainText('Time');
-  await expect(page.locator('.evia-time-key')).toContainText('Learning');
-  await expect(page.locator('.evia-time-track.fill.course')).toHaveCSS('width', '2px');
-  await expect(page.locator('.evia-time-track.fill.time')).toHaveCSS('width', '4px');
-  await expect(page.locator('.evia-time-track.fill.learning')).toHaveCSS('width', '2px');
+  await expect(page.locator('.evia-time-month-carousel')).toBeVisible();
+  await expect(page.locator('[data-evia-time-month="2027-01"]')).toBeAttached();
 
-  const progress = await page.locator('.evia-time-screen').evaluate(node => ({
-    course: Number(node.dataset.courseProgress), time: Number(node.dataset.timeProgress), learning: Number(node.dataset.learningProgress)
-  }));
-  expect(progress.course).toBeCloseTo(42, 3);expect(progress.time).toBeCloseTo(55, 3);expect(progress.learning).toBeCloseTo(70, 3);
-  await expect(page.locator('.evia-time-month-marker[data-month="2026-09"] .evia-time-month-circle')).toContainText('SEP');
-  await expect(page.locator('.evia-time-month-marker[data-month="2026-09"] .evia-time-month-circle')).toContainText('2026');
-  const pack = page.locator('.evia-time-month-marker[data-month="2026-09"] .evia-time-pack-button');
-  await expect(pack).toHaveText('Download September pack');
-  await expect(page.locator('.evia-time-today-label')).toHaveText('TODAY');
-  await expect(page.locator('.evia-time-month-marker.side-left')).toHaveCount(6);
-  await expect(page.locator('.evia-time-month-marker.side-right')).toHaveCount(6);
-  await expect(page.locator('.evia-timeline-event.side-left, .evia-timeline-event.side-right').first()).toBeVisible();
-  await page.evaluate(async () => { localStorage.setItem('eviaMonthlyArchiveV1', JSON.stringify({'2026-09':{updatedAt:'2026-09-06T10:00:00Z'}})); await window.EviaMonthlyPacks.renderTimeTimeline(); });
-  await expect(page.locator('.evia-time-month-marker[data-month="2026-09"] .evia-time-pack-button')).toHaveText('✓ September pack downloaded');
-  await expect(page.locator('.evia-time-month-marker[data-month="2026-09"] .evia-time-pack-button')).toHaveClass(/downloaded/);
+  await page.locator('[data-evia-time-month="2026-09"]').click();
+  await expect(page.locator('[data-evia-time-month="2026-09"]')).toHaveClass(/active/);
+  await expect(page.locator('.evia-time-month-heading')).toHaveText('September 2026');
+  await expect(page.locator('.evia-time-month-count')).toHaveText('4 evidence submissions');
+  await expect(page.locator('.evia-time-evidence-card')).toHaveCount(4);
+  await expect(page.locator('.evia-time-evidence-card').nth(0)).toContainText('Follow RAMS');
+  await expect(page.locator('.evia-time-evidence-card').nth(3)).toContainText('Prepare and repair a plaster defect');
 
-  const report = page.locator('.evia-timeline-event.learner.epa .evia-timeline-event-button');
-  await expect(report.locator('.evia-timeline-event-date')).toHaveText('5th');
-  await expect(report).toContainText('EPA Practice - Interview');
-  await page.evaluate(() => document.querySelector('.evia-timeline-event.learner.epa .evia-timeline-event-button').click());
-  await expect(page.locator('.evia-timeline-event.learner.epa .evia-timeline-event-detail')).toContainText('Strong areas');
+  const widths = await page.evaluate(() => {
+    const carousel = document.querySelector('.evia-time-month-carousel');
+    const active = carousel.querySelector('.evia-time-month-option.active');
+    return { carousel: carousel.getBoundingClientRect().width, active: active.getBoundingClientRect().width };
+  });
+  expect(widths.active / widths.carousel).toBeGreaterThan(0.64);
+  expect(widths.active / widths.carousel).toBeLessThan(0.74);
 
-  await page.evaluate(() => document.querySelector('[data-evia-time-close]').click());
+  await page.locator('[data-evia-time-month="2027-01"]').click();
+  await expect(page.locator('.evia-time-month-heading')).toHaveText('January 2027');
+  await expect(page.locator('.evia-time-evidence-card')).toHaveCount(1);
+  await expect(page.locator('.evia-time-evidence-card')).toContainText('Evidence after planned end date');
+
+  await page.locator('[data-evia-time-close]').click();
   await expect(page.locator('#archDetailPanel')).toHaveAttribute('aria-hidden', 'true');
-  await expect(page.locator('#archDetailPanel')).not.toHaveClass(/evia-time-fullscreen/);
   await context.close();
 });
 
-test('Time evidence uses the compact date-name label and opens the existing viewer', async ({ browser }) => {
+test('Time evidence opens the existing editable portfolio viewer and download offers month or whole portfolio', async ({ browser }) => {
   const { context, page } = await openHarness(browser);
-  const evidence = page.locator('.evia-timeline-event.learner.evidence .evia-timeline-event-button');
-  await expect(evidence.locator('.evia-timeline-event-date')).toHaveText('4th');
-  await expect(evidence).toContainText('Safe working');
-  await expect(evidence.locator('span[aria-hidden="true"]')).toHaveCount(0);
-  await page.evaluate(() => document.querySelector('.evia-timeline-event.learner.evidence .evia-timeline-event-button').click());
-  await expect.poll(async () => page.evaluate(() => window.__openedEvidence || '')).toBe('evidence-1');
+  await page.locator('[data-evia-time-month="2026-09"]').click();
+  await page.locator('.evia-time-evidence-card').nth(1).click();
+  await expect.poll(async () => page.evaluate(() => window.__openedEvidence || '')).toBe('sep-2');
+  await expect(page.locator('#portfolioEditEvidence')).toBeAttached();
+
+  await page.evaluate(() => document.getElementById('backButton').click());
+  await expect(page.locator('.evia-time-screen')).toBeVisible();
+
+  await page.locator('[data-evia-time-download]').click();
+  await expect(page.locator('[data-evia-download-month]')).toHaveText('Download month');
+  await expect(page.locator('[data-evia-download-portfolio]')).toHaveText('Download portfolio');
+  await page.locator('[data-evia-download-portfolio]').click();
+  await expect.poll(async () => page.evaluate(() => Boolean(window.__portfolioDownloaded))).toBeTruthy();
   await context.close();
 });
 
-test('Time has one source of truth and reuses the existing progress calculations', async () => {
-  const html = fs.readFileSync('index.html','utf8');const time = fs.readFileSync('evia-approved-time-monthly-packs-v1.js','utf8');
-  const manifest = fs.readFileSync('evia-runtime-manifest.js','utf8');const worker = fs.readFileSync('service-worker.js','utf8');
-  expect(html).not.toContain('function renderTimePage()');expect(html).not.toContain("timeArch.addEventListener('click', renderTimePage)");expect(html).not.toContain('.time-epa-marker');
-  expect((time.match(/function renderTimeTimeline\(/g)||[]).length).toBe(1);expect((manifest.match(/evia-approved-time-monthly-packs-v1\.js/g)||[]).length).toBe(1);
-  expect(manifest).toContain("'./evia-approved-time-monthly-packs-v1.js?v=4'");expect(time).toContain("typeof courseProgressPercent==='function'");expect(time).toContain("typeof completedCourseProgress==='function'");expect(time).toContain("typeof learnerLearningHours==='function'");
-  expect(worker).toContain("const C='evia-pwa-v85'");expect(worker).toContain("const RELEASE_VERSION='1.1'");expect(worker).not.toContain('client.navigate(');expect(worker).not.toContain('__evia_refresh');
+test('Time keeps one source of truth and the existing portfolio edit contract', async () => {
+  const html = fs.readFileSync('index.html','utf8');
+  const time = fs.readFileSync('evia-approved-time-monthly-packs-v1.js','utf8');
+  const manifest = fs.readFileSync('evia-runtime-manifest.js','utf8');
+  const worker = fs.readFileSync('service-worker.js','utf8');
+  expect(html).not.toContain('function renderTimePage()');
+  expect((time.match(/function renderTimeTimeline\(/g)||[]).length).toBe(1);
+  expect((manifest.match(/evia-approved-time-monthly-packs-v1\.js/g)||[]).length).toBe(1);
+  expect(manifest).toContain("'./evia-approved-time-monthly-packs-v1.js?v=5'");
+  expect(time).toContain('evia-time-month-carousel');
+  expect(time).toContain('padding:7px 15%');
+  expect(time).toContain('buildEvidenceMonthPack');
+  expect(time).toContain('Download portfolio');
+  expect(time).toContain('latestEvidence&&latestEvidence>end');
+  expect(html).toContain("portfolioEditEvidence.addEventListener('click'");
+  expect(worker).toContain("const C='evia-pwa-v85'");
+  expect(worker).toContain("const RELEASE_VERSION='1.1'");
 });
