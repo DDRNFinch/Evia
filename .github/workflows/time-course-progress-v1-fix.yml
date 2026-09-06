@@ -1,0 +1,51 @@
+name: Time course progress v1 fix
+
+on:
+  push:
+    branches: [time-course-progress-v1]
+    paths:
+      - '.github/workflows/time-course-progress-v1-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: time-course-progress-v1
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Fix patch ordering
+        run: python .github/time-course-progress-v1-fix.py
+      - name: Apply approved Time course progress update
+        run: python .github/time-course-progress-v1.py
+      - name: Verify source syntax
+        run: |
+          node --check evia-approved-time-monthly-packs-v1.js
+          node --check evia-runtime-manifest.js
+          node --check tests/time-only-redesign.spec.js
+      - name: Install test dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run Time and EPA integration regressions
+        run: npx playwright test tests/time-only-redesign.spec.js tests/epa-menu.spec.js --reporter=line
+      - name: Run complete Evia smoke suite
+        run: npm run test:smoke
+      - name: Verify approved change scope only
+        run: |
+          git diff --name-only HEAD | sort > /tmp/changed
+          printf '%s\n' evia-approved-time-monthly-packs-v1.js evia-runtime-manifest.js tests/time-only-redesign.spec.js | sort > /tmp/allowed
+          diff -u /tmp/allowed /tmp/changed
+      - name: Commit verified Time update and remove temporary tooling
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/time-course-progress-v1.py .github/time-course-progress-v1-fix.py .github/workflows/time-course-progress-v1.yml .github/workflows/time-course-progress-v1-fix.yml
+          git add evia-approved-time-monthly-packs-v1.js evia-runtime-manifest.js tests/time-only-redesign.spec.js
+          git commit -m 'Add Time course progress and month navigation'
+          git push origin HEAD:time-course-progress-v1
