@@ -25,11 +25,12 @@ time = time.replace(old_detail, new_detail, 1)
 TIME.write_text(time, encoding='utf-8')
 
 test = TEST.read_text(encoding='utf-8')
-seed_after = "window.completedEvidencePaths=new Set();window.activeCourseTitle='Test course';window.archDetailStack=[];"
-seed = seed_after + "\nlocalStorage.setItem('eviaEpaPracticeReportsV1',JSON.stringify([{id:'epa-test-1',completedAt:'2026-09-05T12:00:00',type:'discussion',overall:'strong',strongAreas:['Explains checks clearly'],weakAreas:['Add more tolerances'],evidenceToRevisit:['Safe working'],nextActions:['Practise one follow-up'],itemCount:2}]));"
-if test.count(seed_after) != 1:
-    raise SystemExit('Expected Time harness seed point')
-test = test.replace(seed_after, seed, 1)
+open_marker = "  await expect.poll(async () => page.evaluate(() => Boolean(window.EviaMonthlyPacks?.renderTimeTimeline))).toBeTruthy();\n  await page.evaluate(() => document.getElementById('timeArch').click());"
+open_replacement = "  await expect.poll(async () => page.evaluate(() => Boolean(window.EviaMonthlyPacks?.renderTimeTimeline))).toBeTruthy();\n  await page.evaluate(() => localStorage.setItem('eviaEpaPracticeReportsV1', JSON.stringify([{id:'epa-test-1',completedAt:'2026-09-05T12:00:00',type:'discussion',overall:'strong',strongAreas:['Explains checks clearly'],weakAreas:['Add more tolerances'],evidenceToRevisit:['Safe working'],nextActions:['Practise one follow-up'],itemCount:2}])));\n  await page.evaluate(() => document.getElementById('timeArch').click());"
+if test.count(open_marker) != 1:
+    raise SystemExit('Expected one Time harness open marker')
+test = test.replace(open_marker, open_replacement, 1)
+
 insert_before = "  await context.close();\n});\n\ntest('Time evidence uses the compact date-name label and opens the existing viewer'"
 report_assertions = "  const report = page.locator('.evia-timeline-event.learner.epa .evia-timeline-event-button');\n  await expect(report).toContainText('5th - EPA Practice - Interview');\n  await page.evaluate(() => document.querySelector('.evia-timeline-event.learner.epa .evia-timeline-event-button').click());\n  await expect(page.locator('.evia-timeline-event.learner.epa .evia-timeline-event-detail')).toContainText('Strong areas');\n\n  await context.close();\n});\n\ntest('Time evidence uses the compact date-name label and opens the existing viewer'"
 if test.count(insert_before) != 1:
