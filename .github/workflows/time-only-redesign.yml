@@ -41,6 +41,16 @@ jobs:
           python .github/time-only-test-fix.py
           python .github/time-only-runtime-test-fix.py
           python .github/time-runtime-stability.py
+          python - <<'PY'
+          from pathlib import Path
+          path=Path('tests/time-only-redesign.spec.js')
+          text=path.read_text(encoding='utf-8')
+          old="expect(worker).toContain(\"const C='evia-pwa-v85'\");expect(worker).toContain(\"url.searchParams.set('__evia_refresh','85')\");"
+          new="expect(worker).toContain(\"const C='evia-pwa-v85'\");expect(worker).toContain(\"const RELEASE_VERSION='1.1'\");expect(worker).not.toContain('client.navigate(');expect(worker).not.toContain('__evia_refresh');"
+          if text.count(old) != 1:
+              raise SystemExit('Expected one old Time service-worker assertion')
+          path.write_text(text.replace(old,new,1),encoding='utf-8')
+          PY
 
       - name: Verify source boundaries and syntax
         run: |
