@@ -77,7 +77,7 @@ RELEASE.write_text(json.dumps(release, indent=2) + '\n', encoding='utf-8')
 # 4) EPA timeline smoke data must include the real Time prerequisite: course dates.
 epa = EPA_MENU_TEST.read_text(encoding='utf-8')
 seed_marker = "  await app.evaluate(() => {\n    localStorage.setItem('eviaEpaPracticeReportsV1'"
-seed_replacement = "  await app.evaluate(() => {\n    learnerProfile.startDate='2026-01-01';\n    learnerProfile.endDate='2026-12-31';\n    if(typeof saveLearnerProfile==='function')saveLearnerProfile();\n    localStorage.setItem('eviaEpaPracticeReportsV1'"
+seed_replacement = "  await app.evaluate(() => {\n    learnerProfile.startDate='2026-01-01';\n    learnerProfile.endDate='2026-12-31';\n    localStorage.setItem('eviaEpaPracticeReportsV1'"
 if epa.count(seed_marker) != 1:
     raise SystemExit('Expected one EPA report smoke seed block')
 epa = epa.replace(seed_marker, seed_replacement, 1)
