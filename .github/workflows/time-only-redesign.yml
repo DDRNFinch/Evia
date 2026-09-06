@@ -99,7 +99,12 @@ jobs:
             tests/epa-menu.spec.js \
             tests/runtime-manifest.spec.js \
             tests/time-only-redesign.spec.js | sort > /tmp/allowed
-          diff -u /tmp/allowed /tmp/changed
+          unexpected="$(comm -23 /tmp/changed /tmp/allowed)"
+          if [ -n "$unexpected" ]; then
+            echo 'Unexpected files changed:'
+            printf '%s\n' "$unexpected"
+            exit 1
+          fi
 
       - name: Commit verified branch and remove temporary tooling
         run: |
