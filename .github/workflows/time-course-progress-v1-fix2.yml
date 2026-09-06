@@ -47,7 +47,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git rm .github/time-course-progress-v1.py .github/time-course-progress-v1-fix.py .github/time-course-progress-v1-fix2.py .github/workflows/time-course-progress-v1.yml .github/workflows/time-course-progress-v1-fix.yml .github/workflows/time-course-progress-v1-fix2.yml
+          git rm -f .github/time-course-progress-v1.py .github/time-course-progress-v1-fix.py .github/time-course-progress-v1-fix2.py .github/workflows/time-course-progress-v1.yml .github/workflows/time-course-progress-v1-fix.yml .github/workflows/time-course-progress-v1-fix2.yml
           git add evia-approved-time-monthly-packs-v1.js evia-runtime-manifest.js tests/time-only-redesign.spec.js
           git commit -m 'Add Time course progress and month navigation'
           git push origin HEAD:time-course-progress-v1
