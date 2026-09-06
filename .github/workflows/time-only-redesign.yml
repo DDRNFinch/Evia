@@ -1,4 +1,4 @@
-# final verification with deterministic Time test setup
+# final verification with explicit Time close handoff and report ordering
 name: Time-only redesign
 
 on:
