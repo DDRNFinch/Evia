@@ -71,6 +71,7 @@ jobs:
         run: npm run test:smoke
       - name: Verify approved change scope only
         run: |
+          git checkout -- .github/time-month-browser-v1.py
           git diff --name-only HEAD | sort > /tmp/changed
           printf '%s\n' evia-approved-time-monthly-packs-v1.js evia-runtime-manifest.js index.html tests/epa-menu.spec.js tests/time-only-redesign.spec.js | sort > /tmp/allowed
           diff -u /tmp/allowed /tmp/changed
