@@ -46,22 +46,22 @@ MANIFEST.write_text(manifest.replace(old_m,new_m,1),encoding='utf-8')
 
 test=TEST.read_text(encoding='utf-8')
 test=test.replace("evia-approved-time-monthly-packs-v1.js?v=7","evia-approved-time-monthly-packs-v1.js?v=8")
-old_entry="{id:'sep-4',createdAt:'2026-09-06T11:00:00',type:'text',mimeType:'text/plain',fileName:'plaster.txt',path:['Repairs','S2'],evidenceLabel:'Prepare and repair a plaster defect'},"
-new_entries="""{id:'plaster-photo-1',createdAt:'2026-09-06T09:00:00',type:'photo',mimeType:'image/jpeg',fileName:'plaster-1.jpg',path:['Repairs','S2'],evidenceLabel:'Prepare and repair a plaster defect'},
-{id:'plaster-photo-2',createdAt:'2026-09-06T09:05:00',type:'photo',mimeType:'image/jpeg',fileName:'plaster-2.jpg',path:['Repairs','S2'],evidenceLabel:'Prepare and repair a plaster defect'},
-{id:'plaster-photo-3',createdAt:'2026-09-06T09:10:00',type:'photo',mimeType:'image/jpeg',fileName:'plaster-3.jpg',path:['Repairs','S2'],evidenceLabel:'Prepare and repair a plaster defect'},
-{id:'plaster-audio',createdAt:'2026-09-06T09:15:00',type:'audio',mimeType:'audio/webm',fileName:'plaster.webm',path:['Repairs','S2'],evidenceLabel:'Prepare and repair a plaster defect'},"""
+old_entry=r"{id:\'sep-4\',createdAt:\'2026-09-06T11:00:00\',type:\'text\',mimeType:\'text/plain\',fileName:\'plaster.txt\',path:[\'Repairs\',\'S2\'],evidenceLabel:\'Prepare and repair a plaster defect\'},"
+new_entries=r"""{id:\'plaster-photo-1\',createdAt:\'2026-09-06T09:00:00\',type:\'photo\',mimeType:\'image/jpeg\',fileName:\'plaster-1.jpg\',path:[\'Repairs\',\'S2\'],evidenceLabel:\'Prepare and repair a plaster defect\'},\n{id:\'plaster-photo-2\',createdAt:\'2026-09-06T09:05:00\',type:\'photo\',mimeType:\'image/jpeg\',fileName:\'plaster-2.jpg\',path:[\'Repairs\',\'S2\'],evidenceLabel:\'Prepare and repair a plaster defect\'},\n{id:\'plaster-photo-3\',createdAt:\'2026-09-06T09:10:00\',type:\'photo\',mimeType:\'image/jpeg\',fileName:\'plaster-3.jpg\',path:[\'Repairs\',\'S2\'],evidenceLabel:\'Prepare and repair a plaster defect\'},\n{id:\'plaster-audio\',createdAt:\'2026-09-06T09:15:00\',type:\'audio\',mimeType:\'audio/webm\',fileName:\'plaster.webm\',path:[\'Repairs\',\'S2\'],evidenceLabel:\'Prepare and repair a plaster defect\'},"""
 if test.count(old_entry)!=1: raise SystemExit('Time test plaster anchor changed')
 test=test.replace(old_entry,new_entries,1)
 
-test=test.replace("await expect(page.locator('.evia-time-evidence-card').nth(3)).toContainText('Prepare and repair a plaster defect');","await expect(page.locator('.evia-time-evidence-card').nth(3)).toContainText('Prepare and repair a plaster defect');\n  await expect(page.locator('.evia-time-evidence-card').nth(3)).toContainText('3 Photos · 1 Audio');")
-test=test.replace("await expect(page.locator('[data-evia-month-pick=\"2026-09\"] em')).toHaveText('4');","await expect(page.locator('[data-evia-month-pick=\"2026-09\"] em')).toHaveText('7');")
+needle="await expect(page.locator('.evia-time-evidence-card').nth(3)).toContainText('Prepare and repair a plaster defect');"
+if test.count(needle)!=1: raise SystemExit('Time grouped card assertion anchor changed')
+test=test.replace(needle,needle+"\n  await expect(page.locator('.evia-time-evidence-card').nth(3)).toContainText('3 Photos · 1 Audio');",1)
+old_count="await expect(page.locator('[data-evia-month-pick=\"2026-09\"] em')).toHaveText('4');"
+if test.count(old_count)!=1: raise SystemExit('Time month evidence count anchor changed')
+test=test.replace(old_count,"await expect(page.locator('[data-evia-month-pick=\"2026-09\"] em')).toHaveText('7');",1)
 old_open="await page.locator('.evia-time-evidence-card').nth(1).click();\n  await expect.poll(async () => page.evaluate(() => window.__openedEvidence || '')).toBe('sep-2');\n  await expect(page.locator('#portfolioEditEvidence')).toBeAttached();"
 new_open="await page.locator('.evia-time-evidence-card').nth(3).click();\n  await expect.poll(async () => page.evaluate(() => window.__openedEvidence || '')).toBe('plaster-photo-1');\n  await expect(page.locator('.evia-timeline-evidence-nav')).toBeVisible();\n  await expect(page.locator('.evia-timeline-evidence-nav span')).toHaveText('1 of 4');\n  await page.locator('[data-evia-timeline-next]').click();\n  await expect.poll(async () => page.evaluate(() => window.__openedEvidence || '')).toBe('plaster-photo-2');\n  await expect(page.locator('.evia-timeline-evidence-nav span')).toHaveText('2 of 4');\n  await expect(page.locator('#portfolioEditEvidence')).toBeAttached();"
 if test.count(old_open)!=1: raise SystemExit('Time test viewer anchor changed')
 test=test.replace(old_open,new_open,1)
 old_contract="expect(manifest).toContain(\"'./evia-approved-time-monthly-packs-v1.js?v=8'\");"
-# v8 replacement above already updates source contract. Add grouping checks immediately afterwards.
 if test.count(old_contract)!=1: raise SystemExit('Time test manifest contract changed')
 test=test.replace(old_contract,old_contract+"\n  expect(time).toContain('timeVisibleGroups');\n  expect(time).toContain('data-evia-time-group');\n  expect(time).toContain('evidenceGroupTypeSummary');",1)
 TEST.write_text(test,encoding='utf-8')
