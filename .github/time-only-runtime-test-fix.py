@@ -37,11 +37,11 @@ if test.count(open_marker) != 1:
     raise SystemExit('Expected one Time harness open marker')
 test = test.replace(open_marker, open_replacement, 1)
 
-close_marker = "  await page.evaluate(() => document.querySelector('[data-evia-time-close]').click());"
-report_assertions = "  const report = page.locator('.evia-timeline-event.learner.epa .evia-timeline-event-button');\n  await expect(report).toContainText('5th - EPA Practice - Interview');\n  await page.evaluate(() => document.querySelector('.evia-timeline-event.learner.epa .evia-timeline-event-button').click());\n  await expect(page.locator('.evia-timeline-event.learner.epa .evia-timeline-event-detail')).toContainText('Strong areas');\n\n  await page.evaluate(() => document.querySelector('[data-evia-time-close]').click());"
-if test.count(close_marker) != 1:
-    raise SystemExit('Expected one Time close assertion point')
-test = test.replace(close_marker, report_assertions, 1)
+close_block = "  await page.evaluate(() => document.querySelector('[data-evia-time-close]').click());\n  await expect(page.locator('#archDetailPanel')).toHaveAttribute('aria-hidden', 'true');\n  await expect(page.locator('#archDetailPanel')).not.toHaveClass(/evia-time-fullscreen/);"
+report_and_close = "  const report = page.locator('.evia-timeline-event.learner.epa .evia-timeline-event-button');\n  await expect(report).toContainText('5th - EPA Practice - Interview');\n  await page.evaluate(() => document.querySelector('.evia-timeline-event.learner.epa .evia-timeline-event-button').click());\n  await expect(page.locator('.evia-timeline-event.learner.epa .evia-timeline-event-detail')).toContainText('Strong areas');\n\n  const closedState = await page.evaluate(async () => { document.querySelector('[data-evia-time-close]').click(); await new Promise(resolve => setTimeout(resolve, 100)); const panel=document.getElementById('archDetailPanel'); return { aria: panel.getAttribute('aria-hidden'), classes: panel.className, closeType: typeof window.closeArchDetail }; });\n  console.log('TIME_CLOSE_STATE', JSON.stringify(closedState));\n  expect(closedState.aria).toBe('true');\n  expect(closedState.classes).not.toContain('evia-time-fullscreen');"
+if test.count(close_block) != 1:
+    raise SystemExit('Expected one Time close verification block')
+test = test.replace(close_block, report_and_close, 1)
 TEST.write_text(test, encoding='utf-8')
 
 s = RUNTIME_TEST.read_text(encoding='utf-8')
