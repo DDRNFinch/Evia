@@ -22,11 +22,6 @@ new=old+"  await page.addScriptTag({ url: 'http://127.0.0.1:4173/evia-evidence-k
 if t.count(old)!=1: raise SystemExit('viewer test script anchor changed')
 t=t.replace(old,new,1)
 
-old="      { id:'p1', createdAt:'2026-09-05T09:00:00', type:'photo', mimeType:'image/png', fileName:'photo-1.png', path:['Unit A','Skill one'], evidenceLabel:'Build a test wall', blob:photo('1') },"
-new="      { id:'p1', createdAt:'2026-09-05T09:00:00', type:'photo', mimeType:'image/png', fileName:'photo-1.png', path:['Unit A','Skill one'], evidenceLabel:'Build a test wall', blob:photo('1') },"
-# no-op anchor validation for readability
-if t.count(old)!=1: raise SystemExit('viewer evidence fixture changed')
-
 t=t.replace("window.courseMetaMappings=()=>({K1:[\"Unit A\",\"Skill one\"],S2:[\"Unit A\",\"Skill two\"]});","window.courseMetaMappings=()=>({K1:[\"Unit A\",\"Skill one\"],K22:[\"Unit A\",\"Skill one\"],S2:[\"Unit A\",\"Skill two\"]});",1)
 old_opts="      scopeType:'month', scopeLabel:'September 2026', course:'Test Standard', learner:{firstName:'Test',lastName:'Learner'}\n    });\n    return { names:files.map(file=>file.name), html:new TextDecoder().decode(files[0].data), readme:new TextDecoder().decode(files[1].data) };"
 new_opts="      scopeType:'month', scopeLabel:'September 2026', course:'Test Standard', learner:{firstName:'Test',lastName:'Learner'},\n      epaPlan:{ courseId:'TEST', planVersion:'1.0', title:'Test Standard EPA', methodLabels:{'multiple-choice-test':'Multiple-choice test','practical-assessment-with-questions':'Practical assessment with questions','interview-underpinned-by-portfolio':'Interview underpinned by a portfolio of evidence'}, ksbMethods:{K1:'multiple-choice-test',K22:'practical-assessment-with-questions',S2:'interview-underpinned-by-portfolio'} }\n    });\n    const mapping=files.find(file=>file.name==='KSB Evidence Mapping.pdf');\n    return { names:files.map(file=>file.name), html:new TextDecoder().decode(files[0].data), readme:new TextDecoder().decode(files[1].data), mappingHead:new TextDecoder().decode(mapping.data.slice(0,8)) };"
@@ -40,7 +35,7 @@ t=t.replace(anchor,anchor+"  expect(built.html).toContain('KSB Evidence Index');
 
 anchor="  await expect(page.locator('#slide')).toContainText('5 evidence files');\n\n"
 if t.count(anchor)!=1: raise SystemExit('overview assertion anchor changed')
-t=t.replace(anchor,anchor+"  await page.locator('#ksbBtn').click();\n  await expect(page.locator('#slide')).toContainText('KSB Evidence Index');\n  await expect(page.locator('#slide')).toContainText('K22');\n  await expect(page.locator('#slide')).toContainText('EV-001');\n  await page.locator('#ksbSearch').fill('K22');\n  await expect(page.locator('.ksb-row')).toHaveCount(1);\n  await page.locator('[data-ksb-jump=\"1\"]').click();\n  await expect(page.locator('#slide')).toContainText('EV-001');\n  await expect(page.locator('#slide')).toContainText('Build a test wall');\n\n",1)
+t=t.replace(anchor,anchor+"  await page.locator('#ksbBtn').click();\n  await expect(page.locator('#slide')).toContainText('KSB Evidence Index');\n  await expect(page.locator('#slide')).toContainText('K22');\n  await expect(page.locator('#slide')).toContainText('EV-001');\n  await page.locator('#ksbSearch').fill('K22');\n  await expect(page.locator('.ksb-row')).toHaveCount(1);\n  await page.locator('[data-ksb-jump=\"1\"]').click();\n  await expect(page.locator('#slide')).toContainText('EV-001');\n  await expect(page.locator('#slide')).toContainText('Build a test wall');\n  await page.locator('#prev').click();\n  await expect(page.locator('#slide')).toContainText('2 evidence sections');\n\n",1)
 
 anchor="  expect(manifest).toContain(\"'./evia-evidence-viewer-pack-v2.js?v=2'\");\n"
 if t.count(anchor)!=1: raise SystemExit('manifest contract anchor changed')
