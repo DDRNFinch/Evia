@@ -26,8 +26,13 @@ if manifest.count(old)!=1:
     raise SystemExit('Runtime manifest anchor changed')
 MANIFEST.write_text(manifest.replace(old,new,1),encoding='utf-8')
 
-# Full portfolio ZIP: keep every existing file, then append the viewer files immediately before ZIP creation.
+# Full portfolio ZIP: keep every existing file, append the viewer files, and keep direct runtime ordering aligned.
 index=INDEX.read_text(encoding='utf-8')
+direct_old='  <script src="./evia-approved-witness-video-v1.js"></script>\n  <script src="./evia-approved-time-monthly-packs-v1.js?v=5"></script>'
+direct_new='  <script src="./evia-approved-witness-video-v1.js"></script>\n  <script src="./evia-evidence-viewer-pack-v1.js?v=1"></script>\n  <script src="./evia-approved-time-monthly-packs-v1.js?v=5"></script>'
+if index.count(direct_old)!=1:
+    raise SystemExit(f'Direct runtime anchor expected once, got {index.count(direct_old)}')
+index=index.replace(direct_old,direct_new,1)
 anchor="        const zipBlob = await createZip(files);"
 insert="""        if (globalThis.EviaEvidencePackViewer?.buildViewerFiles) {
           try {
