@@ -1,4 +1,4 @@
-# rerun after fixing the EPA timeline smoke profile seed
+# rerun after aligning the EPA identity regression with explicit first-load runtime
 name: Time and runtime stability
 
 on:
@@ -95,6 +95,7 @@ jobs:
             evia-runtime-manifest.js \
             index.html \
             service-worker.js \
+            tests/epa-home-evia-v84.spec.js \
             tests/epa-menu.spec.js \
             tests/runtime-manifest.spec.js \
             tests/time-only-redesign.spec.js | sort > /tmp/allowed
@@ -112,6 +113,7 @@ jobs:
             evia-runtime-manifest.js \
             index.html \
             service-worker.js \
+            tests/epa-home-evia-v84.spec.js \
             tests/epa-menu.spec.js \
             tests/runtime-manifest.spec.js \
             tests/time-only-redesign.spec.js
