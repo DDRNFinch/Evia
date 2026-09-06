@@ -1,4 +1,4 @@
-name: Time-only redesign diagnostic
+name: Time and runtime stability
 
 on:
   push:
@@ -7,12 +7,12 @@ on:
       - '.github/workflows/time-only-redesign.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  diagnose:
+  verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -21,52 +21,88 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Save original files
-        run: |
-          mkdir -p /tmp/original
-          cp service-worker.js /tmp/original/service-worker.js
-          cp evia-runtime-manifest.js /tmp/original/evia-runtime-manifest.js
-          cp evia-approved-time-monthly-packs-v1.js /tmp/original/evia-approved-time-monthly-packs-v1.js
-          cp index.html /tmp/original/index.html
-      - name: Apply corrected candidate
+
+      - name: Apply the precise Time source boundary
         run: |
           python - <<'PY'
           from pathlib import Path
           path=Path('.github/time-only-redesign.py')
           text=path.read_text(encoding='utf-8')
-          text=text.replace("b_marker = '    function renderCoursePage() {'", "b_marker = '    function courseMetaMappings() {'", 1)
-          path.write_text(text,encoding='utf-8')
+          old="b_marker = '    function renderCoursePage() {'"
+          new="b_marker = '    function courseMetaMappings() {'"
+          if text.count(old) != 1:
+              raise SystemExit('Expected one original Time removal boundary')
+          path.write_text(text.replace(old,new,1),encoding='utf-8')
           PY
+
+      - name: Build the approved Time and runtime candidate
+        run: |
           python .github/time-only-redesign.py
           python .github/time-only-test-fix.py
           python .github/time-only-runtime-test-fix.py
-          npm install --no-audit --no-fund
-      - name: Isolate EPA homepage identity interaction
+          python .github/time-runtime-stability.py
+
+      - name: Verify source boundaries and syntax
         run: |
-          set +e
-          echo '=== A candidate ==='
-          npx playwright test tests/epa-home-evia-v84.spec.js --reporter=line
-          A=$?
-          echo "A=$A"
-          echo '=== B restore service worker ==='
-          cp /tmp/original/service-worker.js service-worker.js
-          npx playwright test tests/epa-home-evia-v84.spec.js --reporter=line
-          B=$?
-          echo "B=$B"
-          echo '=== C restore runtime manifest ==='
-          cp /tmp/original/evia-runtime-manifest.js evia-runtime-manifest.js
-          npx playwright test tests/epa-home-evia-v84.spec.js --reporter=line
-          C=$?
-          echo "C=$C"
-          echo '=== D restore Time runtime ==='
-          cp /tmp/original/evia-approved-time-monthly-packs-v1.js evia-approved-time-monthly-packs-v1.js
-          npx playwright test tests/epa-home-evia-v84.spec.js --reporter=line
-          D=$?
-          echo "D=$D"
-          echo '=== E restore index ==='
-          cp /tmp/original/index.html index.html
-          npx playwright test tests/epa-home-evia-v84.spec.js --reporter=line
-          E=$?
-          echo "E=$E"
-          echo "RESULTS A=$A B=$B C=$C D=$D E=$E"
-          exit 0
+          grep -F "function courseMetaMappings()" index.html
+          grep -F "function inferredCourseMeta()" index.html
+          if grep -Fq "function renderTimePage()" index.html; then
+            echo 'Superseded Time renderer still exists'
+            exit 1
+          fi
+          node --check evia-approved-time-monthly-packs-v1.js
+          node --check evia-runtime-manifest.js
+          node --check service-worker.js
+          node --check evia-approved-updates-stable-v1.js
+
+      - name: Install test dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Verify runtime architecture
+        run: npx playwright test tests/runtime-manifest.spec.js --reporter=line
+
+      - name: Verify Time and EPA integrations
+        run: |
+          npx playwright test tests/time-only-redesign.spec.js --reporter=line
+          npx playwright test tests/epa-mcq-bank.spec.js --reporter=line
+          npx playwright test tests/epa-menu.spec.js --reporter=line
+          npx playwright test tests/epa-home-evia-v84.spec.js --repeat-each=3 --reporter=line
+
+      - name: Verify core learner surfaces
+        run: npx playwright test tests/evia-smoke.spec.js --grep "core learner surfaces" --reporter=line
+
+      - name: Run complete Evia smoke suite
+        run: npm run test:smoke
+
+      - name: Verify only intended final files changed
+        run: |
+          git diff --name-only HEAD | grep -v '^.github/time-' | grep -v '^.github/workflows/time-only-redesign.yml$' | sort > /tmp/changed
+          printf '%s\n' \
+            evia-approved-time-monthly-packs-v1.js \
+            evia-approved-updates-stable-v1.js \
+            evia-release.json \
+            evia-runtime-manifest.js \
+            index.html \
+            service-worker.js \
+            tests/epa-menu.spec.js \
+            tests/runtime-manifest.spec.js \
+            tests/time-only-redesign.spec.js | sort > /tmp/allowed
+          diff -u /tmp/allowed /tmp/changed
+
+      - name: Commit verified branch and remove temporary tooling
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/time-only-redesign.py .github/time-only-test-fix.py .github/time-only-runtime-test-fix.py .github/time-runtime-stability.py .github/workflows/time-only-redesign.yml
+          git add \
+            evia-approved-time-monthly-packs-v1.js \
+            evia-approved-updates-stable-v1.js \
+            evia-release.json \
+            evia-runtime-manifest.js \
+            index.html \
+            service-worker.js \
+            tests/epa-menu.spec.js \
+            tests/runtime-manifest.spec.js \
+            tests/time-only-redesign.spec.js
+          git commit -m 'Stabilize Time and runtime startup'
+          git push origin HEAD:time-only-redesign
