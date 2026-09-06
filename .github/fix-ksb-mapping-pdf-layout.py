@@ -30,7 +30,7 @@ new_assert = "expect(built.mappingHead).toBe('%PDF-1.4');\n  expect(built.mappin
 if test.count(old_assert) != 1:
     raise SystemExit('Expected one mapping PDF header assertion')
 test = test.replace(old_assert, new_assert, 1)
-if test.count("evia-evidence-ksb-index-v1.js?v=1") != 2:
-    raise SystemExit('Expected two KSB index v1 test references')
+if test.count("evia-evidence-ksb-index-v1.js?v=1") != 3:
+    raise SystemExit('Expected three KSB index v1 test references')
 test = test.replace("evia-evidence-ksb-index-v1.js?v=1", "evia-evidence-ksb-index-v1.js?v=2")
 test_path.write_text(test, encoding='utf-8')
