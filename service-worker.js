@@ -1,10 +1,10 @@
 importScripts('./evia-runtime-manifest.js');
 
-const C='evia-pwa-v84';
+const C='evia-pwa-v85';
 const UPDATE_UI_MARKER='evia-update-ui-ready-v1';
-const RELEASE_VERSION='1.0';
+const RELEASE_VERSION='1.1';
 const RELEASE_MARKER_URL=new URL('./__evia-visible-release-version__',self.registration.scope).href;
-const INTERNAL_RELOAD_MARKER_URL=new URL('./__evia-internal-reload__',self.registration.scope).href;
+const LEGACY_INTERNAL_RELOAD_MARKER_URL=new URL('./__evia-internal-reload__',self.registration.scope).href;
 const OPTIONAL_OFFLINE_MARKER_URL=new URL('./__evia-optional-offline-v5__',self.registration.scope).href;
 const RUNTIME_SCRIPTS=Array.isArray(globalThis.EVIA_RUNTIME_SCRIPTS)?[...globalThis.EVIA_RUNTIME_SCRIPTS]:[];
 if(!RUNTIME_SCRIPTS.length)throw new Error('Evia runtime manifest is unavailable.');
@@ -121,8 +121,7 @@ self.addEventListener('install',e=>{
     const prepared=htmlResponse(await index.text(),index);
     await cache.put(new URL('./index.html',self.registration.scope).href,prepared.clone());
     await cache.put(new URL('./',self.registration.scope).href,prepared.clone());
-    if(!installedVersion||installedVersion===RELEASE_VERSION)await marker.put(INTERNAL_RELOAD_MARKER_URL,new Response('1',{headers:{'content-type':'text/plain'}}));
-    if(!installedVersion||installedVersion===RELEASE_VERSION)await self.skipWaiting();
+    if(!installedVersion)await self.skipWaiting();
   })());
 });
 
@@ -131,16 +130,9 @@ self.addEventListener('activate',e=>{
     const keys=await caches.keys();
     await Promise.all(keys.filter(key=>key!==C&&key!==QR_CACHE&&key!==QUESTION_CACHE&&key!==NAXOS_CACHE&&key!==UPDATE_UI_MARKER).map(key=>caches.delete(key)));
     const marker=await caches.open(UPDATE_UI_MARKER);
-    const internalReload=await marker.match(INTERNAL_RELOAD_MARKER_URL);
+    await marker.delete(LEGACY_INTERNAL_RELOAD_MARKER_URL);
     await marker.put(RELEASE_MARKER_URL,new Response(RELEASE_VERSION,{headers:{'content-type':'text/plain'}}));
     await self.clients.claim();
-    if(internalReload){
-      await marker.delete(INTERNAL_RELOAD_MARKER_URL);
-      const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
-      await Promise.all(windows.map(client=>{
-        try{const url=new URL(client.url);url.searchParams.set('__evia_refresh','84');return client.navigate(url.href).catch(()=>null)}catch{return null}
-      }));
-    }
   })());
 });
 

@@ -1,5 +1,5 @@
 (()=>{'use strict';
-const CURRENT_VERSION='1.0';
+const CURRENT_VERSION='1.1';
 const RELEASE_URL='./evia-release.json';
 const PENDING_RELEASE_KEY='eviaPendingReleaseV1';
 const YELLOW='#f5c400';

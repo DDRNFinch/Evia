@@ -1,14 +1,11 @@
 {
-  "version": "1.0",
-  "released": "2026-08-31",
-  "title": "Evia v1.0",
-  "details": "Evia v1.0 establishes learner-facing release updates. Future updates will appear on the Home screen when they are downloaded and ready to install.",
+  "version": "1.1",
+  "released": "2026-09-06",
+  "title": "Evia v1.1",
+  "details": "This update makes Time and app startup more reliable while keeping learner data on this device.",
   "whatsNew": [
-    "Smarter 12-week targets paced across the remaining review periods so Course and Learning are completed by the planned EPA or course end date.",
-    "Targets now include live measurable progress, direct links to the right part of Evia and Review History for Milos review outcomes.",
-    "My EPA brings readiness, assessment information, Learning Hours and review targets together in one learner view.",
-    "Learning Support has clearer before-and-after previews, stronger reading adjustments and full-screen translucent tint overlays.",
-    "The compact top-right tools menu keeps Chat, Targets, Profile, EPA and Settings off the Home screen.",
-    "Teach Me focuses on the actual course subject and Learning Hours use the requirement supplied by Naxos."
+    "Time now uses one timeline source instead of overlapping old and new renderers.",
+    "EPA Practice reports now appear directly on the Time timeline with their useful feedback.",
+    "Evia now loads its approved runtime explicitly and no longer relies on an automatic service-worker reload to finish starting."
   ]
 }

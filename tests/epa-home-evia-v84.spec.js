@@ -21,6 +21,11 @@ test('EPA physically reuses the same homepage Evia DOM instance', async ({ page 
   });
 
   await page.evaluate(() => {
+    const existing = document.getElementById('eviaEpaZoneV2');
+    if (existing) {
+      existing.classList.add('open');
+      return;
+    }
     const zone = document.createElement('section');
     zone.id = 'eviaEpaZoneV2';
     zone.className = 'evia-epa-zone-v2 open';
