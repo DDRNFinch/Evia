@@ -8,7 +8,7 @@ async function openHarness(browser) {
   await context.route('http://127.0.0.1:4173/time-harness', route => route.fulfill({ status: 200, contentType: 'text/html', body: HARNESS }));
   const page = await context.newPage();
   await page.goto('http://127.0.0.1:4173/time-harness', { waitUntil: 'domcontentloaded' });
-  await page.addScriptTag({ url: 'http://127.0.0.1:4173/evia-approved-time-monthly-packs-v1.js?v=2' });
+  await page.addScriptTag({ url: 'http://127.0.0.1:4173/evia-approved-time-monthly-packs-v1.js?v=3' });
   await expect.poll(async () => page.evaluate(() => Boolean(window.EviaMonthlyPacks?.renderTimeTimeline))).toBeTruthy();
   await page.evaluate(() => localStorage.setItem('eviaEpaPracticeReportsV1', JSON.stringify([{id:'epa-test-1',completedAt:'2026-09-05T12:00:00',type:'discussion',overall:'strong',strongAreas:['Explains checks clearly'],weakAreas:['Add more tolerances'],evidenceToRevisit:['Safe working'],nextActions:['Practise one follow-up'],itemCount:2}])));
   await page.evaluate(() => document.getElementById('timeArch').click());
@@ -33,6 +33,12 @@ test('Time renders and closes as the approved full-page three-line timeline', as
   expect(progress.course).toBeCloseTo(42, 3);expect(progress.time).toBeCloseTo(55, 3);expect(progress.learning).toBeCloseTo(70, 3);
   await expect(page.locator('.evia-time-month-marker[data-month="2026-09"] .evia-time-month-circle')).toContainText('SEP');
   await expect(page.locator('.evia-time-month-marker[data-month="2026-09"] .evia-time-month-circle')).toContainText('2026');
+  const pack = page.locator('.evia-time-month-marker[data-month="2026-09"] .evia-time-pack-button');
+  await expect(pack).toHaveText('Download September pack');
+  await expect(page.locator('.evia-time-today-label')).toHaveText('TODAY');
+  await page.evaluate(async () => { localStorage.setItem('eviaMonthlyArchiveV1', JSON.stringify({'2026-09':{updatedAt:'2026-09-06T10:00:00Z'}})); await window.EviaMonthlyPacks.renderTimeTimeline(); });
+  await expect(page.locator('.evia-time-month-marker[data-month="2026-09"] .evia-time-pack-button')).toHaveText('✓ September pack downloaded');
+  await expect(page.locator('.evia-time-month-marker[data-month="2026-09"] .evia-time-pack-button')).toHaveClass(/downloaded/);
 
   const report = page.locator('.evia-timeline-event.learner.epa .evia-timeline-event-button');
   await expect(report).toContainText('5th - EPA Practice - Interview');
@@ -49,6 +55,7 @@ test('Time evidence uses the compact date-name label and opens the existing view
   const { context, page } = await openHarness(browser);
   const evidence = page.locator('.evia-timeline-event.learner.evidence .evia-timeline-event-button');
   await expect(evidence).toContainText('4th - Safe working');
+  await expect(evidence.locator('span[aria-hidden="true"]')).toHaveCount(0);
   await page.evaluate(() => document.querySelector('.evia-timeline-event.learner.evidence .evia-timeline-event-button').click());
   await expect.poll(async () => page.evaluate(() => window.__openedEvidence || '')).toBe('evidence-1');
   await context.close();
@@ -59,6 +66,6 @@ test('Time has one source of truth and reuses the existing progress calculations
   const manifest = fs.readFileSync('evia-runtime-manifest.js','utf8');const worker = fs.readFileSync('service-worker.js','utf8');
   expect(html).not.toContain('function renderTimePage()');expect(html).not.toContain("timeArch.addEventListener('click', renderTimePage)");expect(html).not.toContain('.time-epa-marker');
   expect((time.match(/function renderTimeTimeline\(/g)||[]).length).toBe(1);expect((manifest.match(/evia-approved-time-monthly-packs-v1\.js/g)||[]).length).toBe(1);
-  expect(manifest).toContain("'./evia-approved-time-monthly-packs-v1.js?v=2'");expect(time).toContain("typeof courseProgressPercent==='function'");expect(time).toContain("typeof completedCourseProgress==='function'");expect(time).toContain("typeof learnerLearningHours==='function'");
+  expect(manifest).toContain("'./evia-approved-time-monthly-packs-v1.js?v=3'");expect(time).toContain("typeof courseProgressPercent==='function'");expect(time).toContain("typeof completedCourseProgress==='function'");expect(time).toContain("typeof learnerLearningHours==='function'");
   expect(worker).toContain("const C='evia-pwa-v85'");expect(worker).toContain("const RELEASE_VERSION='1.1'");expect(worker).not.toContain('client.navigate(');expect(worker).not.toContain('__evia_refresh');
 });
