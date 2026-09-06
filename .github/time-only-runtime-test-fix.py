@@ -5,17 +5,12 @@ TEST = Path('tests/time-only-redesign.spec.js')
 RUNTIME_TEST = Path('tests/runtime-manifest.spec.js')
 
 time = TIME.read_text(encoding='utf-8')
-old_close = "function closeTime(){exitTimeFullscreen();try{if(typeof closeArchDetail==='function')closeArchDetail()}catch{}}"
-new_close = "function closeTime(){exitTimeFullscreen();const finish=()=>{try{const fn=globalThis.closeArchDetail;if(typeof fn==='function'){fn();return}}catch{}const panel=document.getElementById('archDetailPanel'),root=document.getElementById('archDetailContent');try{if(typeof archDetailOpen!=='undefined')archDetailOpen=false;if(typeof archDetailStack!=='undefined')archDetailStack=[]}catch{}panel?.classList.remove('open');panel?.setAttribute('aria-hidden','true');if(root)root.innerHTML='';try{if(typeof updateBackButton==='function')updateBackButton()}catch{}};if(typeof setTimeout==='function')setTimeout(finish,0);else finish()}"
-if time.count(old_close) != 1:
-    raise SystemExit('Expected exactly one generated Time close function')
-time = time.replace(old_close, new_close, 1)
 
-render_marker = "root.innerHTML='<div class=\"evia-time-screen\"><div class=\"evia-time-topbar\"><div class=\"evia-time-key\"><strong>Key</strong><span class=\"evia-time-key-item\"><i class=\"evia-time-key-line course\"></i>Course</span><span class=\"evia-time-key-item\"><i class=\"evia-time-key-line time\"></i>Time</span><span class=\"evia-time-key-item\"><i class=\"evia-time-key-line learning\"></i>Learning</span></div><button class=\"evia-time-close\" type=\"button\" data-evia-time-close aria-label=\"Close Time\">×</button></div><div class=\"evia-time-scroll\"><div class=\"evia-time-empty\">Loading timeline…</div></div></div>';const [entries,learning]="
-render_replacement = "root.innerHTML='<div class=\"evia-time-screen\"><div class=\"evia-time-topbar\"><div class=\"evia-time-key\"><strong>Key</strong><span class=\"evia-time-key-item\"><i class=\"evia-time-key-line course\"></i>Course</span><span class=\"evia-time-key-item\"><i class=\"evia-time-key-line time\"></i>Time</span><span class=\"evia-time-key-item\"><i class=\"evia-time-key-line learning\"></i>Learning</span></div><button class=\"evia-time-close\" type=\"button\" data-evia-time-close aria-label=\"Close Time\">×</button></div><div class=\"evia-time-scroll\"><div class=\"evia-time-empty\">Loading timeline…</div></div></div>';const closeButton=root.querySelector('[data-evia-time-close]');if(closeButton)closeButton.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();closeTime()});const [entries,learning]="
-if time.count(render_marker) != 1:
-    raise SystemExit('Expected exactly one generated Time close control marker')
-time = time.replace(render_marker, render_replacement, 1)
+old_observer = "if(panel)new MutationObserver(()=>{if(!panel.classList.contains('open'))exitTimeFullscreen()}).observe(panel,{attributes:true,attributeFilter:['class']});"
+new_observer = "if(panel)new MutationObserver(()=>{if(!panel.classList.contains('open')&&(panel.classList.contains('evia-time-fullscreen')||document.body.classList.contains('evia-time-fullscreen')))exitTimeFullscreen()}).observe(panel,{attributes:true,attributeFilter:['class']});"
+if time.count(old_observer) != 1:
+    raise SystemExit('Expected exactly one Time panel observer')
+time = time.replace(old_observer, new_observer, 1)
 
 old_epa = "function makeEpaEvents(){const state=readJson('eviaEpaPracticeV1',{});if(!clean(state?.completedAt)||!Number.isFinite(Number(state?.percent)))return[];return[{id:`epa:${dayKey(state.completedAt)}`,date:state.completedAt,kind:'epa',assistant:'',title:'EPA practice completed',summary:`${Math.round(Number(state.percent))}% practice score`,items:[state]}]}"
 new_epa = "function epaPracticeLabel(report){const type=clean(report?.type).toLowerCase();return type==='mcq'?'Multiple-choice':type==='discussion'?'Interview':'Practical Prep'}\nfunction makeEpaEvents(){const reports=readJson('eviaEpaPracticeReportsV1',[]);if(Array.isArray(reports)&&reports.length)return reports.filter(report=>clean(report?.completedAt)).map(report=>{const percent=Number(report?.percent),overall=clean(report?.overall),summary=Number.isFinite(percent)?`${Math.round(percent)}%${overall?` - ${overall}`:''}`:(overall||'Practice report');return{id:`epa-report:${clean(report?.id)||dayKey(report.completedAt)}`,date:report.completedAt,kind:'epa',assistant:'',title:`EPA Practice - ${epaPracticeLabel(report)}`,summary,items:[report]}});const state=readJson('eviaEpaPracticeV1',{});if(!clean(state?.completedAt)||!Number.isFinite(Number(state?.percent)))return[];return[{id:`epa:${dayKey(state.completedAt)}`,date:state.completedAt,kind:'epa',assistant:'',title:'EPA Practice - Multiple-choice',summary:`${Math.round(Number(state.percent))}%`,items:[state]}]}"
@@ -37,11 +32,11 @@ if test.count(open_marker) != 1:
     raise SystemExit('Expected one Time harness open marker')
 test = test.replace(open_marker, open_replacement, 1)
 
-close_block = "  await page.evaluate(() => document.querySelector('[data-evia-time-close]').click());\n  await expect(page.locator('#archDetailPanel')).toHaveAttribute('aria-hidden', 'true');\n  await expect(page.locator('#archDetailPanel')).not.toHaveClass(/evia-time-fullscreen/);"
-report_and_close = "  const report = page.locator('.evia-timeline-event.learner.epa .evia-timeline-event-button');\n  await expect(report).toContainText('5th - EPA Practice - Interview');\n  await page.evaluate(() => document.querySelector('.evia-timeline-event.learner.epa .evia-timeline-event-button').click());\n  await expect(page.locator('.evia-timeline-event.learner.epa .evia-timeline-event-detail')).toContainText('Strong areas');\n\n  const closedState = await page.evaluate(async () => { document.querySelector('[data-evia-time-close]').click(); await new Promise(resolve => setTimeout(resolve, 100)); const panel=document.getElementById('archDetailPanel'); return { aria: panel.getAttribute('aria-hidden'), classes: panel.className, closeType: typeof window.closeArchDetail }; });\n  console.log('TIME_CLOSE_STATE', JSON.stringify(closedState));\n  expect(closedState.aria).toBe('true');\n  expect(closedState.classes).not.toContain('evia-time-fullscreen');"
-if test.count(close_block) != 1:
-    raise SystemExit('Expected one Time close verification block')
-test = test.replace(close_block, report_and_close, 1)
+close_marker = "  await page.evaluate(() => document.querySelector('[data-evia-time-close]').click());"
+report_then_close = "  const report = page.locator('.evia-timeline-event.learner.epa .evia-timeline-event-button');\n  await expect(report).toContainText('5th - EPA Practice - Interview');\n  await page.evaluate(() => document.querySelector('.evia-timeline-event.learner.epa .evia-timeline-event-button').click());\n  await expect(page.locator('.evia-timeline-event.learner.epa .evia-timeline-event-detail')).toContainText('Strong areas');\n\n  await page.evaluate(() => document.querySelector('[data-evia-time-close]').click());"
+if test.count(close_marker) != 1:
+    raise SystemExit('Expected one Time close verification point')
+test = test.replace(close_marker, report_then_close, 1)
 TEST.write_text(test, encoding='utf-8')
 
 s = RUNTIME_TEST.read_text(encoding='utf-8')
