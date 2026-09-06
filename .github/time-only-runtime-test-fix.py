@@ -3,6 +3,7 @@ from pathlib import Path
 TIME = Path('evia-approved-time-monthly-packs-v1.js')
 TEST = Path('tests/time-only-redesign.spec.js')
 RUNTIME_TEST = Path('tests/runtime-manifest.spec.js')
+EPA_MENU_TEST = Path('tests/epa-menu.spec.js')
 
 time = TIME.read_text(encoding='utf-8')
 
@@ -44,3 +45,11 @@ s = s.replace('service worker uses the manifest as its runtime source and is v84
 s = s.replace("const C='evia-pwa-v84'","const C='evia-pwa-v85'")
 s = s.replace("url.searchParams.set('__evia_refresh','84')","url.searchParams.set('__evia_refresh','85')")
 RUNTIME_TEST.write_text(s, encoding='utf-8')
+
+epa_menu = EPA_MENU_TEST.read_text(encoding='utf-8')
+old_report_assertion = "  await expect(app.locator('.evia-epa-report-event[data-epa-report-id=\"smoke-epa-report\"]')).toBeVisible({ timeout:5000 });"
+new_report_assertion = "  const reportEvent = app.locator('.evia-timeline-event.learner.epa').filter({ hasText:'EPA Practice - Interview' }).first();\n  await expect(reportEvent).toBeVisible({ timeout:5000 });\n  await reportEvent.locator('.evia-timeline-event-button').click();\n  await expect(reportEvent.locator('.evia-timeline-event-detail')).toContainText('Clear sequence');"
+if epa_menu.count(old_report_assertion) != 1:
+    raise SystemExit('Expected exactly one legacy EPA timeline smoke assertion')
+epa_menu = epa_menu.replace(old_report_assertion, new_report_assertion, 1)
+EPA_MENU_TEST.write_text(epa_menu, encoding='utf-8')
