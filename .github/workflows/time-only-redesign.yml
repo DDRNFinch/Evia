@@ -1,4 +1,4 @@
-# final verification after close dispatch and EPA timeline integration
+# final verification with deterministic Time test setup
 name: Time-only redesign
 
 on:
