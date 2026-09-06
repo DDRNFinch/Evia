@@ -8,7 +8,7 @@ async function openHarness(browser) {
   await context.route('http://127.0.0.1:4173/time-harness', route => route.fulfill({ status: 200, contentType: 'text/html', body: HARNESS }));
   const page = await context.newPage();
   await page.goto('http://127.0.0.1:4173/time-harness', { waitUntil: 'domcontentloaded' });
-  await page.addScriptTag({ url: 'http://127.0.0.1:4173/evia-approved-time-monthly-packs-v1.js?v=7' });
+  await page.addScriptTag({ url: 'http://127.0.0.1:4173/evia-approved-time-monthly-packs-v1.js?v=8' });
   await expect.poll(async () => page.evaluate(() => Boolean(window.EviaMonthlyPacks?.renderTimeTimeline))).toBeTruthy();
   await page.evaluate(() => document.getElementById('timeArch').click());
   await expect(page.locator('.evia-time-screen')).toBeVisible();
@@ -93,7 +93,7 @@ test('Time keeps one source of truth and the existing portfolio edit contract', 
   expect(html).not.toContain('function renderTimePage()');
   expect((time.match(/function renderTimeTimeline\(/g)||[]).length).toBe(1);
   expect((manifest.match(/evia-approved-time-monthly-packs-v1\.js/g)||[]).length).toBe(1);
-  expect(manifest).toContain("'./evia-approved-time-monthly-packs-v1.js?v=7'");
+  expect(manifest).toContain("'./evia-approved-time-monthly-packs-v1.js?v=8'");
   expect(time).toContain('evia-time-month-carousel');
   expect(time).toContain('evia-time-course-strip');
   expect(time).toContain('Expected EPA');
