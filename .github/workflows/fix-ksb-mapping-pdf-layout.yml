@@ -5,6 +5,7 @@ on:
     branches: [fix-ksb-mapping-pdf-layout]
     paths:
       - '.github/workflows/fix-ksb-mapping-pdf-layout.yml'
+      - '.github/fix-ksb-mapping-pdf-layout.py'
 
 permissions:
   contents: write
