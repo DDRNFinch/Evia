@@ -106,11 +106,10 @@ jobs:
             exit 1
           fi
 
-      - name: Commit verified branch and remove temporary tooling
+      - name: Commit verified branch candidate
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git rm .github/time-only-redesign.py .github/time-only-test-fix.py .github/time-only-runtime-test-fix.py .github/time-runtime-stability.py .github/workflows/time-only-redesign.yml
           git add \
             evia-approved-time-monthly-packs-v1.js \
             evia-approved-updates-stable-v1.js \
