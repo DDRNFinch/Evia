@@ -3756,6 +3756,21 @@
           date: new Date()
         });
 
+        if (globalThis.EviaEvidencePackViewer?.buildViewerFiles) {
+          try {
+            const viewerFiles = await globalThis.EviaEvidencePackViewer.buildViewerFiles(entries, {
+              scopeType: 'portfolio',
+              scopeLabel: 'Complete portfolio',
+              course: typeof activeCourseTitle !== 'undefined' ? activeCourseTitle : '',
+              learner: typeof officialLearnerProfile === 'function' ? officialLearnerProfile() : {},
+              learning: typeof learningEntries !== 'undefined' && Array.isArray(learningEntries) ? learningEntries : []
+            });
+            files.push(...viewerFiles);
+          } catch (viewerError) {
+            console.warn('Could not add the self-contained Evia evidence viewer to the portfolio ZIP.', viewerError);
+          }
+        }
+
         const zipBlob = await createZip(files);
         const link = document.createElement('a');
         const url = URL.createObjectURL(zipBlob);
@@ -4975,6 +4990,7 @@
   <script src="./evia-approved-evidence-capture-layout-v1.js?v=2"></script>
   <script src="./evia-approved-guided-capture-v1.js"></script>
   <script src="./evia-approved-witness-video-v1.js"></script>
+  <script src="./evia-evidence-viewer-pack-v2.js?v=2"></script>
   <script src="./evia-approved-time-monthly-packs-v1.js?v=5"></script>
   <script src="./evia-approved-portfolio-hub-icon-v1.js"></script>
   <script src="./evia-approved-update-system-v1.js?v=2"></script>
