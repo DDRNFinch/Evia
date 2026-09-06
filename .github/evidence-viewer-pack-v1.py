@@ -7,12 +7,16 @@ MANIFEST=Path('evia-runtime-manifest.js')
 TIME_TEST=Path('tests/time-only-redesign.spec.js')
 VIEWER=Path('evia-evidence-viewer-pack-v1.js')
 
-# Correct the portable viewer's JSON escaping helper. Escaping every < already protects </script.
+# Correct the portable viewer source before verification.
 viewer_source=VIEWER.read_text(encoding='utf-8')
 bad=r".replace(/<\\/script/gi,'<\\/script')"
 if viewer_source.count(bad)!=1:
     raise SystemExit(f'Viewer JSON escape fix anchor expected once, got {viewer_source.count(bad)}')
-VIEWER.write_text(viewer_source.replace(bad,'',1),encoding='utf-8')
+viewer_source=viewer_source.replace(bad,'',1)
+viewer_source,quote_count=re.subn(r"device\\+'s normal viewer","normal device viewer",viewer_source,count=1)
+if quote_count!=1:
+    raise SystemExit(f'Viewer generated-script quote anchor expected once, got {quote_count}')
+VIEWER.write_text(viewer_source,encoding='utf-8')
 
 # Runtime: load the self-contained viewer builder before Time, and bust the changed Time file.
 manifest=MANIFEST.read_text(encoding='utf-8')
