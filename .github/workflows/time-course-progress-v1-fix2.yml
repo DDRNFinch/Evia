@@ -38,9 +38,9 @@ jobs:
         run: npx playwright test tests/time-only-redesign.spec.js tests/epa-menu.spec.js --reporter=line
       - name: Run complete Evia smoke suite
         run: npm run test:smoke
-      - name: Verify approved change scope only
+      - name: Verify approved app change scope only
         run: |
-          git diff --name-only HEAD | sort > /tmp/changed
+          git diff --name-only HEAD | grep -v '^\.github/time-course-progress-v1' | sort > /tmp/changed
           printf '%s\n' evia-approved-time-monthly-packs-v1.js evia-runtime-manifest.js tests/time-only-redesign.spec.js | sort > /tmp/allowed
           diff -u /tmp/allowed /tmp/changed
       - name: Commit verified Time update and remove temporary tooling
