@@ -26,7 +26,7 @@ function injectStyles(){
     .bottom-arches .status-arch-label{position:absolute!important;left:50%!important;top:62px!important;bottom:auto!important;transform:translateX(-50%)!important;font-size:9.5px!important;line-height:1!important;font-weight:700!important;white-space:nowrap!important;text-align:center!important;z-index:4!important}
     .bottom-arches .evia-circle-track-v3,.bottom-arches .evia-circle-fill-v3{fill:none;vector-effect:non-scaling-stroke;stroke-width:4}
     .bottom-arches .evia-circle-track-v3{stroke:rgba(245,196,0,.19)}
-    .bottom-arches .evia-circle-fill-v3{stroke:${YELLOW};stroke-linecap:butt;stroke-dasharray:${RING_CIRCUMFERENCE};stroke-dashoffset:${RING_CIRCUMFERENCE};transform:rotate(-90deg);transform-origin:50px 50px;transition:stroke-dashoffset 900ms cubic-bezier(.22,1,.36,1)}
+    .bottom-arches .evia-circle-fill-v3{stroke:${YELLOW};stroke-linecap:butt;stroke-dasharray:0 ${RING_CIRCUMFERENCE};stroke-dashoffset:0;transform:rotate(-90deg);transform-origin:50px 50px;transition:stroke-dasharray 900ms cubic-bezier(.22,1,.36,1)}
     .bottom-arches .evia-circle-marker-v2,.bottom-arches .evia-ring-dot-orbit,.bottom-arches .evia-ring-marker-group{display:none!important}
     #evidenceTop #recordToggle.evia-guided-record-toggle-hidden,#evidenceTop #audioToggle.evia-guided-record-toggle-hidden{display:inline-flex!important}
     #evidenceTop #recordToggle.evia-witness-start-hidden{display:inline-flex!important}
@@ -45,6 +45,7 @@ function injectStyles(){
 }
 
 function ringValue(button){const n=Number(button?.style?.getPropertyValue('--arch-progress'));return Number.isFinite(n)?Math.max(0,Math.min(100,n)):0}
+function displayedRingValue(button){const text=String(button?.querySelector('.status-arch-value')?.textContent||'').trim(),match=text.match(/^(-?\d+(?:\.\d+)?)%$/);if(match){const n=Number(match[1]);if(Number.isFinite(n))return Math.max(0,Math.min(100,Math.round(n)))}return Math.round(ringValue(button))}
 function ensureCircle(button){
   const svg=button?.querySelector('.arch-progress-svg');if(!svg)return null;
   if(!svg.dataset.eviaCircleV3){
@@ -58,15 +59,16 @@ function ensureCircle(button){
 }
 function syncCircle(button){
   const svg=ensureCircle(button);if(!svg)return;
-  const p=Math.round(ringValue(button)),fill=svg.querySelector('.evia-circle-fill-v3'),offset=RING_CIRCUMFERENCE*(1-(p/100));
-  if(fill){fill.style.strokeDasharray=String(RING_CIRCUMFERENCE);fill.style.strokeDashoffset=String(offset);fill.style.opacity=button.classList.contains('progress-ready')?'1':'0'}
+  const p=displayedRingValue(button),fill=svg.querySelector('.evia-circle-fill-v3'),dash=RING_CIRCUMFERENCE*(p/100),gap=RING_CIRCUMFERENCE-dash;
+  if(fill){fill.style.strokeDasharray=`${dash} ${gap}`;fill.style.strokeDashoffset='0';fill.style.opacity=button.classList.contains('progress-ready')&&p>0?'1':'0'}
 }
 function installCircles(){
   document.querySelectorAll('.bottom-arches .status-arch').forEach(button=>{
     syncCircle(button);
     if(button.dataset.eviaCircleV3Observer)return;
     button.dataset.eviaCircleV3Observer='1';
-    new MutationObserver(()=>syncCircle(button)).observe(button,{attributes:true,attributeFilter:['style','class']})
+    new MutationObserver(()=>syncCircle(button)).observe(button,{attributes:true,attributeFilter:['style','class']});
+    const value=button.querySelector('.status-arch-value');if(value)new MutationObserver(()=>syncCircle(button)).observe(value,{childList:true,characterData:true,subtree:true})
   })
 }
 
