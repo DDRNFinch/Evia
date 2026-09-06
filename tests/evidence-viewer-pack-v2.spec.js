@@ -4,7 +4,7 @@ const fs = require('node:fs');
 test('self-contained viewer embeds grouped evidence and creates media Blob URLs without sibling files', async ({ page }) => {
   await page.setContent('<!doctype html><html><body><script>window.courseMetaMappings=()=>({K1:["Unit A","Skill one"],K22:["Unit A","Skill one"],S2:["Unit A","Skill two"]});</script></body></html>');
   await page.addScriptTag({ url: 'http://127.0.0.1:4173/evia-evidence-viewer-pack-v2.js?v=2' });
-  await page.addScriptTag({ url: 'http://127.0.0.1:4173/evia-evidence-ksb-index-v1.js?v=1' });
+  await page.addScriptTag({ url: 'http://127.0.0.1:4173/evia-evidence-ksb-index-v1.js?v=2' });
   const built = await page.evaluate(async () => {
     const pngBytes = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Z4iAAAAAASUVORK5CYII='), c => c.charCodeAt(0));
     const photo = (name) => new Blob([pngBytes], { type:'image/png' });
@@ -20,11 +20,15 @@ test('self-contained viewer embeds grouped evidence and creates media Blob URLs 
       epaPlan:{ courseId:'TEST', planVersion:'1.0', title:'Test Standard EPA', methodLabels:{'multiple-choice-test':'Multiple-choice test','practical-assessment-with-questions':'Practical assessment with questions','interview-underpinned-by-portfolio':'Interview underpinned by a portfolio of evidence'}, ksbMethods:{K1:'multiple-choice-test',K22:'practical-assessment-with-questions',S2:'interview-underpinned-by-portfolio'} }
     });
     const mapping=files.find(file=>file.name==='KSB Evidence Mapping.pdf');
-    return { names:files.map(file=>file.name), html:new TextDecoder().decode(files[0].data), readme:new TextDecoder().decode(files[1].data), mappingHead:new TextDecoder().decode(mapping.data.slice(0,8)) };
+    return { names:files.map(file=>file.name), html:new TextDecoder().decode(files[0].data), readme:new TextDecoder().decode(files[1].data), mappingHead:new TextDecoder().decode(mapping.data.slice(0,8)), mappingText:new TextDecoder().decode(mapping.data) };
   });
 
   expect(built.names).toEqual(['Open Evidence Viewer.html','Evidence Viewer - Read Me.txt','KSB Evidence Mapping.pdf']);
   expect(built.mappingHead).toBe('%PDF-1.4');
+  expect(built.mappingText).toContain('1 0 0 1 36 806 Tm');
+  expect(built.mappingText).toContain('1 0 0 1 36 24 Tm');
+  expect(built.mappingText).not.toMatch(/Tf 36 -?\d+ Td/);
+  expect((built.mappingText.match(/1 0 0 1 36 \d+ Tm/g)||[]).length).toBeGreaterThan(5);
   expect(built.html).toContain('Self-contained offline evidence pack');
   expect(built.html).toContain('September 2026');
   expect(built.html).toContain('Build a test wall');
@@ -84,8 +88,8 @@ test('month and portfolio downloads add self-contained viewer while preserving e
   const viewer = fs.readFileSync('evia-evidence-viewer-pack-v2.js','utf8');
 
   expect(manifest).toContain("'./evia-evidence-viewer-pack-v2.js?v=2'");
-  expect(manifest).toContain("'./evia-evidence-ksb-index-v1.js?v=1'");
-  expect(index).toContain('evia-evidence-ksb-index-v1.js?v=1');
+  expect(manifest).toContain("'./evia-evidence-ksb-index-v1.js?v=2'");
+  expect(index).toContain('evia-evidence-ksb-index-v1.js?v=2');
   expect(manifest).toContain("'./evia-approved-time-monthly-packs-v1.js?v=9'");
   expect(index).toContain('EviaEvidencePackViewer.buildViewerFiles(entries');
   expect(index).toContain("name: 'portfolio.json'");

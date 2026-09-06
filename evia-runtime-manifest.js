@@ -23,7 +23,7 @@ const scripts=[
   './evia-approved-guided-capture-v1.js',
   './evia-approved-witness-video-v1.js',
   './evia-evidence-viewer-pack-v2.js?v=2',
-  './evia-evidence-ksb-index-v1.js?v=1',
+  './evia-evidence-ksb-index-v1.js?v=2',
   './evia-approved-time-monthly-packs-v1.js?v=9',
   './evia-approved-portfolio-hub-icon-v1.js',
   './evia-approved-update-system-v1.js?v=2',
