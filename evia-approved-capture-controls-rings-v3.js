@@ -3,6 +3,8 @@ const STYLE_ID='eviaCaptureControlsRingsV3Styles';
 const SVG_NS='http://www.w3.org/2000/svg';
 const YELLOW='#f5c400';
 const AVATAR_YELLOW='#e6bd2f';
+const RING_RADIUS=43;
+const RING_CIRCUMFERENCE=2*Math.PI*RING_RADIUS;
 let bypassNative=false;
 let audioStartedAt=0;
 let audioTimerId=0;
@@ -24,7 +26,7 @@ function injectStyles(){
     .bottom-arches .status-arch-label{position:absolute!important;left:50%!important;top:62px!important;bottom:auto!important;transform:translateX(-50%)!important;font-size:9.5px!important;line-height:1!important;font-weight:700!important;white-space:nowrap!important;text-align:center!important;z-index:4!important}
     .bottom-arches .evia-circle-track-v3,.bottom-arches .evia-circle-fill-v3{fill:none;vector-effect:non-scaling-stroke;stroke-width:4}
     .bottom-arches .evia-circle-track-v3{stroke:rgba(245,196,0,.19)}
-    .bottom-arches .evia-circle-fill-v3{stroke:${YELLOW};stroke-linecap:butt;stroke-dasharray:100;stroke-dashoffset:100;transform:rotate(-90deg);transform-origin:50px 50px;transition:stroke-dashoffset 900ms cubic-bezier(.22,1,.36,1)}
+    .bottom-arches .evia-circle-fill-v3{stroke:${YELLOW};stroke-linecap:butt;stroke-dasharray:${RING_CIRCUMFERENCE};stroke-dashoffset:${RING_CIRCUMFERENCE};transform:rotate(-90deg);transform-origin:50px 50px;transition:stroke-dashoffset 900ms cubic-bezier(.22,1,.36,1)}
     .bottom-arches .evia-circle-marker-v2,.bottom-arches .evia-ring-dot-orbit,.bottom-arches .evia-ring-marker-group{display:none!important}
     #evidenceTop #recordToggle.evia-guided-record-toggle-hidden,#evidenceTop #audioToggle.evia-guided-record-toggle-hidden{display:inline-flex!important}
     #evidenceTop #recordToggle.evia-witness-start-hidden{display:inline-flex!important}
@@ -47,8 +49,8 @@ function ensureCircle(button){
   const svg=button?.querySelector('.arch-progress-svg');if(!svg)return null;
   if(!svg.dataset.eviaCircleV3){
     svg.dataset.eviaCircleV3='1';svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('preserveAspectRatio','xMidYMid meet');svg.innerHTML='';
-    const track=document.createElementNS(SVG_NS,'circle');track.setAttribute('class','evia-circle-track-v3');track.setAttribute('cx','50');track.setAttribute('cy','50');track.setAttribute('r','43');track.setAttribute('pathLength','100');
-    const fill=document.createElementNS(SVG_NS,'circle');fill.setAttribute('class','evia-circle-fill-v3');fill.setAttribute('cx','50');fill.setAttribute('cy','50');fill.setAttribute('r','43');fill.setAttribute('pathLength','100');
+    const track=document.createElementNS(SVG_NS,'circle');track.setAttribute('class','evia-circle-track-v3');track.setAttribute('cx','50');track.setAttribute('cy','50');track.setAttribute('r',String(RING_RADIUS));
+    const fill=document.createElementNS(SVG_NS,'circle');fill.setAttribute('class','evia-circle-fill-v3');fill.setAttribute('cx','50');fill.setAttribute('cy','50');fill.setAttribute('r',String(RING_RADIUS));
     svg.append(track,fill)
   }
   svg.querySelectorAll('.evia-circle-marker-v2,.evia-ring-marker-group').forEach(node=>node.remove());
@@ -56,8 +58,8 @@ function ensureCircle(button){
 }
 function syncCircle(button){
   const svg=ensureCircle(button);if(!svg)return;
-  const p=ringValue(button),fill=svg.querySelector('.evia-circle-fill-v3');
-  if(fill){fill.style.strokeDasharray='100';fill.style.strokeDashoffset=String(100-p);fill.style.opacity=button.classList.contains('progress-ready')?'1':'0'}
+  const p=Math.round(ringValue(button)),fill=svg.querySelector('.evia-circle-fill-v3'),offset=RING_CIRCUMFERENCE*(1-(p/100));
+  if(fill){fill.style.strokeDasharray=String(RING_CIRCUMFERENCE);fill.style.strokeDashoffset=String(offset);fill.style.opacity=button.classList.contains('progress-ready')?'1':'0'}
 }
 function installCircles(){
   document.querySelectorAll('.bottom-arches .status-arch').forEach(button=>{
