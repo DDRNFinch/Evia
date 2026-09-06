@@ -1,4 +1,4 @@
-# final verification with explicit Time close handoff and report ordering
+# final verification with direct Time close binding
 name: Time-only redesign
 
 on:
