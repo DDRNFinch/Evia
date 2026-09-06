@@ -28,11 +28,13 @@ test('runtime manifest is unique and every runtime file exists', async () => {
   }
 });
 
-test('service worker uses the manifest as its runtime source and is v84', async () => {
+test('service worker uses the manifest as its runtime source and is v85', async () => {
   const worker = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
   expect(worker).toContain("importScripts('./evia-runtime-manifest.js')");
-  expect(worker).toContain("const C='evia-pwa-v84'");
-  expect(worker).toContain("url.searchParams.set('__evia_refresh','84')");
+  expect(worker).toContain("const C='evia-pwa-v85'");
+  expect(worker).toContain("const RELEASE_VERSION='1.1'");
+  expect(worker).not.toContain('client.navigate(');
+  expect(worker).not.toContain('__evia_refresh');
   expect(worker).not.toMatch(/const\s+RUNTIME_SCRIPTS\s*=\s*\[/);
 });
 
@@ -60,11 +62,15 @@ test('direct first-load runtime scripts remain an ordered subset of the manifest
     .map((match) => cleanRuntimePath(match[1]))
     .filter((src) => manifestIndex.has(src));
 
-  expect(direct.length).toBeGreaterThan(10);
-  let previous = -1;
-  for (const src of direct) {
-    const index = manifestIndex.get(src);
-    expect(index, `${src} moved out of approved runtime order`).toBeGreaterThan(previous);
-    previous = index;
-  }
+  expect(direct).toEqual(manifest);
+});
+
+
+test('release version is aligned across the worker, update UI and release metadata', async () => {
+  const worker = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
+  const updates = fs.readFileSync(path.join(root, 'evia-approved-updates-stable-v1.js'), 'utf8');
+  const release = JSON.parse(fs.readFileSync(path.join(root, 'evia-release.json'), 'utf8'));
+  expect(worker).toContain("const RELEASE_VERSION='1.1'");
+  expect(updates).toContain("const CURRENT_VERSION='1.1'");
+  expect(release.version).toBe('1.1');
 });

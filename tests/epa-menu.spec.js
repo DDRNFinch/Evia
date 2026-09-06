@@ -101,11 +101,16 @@ test('EPA Practice opens as a dedicated guided zone and keeps consolidated utili
   await expect(app.locator('#eviaEpaZoneV2')).toBeHidden({ timeout:3000 });
 
   await app.evaluate(() => {
+    learnerProfile.startDate='2026-01-01';
+    learnerProfile.endDate='2026-12-31';
     localStorage.setItem('eviaEpaPracticeReportsV1', JSON.stringify([{ id:'smoke-epa-report', completedAt:new Date().toISOString(), type:'discussion', methodTitle:'Interview Practice', overall:'developing', strongAreas:['Clear sequence'], weakAreas:['Checks need more detail'], evidenceToRevisit:['Cavity wall evidence'], nextActions:['Practise tolerances'], mappedTo:['K1'], itemCount:3 }]));
   });
   await app.locator('#timeArch').click();
   await expect(app.locator('#archDetailContent')).toHaveClass(/evia-time-timeline-v1/, { timeout:5000 });
-  await expect(app.locator('.evia-epa-report-event[data-epa-report-id="smoke-epa-report"]')).toBeVisible({ timeout:5000 });
+  const reportEvent = app.locator('.evia-timeline-event.learner.epa').filter({ hasText:'EPA Practice - Interview' }).first();
+  await expect(reportEvent).toBeVisible({ timeout:5000 });
+  await reportEvent.locator('.evia-timeline-event-button').click();
+  await expect(reportEvent.locator('.evia-timeline-event-detail')).toContainText('Clear sequence');
 
   expect(errors).toEqual([]);
 });
