@@ -35,6 +35,7 @@ const scripts=[
   './evia-approved-progress-rings-completion-v1.js',
   './evia-approved-media-ring-completion-fix-v1.js',
   './evia-approved-capture-controls-rings-v3.js',
+  './evia-approved-ring-render-v4.js?v=1',
   './evia-approved-naxos-question-bank-v1.js',
   './evia-ai-config-v1.js',
   './evia-approved-ai-teach-test-v1.js',
