@@ -1,4 +1,4 @@
-# focused verification of Time close state
+# final verification after fixing Time observer recursion
 name: Time-only redesign
 
 on:
