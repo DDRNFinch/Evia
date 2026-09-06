@@ -1,5 +1,4 @@
-# final verification after fixing Time observer recursion and aligning EPA report tests
-name: Time-only redesign
+name: Time-only redesign diagnostic
 
 on:
   push:
@@ -8,10 +7,10 @@ on:
       - '.github/workflows/time-only-redesign.yml'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  redesign:
+  diagnose:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -22,34 +21,52 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Apply Time-only source update
+      - name: Save approved main-state files
+        run: |
+          mkdir -p /tmp/evia-original
+          cp service-worker.js /tmp/evia-original/service-worker.js
+          cp evia-runtime-manifest.js /tmp/evia-original/evia-runtime-manifest.js
+          cp evia-approved-time-monthly-packs-v1.js /tmp/evia-original/evia-approved-time-monthly-packs-v1.js
+          cp index.html /tmp/evia-original/index.html
+      - name: Apply candidate Time redesign
         run: |
           python .github/time-only-redesign.py
           python .github/time-only-test-fix.py
           python .github/time-only-runtime-test-fix.py
-      - name: Verify syntax and Time-only regression tests
-        run: |
-          node --check evia-approved-time-monthly-packs-v1.js
-          node --check evia-runtime-manifest.js
-          node --check service-worker.js
           npm install --no-audit --no-fund
-          npx playwright test tests/time-only-redesign.spec.js --reporter=line
-      - name: Recheck EPA MCQ and core Learn surfaces
+      - name: Confirm Time candidate itself
+        run: npx playwright test tests/time-only-redesign.spec.js --reporter=line
+      - name: Isolate EPA MCQ interaction
         run: |
+          set +e
+          echo '=== CASE A: complete Time candidate ==='
           npx playwright test tests/epa-mcq-bank.spec.js --reporter=line
-          npx playwright test tests/evia-smoke.spec.js --grep "core learner surfaces" --reporter=line
-      - name: Run complete Evia smoke suite
-        run: npm run test:smoke
-      - name: Verify only approved app and test files changed
-        run: |
-          git diff --name-only HEAD | sort > /tmp/changed
-          printf '%s\n' evia-approved-time-monthly-packs-v1.js evia-runtime-manifest.js index.html service-worker.js tests/epa-menu.spec.js tests/runtime-manifest.spec.js tests/time-only-redesign.spec.js | sort > /tmp/allowed
-          diff -u /tmp/allowed /tmp/changed
-      - name: Commit tested Time-only change and remove temporary tooling
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git rm .github/time-only-redesign.py .github/time-only-test-fix.py .github/time-only-runtime-test-fix.py .github/workflows/time-only-redesign.yml
-          git add evia-approved-time-monthly-packs-v1.js evia-runtime-manifest.js index.html service-worker.js tests/epa-menu.spec.js tests/runtime-manifest.spec.js tests/time-only-redesign.spec.js
-          git commit -m 'Update Time timeline only'
-          git push origin HEAD:time-only-redesign
+          A=$?
+          echo "CASE_A=$A"
+
+          echo '=== CASE B: original service worker only ==='
+          cp /tmp/evia-original/service-worker.js service-worker.js
+          npx playwright test tests/epa-mcq-bank.spec.js --reporter=line
+          B=$?
+          echo "CASE_B=$B"
+
+          echo '=== CASE C: original service worker + runtime manifest ==='
+          cp /tmp/evia-original/evia-runtime-manifest.js evia-runtime-manifest.js
+          npx playwright test tests/epa-mcq-bank.spec.js --reporter=line
+          C=$?
+          echo "CASE_C=$C"
+
+          echo '=== CASE D: original service worker + manifest + Time runtime ==='
+          cp /tmp/evia-original/evia-approved-time-monthly-packs-v1.js evia-approved-time-monthly-packs-v1.js
+          npx playwright test tests/epa-mcq-bank.spec.js --reporter=line
+          D=$?
+          echo "CASE_D=$D"
+
+          echo '=== CASE E: full original app state ==='
+          cp /tmp/evia-original/index.html index.html
+          npx playwright test tests/epa-mcq-bank.spec.js --reporter=line
+          E=$?
+          echo "CASE_E=$E"
+
+          echo "RESULTS A=$A B=$B C=$C D=$D E=$E"
+          exit 0
