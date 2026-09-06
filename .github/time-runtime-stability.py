@@ -9,6 +9,7 @@ UPDATES = Path('evia-approved-updates-stable-v1.js')
 RELEASE = Path('evia-release.json')
 RUNTIME_TEST = Path('tests/runtime-manifest.spec.js')
 EPA_MENU_TEST = Path('tests/epa-menu.spec.js')
+EPA_HOME_TEST = Path('tests/epa-home-evia-v84.spec.js')
 
 # 1) Make the runtime explicit on first load instead of depending on a service-worker reload.
 manifest = MANIFEST.read_text(encoding='utf-8')
@@ -83,7 +84,18 @@ if epa.count(seed_marker) != 1:
 epa = epa.replace(seed_marker, seed_replacement, 1)
 EPA_MENU_TEST.write_text(epa, encoding='utf-8')
 
-# 5) Strengthen the architectural regression tests.
+# 5) The EPA identity regression must open the real runtime zone when it already exists.
+# With explicit first-load runtime, creating a second element with the same id is invalid and
+# makes document.getElementById() intentionally resolve the original closed zone.
+epa_home = EPA_HOME_TEST.read_text(encoding='utf-8')
+old_zone_setup = """  await page.evaluate(() => {\n    const zone = document.createElement('section');\n    zone.id = 'eviaEpaZoneV2';\n    zone.className = 'evia-epa-zone-v2 open';\n    zone.innerHTML = '<div class=\"evia-epa-stage-v2\"><div class=\"evia-epa-avatar-v2\"></div></div>';\n    document.getElementById('screen').appendChild(zone);\n  });"""
+new_zone_setup = """  await page.evaluate(() => {\n    const existing = document.getElementById('eviaEpaZoneV2');\n    if (existing) {\n      existing.classList.add('open');\n      return;\n    }\n    const zone = document.createElement('section');\n    zone.id = 'eviaEpaZoneV2';\n    zone.className = 'evia-epa-zone-v2 open';\n    zone.innerHTML = '<div class=\"evia-epa-stage-v2\"><div class=\"evia-epa-avatar-v2\"></div></div>';\n    document.getElementById('screen').appendChild(zone);\n  });"""
+if epa_home.count(old_zone_setup) != 1:
+    raise SystemExit('Expected one legacy EPA identity zone setup')
+epa_home = epa_home.replace(old_zone_setup, new_zone_setup, 1)
+EPA_HOME_TEST.write_text(epa_home, encoding='utf-8')
+
+# 6) Strengthen the architectural regression tests.
 test = RUNTIME_TEST.read_text(encoding='utf-8')
 old_worker_expect = "  expect(worker).toContain(\"url.searchParams.set('__evia_refresh','85')\");"
 new_worker_expect = "  expect(worker).toContain(\"const RELEASE_VERSION='1.1'\");\n  expect(worker).not.toContain('client.navigate(');\n  expect(worker).not.toContain('__evia_refresh');"
