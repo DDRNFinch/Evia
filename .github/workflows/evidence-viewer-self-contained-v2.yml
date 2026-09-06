@@ -1,4 +1,5 @@
 name: Evidence viewer self-contained v2
+# rerun 2
 
 on:
   push:
@@ -38,7 +39,7 @@ jobs:
         run: npm run test:smoke
       - name: Verify approved app scope only
         run: |
-          git diff --name-only HEAD | grep -v '^\.github/evidence-viewer-self-contained-v2' | sort > /tmp/changed
+          { git diff --name-only origin/main...HEAD; git diff --name-only; } | sort -u | grep -v '^\.github/evidence-viewer-self-contained-v2' > /tmp/changed
           printf '%s\n' index.html evia-evidence-viewer-pack-v2.js evia-approved-time-monthly-packs-v1.js evia-runtime-manifest.js tests/evidence-viewer-pack-v2.spec.js tests/time-only-redesign.spec.js | sort > /tmp/allowed
           diff -u /tmp/allowed /tmp/changed
       - name: Commit verified viewer update and remove temporary tooling
