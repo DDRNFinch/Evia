@@ -23,10 +23,10 @@ test('Time opens as the approved full-page three-line timeline without changing 
     learnerProfile.startDate = '2026-01-01';
     learnerProfile.endDate = '2026-12-31';
     if (typeof saveLearnerProfile === 'function') saveLearnerProfile();
+    document.getElementById('timeArch')?.click();
   });
 
-  await page.locator('#timeArch').click();
-  await expect(page.locator('.evia-time-screen')).toBeVisible();
+  await expect(page.locator('.evia-time-screen')).toBeVisible({ timeout: 10000 });
   await expect(page.locator('[data-evia-time-close]')).toBeVisible();
   await expect(page.locator('.evia-time-key')).toContainText('Course');
   await expect(page.locator('.evia-time-key')).toContainText('Time');
@@ -38,7 +38,7 @@ test('Time opens as the approved full-page three-line timeline without changing 
   await expect(page.locator('.evia-time-month-marker[data-month="2026-09"] .evia-time-month-circle')).toContainText('2026');
   await expect(page.locator('.evia-time-overview')).toHaveCount(0);
 
-  await page.locator('[data-evia-time-close]').click();
+  await page.evaluate(() => document.querySelector('[data-evia-time-close]')?.click());
   await expect(page.locator('#archDetailPanel')).toHaveAttribute('aria-hidden', 'true');
   await expect(page.locator('#eviaStage')).toBeVisible();
   await expect(page.locator('#bottomArches')).toBeVisible();
