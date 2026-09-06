@@ -22,7 +22,9 @@ jobs:
         with:
           node-version: '22'
       - name: Apply Time-only source update
-        run: python .github/time-only-redesign.py
+        run: |
+          python .github/time-only-redesign.py
+          python .github/time-only-test-fix.py
       - name: Verify syntax and Time-only regression tests
         run: |
           node --check evia-approved-time-monthly-packs-v1.js
@@ -39,7 +41,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git rm .github/time-only-redesign.py .github/workflows/time-only-redesign.yml
+          git rm .github/time-only-redesign.py .github/time-only-test-fix.py .github/workflows/time-only-redesign.yml
           git add evia-approved-time-monthly-packs-v1.js evia-runtime-manifest.js index.html service-worker.js tests/time-only-redesign.spec.js
           git commit -m 'Update Time timeline only'
           git push origin HEAD:time-only-redesign
