@@ -1,0 +1,50 @@
+name: KSB evidence index v1
+
+on:
+  push:
+    branches: [ksb-evidence-index-v1]
+    paths:
+      - '.github/workflows/ksb-evidence-index-v1.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ksb-evidence-index-v1
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply approved KSB index integration
+        run: python .github/ksb-evidence-index-v1.py
+      - name: Verify JavaScript syntax
+        run: |
+          node --check evia-evidence-ksb-index-v1.js
+          node --check evia-evidence-viewer-pack-v2.js
+          node --check evia-runtime-manifest.js
+          node --check tests/evidence-viewer-pack-v2.spec.js
+      - name: Install test dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run viewer, Time and EPA regressions
+        run: npx playwright test tests/evidence-viewer-pack-v2.spec.js tests/time-only-redesign.spec.js tests/epa-menu.spec.js --reporter=line
+      - name: Run complete Evia smoke suite
+        run: npm run test:smoke
+      - name: Verify approved app scope only
+        run: |
+          { git diff --name-only origin/main...HEAD; git diff --name-only; } | sort -u | grep -v '^\.github/ksb-evidence-index-v1' > /tmp/changed
+          printf '%s\n' evia-evidence-ksb-index-v1.js evia-runtime-manifest.js index.html tests/evidence-viewer-pack-v2.spec.js | sort > /tmp/allowed
+          diff -u /tmp/allowed /tmp/changed
+      - name: Commit verified KSB index and remove temporary tooling
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/ksb-evidence-index-v1.py .github/workflows/ksb-evidence-index-v1.yml
+          git add evia-evidence-ksb-index-v1.js evia-runtime-manifest.js index.html tests/evidence-viewer-pack-v2.spec.js
+          git commit -m 'Add KSB evidence index to evidence viewer'
+          git push origin HEAD:ksb-evidence-index-v1
