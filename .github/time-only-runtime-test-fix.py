@@ -6,7 +6,7 @@ RUNTIME_TEST = Path('tests/runtime-manifest.spec.js')
 
 time = TIME.read_text(encoding='utf-8')
 old_close = "function closeTime(){exitTimeFullscreen();try{if(typeof closeArchDetail==='function')closeArchDetail()}catch{}}"
-new_close = "function closeTime(){exitTimeFullscreen();const finish=()=>{try{if(typeof closeArchDetail==='function')closeArchDetail()}catch{}};if(typeof setTimeout==='function')setTimeout(finish,0);else finish()}"
+new_close = "function closeTime(){exitTimeFullscreen();const finish=()=>{try{const fn=globalThis.closeArchDetail;if(typeof fn==='function'){fn();return}}catch{}const panel=document.getElementById('archDetailPanel'),root=document.getElementById('archDetailContent');try{if(typeof archDetailOpen!=='undefined')archDetailOpen=false;if(typeof archDetailStack!=='undefined')archDetailStack=[]}catch{}panel?.classList.remove('open');panel?.setAttribute('aria-hidden','true');if(root)root.innerHTML='';try{if(typeof updateBackButton==='function')updateBackButton()}catch{}};if(typeof setTimeout==='function')setTimeout(finish,0);else finish()}"
 if time.count(old_close) != 1:
     raise SystemExit('Expected exactly one generated Time close function')
 time = time.replace(old_close, new_close, 1)
@@ -31,11 +31,11 @@ if test.count(open_marker) != 1:
     raise SystemExit('Expected one Time harness open marker')
 test = test.replace(open_marker, open_replacement, 1)
 
-insert_before = "  await context.close();\n});\n\ntest('Time evidence uses the compact date-name label and opens the existing viewer'"
-report_assertions = "  const report = page.locator('.evia-timeline-event.learner.epa .evia-timeline-event-button');\n  await expect(report).toContainText('5th - EPA Practice - Interview');\n  await page.evaluate(() => document.querySelector('.evia-timeline-event.learner.epa .evia-timeline-event-button').click());\n  await expect(page.locator('.evia-timeline-event.learner.epa .evia-timeline-event-detail')).toContainText('Strong areas');\n\n  await context.close();\n});\n\ntest('Time evidence uses the compact date-name label and opens the existing viewer'"
-if test.count(insert_before) != 1:
-    raise SystemExit('Expected Time report assertion insertion point')
-test = test.replace(insert_before, report_assertions, 1)
+close_marker = "  await page.evaluate(() => document.querySelector('[data-evia-time-close]').click());"
+report_assertions = "  const report = page.locator('.evia-timeline-event.learner.epa .evia-timeline-event-button');\n  await expect(report).toContainText('5th - EPA Practice - Interview');\n  await page.evaluate(() => document.querySelector('.evia-timeline-event.learner.epa .evia-timeline-event-button').click());\n  await expect(page.locator('.evia-timeline-event.learner.epa .evia-timeline-event-detail')).toContainText('Strong areas');\n\n  await page.evaluate(() => document.querySelector('[data-evia-time-close]').click());"
+if test.count(close_marker) != 1:
+    raise SystemExit('Expected one Time close assertion point')
+test = test.replace(close_marker, report_assertions, 1)
 TEST.write_text(test, encoding='utf-8')
 
 s = RUNTIME_TEST.read_text(encoding='utf-8')
