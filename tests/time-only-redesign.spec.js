@@ -8,7 +8,7 @@ async function openHarness(browser) {
   await context.route('http://127.0.0.1:4173/time-harness', route => route.fulfill({ status: 200, contentType: 'text/html', body: HARNESS }));
   const page = await context.newPage();
   await page.goto('http://127.0.0.1:4173/time-harness', { waitUntil: 'domcontentloaded' });
-  await page.addScriptTag({ url: 'http://127.0.0.1:4173/evia-approved-time-monthly-packs-v1.js?v=6' });
+  await page.addScriptTag({ url: 'http://127.0.0.1:4173/evia-approved-time-monthly-packs-v1.js?v=7' });
   await expect.poll(async () => page.evaluate(() => Boolean(window.EviaMonthlyPacks?.renderTimeTimeline))).toBeTruthy();
   await page.evaluate(() => document.getElementById('timeArch').click());
   await expect(page.locator('.evia-time-screen')).toBeVisible();
@@ -30,8 +30,9 @@ test('Time is a month-by-month evidence browser with a 70 percent month carousel
   await page.evaluate(() => { const month=document.querySelector('[data-evia-time-month=\"2026-09\"]'); if(month&&!month.classList.contains('active'))month.click(); });
   await expect(page.locator('[data-evia-time-month="2026-09"]')).toHaveClass(/active/);
   await expect(page.locator('[data-evia-progress-month="2026-09"]')).toHaveClass(/selected/);
-  await expect(page.locator('.evia-time-month-heading')).toHaveText('September 2026');
-  await expect(page.locator('.evia-time-month-count')).toHaveText('4 evidence submissions');
+  await expect(page.locator('.evia-time-month-summary')).toHaveCount(0);
+  await expect(page.locator('.evia-time-month-heading')).toHaveCount(0);
+  await expect(page.locator('.evia-time-month-count')).toHaveCount(0);
   await expect(page.locator('.evia-time-evidence-card')).toHaveCount(4);
   await expect(page.locator('.evia-time-evidence-card').nth(0)).toContainText('Follow RAMS');
   await expect(page.locator('.evia-time-evidence-card').nth(3)).toContainText('Prepare and repair a plaster defect');
@@ -56,7 +57,7 @@ test('Time is a month-by-month evidence browser with a 70 percent month carousel
   expect(widths.active / widths.carousel).toBeLessThan(0.74);
 
   await page.locator('[data-evia-time-month="2027-01"]').click();
-  await expect(page.locator('.evia-time-month-heading')).toHaveText('January 2027');
+  await expect(page.locator('.evia-time-month-summary')).toHaveCount(0);
   await expect(page.locator('.evia-time-evidence-card')).toHaveCount(1);
   await expect(page.locator('.evia-time-evidence-card')).toContainText('Evidence after planned end date');
 
@@ -92,7 +93,7 @@ test('Time keeps one source of truth and the existing portfolio edit contract', 
   expect(html).not.toContain('function renderTimePage()');
   expect((time.match(/function renderTimeTimeline\(/g)||[]).length).toBe(1);
   expect((manifest.match(/evia-approved-time-monthly-packs-v1\.js/g)||[]).length).toBe(1);
-  expect(manifest).toContain("'./evia-approved-time-monthly-packs-v1.js?v=6'");
+  expect(manifest).toContain("'./evia-approved-time-monthly-packs-v1.js?v=7'");
   expect(time).toContain('evia-time-month-carousel');
   expect(time).toContain('evia-time-course-strip');
   expect(time).toContain('Expected EPA');
