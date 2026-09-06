@@ -36,11 +36,27 @@ jobs:
           python .github/time-month-browser-v1.py
           python - <<'PY'
           from pathlib import Path
-          path=Path('tests/time-only-redesign.spec.js')
-          source=path.read_text(encoding='utf-8')
-          source=source.replace(r'/function renderTimeTimeline\\(/g',r'/function renderTimeTimeline\(/g')
-          source=source.replace(r'/evia-approved-time-monthly-packs-v1\\.js/g',r'/evia-approved-time-monthly-packs-v1\.js/g')
-          path.write_text(source,encoding='utf-8')
+          time_path=Path('evia-approved-time-monthly-packs-v1.js')
+          time=time_path.read_text(encoding='utf-8')
+          old='.evia-time-month-option{flex:0 0 70%;min-width:70%;'
+          new='.evia-time-month-option{flex:0 0 100%;min-width:100%;'
+          if time.count(old)!=1:
+              raise SystemExit('Expected one month option width rule')
+          time_path.write_text(time.replace(old,new,1),encoding='utf-8')
+
+          test_path=Path('tests/time-only-redesign.spec.js')
+          test=test_path.read_text(encoding='utf-8')
+          test=test.replace(r'/function renderTimeTimeline\\(/g',r'/function renderTimeTimeline\(/g')
+          test=test.replace(r'/evia-approved-time-monthly-packs-v1\\.js/g',r'/evia-approved-time-monthly-packs-v1\.js/g')
+          old_back="await page.locator('#backButton').click();"
+          if test.count(old_back)!=1:
+              raise SystemExit('Expected one Time evidence back interaction')
+          test=test.replace(old_back,"await page.evaluate(() => document.getElementById('backButton').click());",1)
+          old_source="expect(time).toContain('flex:0 0 70%');"
+          if test.count(old_source)!=1:
+              raise SystemExit('Expected one carousel source assertion')
+          test=test.replace(old_source,"expect(time).toContain('padding:7px 15%');",1)
+          test_path.write_text(test,encoding='utf-8')
           PY
       - name: Verify source syntax
         run: |
