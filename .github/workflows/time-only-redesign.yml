@@ -1,0 +1,45 @@
+name: Time-only redesign
+
+on:
+  push:
+    branches: [time-only-redesign]
+    paths:
+      - '.github/workflows/time-only-redesign.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  redesign:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: time-only-redesign
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply Time-only source update
+        run: python .github/time-only-redesign.py
+      - name: Verify syntax and Time-only regression tests
+        run: |
+          node --check evia-approved-time-monthly-packs-v1.js
+          node --check evia-runtime-manifest.js
+          node --check service-worker.js
+          npm install --no-audit --no-fund
+          npx playwright test tests/time-only-redesign.spec.js --reporter=line
+      - name: Verify only approved app files changed
+        run: |
+          git diff --name-only HEAD | sort > /tmp/changed
+          printf '%s\n' evia-approved-time-monthly-packs-v1.js evia-runtime-manifest.js index.html service-worker.js tests/time-only-redesign.spec.js | sort > /tmp/allowed
+          diff -u /tmp/allowed /tmp/changed
+      - name: Commit tested Time-only change and remove temporary tooling
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/time-only-redesign.py .github/workflows/time-only-redesign.yml
+          git add evia-approved-time-monthly-packs-v1.js evia-runtime-manifest.js index.html service-worker.js tests/time-only-redesign.spec.js
+          git commit -m 'Update Time timeline only'
+          git push origin HEAD:time-only-redesign
