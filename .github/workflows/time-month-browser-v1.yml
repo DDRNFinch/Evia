@@ -22,7 +22,18 @@ jobs:
         with:
           node-version: '22'
       - name: Apply approved Time month browser
-        run: python .github/time-month-browser-v1.py
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path=Path('.github/time-month-browser-v1.py')
+          source=path.read_text(encoding='utf-8')
+          old="out, count = re.subn(pattern, repl, text, count=1, flags=flags)"
+          new="out, count = re.subn(pattern, lambda _match: repl, text, count=1, flags=flags)"
+          if source.count(old)!=1:
+              raise SystemExit('Expected one sub_once replacement implementation')
+          path.write_text(source.replace(old,new,1),encoding='utf-8')
+          PY
+          python .github/time-month-browser-v1.py
       - name: Verify source syntax
         run: |
           node --check evia-approved-time-monthly-packs-v1.js
