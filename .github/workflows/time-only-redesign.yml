@@ -1,4 +1,4 @@
-name: Time-only redesign diagnostic
+name: Time-only redesign
 
 on:
   push:
@@ -7,10 +7,10 @@ on:
       - '.github/workflows/time-only-redesign.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  diagnose:
+  redesign:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -21,52 +21,62 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Save approved main-state files
+
+      - name: Correct Time-only source boundary
         run: |
-          mkdir -p /tmp/evia-original
-          cp service-worker.js /tmp/evia-original/service-worker.js
-          cp evia-runtime-manifest.js /tmp/evia-original/evia-runtime-manifest.js
-          cp evia-approved-time-monthly-packs-v1.js /tmp/evia-original/evia-approved-time-monthly-packs-v1.js
-          cp index.html /tmp/evia-original/index.html
-      - name: Apply candidate Time redesign
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('.github/time-only-redesign.py')
+          text = path.read_text(encoding='utf-8')
+          old = "b_marker = '    function renderCoursePage() {'"
+          new = "b_marker = '    function courseMetaMappings() {'"
+          if text.count(old) != 1:
+              raise SystemExit('Expected one original Time removal boundary')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+
+      - name: Apply Time-only source update
         run: |
           python .github/time-only-redesign.py
           python .github/time-only-test-fix.py
           python .github/time-only-runtime-test-fix.py
-          npm install --no-audit --no-fund
-      - name: Confirm Time candidate itself
-        run: npx playwright test tests/time-only-redesign.spec.js --reporter=line
-      - name: Isolate EPA MCQ interaction
+
+      - name: Verify shared course helpers were preserved
         run: |
-          set +e
-          echo '=== CASE A: complete Time candidate ==='
-          npx playwright test tests/epa-mcq-bank.spec.js --reporter=line
-          A=$?
-          echo "CASE_A=$A"
+          grep -F "function courseMetaMappings()" index.html
+          grep -F "function inferredCourseMeta()" index.html
+          if grep -Fq "function renderTimePage()" index.html; then
+            echo 'Superseded Time renderer still exists'
+            exit 1
+          fi
 
-          echo '=== CASE B: original service worker only ==='
-          cp /tmp/evia-original/service-worker.js service-worker.js
-          npx playwright test tests/epa-mcq-bank.spec.js --reporter=line
-          B=$?
-          echo "CASE_B=$B"
+      - name: Verify syntax and Time regression tests
+        run: |
+          node --check evia-approved-time-monthly-packs-v1.js
+          node --check evia-runtime-manifest.js
+          node --check service-worker.js
+          npm install --no-audit --no-fund
+          npx playwright test tests/time-only-redesign.spec.js --reporter=line
 
-          echo '=== CASE C: original service worker + runtime manifest ==='
-          cp /tmp/evia-original/evia-runtime-manifest.js evia-runtime-manifest.js
+      - name: Verify EPA MCQ and core learner surfaces
+        run: |
           npx playwright test tests/epa-mcq-bank.spec.js --reporter=line
-          C=$?
-          echo "CASE_C=$C"
+          npx playwright test tests/evia-smoke.spec.js --grep "core learner surfaces" --reporter=line
 
-          echo '=== CASE D: original service worker + manifest + Time runtime ==='
-          cp /tmp/evia-original/evia-approved-time-monthly-packs-v1.js evia-approved-time-monthly-packs-v1.js
-          npx playwright test tests/epa-mcq-bank.spec.js --reporter=line
-          D=$?
-          echo "CASE_D=$D"
+      - name: Run complete Evia smoke suite
+        run: npm run test:smoke
 
-          echo '=== CASE E: full original app state ==='
-          cp /tmp/evia-original/index.html index.html
-          npx playwright test tests/epa-mcq-bank.spec.js --reporter=line
-          E=$?
-          echo "CASE_E=$E"
+      - name: Verify only intended app and regression files changed
+        run: |
+          git diff --name-only HEAD | sort > /tmp/changed
+          printf '%s\n' evia-approved-time-monthly-packs-v1.js evia-runtime-manifest.js index.html service-worker.js tests/epa-menu.spec.js tests/runtime-manifest.spec.js tests/time-only-redesign.spec.js | sort > /tmp/allowed
+          diff -u /tmp/allowed /tmp/changed
 
-          echo "RESULTS A=$A B=$B C=$C D=$D E=$E"
-          exit 0
+      - name: Commit tested Time change and remove temporary tooling
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/time-only-redesign.py .github/time-only-test-fix.py .github/time-only-runtime-test-fix.py .github/workflows/time-only-redesign.yml
+          git add evia-approved-time-monthly-packs-v1.js evia-runtime-manifest.js index.html service-worker.js tests/epa-menu.spec.js tests/runtime-manifest.spec.js tests/time-only-redesign.spec.js
+          git commit -m 'Update Time timeline safely'
+          git push origin HEAD:time-only-redesign
