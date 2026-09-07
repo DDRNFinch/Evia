@@ -114,6 +114,6 @@ test('Time keeps one source of truth and the existing portfolio edit contract', 
   expect(time).toContain('Download portfolio');
   expect(time).toContain('latestEvidence&&latestEvidence>end');
   expect(html).toContain("portfolioEditEvidence.addEventListener('click'");
-  expect(worker).toContain("const C='evia-pwa-v85'");
-  expect(worker).toContain("const RELEASE_VERSION='1.1'");
+  expect(worker).toContain("const C='evia-pwa-v91'");
+  expect(worker).toContain("const RELEASE_VERSION='1.2'");
 });
