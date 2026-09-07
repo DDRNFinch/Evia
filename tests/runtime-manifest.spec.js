@@ -76,3 +76,23 @@ test('release version is aligned across worker update UI and release metadata', 
   expect(worker).toContain(`const RELEASE_VERSION='${release.version}'`);
   expect(updates).toContain(`const CURRENT_VERSION='${release.version}'`);
 });
+
+test('current PWA manifest keeps its install scope and referenced icon assets', async () => {
+  const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8'));
+  expect(manifest.name).toBe('Evia');
+  expect(manifest.id).toBe('/Evia/');
+  expect(manifest.start_url).toBe('/Evia/');
+  expect(manifest.scope).toBe('/Evia/');
+  expect(manifest.display).toBe('standalone');
+
+  const icons = Array.isArray(manifest.icons) ? manifest.icons : [];
+  expect(icons).toEqual(expect.arrayContaining([
+    expect.objectContaining({ src: '/Evia/icons/evia-192.png', sizes: '192x192', purpose: 'any' }),
+    expect.objectContaining({ src: '/Evia/icons/evia-512.png', sizes: '512x512', purpose: 'any maskable' })
+  ]));
+
+  for (const icon of icons) {
+    const local = String(icon.src || '').replace(/^\/Evia\//, '');
+    expect(fs.existsSync(path.join(root, local)), `missing PWA icon ${icon.src}`).toBeTruthy();
+  }
+});
