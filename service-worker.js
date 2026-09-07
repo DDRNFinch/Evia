@@ -1,8 +1,8 @@
 importScripts('./evia-runtime-manifest.js');
 
-const C='evia-pwa-v90';
+const C='evia-pwa-v91';
 const UPDATE_UI_MARKER='evia-update-ui-ready-v1';
-const RELEASE_VERSION='1.1';
+const RELEASE_VERSION='1.2';
 const RELEASE_MARKER_URL=new URL('./__evia-visible-release-version__',self.registration.scope).href;
 const LEGACY_INTERNAL_RELOAD_MARKER_URL=new URL('./__evia-internal-reload__',self.registration.scope).href;
 const OPTIONAL_OFFLINE_MARKER_URL=new URL('./__evia-optional-offline-v5__',self.registration.scope).href;
