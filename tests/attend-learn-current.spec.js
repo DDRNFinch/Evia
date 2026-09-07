@@ -16,6 +16,7 @@ test('Attend keeps the current two-action layout without a Nisia control', async
   await expect(page.locator('#eviaAttendActionsV4')).toBeVisible();
   await expect(page.locator('#eviaAttendActionsV4 button')).toHaveCount(2);
   await expect(page.locator('#archDetailPanel [id*="nisia" i]:visible, #archDetailPanel [data-action*="nisia" i]:visible')).toHaveCount(0);
+  await expect(page.locator('#archDetailPanel')).not.toContainText(/\bNisia\b/i);
 });
 
 test('Learn keeps the current Add Learning Catch Up Ideas order', async ({ page }) => {
@@ -27,6 +28,25 @@ test('Learn keeps the current Add Learning Catch Up Ideas order', async ({ page 
   await expect(actions.nth(0)).toContainText(/Add Learning/i);
   await expect(actions.nth(1)).toContainText(/Catch\s*Up/i);
   await expect(actions.nth(2)).toContainText(/Ideas/i);
+});
+
+test('Learn preserves the current mobile pill spacing at 390px', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await prepare(page);
+  await page.locator('#learnArch').click();
+  const add = page.locator('#openManualLearning');
+  await expect(add).toBeVisible();
+  const style = await add.evaluate((node) => {
+    const computed = getComputedStyle(node);
+    return {
+      minHeight: computed.minHeight,
+      paddingTop: computed.paddingTop,
+      paddingRight: computed.paddingRight,
+      paddingBottom: computed.paddingBottom,
+      paddingLeft: computed.paddingLeft
+    };
+  });
+  expect(style).toEqual({ minHeight: '52px', paddingTop: '8px', paddingRight: '42px', paddingBottom: '8px', paddingLeft: '15px' });
 });
 
 test('Attend Learn current renderer has no polling patch loop or superseded files', async () => {
