@@ -1464,7 +1464,12 @@
       }
     }
   </style>
-  <script src="./evia-demo-v1.js?v=2"></script>
+  <script src="./evia-runtime-manifest.js?v=91"></script>
+<script>
+  if (globalThis.EVIA_RUNTIME_SCRIPTS?.[0]) {
+    document.write('<script src="' + globalThis.EVIA_RUNTIME_SCRIPTS[0] + '"><\/script>');
+  }
+</script>
 </head>
 <body>
   <main class="screen" id="screen" aria-label="Evia home">
@@ -4968,51 +4973,12 @@
       }
     });
   </script>
-  <!-- Evia runtime: explicit first-load path mirrors the runtime manifest. The service worker is cache/offline support, not a second boot path. -->
-  <script src="./evia-approved-features.js"></script>
-  <script src="./evia-approved-learning-ui.js"></script>
-  <script src="./evia-approved-menu-support.js"></script>
-  <script src="./evia-approved-epa.js"></script>
-  <script src="./evia-approved-targets.js"></script>
-  <script src="./evia-approved-target-plan-v1.js"></script>
-  <script src="./evia-approved-updates-stable-v1.js"></script>
-  <script src="./evia-sw-update-hardening-v1.js"></script>
-  <script src="./evia-approved-runtime-fixes-v1.js"></script>
-  <script src="./evia-ui-polish-v1.js"></script>
-  <script src="./evia-ui-polish-visible-v1.js?v=2"></script>
-  <script src="./evia-approved-settings-stable-v1.js"></script>
-  <script src="./evia-developer-mode-v1.js?v=1"></script>
-  <script src="./evia-approved-support-preview-visual-v1.js"></script>
-  <script src="./evia-approved-naxos-evidence-contract-v2.js"></script>
-  <script src="./evia-approved-naxos-activity-prompts-v1.js"></script>
-  <script src="./evia-approved-naxos-evidence-existing-v2.js"></script>
-  <script src="./evia-approved-speech-landing-fix.js"></script>
-  <script src="./evia-approved-evidence-capture-layout-v1.js?v=2"></script>
-  <script src="./evia-approved-guided-capture-v1.js"></script>
-  <script src="./evia-approved-witness-video-v1.js"></script>
-  <script src="./evia-evidence-viewer-pack-v2.js?v=2"></script>
-  <script src="./evia-evidence-ksb-index-v1.js?v=2"></script>
-  <script src="./evia-approved-time-monthly-packs-v1.js?v=5"></script>
-  <script src="./evia-approved-portfolio-hub-icon-v1.js"></script>
-  <script src="./evia-approved-update-system-v1.js?v=2"></script>
-  <script src="./evia-approved-ux-cleanup-v1.js?v=2"></script>
-  <script src="./evia-approved-ux-cleanup-v3.js?v=2"></script>
-  <script src="./nisia-loader.js?v=3"></script>
-  <script src="./evia-approved-attend-learn-render-v4.js?v=1"></script>
-  <script src="./evia-approved-attend-learn-final-v5.js?v=2"></script>
-  <script src="./evia-approved-progress-rings-completion-v1.js"></script>
-  <script src="./evia-approved-media-ring-completion-fix-v1.js"></script>
-  <script src="./evia-approved-capture-controls-rings-v3.js"></script>
-  <script src="./evia-approved-naxos-question-bank-v1.js"></script>
-  <script src="./evia-ai-config-v1.js"></script>
-  <script src="./evia-approved-ai-teach-test-v1.js"></script>
-  <script src="./evia-approved-ai-ask-v1.js"></script>
-  <script src="./evia-approved-menu-epa-practice-v1.js"></script>
-  <script src="./evia-approved-demo-teach-test-v1.js"></script>
-  <script src="./evia-approved-epa-loading-text-v1.js"></script>
-  <script src="./evia-approved-epa-ui-fix-v1.js?v=2"></script>
-  <script src="./evia-approved-epa-zone-v2.js"></script>
-  <script src="./evia-approved-epa-mcq-bank-fix-v1.js"></script>
+  <!-- Evia runtime: the manifest is the single ordered source for current modules. -->
+<script>
+  (globalThis.EVIA_RUNTIME_SCRIPTS || []).slice(1).forEach((src) => {
+    document.write('<script src="' + src + '"><\/script>');
+  });
+</script>
 
 </body>
 </html>

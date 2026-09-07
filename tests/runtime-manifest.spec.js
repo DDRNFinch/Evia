@@ -17,7 +17,7 @@ function cleanRuntimePath(value) {
   return String(value || '').replace(/^\.\//, '').split('?')[0];
 }
 
-test('runtime manifest is unique and every runtime file exists', async () => {
+test('runtime manifest is unique and every current runtime file exists', async () => {
   const scripts = runtimeScripts();
   expect(scripts.length).toBeGreaterThan(30);
   expect(new Set(scripts).size).toBe(scripts.length);
@@ -28,14 +28,29 @@ test('runtime manifest is unique and every runtime file exists', async () => {
   }
 });
 
-test('service worker uses the manifest as its runtime source and is v85', async () => {
+test('service worker uses the current runtime manifest only for caching', async () => {
   const worker = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
   expect(worker).toContain("importScripts('./evia-runtime-manifest.js')");
-  expect(worker).toContain("const C='evia-pwa-v85'");
-  expect(worker).toContain("const RELEASE_VERSION='1.1'");
+  expect(worker).toContain("const C='evia-pwa-v91'");
+  expect(worker).toContain("const RELEASE_VERSION='1.2'");
+  expect(worker).not.toContain('injectFeatures(');
   expect(worker).not.toContain('client.navigate(');
   expect(worker).not.toContain('__evia_refresh');
   expect(worker).not.toMatch(/const\s+RUNTIME_SCRIPTS\s*=\s*\[/);
+});
+
+test('clean page boot is sourced from the manifest and contains no superseded Attend Learn runtime', async () => {
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const manifest = runtimeScripts().map(cleanRuntimePath);
+
+  expect(html).toContain('./evia-runtime-manifest.js?v=91');
+  expect(html).toContain('EVIA_RUNTIME_SCRIPTS');
+  expect(html).not.toContain('evia-approved-attend-learn-render-v4.js');
+  expect(html).not.toContain('evia-approved-attend-learn-final-v5.js');
+  expect(manifest).toContain('evia-attend-learn.js');
+  expect(manifest).toContain('evia-approved-6570-05-completion-rules-v1.js');
+  expect(manifest).not.toContain('evia-approved-attend-learn-render-v4.js');
+  expect(manifest).not.toContain('evia-approved-attend-learn-final-v5.js');
 });
 
 test('EPA MCQ bank fix loads after the EPA zone', async () => {
@@ -54,23 +69,30 @@ test('EPA MCQ bank fix loads after the EPA zone', async () => {
   expect(mcqFix).toBe(manifest.length - 1);
 });
 
-test('direct first-load runtime scripts remain an ordered subset of the manifest', async () => {
-  const manifest = runtimeScripts().map(cleanRuntimePath);
-  const manifestIndex = new Map(manifest.map((item, index) => [item, index]));
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  const direct = [...html.matchAll(/<script\s+[^>]*src=["']([^"']+)["'][^>]*>/gi)]
-    .map((match) => cleanRuntimePath(match[1]))
-    .filter((src) => manifestIndex.has(src));
-
-  expect(direct).toEqual(manifest);
-});
-
-
-test('release version is aligned across the worker, update UI and release metadata', async () => {
+test('release version is aligned across worker update UI and release metadata', async () => {
   const worker = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
   const updates = fs.readFileSync(path.join(root, 'evia-approved-updates-stable-v1.js'), 'utf8');
   const release = JSON.parse(fs.readFileSync(path.join(root, 'evia-release.json'), 'utf8'));
-  expect(worker).toContain("const RELEASE_VERSION='1.1'");
-  expect(updates).toContain("const CURRENT_VERSION='1.1'");
-  expect(release.version).toBe('1.1');
+  expect(worker).toContain(`const RELEASE_VERSION='${release.version}'`);
+  expect(updates).toContain(`const CURRENT_VERSION='${release.version}'`);
+});
+
+test('current PWA manifest keeps its install scope and referenced icon assets', async () => {
+  const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8'));
+  expect(manifest.name).toBe('Evia');
+  expect(manifest.id).toBe('/Evia/');
+  expect(manifest.start_url).toBe('/Evia/');
+  expect(manifest.scope).toBe('/Evia/');
+  expect(manifest.display).toBe('standalone');
+
+  const icons = Array.isArray(manifest.icons) ? manifest.icons : [];
+  expect(icons).toEqual(expect.arrayContaining([
+    expect.objectContaining({ src: '/Evia/icons/evia-192.png', sizes: '192x192', purpose: 'any' }),
+    expect.objectContaining({ src: '/Evia/icons/evia-512.png', sizes: '512x512', purpose: 'any maskable' })
+  ]));
+
+  for (const icon of icons) {
+    const local = String(icon.src || '').replace(/^\/Evia\//, '');
+    expect(fs.existsSync(path.join(root, local)), `missing PWA icon ${icon.src}`).toBeTruthy();
+  }
 });

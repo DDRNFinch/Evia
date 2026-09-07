@@ -30,25 +30,13 @@ const NAXOS_SEEDS=[
 ].map(path=>new URL(path,NAXOS_BASE).href);
 let optionalOfflineCacheStarted=false;
 
-function injectFeatures(html){
-  if(typeof html!=='string')return html;
-  const tags=[];
-  for(const src of RUNTIME_SCRIPTS){
-    const marker=src.replace(/^\.\//,'').split('?')[0];
-    if(!html.includes(marker))tags.push(`<script src="${src}"></script>`);
-  }
-  if(!tags.length)return html;
-  const tag=tags.join('');
-  return html.includes('</body>')?html.replace('</body>',`${tag}</body>`):`${html}${tag}`;
-}
-
-function htmlResponse(text,source){
+function navigationResponse(text,source){
   const headers=new Headers(source.headers);
   headers.set('content-type','text/html; charset=utf-8');
   headers.delete('content-length');
   headers.delete('content-encoding');
   headers.set('cache-control','no-store');
-  return new Response(injectFeatures(text),{status:source.status,statusText:source.statusText,headers});
+  return new Response(text,{status:source.status,statusText:source.statusText,headers});
 }
 
 async function fetchFreshLocal(path){
@@ -118,7 +106,7 @@ self.addEventListener('install',e=>{
     await cacheCoreFresh(cache);
     const index=await fetch(new URL('./index.html',self.registration.scope).href,{cache:'no-store'});
     if(!index.ok)throw new Error('Could not cache Evia.');
-    const prepared=htmlResponse(await index.text(),index);
+    const prepared=navigationResponse(await index.text(),index);
     await cache.put(new URL('./index.html',self.registration.scope).href,prepared.clone());
     await cache.put(new URL('./',self.registration.scope).href,prepared.clone());
     if(!installedVersion)await self.skipWaiting();
@@ -164,7 +152,7 @@ self.addEventListener('fetch',e=>{
     e.respondWith((async()=>{
       try{
         const network=await fetch(e.request,{cache:'no-store'});
-        const prepared=htmlResponse(await network.text(),network);
+        const prepared=navigationResponse(await network.text(),network);
         const cache=await caches.open(C);
         await cache.put(new URL('./index.html',self.registration.scope).href,prepared.clone());
         await cache.put(new URL('./',self.registration.scope).href,prepared.clone());
