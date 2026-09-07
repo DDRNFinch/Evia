@@ -7,7 +7,7 @@
   const SUPABASE_URL = 'https://ffgfigkeeeauzkifopei.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_w_R4Kqq3UqNKQuv6erQzAQ_bXBkw8Bc';
   const SUPABASE_SCRIPT = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-  const NISIA_SYNC_SCRIPT = './nisia-sync.js?v=3';
+  const NISIA_SYNC_SCRIPT = './nisia-sync.js?v=4';
   const STATUS_STYLE_ID = 'evia-nisia-status-v1';
 
   let activationPromise = null;
@@ -102,7 +102,8 @@
 
   function setStandaloneLabel(button) {
     if (!button || window.__eviaNisiaRuntimeActive) return;
-    button.textContent = hasNisiaSessionHint() ? 'Sync with Nisia' : 'Connect Nisia';
+    const label = hasNisiaSessionHint() ? 'Sync with Nisia' : 'Connect Nisia';
+    if (button.textContent !== label) button.textContent = label;
   }
 
   function bindConnectionButton() {
@@ -147,7 +148,7 @@
   function scannerMessage(text) {
     try {
       const status = document.getElementById('scannerStatus');
-      if (status) status.textContent = text;
+      if (status && status.textContent !== text) status.textContent = text;
     } catch {}
   }
 
@@ -238,8 +239,9 @@
     } catch {}
 
     const idleStatus = document.getElementById('scannerStatus');
-    if (idleStatus && !document.getElementById('scannerPanel')?.classList.contains('open')) {
-      idleStatus.textContent = 'Scan a Naxos course or Nisia connection QR code.';
+    const idleText = 'Scan a Naxos course or Nisia connection QR code.';
+    if (idleStatus && !document.getElementById('scannerPanel')?.classList.contains('open') && idleStatus.textContent !== idleText) {
+      idleStatus.textContent = idleText;
     }
   }
 
@@ -283,8 +285,9 @@
     ensureProfileStatus();
     ensureSettingsStatus();
     const connected = hasNisiaSessionHint();
+    const text = connected ? 'Connected' : 'Not connected';
     document.querySelectorAll('[data-evia-nisia-status]').forEach((node) => {
-      node.textContent = connected ? 'Connected' : 'Not connected';
+      if (node.textContent !== text) node.textContent = text;
       node.classList.toggle('connected', connected);
     });
   }
