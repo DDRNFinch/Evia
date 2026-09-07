@@ -29,7 +29,7 @@ const scripts=[
   './evia-approved-update-system-v1.js?v=2',
   './evia-approved-ux-cleanup-v1.js?v=2',
   './evia-approved-ux-cleanup-v3.js?v=2',
-  './nisia-loader.js?v=3',
+  './nisia-loader.js?v=4',
   './evia-approved-attend-learn-render-v4.js?v=1',
   './evia-approved-attend-learn-final-v5.js?v=2',
   './evia-approved-progress-rings-completion-v1.js',
