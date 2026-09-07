@@ -1,14 +1,15 @@
 const { test, expect } = require('@playwright/test');
 const fs = require('node:fs');
 const path = require('node:path');
-const { pathToFileURL } = require('node:url');
 
 const workerPath = path.resolve(__dirname, '..', 'cloudflare-ai', 'worker-v5.js');
 let loadedWorker;
 
 async function currentWorker() {
   if (!loadedWorker) {
-    const module = await import(`${pathToFileURL(workerPath).href}?evia-current-worker`);
+    const source = fs.readFileSync(workerPath, 'utf8');
+    const moduleUrl = `data:text/javascript;base64,${Buffer.from(source, 'utf8').toString('base64')}`;
+    const module = await import(moduleUrl);
     loadedWorker = module.default;
   }
   return loadedWorker;
