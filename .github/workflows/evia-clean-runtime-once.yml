@@ -1,0 +1,72 @@
+name: Consolidate Evia runtime once
+
+on:
+  push:
+    branches:
+      - evia-clean-current
+
+permissions:
+  contents: write
+
+jobs:
+  consolidate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: evia-clean-current
+
+      - name: Make runtime manifest the single ordered source
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('index.html')
+          text = path.read_text()
+
+          old_head = '  <script src="./evia-demo-v1.js?v=2"></script>'
+          new_head = '''  <script src="./evia-runtime-manifest.js?v=91"></script>
+          <script>
+            if (globalThis.EVIA_RUNTIME_SCRIPTS?.[0]) {
+              document.write('<script src="' + globalThis.EVIA_RUNTIME_SCRIPTS[0] + '"><\\/script>');
+            }
+          </script>'''
+          if old_head not in text:
+              raise SystemExit('Expected current demo boot tag was not found')
+          text = text.replace(old_head, new_head, 1)
+
+          start_marker = '  <!-- Evia runtime: explicit first-load path mirrors the runtime manifest. The service worker is cache/offline support, not a second boot path. -->'
+          start = text.find(start_marker)
+          if start < 0:
+              raise SystemExit('Expected current runtime block was not found')
+          end = text.find('\n\n</body>', start)
+          if end < 0:
+              raise SystemExit('Could not find end of current runtime block')
+
+          new_bottom = '''  <!-- Evia runtime: the manifest is the single ordered source for current modules. -->
+          <script>
+            (globalThis.EVIA_RUNTIME_SCRIPTS || []).slice(1).forEach((src) => {
+              document.write('<script src="' + src + '"><\\/script>');
+            });
+          </script>'''
+          text = text[:start] + new_bottom + text[end:]
+          path.write_text(text)
+
+          Path('.github/workflows/evia-clean-runtime-once.yml').unlink()
+          PY
+
+      - name: Verify removed runtime references
+        run: |
+          ! grep -q 'evia-approved-attend-learn-render-v4.js' index.html
+          ! grep -q 'evia-approved-attend-learn-final-v5.js' index.html
+          grep -q 'evia-runtime-manifest.js?v=91' index.html
+          grep -q 'EVIA_RUNTIME_SCRIPTS' index.html
+
+      - name: Commit clean runtime boot path
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html .github/workflows/evia-clean-runtime-once.yml
+          git commit -m 'Consolidate current Evia runtime boot path'
+          git push origin HEAD:evia-clean-current
