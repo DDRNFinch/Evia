@@ -29,8 +29,10 @@ test('Learn keeps the current Add Learning Catch Up Ideas order', async ({ page 
   await expect(actions.nth(2)).toContainText(/Ideas/i);
 });
 
-test('Attend Learn current renderer has no polling patch loop', async () => {
+test('Attend Learn current renderer has no polling patch loop or superseded files', async () => {
   const source = fs.readFileSync('evia-attend-learn.js', 'utf8');
   expect(source).not.toContain('setInterval(');
   expect(source).toContain('MutationObserver');
+  expect(fs.existsSync('evia-approved-attend-learn-render-v4.js')).toBeFalsy();
+  expect(fs.existsSync('evia-approved-attend-learn-final-v5.js')).toBeFalsy();
 });
