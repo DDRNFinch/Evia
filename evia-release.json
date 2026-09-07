@@ -1,11 +1,9 @@
 {
-  "version": "1.1",
-  "released": "2026-09-06",
-  "title": "Evia v1.1",
-  "details": "This update makes Time and app startup more reliable while keeping learner data on this device.",
+  "version": "1.2",
+  "released": "2026-09-07",
+  "title": "Evia v1.2",
+  "details": "This update adds the official reduced-choice completion requirements used by the 6570-05 Trowel qualification.",
   "whatsNew": [
-    "Time now uses one timeline source instead of overlapping old and new renderers.",
-    "EPA Practice reports now appear directly on the Time timeline with their useful feedback.",
-    "Evia now loads its approved runtime explicitly and no longer relies on an automatic service-worker reload to finish starting."
+    "6570-05 criteria that require only a stated number of options now complete when that threshold is met, and the same completion state is used in Course and Evia option progress."
   ]
 }
