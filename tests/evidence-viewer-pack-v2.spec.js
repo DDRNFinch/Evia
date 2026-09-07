@@ -89,7 +89,8 @@ test('month and portfolio downloads add self-contained viewer while preserving e
 
   expect(manifest).toContain("'./evia-evidence-viewer-pack-v2.js?v=2'");
   expect(manifest).toContain("'./evia-evidence-ksb-index-v1.js?v=2'");
-  expect(index).toContain('evia-evidence-ksb-index-v1.js?v=2');
+  expect(index).toContain('./evia-runtime-manifest.js?v=91');
+  expect(index).toContain('EVIA_RUNTIME_SCRIPTS');
   expect(manifest).toContain("'./evia-approved-time-monthly-packs-v1.js?v=9'");
   expect(index).toContain('EviaEvidencePackViewer.buildViewerFiles(entries');
   expect(index).toContain("name: 'portfolio.json'");
