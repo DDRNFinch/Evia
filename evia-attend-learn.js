@@ -98,11 +98,14 @@
       #${PANEL_ID}.evia-attend-current [data-evia-action*="nisia" i],
       #${PANEL_ID}.evia-attend-current [data-nisia]{display:none!important}
       @media(max-width:390px){
-        #${ROOT_ID}.evia-attend-current .evia-attend-actions>button,
-        #${ROOT_ID}.evia-learn-current #eviaLearnActionsV4>button{
+        #${ROOT_ID}.evia-attend-current .evia-attend-actions>button{
           min-height:52px!important;
           padding-top:8px!important;
           padding-bottom:8px!important;
+        }
+        #${ROOT_ID}.evia-learn-current #eviaLearnActionsV4>button{
+          min-height:52px!important;
+          padding:8px 42px 8px 15px!important;
         }
       }
     `;
@@ -141,10 +144,19 @@
     [...panel.querySelectorAll('button,[role="button"],a[href],[tabindex],#uploadPortfolio,[id*="nisia" i],[class*="nisia" i],[data-nisia]')]
       .forEach((node) => {
         if (!isNisiaControl(node)) return;
-        if (node.closest('#eviaAttendanceManual,#eviaAttendanceQr')) return;
         parents.push(node.parentElement);
         node.remove();
       });
+
+    [...panel.querySelectorAll('div,section,span,p')].forEach((node) => {
+      if (!node.isConnected || node === root || node === panel) return;
+      if (!isNisiaControl(node)) return;
+      if (node.querySelector('#eviaAttendanceManual,#eviaAttendanceQr')) return;
+      if (node.children.length > 4) return;
+      parents.push(node.parentElement);
+      node.remove();
+    });
+
     parents.forEach((parent) => cleanEmptyAncestors(parent, panel));
     root.querySelectorAll('[data-evia-v4-hidden]').forEach((node) => node.removeAttribute('data-evia-v4-hidden'));
   }
