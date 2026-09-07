@@ -1,0 +1,38 @@
+name: Align current Evia test once
+
+on:
+  push:
+    branches:
+      - evia-clean-current
+
+permissions:
+  contents: write
+
+jobs:
+  align:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: evia-clean-current
+
+      - name: Align Time test with current release
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path=Path('tests/time-only-redesign.spec.js')
+          text=path.read_text()
+          text=text.replace("const C='evia-pwa-v85'", "const C='evia-pwa-v91'")
+          text=text.replace("const RELEASE_VERSION='1.1'", "const RELEASE_VERSION='1.2'")
+          path.write_text(text)
+          Path('.github/workflows/evia-update-current-tests-once.yml').unlink()
+          PY
+
+      - name: Commit current test alignment
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tests/time-only-redesign.spec.js .github/workflows/evia-update-current-tests-once.yml
+          git commit -m 'Align Time test with current Evia release'
+          git push origin HEAD:evia-clean-current
