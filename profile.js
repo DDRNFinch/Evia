@@ -79,11 +79,10 @@
     root.innerHTML='<div class="welcome-inner">'+
       '<div class="welcome-avatar evia-welcome-face"><span class="evia-eye"></span><span class="evia-eye"></span></div>'+
       '<div class="welcome-pulse"></div>'+
-      '<div class="welcome-copy"><div class="welcome-small">EVIA</div><h2>Hi'+(p.name?", "+esc(p.name):"")+'.</h2><p>What do you want to work on today?</p><button id="welcome-start">Let’s get started</button></div>'+
+      '<div class="welcome-copy"><div class="welcome-small">EVIA</div><h2>Hi'+(p.name?", "+esc(p.name):"")+'.</h2><p>What do you want to work on today?</p></div>'+
       '</div>';
     document.body.appendChild(root);
     requestAnimationFrame(()=>root.classList.add("visible"));
-    document.getElementById("welcome-start").onclick=finishWelcome;
     root.querySelector(".welcome-avatar").onclick=finishWelcome;
   }
 
@@ -137,6 +136,10 @@
       #signature-pad{display:block;width:100%;height:150px;touch-action:none}
       #clear-signature{position:absolute;right:8px;top:8px;border:0;border-radius:10px;background:#f1f3f5;padding:7px 9px;font-size:11px;color:#667085}
       .profile-actions{margin-top:20px}.profile-actions .primary,.profile-actions .secondary{flex:1}
+      .evidence-signoff{margin-top:14px;padding:12px 0;border-top:1px solid #edf0f3;display:grid;gap:5px}
+      .evidence-signoff img{display:block;width:180px;height:52px;object-fit:contain;object-position:left center}
+      .evidence-signoff small{font-size:10px;color:#9aa3af}
+      .welcome-avatar{cursor:pointer}
       #welcome-screen{position:fixed;inset:0;z-index:2000;background:#fffdfa;display:grid;place-items:center;opacity:0;transition:opacity .45s ease}
       #welcome-screen.visible{opacity:1}
       #welcome-screen.leaving{opacity:0}
