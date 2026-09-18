@@ -158,6 +158,12 @@
       .evidence-signoff img{display:block;width:180px;height:52px;object-fit:contain;object-position:left center}
       .evidence-signoff small{font-size:10px;color:#9aa3af}
       .welcome-avatar{cursor:pointer}
+      .welcome-avatar .evia-face{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:14px}
+      .welcome-avatar .evia-face i{display:block;width:30px;height:30px;border:4px solid #e6b800;border-radius:50%;position:relative}
+      .welcome-avatar .evia-face i:after{content:"";position:absolute;width:7px;height:7px;border-radius:50%;background:#e6b800;left:8px;top:8px;animation:welcomeLook 4.5s ease-in-out infinite}
+      .welcome-avatar .evia-face i:nth-child(2):after{animation-delay:.25s}
+      @keyframes welcomeLook{0%,100%{transform:translate(0)}35%{transform:translate(7px,3px)}65%{transform:translate(-4px,-3px)}}
+      .welcome-avatar .evia-face{pointer-events:none}
       #welcome-screen{position:fixed;inset:0;z-index:2000;background:#fffdfa;display:grid;place-items:center;opacity:0;transition:opacity .45s ease}
       #welcome-screen.visible{opacity:1}
       #welcome-screen.leaving{opacity:0}
