@@ -64,7 +64,8 @@
       '<div class="entry-meta">'+esc(e.d||e.savedAt||"")+'</div>'+
       '<h2>'+esc(e.u)+'</h2>'+
       (e.p&&e.p.length?'<div class="evidence-photos">'+e.p.map(p=>'<img src="'+p+'" alt="Evidence photo">').join("")+'</div>':"")+
-      (e.w?'<p class="evidence-notes">'+esc(e.w).replace(/\n/g,"<br>")+'</p>':"")+
+      (e.w?'<p class="evidence-notes">'+esc(e.w).replace(/
+/g,"<br>")+'</p>':"")+
       '<div class="evidence-ksbs">'+(e.k||[]).map(k=>'<span>'+esc(k)+'</span>').join("")+'</div>'+
       (e.signature?'<div class="evidence-signature"><img src="'+e.signature+'" alt="Learner signature"><span>Signed by '+esc((e.learnerProfile&&e.learnerProfile.name)||"Apprentice")+' · '+esc(e.savedAt||e.d||"")+'</span></div>':"")+
       '</article>';
@@ -107,7 +108,14 @@
   function finishWelcome(){
     const root=document.getElementById("welcome-screen"),fab=document.getElementById("evia-fab");
     if(!root||!fab)return;
-    // Freeze the dock face before measuring it so its floating animation cannot move the target during the transition.\n    fab.classList.add("welcome-target-hidden");\n    const target=fab.getBoundingClientRect(),avatar=root.querySelector(".welcome-avatar");\n    // Keep the welcome face exactly 1.5x the live dock face at every viewport size.\n    const dockSize=fab.offsetWidth;\n    avatar.style.width=(dockSize*1.5)+"px";\n    avatar.style.height=(dockSize*1.5)+"px";\n    const start=avatar.getBoundingClientRect();
+    // Freeze the dock face before measuring it so its floating animation cannot move the target during the transition.
+    fab.classList.add("welcome-target-hidden");
+    const target=fab.getBoundingClientRect(),avatar=root.querySelector(".welcome-avatar");
+    // Keep the welcome face exactly 1.5x the live dock face at every viewport size.
+    const dockSize=fab.offsetWidth;
+    avatar.style.width=(dockSize*1.5)+"px";
+    avatar.style.height=(dockSize*1.5)+"px";
+    const start=avatar.getBoundingClientRect();
     const clone=root.querySelector(".welcome-avatar").cloneNode(true);
     clone.classList.add("welcome-flying");
     Object.assign(clone.style,{left:start.left+"px",top:start.top+"px",width:start.width+"px",height:start.height+"px"});
