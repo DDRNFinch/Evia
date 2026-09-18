@@ -107,7 +107,7 @@
   function finishWelcome(){
     const root=document.getElementById("welcome-screen"),fab=document.getElementById("evia-fab");
     if(!root||!fab)return;
-    const target=fab.getBoundingClientRect(),start=root.querySelector(".welcome-avatar").getBoundingClientRect();
+    const target=fab.getBoundingClientRect(),avatar=root.querySelector(".welcome-avatar");\n    // Keep the welcome face exactly 1.5x the live dock face at every viewport size.\n    const dockSize=fab.offsetWidth;\n    avatar.style.width=(dockSize*1.5)+"px";\n    avatar.style.height=(dockSize*1.5)+"px";\n    const start=avatar.getBoundingClientRect();
     const clone=root.querySelector(".welcome-avatar").cloneNode(true);
     clone.classList.add("welcome-flying");
     Object.assign(clone.style,{left:start.left+"px",top:start.top+"px",width:start.width+"px",height:start.height+"px"});
