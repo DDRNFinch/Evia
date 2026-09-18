@@ -152,15 +152,61 @@ function portfolio(){
  const download=$("#download-pdf");
  if(download)download.onclick=()=>window.downloadEvidencePack&&window.downloadEvidencePack();
 }
+function confidenceHistory(){
+ try{return JSON.parse(localStorage.getItem("evia7-confidence")||"[]")}catch(_){return[]}
+}
+function saveConfidenceHistory(history){localStorage.setItem("evia7-confidence",JSON.stringify(history))}
+function confidenceQuestions(){
+ const banks={
+  bricklayer:[
+   ["Jointing styles","How confident are you at choosing and producing the correct joint finish, including flush, recessed, half-round and weather-struck joints?"],
+   ["Mortar mixing","How confident are you at selecting the correct mortar materials and mixing to the required ratio and consistency?"],
+   ["Setting out a solid wall","How confident are you at setting out a solid brick wall accurately from drawings, including gauge, line, corners and capping?"],
+   ["Brick bonds","How confident are you at setting out and building English bond, Flemish bond, garden wall bonds and broken bond?"],
+   ["Materials","How confident are you at selecting the correct bricks, blocks, mortar, wall ties, DPCs, cavity trays and lintels for a job?"],
+   ["Cavity wall setting out","How confident are you at setting out a cavity wall with openings, profiles, gauge rods, DPCs, cavity trays and weep holes?"],
+   ["Cavity wall construction","How confident are you at constructing a stretcher-bond cavity wall with a return and opening, including insulation and fire stopping?"],
+   ["Lintels","How confident are you at selecting and correctly positioning a lintel and forming the surrounding opening, including the required cavity details?"],
+   ["Joint protection","How confident are you at protecting unfinished and completed brickwork from frost, water and construction damage?"],
+   ["Raking cuts","How confident are you at setting out and constructing a gable end or other raked brick wall accurately?"],
+   ["Cutting bricks","How confident are you at measuring and cutting bricks and blocks safely to the required tolerance?"],
+   ["Brick repairs","How confident are you at identifying a damaged brick and carrying out a simple repair without damaging the surrounding wall?"]
+  ],
+  site:[
+   ["Structural carcassing","How confident are you at setting out and installing load-bearing timber studwork accurately?"],
+   ["Partition walls","How confident are you at setting out and constructing straight timber or metal partition walls?"],
+   ["Floor joists","How confident are you at setting out and installing floor joists and their coverings correctly?"],
+   ["Stairs","How confident are you at setting out and installing a straight flight of stairs accurately?"],
+   ["Service encasement","How confident are you at constructing service encasements safely and accurately?"],
+   ["Cladding","How confident are you at setting out and installing timber cladding correctly?"],
+   ["Units and fitments","How confident are you at manufacturing or fitting wall and floor units and producing accurate jigs where required?"],
+   ["Handrails and spindles","How confident are you at setting out and fitting handrails and spindles to a straight flight of stairs?"],
+   ["Doors","How confident are you at fitting internal and external doors accurately, including the required connections and ironmongery?"],
+   ["Skirting and architrave","How confident are you at measuring, cutting, scribing and fitting skirting boards and architrave?"],
+   ["Window boards","How confident are you at measuring, marking out, cutting, mitring and fitting window boards?"],
+   ["Roofs","How confident are you at constructing rafter roofs, including verge, eaves and loft access details?"]
+  ],
+  joiner:[
+   ["Woodworking joints","How confident are you at producing accurate dovetail, bridal, mortise and tenon and halving joints?"],
+   ["Timber windows","How confident are you at manufacturing and assembling a timber window with casement, glazing rebates and ironmongery?"],
+   ["Straight staircases","How confident are you at manufacturing and assembling a straight timber staircase accurately?"],
+   ["Door frames and linings","How confident are you at manufacturing and assembling timber door frames and linings?"],
+   ["Timber doors","How confident are you at manufacturing and assembling timber doors accurately?"],
+   ["Wall and floor units","How confident are you at manufacturing and assembling wall and floor units and fitments?"],
+   ["Staircase spindles","How confident are you at manufacturing and assembling staircase spindles and balustrades?"],
+   ["Ironmongery","How confident are you at accurately fitting locks, handles, hinges, latches and drawer runners?"],
+   ["Fixed machinery","How confident are you at inspecting, preparing and safely operating fixed woodworking machinery?"],
+   ["Materials","How confident are you at selecting timber and timber-based products for the job and recognising their characteristics?"],
+   ["Drawings","How confident are you at interpreting drawings and specifications and extracting the information you need to manufacture a component?"],
+   ["Power tools","How confident are you at selecting, using, inspecting and storing the correct power tools for the job?"]
+  ]
+ };
+ return banks[course]||banks.bricklayer;
+}
+
 function chat(){
  const fab=$("#evia-fab");
  fab.classList.add("chat-active");
- const unitKSBs=()=>data().u.flatMap(u=>u[1]).filter(k=>/^K\d+\|/.test(k));
- const naturalQuestion=k=>{
-   const raw=text(k).replace(/^.*?:\s*/,"").trim();
-   const clean=raw.replace(/\([^)]*\)/g,"").replace(/\s+/g," ").replace(/\.$/,"").trim();
-   return clean?"What is your knowledge like towards "+clean.charAt(0).toLowerCase()+clean.slice(1)+"?":"How confident do you feel about this area?";
- };
  const options=[
   ["Portfolio check",""],
   ["Test me",""],
@@ -177,44 +223,140 @@ function chat(){
    el.innerHTML='<span class="thinking-label">Evia is thinking</span><span class="thinking-dots"><i></i><i></i><i></i></span>';
    $("#chat").appendChild(el);scroll();return el;
  };
- const eviaReply=(html,delay=1400)=>{
+ const eviaReply=(html,delay=900)=>{
    const t=thinking();
    setTimeout(()=>{t.outerHTML='<div class="bubble evia">'+html+'</div>';scroll()},delay);
  };
+ const firstName=()=>{
+   const p=JSON.parse(localStorage.getItem("evia7-profile")||"{}");
+   return String(p.name||"").trim().split(/\s+/)[0]||"";
+ };
  const confidence=()=>{
-   const ks=unitKSBs().slice(0,12);
-   if(!ks.length){eviaReply('I do not have any knowledge areas loaded for this course yet.');return}
+   const bank=confidenceQuestions();
+   if(!bank.length){eviaReply("I do not have any practical skill areas loaded for this course yet.");return}
    let index=0;
+   const session={id:"confidence-"+Date.now(),course,startedAt:new Date().toISOString(),scores:[]};
    const ask=()=>{
-     const k=ks[index];
+     const q=bank[Math.floor(Math.random()*bank.length)];
      const t=thinking();
      setTimeout(()=>{
-       t.outerHTML='<div class="bubble evia">'+esc(naturalQuestion(k))+'</div><div class="rating-options">'+
+       t.outerHTML='<div class="bubble evia">'+esc(q[1])+'</div><div class="rating-options">'+
          ["I need more help with this","I understand it but need more practice","I can do this confidently on my own","I am very confident and could explain it to someone else"].map((label,n)=>'<button class="rating-pill" data-rating="'+(n+1)+'"><strong>'+label+'</strong></button>').join("")+
          '</div>';
        scroll();
        document.querySelectorAll("[data-rating]").forEach(b=>b.onclick=()=>{
+         const score=Number(b.dataset.rating);
          addBubble("I’d rate myself "+b.querySelector("strong").textContent.toLowerCase()+".");
+         session.scores.push({area:q[0],score,question:q[1],answeredAt:new Date().toISOString()});
          document.querySelectorAll(".rating-options").forEach(x=>x.remove());
          index++;
-         if(index<ks.length)ask();
-         else eviaReply("That confidence check is complete. Your ratings are for your own reflection and are not an assessment.");
+         if(index<3){ask();return}
+         saveConfidenceHistory([...confidenceHistory(),session]);
+         const yesNo='<div class="bubble evia">Would you like to do 3 more?</div><div class="rating-options"><button class="rating-pill" data-more="yes"><strong>Yes</strong></button><button class="rating-pill" data-more="no"><strong>No</strong></button></div>';
+         $("#chat").insertAdjacentHTML("beforeend",yesNo);scroll();
+         document.querySelectorAll("[data-more]").forEach(b=>b.onclick=()=>{
+           addBubble(b.dataset.more==="yes"?"Yes":"No");
+           document.querySelectorAll("[data-more]").forEach(x=>x.parentElement&&x.parentElement.remove());
+           if(b.dataset.more==="yes"){
+             index=3;
+             const askMore=()=>{
+               const q2=bank[(index-3)%bank.length];
+               const t2=thinking();
+               setTimeout(()=>{
+                 t2.outerHTML='<div class="bubble evia">'+esc(q2[1])+'</div><div class="rating-options">'+
+                   ["I need more help with this","I understand it but need more practice","I can do this confidently on my own","I am very confident and could explain it to someone else"].map((label,n)=>'<button class="rating-pill" data-rating-more="'+(n+1)+'"><strong>'+label+'</strong></button>').join("")+
+                   '</div>';scroll();
+                 document.querySelectorAll("[data-rating-more]").forEach(btn=>btn.onclick=()=>{
+                   const score2=Number(btn.dataset.ratingMore);
+                   addBubble("I’d rate myself "+btn.querySelector("strong").textContent.toLowerCase()+".");
+                   session.scores.push({area:q2[0],score:score2,question:q2[1],answeredAt:new Date().toISOString()});
+                   document.querySelectorAll(".rating-options").forEach(x=>x.remove());
+                   index++;
+                   if(index<6){askMore();return}
+                   saveConfidenceHistory([...confidenceHistory(),session]);
+                   eviaReply("That confidence check is complete. I’ve saved all 6 ratings for your progress review. They are for reflection, not assessment.");
+                 });
+               },900);
+             };
+             askMore();
+           }else{
+             eviaReply("That confidence check is complete. I’ve saved your 3 ratings for your progress review. They are for reflection, not assessment.");
+           }
+         });
        });
-     },1400);
+     },900);
    };
    ask();
+ };
+ const portfolioReview=()=>{
+   const entries=evidence.filter(e=>e.c===course);
+   const rows=data().u.map((u,i)=>{
+     const es=entries.filter(e=>e.u===u[0]);
+     const photos=es.reduce((n,e)=>n+(Array.isArray(e.p)?e.p.length:0),0);
+     const words=es.reduce((n,e)=>n+String(e.w||"").trim().split(/\s+/).filter(Boolean).length,0);
+     const stages={beginning:0,middle:0,end:0};
+     es.forEach(e=>{
+       if(e.stages){stages.beginning+=Number(e.stages.beginning||0);stages.middle+=Number(e.stages.middle||0);stages.end+=Number(e.stages.end||0)}
+     });
+     const photoLevel=photos<6?"weak":photos<=10?"good":"strong";
+     const textLevel=words<50?"weak":words<=100?"good":"strong";
+     const overall=photoLevel==="strong"&&textLevel==="strong"?"strong":photoLevel==="weak"||textLevel==="weak"?"weak":"good";
+     const missingStages=["beginning","middle","end"].filter(s=>stages[s]<2);
+     let advice="";
+     if(overall==="weak") advice="Add more evidence during another job, with more photos and/or a fuller write-up.";
+     else if(overall==="good") advice="Good evidence base. Add more photos and/or detail during another job to make this unit stronger.";
+     else advice="Strong evidence base. Keep adding evidence naturally during another job where it gives useful extra coverage.";
+     if(missingStages.length) advice+=" Aim for at least 2 photos at "+missingStages.join(", ")+" of the job.";
+     return {i,name:u[0],photos,words,photoLevel,textLevel,overall,advice};
+   });
+   const label=x=>x.charAt(0).toUpperCase()+x.slice(1);
+   const lines=rows.map(r=>'<div class="bubble evia"><strong>'+esc(r.name)+'</strong><br>Evidence: '+label(r.overall)+' · '+r.photos+' photos · '+r.words+' words.<br>'+esc(r.advice)+'</div>').join("");
+   eviaReply('<strong>Portfolio check</strong><br>I’ve reviewed your saved evidence unit by unit. '+(rows.length? "Here is the current evidence strength:":"There is no saved evidence yet.")+lines);
+ };
+ const progressReview=()=>{
+   const entries=evidence.filter(e=>e.c===course);
+   const units=data().u.length;
+   const covered=new Set(entries.map(e=>e.u)).size;
+   const completion=units?Math.round(covered/units*100):0;
+   const p=JSON.parse(localStorage.getItem("evia7-profile")||"{}");
+   const startDate=p.start?new Date(p.start+"T00:00:00"):null;
+   const endDate=p.end?new Date(p.end+"T23:59:59"):null;
+   let timeText="I don’t have your apprenticeship dates recorded yet.";
+   if(startDate&&!isNaN(startDate)&&endDate&&!isNaN(endDate)&&endDate>startDate){
+     const now=Math.min(Date.now(),endDate.getTime());
+     const elapsed=Math.max(0,Math.min(1,(now-startDate.getTime())/(endDate.getTime()-startDate.getTime())));
+     const elapsedPct=Math.round(elapsed*100);
+     timeText="About "+elapsedPct+"% of your planned course time has elapsed, compared with "+completion+"% of units having saved evidence.";
+   }
+   const totalOTJ=hours.reduce((n,x)=>n+Number(x.n||0),0);
+   const history=confidenceHistory().filter(x=>x.course===course&&Array.isArray(x.scores));
+   const current=history[history.length-1], previous=history[history.length-2];
+   const currentMap=new Map((current?current.scores:[]).map(x=>[x.area,x.score]));
+   const previousMap=new Map((previous?previous.scores:[]).map(x=>[x.area,x.score]));
+   const confident=[...(current?current.scores:[])].sort((a,b)=>b.score-a.score).slice(0,3);
+   const less=[...(current?current.scores:[])].sort((a,b)=>a.score-b.score).slice(0,3);
+   const changes=(current?current.scores:[]).map(x=>previousMap.has(x.area)?{area:x.area,delta:x.score-previousMap.get(x.area)}:null).filter(Boolean);
+   const changeText=changes.length?changes.map(x=>esc(x.area)+" "+(x.delta>0?"↑":x.delta<0?"↓":"→")+" "+Math.abs(x.delta)).join(", "):"No previous confidence check is available yet for comparison.";
+   let guidance="Focus next on the practical units you have not yet captured evidence for, while using another job to strengthen weaker portfolio areas.";
+   if(completion===100) guidance="You have saved evidence against every unit. Use your next jobs to strengthen weaker evidence areas and revisit any low-confidence practical skills.";
+   if(!entries.length) guidance="Start by capturing evidence from your next practical job, then use the confidence check to identify the practical skills you want to revisit.";
+   const name=firstName();
+   eviaReply('<strong>Progress review'+(name?", "+esc(name):"")+'</strong><br>'+
+     'Evidence completion: '+completion+'% ('+covered+'/'+units+' units). '+timeText+'<br>'+
+     'Off-the-job learning: '+totalOTJ.toFixed(2)+' hours across '+hours.length+' learning entries.<br>'+
+     (current?'<br><strong>Most confident areas:</strong> '+confident.map(x=>esc(x.area)).join(", ")+'.<br><strong>Areas to work on:</strong> '+less.map(x=>esc(x.area)).join(", ")+'.<br><strong>Change since your previous check:</strong> '+changeText:'<br>No confidence check has been completed yet.')+
+     '<br><br><strong>Next direction:</strong> '+guidance);
  };
  document.querySelectorAll("[data-chat-option]").forEach(b=>b.onclick=()=>{
    const choice=options[Number(b.dataset.chatOption)];
    addBubble(choice[0]);
-   if(choice[0]==="Portfolio check")eviaReply("Open Portfolio to see the evidence you have saved. I can help you identify areas you may want to revisit.");
-   else if(choice[0]==="Progress review")eviaReply("You have "+evidence.filter(e=>e.c===course).length+" saved evidence entries and "+hours.length+" learning entries. Use Progress to review the knowledge areas linked to your course.");
+   if(choice[0]==="Portfolio check")portfolioReview();
+   else if(choice[0]==="Progress review")progressReview();
    else if(choice[0]==="Confidence check")confidence();
-   else eviaReply("I can test you on the knowledge areas linked to your course. This will be a learning check, not an assessment.");
+   else eviaReply("I can test you on practical skill areas linked to your course. This is a learning check, not an assessment.");
    scroll();
  });
 }
-
 document.querySelectorAll("[data-nav]").forEach(b=>b.onclick=()=>nav(b.dataset.nav));
 $("#evia-fab").onclick=chat;$("#profile-btn").onclick=()=>alert("Profile settings will be added here.");
 render();
