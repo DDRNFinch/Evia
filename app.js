@@ -158,8 +158,8 @@ function allK(){let m=new Map();data().u.forEach(u=>u[1].forEach(k=>m.set(code(k
 function courseProgressMeta(){
  const metas={
   bricklayer:{durationMonths:24,epaMonths:3,otjTarget:null},
-  site:{durationMonths:24,epaMonths:3,otjTarget:null},
-  joiner:{durationMonths:24,epaMonths:3,otjTarget:null}
+  site:{durationMonths:24,epaMonths:6,otjTarget:null},
+  joiner:{durationMonths:24,epaMonths:6,otjTarget:null}
  };
  return metas[course]||metas.bricklayer;
 }
