@@ -126,13 +126,13 @@
     avatar.style.height=start.height+"px";
     avatar.style.margin="0";
     avatar.style.zIndex="2100";
-    avatar.style.transition="transform .62s cubic-bezier(.2,.75,.2,1),width .62s cubic-bezier(.2,.75,.2,1),height .62s cubic-bezier(.2,.75,.2,1)";
+    avatar.style.transformOrigin="center center";
+    avatar.style.transition="transform .62s cubic-bezier(.2,.75,.2,1)";
     root.classList.add("leaving");
 
     requestAnimationFrame(()=>{
-      avatar.style.width=target.width+"px";
-      avatar.style.height=target.height+"px";
-      avatar.style.transform="translate(0,"+dy+"px)";
+      const scale=target.width/start.width;
+      avatar.style.transform="translate(0,"+dy+"px) scale("+scale+")";
     });
 
     setTimeout(()=>{
