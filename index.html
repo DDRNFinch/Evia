@@ -30,6 +30,6 @@
 <div id="modal-root"></div>
 <script src="app.js"></script>
 <script src="polish.js"></script>
-<script src="profile.js"></script>\n<script>\n(function(){\n  if (!("serviceWorker" in navigator)) return;\n  window.addEventListener("load", async function(){\n    try {\n      const registration = await navigator.serviceWorker.register("./sw.js", {updateViaCache:"none"});\n      await registration.update();\n      if (registration.waiting) registration.waiting.postMessage({type:"SKIP_WAITING"});\n    } catch (e) { console.warn("Evia update service unavailable", e); }\n  });\n})();\n</script>
+<script src="profile.js"></script>\n<script>\n(function(){\n  if (!("serviceWorker" in navigator)) return;\n  let reloading=false;\n  navigator.serviceWorker.addEventListener("controllerchange",function(){\n    if(reloading)return;\n    reloading=true;\n    window.location.reload();\n  });\n  window.addEventListener("load", async function(){\n    try {\n      const registration=await navigator.serviceWorker.register("./sw.js",{updateViaCache:"none"});\n      await registration.update();\n      if(registration.waiting) registration.waiting.postMessage({type:"SKIP_WAITING"});\n    } catch(e) { console.warn("Evia update service unavailable",e); }\n  });\n})();\n</script>
 </body>
 </html>
