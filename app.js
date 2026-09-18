@@ -157,9 +157,9 @@ function bindCourses(){document.querySelectorAll("[data-c]").forEach(b=>b.onclic
 function allK(){let m=new Map();data().u.forEach(u=>u[1].forEach(k=>m.set(code(k),text(k))));return [...m].sort((a,b)=>a[0][0].localeCompare(b[0][0])||Number(a[0].slice(1))-Number(b[0].slice(1)))}
 function courseProgressMeta(){
  const metas={
-  bricklayer:{durationMonths:24,epaMonths:3,otjTarget:null},
-  site:{durationMonths:24,epaMonths:6,otjTarget:null},
-  joiner:{durationMonths:24,epaMonths:6,otjTarget:null}
+  bricklayer:{durationMonths:24,epaMonths:3,otjTarget:578},
+  site:{durationMonths:24,epaMonths:6,otjTarget:557},
+  joiner:{durationMonths:24,epaMonths:6,otjTarget:557}
  };
  return metas[course]||metas.bricklayer;
 }
