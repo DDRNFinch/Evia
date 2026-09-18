@@ -38,19 +38,71 @@ joiner:{name:"Architectural Joiner",std:"ST0264 v1.4",u:[
 ["Fixed Machinery",["S30|Architectural joiner: Inspect, prepare and operate fixed machinery.","K31|Architectural joiner: Safe use of fixed machinery, inspection, preparation and operation techniques: Crosscut saw, band saw, planer and thicknesser and mortiser.","S2|Identify and use safety control equipment, for example, RPE, dust suppression, PPE and LEV.","K1|Fire safety, fire extinguishers","S5|Prepare and maintain a safe working area.","K3|Safe systems of work: Site inductions, tool box talks, risk assessments, method statements and hazard identification in the work area.","K5|Principles of building and modern methods of construction","B5|Team-focus to meet team goals including, considering the wider build team."]]
 ]}};
 const esc=s=>String(s??"").replace(/[&<>"']/g,x=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[x]));
-let course=localStorage.getItem("evia7-course")||"bricklayer", screen="learning", unit=-1, photos=[], evidence=JSON.parse(localStorage.getItem("evia7-evidence")||"[]"), hours=JSON.parse(localStorage.getItem("evia7-hours")||"[]");
+let course=localStorage.getItem("evia7-course")||"bricklayer", screen="learning", unit=-1, photos=[], evidence=JSON.parse(localStorage.getItem("evia7-evidence")||"[]"), hours=JSON.parse(localStorage.getItem("evia7-hours")||"[]"), otjBatches=JSON.parse(localStorage.getItem("evia7-otj-batches")||"[]");
+hours=hours.map((x,i)=>Object.assign({id:"legacy-"+i,createdAt:x.createdAt||Date.parse(x.d)||Date.now(),savedAt:x.savedAt||x.d||""},x));
 const $=s=>document.querySelector(s), data=()=>C[course], code=x=>x.split("|")[0], text=x=>x.split("|").slice(1).join("|");
-function persist(){localStorage.setItem("evia7-course",course);localStorage.setItem("evia7-evidence",JSON.stringify(evidence));localStorage.setItem("evia7-hours",JSON.stringify(hours))}
+function persist(){localStorage.setItem("evia7-course",course);localStorage.setItem("evia7-evidence",JSON.stringify(evidence));localStorage.setItem("evia7-hours",JSON.stringify(hours));localStorage.setItem("evia7-otj-batches",JSON.stringify(otjBatches))}
 function picker(){return '<div class="course-picker">'+Object.keys(C).map(k=>'<button class="pill '+(k===course?"active":"")+'" data-c="'+k+'">'+esc(C[k].name)+'</button>').join("")+'</div>'}
-function nav(s){screen=s;unit=-1;render()}
-function render(){
- document.querySelectorAll("[data-nav]").forEach(b=>b.classList.toggle("active",b.dataset.nav===screen));
- if(screen==="learning")learning(); else if(screen==="course")courses(); else if(screen==="progress")progress(); else portfolio();
+function nav(s){screen=function formatDateTime(ts){
+ const d=new Date(ts);
+ return d.toLocaleString("en-GB",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
+}
+function otjEntriesForBatch(batch){
+ if(!batch)return[];
+ const ids=new Set(batch.entryIds||[]);
+ return hours.filter(x=>ids.has(x.id));
+}
+function buildOTJPrintWindow(entries,title,downloadedAt){
+ const p=JSON.parse(localStorage.getItem("evia7-profile")||"{}");
+ const learner=p.name||"Apprentice";
+ const total=entries.reduce((a,x)=>a+Number(x.n||0),0);
+ const w=window.open("","_blank");
+ if(!w){alert("Please allow pop-ups to download your off-the-job evidence PDF.");return false}
+ w.document.write('<!doctype html><html lang="en"><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>'+
+ '@page{size:A4;margin:15mm}*{box-sizing:border-box}body{margin:0;color:#172033;font:10.5pt -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.45}.header{border-bottom:2px solid #e6b800;padding-bottom:14px;margin-bottom:18px}.eyebrow{font-size:8.5pt;letter-spacing:.12em;color:#667085;font-weight:700}.header h1{font-size:22pt;margin:4px 0 12px}.details{display:grid;grid-template-columns:1fr 1fr;gap:5px;color:#475467}.summary{background:#fff7d6;border:1px solid #f1df91;border-radius:10px;padding:10px;margin-bottom:16px}.entry{border:1px solid #e4e7ec;border-radius:11px;padding:13px;margin-bottom:10px;break-inside:avoid;page-break-inside:avoid}.entry-date{font-size:8.5pt;color:#667085;font-weight:700;letter-spacing:.05em}.entry-hours{font-size:15pt;font-weight:800;margin:3px 0}.entry-description{white-space:pre-wrap;color:#344054}.footer{margin-top:18px;padding-top:10px;border-top:1px solid #eaecf0;color:#667085;font-size:8.5pt}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}</style></head><body>'+
+ '<header class="header"><div class="eyebrow">EVIA · OFF-THE-JOB LEARNING EVIDENCE</div><h1>'+esc(learner)+'</h1><div class="details">'+
+ '<span><strong>Course:</strong> '+esc(data().name)+'</span><span><strong>Standard:</strong> '+esc(data().std)+'</span>'+
+ (p.start?'<span><strong>Apprenticeship start:</strong> '+esc(p.start)+'</span>':"")+
+ (p.end?'<span><strong>Apprenticeship end:</strong> '+esc(p.end)+'</span>':"")+
+ '<span><strong>PDF generated:</strong> '+esc(formatDateTime(downloadedAt))+'</span></div></header>'+
+ '<div class="summary"><strong>'+total.toFixed(2)+' hours</strong> across '+entries.length+' learning entries included in this download.</div>'+
+ entries.slice().sort((a,b)=>Number(a.createdAt)-Number(b.createdAt)).map(x=>'<article class="entry"><div class="entry-date">'+esc(x.savedAt||formatDateTime(x.createdAt))+'</div><div class="entry-hours">'+esc(Number(x.n).toFixed(2))+' hours</div><div class="entry-description">'+esc(x.description||"No description recorded.")+'</div></article>').join("")+
+ '<div class="footer">This document contains the off-the-job learning entries included at the time of this download. The next Evia OTJ download will contain new entries recorded after this download.</div>'+
+ '</body></html>');
+ w.document.close();w.focus();setTimeout(()=>w.print(),250);return true;
+}
+function downloadOTJPDF(mode){
+ const now=Date.now();
+ let entries=[],batch=null;
+ if(mode==="last"){
+   batch=otjBatches[otjBatches.length-1];
+   entries=otjEntriesForBatch(batch);
+   if(!entries.length){alert("There is no saved OTJ PDF to download again.");return}
+   buildOTJPrintWindow(entries,"Evia OTJ evidence · "+(batch.downloadedAt?formatDateTime(batch.downloadedAt):""),batch.downloadedAt||now);
+   return;
+ }
+ const lastBatch=otjBatches[otjBatches.length-1];
+ const lastCutoff=lastBatch?Number(lastBatch.cutoff):0;
+ entries=hours.filter(x=>Number(x.createdAt)>lastCutoff);
+ if(!entries.length){alert("There is no new off-the-job learning to include in a new PDF. Add more learning entries first.");return}
+ batch={id:"otj-"+now+"-"+Math.random().toString(36).slice(2,8),downloadedAt:now,cutoff:now,entryIds:entries.map(x=>x.id)};
+ if(!buildOTJPrintWindow(entries,"Evia OTJ evidence · "+formatDateTime(now),now))return;
+ otjBatches.push(batch);persist();learning();
 }
 function learning(){
  $("#page-title").textContent="Learning";
  const total=hours.reduce((a,x)=>a+Number(x.n),0);
- $("#screen").innerHTML='<div class="empty-home"></div><div class="card"><div class="section-title">Off-the-job learning</div><h2>Record learning from site</h2><p>Add off-the-job hours gathered as part of your apprenticeship.</p><div class="learning-input" style="margin-top:14px"><input id="hrs" type="number" min="0" step=".25" placeholder="Hours"><button class="primary" id="add">Add</button></div></div><div class="stats"><div class="card stat"><strong>'+total.toFixed(2)+'</strong><span>Total OTJ hours</span></div><div class="card stat"><strong>'+hours.length+'</strong><span>Learning entries</span></div></div>'+hours.slice().reverse().map(x=>'<div class="card"><strong>'+esc(x.n)+' hours</strong><p>Off-the-job learning recorded on site</p><small style="color:#9aa7ba">'+esc(x.d)+'</small></div>').join("");
+ const lastBatch=otjBatches[otjBatches.length-1];
+ const pending=hours.filter(x=>Number(x.createdAt)>Number(lastBatch?lastBatch.cutoff:0)).length;
+ $("#screen").innerHTML='<div class="card"><div class="section-title">Off-the-job learning</div><h2>Record learning from site</h2><p>Record the hours you complete and describe what you learned or did.</p><div class="learning-input" style="margin-top:14px"><input id="hrs" type="number" min="0" step=".25" placeholder="Hours"><button class="primary" id="add">Add</button></div><textarea id="otj-description" placeholder="What did you do or learn?"></textarea></div>'+
+ '<div class="card otj-download-card"><div><div class="section-title">Off-the-job evidence</div><h3>'+pending+' new '+(pending===1?"entry":"entries")+' ready for PDF</h3><p>Each saved entry includes the date and time. Downloading creates a PDF batch; anything added afterwards waits for the next PDF.</p></div><div class="row"><button class="primary" id="download-otj" '+(pending?"":"disabled")+'>Download new PDF</button>'+(lastBatch?'<button class="secondary" id="download-last-otj">Download last PDF again</button>':"")+'</div></div>'+
+ '<div class="stats"><div class="card stat"><strong>'+total.toFixed(2)+'</strong><span>Total OTJ hours</span></div><div class="card stat"><strong>'+hours.length+'</strong><span>Learning entries</span></div></div>'+
+ hours.slice().reverse().map(x=>'<div class="card otj-entry"><div class="progress-row"><strong>'+esc(Number(x.n).toFixed(2))+' hours</strong><span class="status '+(lastBatch&&Number(x.createdAt)<=Number(lastBatch.cutoff)?"done":"")+'">'+(lastBatch&&Number(x.createdAt)<=Number(lastBatch.cutoff)?"Downloaded":"New")+'</span></div><small class="otj-date">'+esc(x.savedAt||formatDateTime(x.createdAt))+'</small><p>'+esc(x.description||"No description recorded.")+'</p></div>').join("");
+ $("#add").onclick=()=>{let n=Number($("#hrs").value),description=$("#otj-description").value.trim();if(n>0&&description){const now=Date.now();hours.push({id:"otj-"+now+"-"+Math.random().toString(36).slice(2,8),n:n,description:description,createdAt:now,savedAt:formatDateTime(now)});persist();learning()}else if(n>0){alert("Add a short description of what you did or learned before saving.")}};
+ const dl=$("#download-otj");if(dl)dl.onclick=()=>downloadOTJPDF("new");
+ const last=$("#download-last-otj");if(last)last.onclick=()=>downloadOTJPDF("last");
+}
+n)+' hours</strong><p>Off-the-job learning recorded on site</p><small style="color:#9aa7ba">'+esc(x.d)+'</small></div>').join("");
  $("#add").onclick=()=>{let n=Number($("#hrs").value);if(n>0){hours.push({n:n,d:new Date().toLocaleDateString("en-GB")});persist();learning()}};
 }
 function courses(){
