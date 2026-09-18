@@ -308,6 +308,7 @@ function chat(){
              };
              askMore();
            }else{
+             saveConfidenceHistory([...confidenceHistory(),session]);
              eviaReply("That confidence check is complete. I’ve saved your 3 ratings for your progress review. They are for reflection, not assessment.");
            }
          });
