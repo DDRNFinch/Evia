@@ -93,18 +93,21 @@
         }
         return hex(await crypto.subtle.digest("SHA-256",encoder.encode(parts.join("\\n---\\n"))));
       };
+      const resetMarker="2026-09-18-cache-v2";
+      const previousMarker=localStorage.getItem("evia7-cache-reset-marker");
       const previous=localStorage.getItem("evia7-build-signature");
       const current=await getBuildSignature();
-      if(previous && previous!==current){
+      const changed=Boolean(previous && previous!==current);
+      const firstRun=previousMarker!==resetMarker;
+      if(firstRun || changed){
         const names=await caches.keys();
         await Promise.all(names.filter(name=>name.startsWith("evia7-")).map(name=>caches.delete(name)));
         localStorage.setItem("evia7-build-signature",current);
-        sessionStorage.setItem("evia7-cache-reset","1");
+        localStorage.setItem("evia7-cache-reset-marker",resetMarker);
         window.location.reload();
         return;
       }
       localStorage.setItem("evia7-build-signature",current);
-      sessionStorage.removeItem("evia7-cache-reset");
     } catch(e) { console.warn("Evia update check unavailable",e); }
   });
 })();
