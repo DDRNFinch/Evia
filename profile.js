@@ -161,9 +161,9 @@
       .evidence-signoff img{display:block;width:180px;height:52px;object-fit:contain;object-position:left center}
       .evidence-signoff small{font-size:10px;color:#9aa3af}
       .welcome-avatar{cursor:pointer}
-      .welcome-avatar .evia-face{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:16px}
-      .welcome-avatar .evia-face i{display:block;flex:0 0 34px;width:34px;height:34px;border:4px solid #e6b800;border-radius:50%;position:relative}
-      .welcome-avatar .evia-face i:after{content:"";position:absolute;width:8px;height:8px;border-radius:50%;background:#e6b800;left:9px;top:9px;animation:welcomeLook 4.5s ease-in-out infinite}
+      .welcome-avatar .evia-face{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:13px}
+      .welcome-avatar .evia-face i{display:block;flex:0 0 26px;width:26px;height:26px;border:3px solid #e6b800;border-radius:50%;position:relative}
+      .welcome-avatar .evia-face i:after{content:"";position:absolute;width:6px;height:6px;border-radius:50%;background:#e6b800;left:7px;top:7px;animation:welcomeLook 4.5s ease-in-out infinite}
       .welcome-avatar .evia-face i:nth-child(2):after{animation-delay:.25s}
       @keyframes welcomeLook{0%,100%{transform:translate(0)}35%{transform:translate(7px,3px)}65%{transform:translate(-4px,-3px)}}
       .welcome-avatar .evia-face{pointer-events:none}
