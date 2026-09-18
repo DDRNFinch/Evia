@@ -137,7 +137,7 @@ function unitStrengthForCourse(unitName){
  const photos=es.reduce((n,e)=>n+(Array.isArray(e.p)?e.p.length:0),0);
  const words=es.reduce((n,e)=>n+String(e.w||"").trim().split(/\s+/).filter(Boolean).length,0);
  const photoLevel=photos<6?"weak":photos<10?"good":"strong";
- const textLevel=words<50?"weak":words<=100?"good":"strong";
+ const textLevel=words<100?"weak":words<=200?"good":"strong";
  return photoLevel==="strong"&&textLevel==="strong"?"strong":photoLevel==="weak"||textLevel==="weak"?"weak":"good";
 }
 function strengthBars(level){
@@ -148,7 +148,7 @@ function courses(){
  $("#page-title").textContent="Course";
  $("#screen").innerHTML=picker()+'<div class="card"><div class="section-title">'+esc(data().std)+'</div><h2>'+esc(data().name)+'</h2><p>'+data().u.length+' units. Open a unit to capture evidence.</p></div>'+data().u.map((u,i)=>{
    const level=unitStrengthForCourse(u[0]);
-   return '<div class="card unit-card" data-u="'+i+'"><div><div class="unit-number">UNIT '+(i+1)+'</div><div class="unit-title">'+esc(u[0])+'</div><div class="unit-meta-row">'+(level?'<span class="status done">Evidence added</span>':'<span class="status">Not started</span>')+(level?'<span class="strength-label">'+esc(level.charAt(0).toUpperCase()+level.slice(1))+'</span>'+strengthBars(level):'')+'</div></div><span class="arrow">›</span></div>';
+   return '<div class="card unit-card" data-u="'+i+'"><div><div class="unit-number">UNIT '+(i+1)+'</div><div class="unit-title">'+esc(u[0])+'</div><div class="unit-meta-row">'+strengthBars(level)+'</div></div><span class="arrow">›</span></div>';
  }).join("");
  bindCourses();document.querySelectorAll("[data-u]").forEach(b=>b.onclick=()=>openUnit(+b.dataset.u));
 }
@@ -324,17 +324,21 @@ function chat(){
      if(!es.length)return null;
      const photos=es.reduce((n,e)=>n+(Array.isArray(e.p)?e.p.length:0),0);
      const words=es.reduce((n,e)=>n+String(e.w||"").trim().split(/\s+/).filter(Boolean).length,0);
-     const stages={beginning:0,middle:0,end:0};
-     es.forEach(e=>{if(e.stages){stages.beginning+=Number(e.stages.beginning||0);stages.middle+=Number(e.stages.middle||0);stages.end+=Number(e.stages.end||0)}});
      const photoLevel=photos<6?"weak":photos<10?"good":"strong";
-     const textLevel=words<50?"weak":words<=100?"good":"strong";
+     const textLevel=words<100?"weak":words<=200?"good":"strong";
      const overall=photoLevel==="strong"&&textLevel==="strong"?"strong":photoLevel==="weak"||textLevel==="weak"?"weak":"good";
-     const missingStages=["beginning","middle","end"].filter(s=>stages[s]<2);
      let advice="";
-     if(overall==="weak")advice="Add more evidence during another job, with more photos and/or a fuller write-up.";
-     else if(overall==="good")advice="Good evidence base. Add more photos and/or detail during another job to make this unit stronger.";
-     else advice="Strong evidence base. Keep adding evidence naturally during another job where it gives useful extra coverage.";
-     if(missingStages.length)advice+=" Aim for at least 2 photos at "+missingStages.join(", ")+" of the job.";
+     if(overall==="strong"){
+       advice="This evidence is sufficient.";
+     }else if(overall==="good"){
+       advice="Good evidence base. I recommend gathering more evidence during another job to strengthen this portfolio pack.";
+     }else{
+       const needsPhotos=photoLevel==="weak";
+       const needsText=textLevel==="weak";
+       if(needsPhotos&&needsText)advice="This pack needs more photos and more written detail. Repeat this unit during another job and add both.";
+       else if(needsPhotos)advice="This pack needs more photos. Repeat this unit during another job and add more photos.";
+       else advice="This pack needs more written detail. Repeat this unit during another job and add a fuller write-up.";
+     }
      return {i,name:u[0],photos,words,overall,advice};
    }).filter(Boolean);
    const remaining=Math.max(0,data().u.length-startedNames.size);
