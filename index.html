@@ -4,12 +4,28 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#fffdfa">
-<meta name="description" content="Evia apprenticeship tracking">\n<meta name="evia-build-policy" content="network-first-v1">
+<meta name="description" content="Evia apprenticeship tracking">
+<meta name="evia-build-policy" content="network-first-v1">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg">
 <title>Evia</title>
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="polish.css">
+<style>
+.chat-sheet{max-height:56vh;padding-bottom:calc(18px + env(safe-area-inset-bottom))}
+.chat-kicker{font-size:10px;letter-spacing:.14em;color:#9aa3af;font-weight:800;margin-bottom:4px}
+.chat-sheet .sheet-head{margin-bottom:10px}
+.chat-sheet .sheet-head h2{margin:0;font-size:22px}
+.chat-sheet .chat{height:auto;max-height:46vh;min-height:260px;background:#fafbfc;padding:14px;overflow:auto}
+.chat-options{display:grid;gap:9px;margin-top:12px}
+.chat-pill,.rating-pill{width:100%;text-align:left;border:1px solid #e3e7ed;background:#fff;border-radius:17px;padding:13px 15px;box-shadow:0 2px 8px rgba(25,36,55,.04)}
+.chat-pill strong{display:block;font-size:14px;margin-bottom:3px}
+.chat-pill span,.rating-pill span{display:block;color:#7b8797;font-size:12px;line-height:1.35}
+.rating-options{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:10px 0}
+.rating-pill{text-align:center;padding:11px 8px}
+.rating-pill strong{display:block}
+.rating-pill span{font-size:11px}
+</style>
 </head>
 <body>
 <div id="app">
@@ -30,6 +46,24 @@
 <div id="modal-root"></div>
 <script src="app.js"></script>
 <script src="polish.js"></script>
-<script src="profile.js"></script>\n<script>\n(function(){\n  if (!("serviceWorker" in navigator)) return;\n  let reloading=false;\n  navigator.serviceWorker.addEventListener("controllerchange",function(){\n    if(reloading)return;\n    reloading=true;\n    window.location.reload();\n  });\n  window.addEventListener("load", async function(){\n    try {\n      const registration=await navigator.serviceWorker.register("./sw.js",{updateViaCache:"none"});\n      await registration.update();\n      if(registration.waiting) registration.waiting.postMessage({type:"SKIP_WAITING"});\n    } catch(e) { console.warn("Evia update service unavailable",e); }\n  });\n})();\n</script>
+<script src="profile.js"></script>
+<script>
+(function(){
+  if (!("serviceWorker" in navigator)) return;
+  let reloading=false;
+  navigator.serviceWorker.addEventListener("controllerchange",function(){
+    if(reloading)return;
+    reloading=true;
+    window.location.reload();
+  });
+  window.addEventListener("load", async function(){
+    try {
+      const registration=await navigator.serviceWorker.register("./sw.js",{updateViaCache:"none"});
+      await registration.update();
+      if(registration.waiting) registration.waiting.postMessage({type:"SKIP_WAITING"});
+    } catch(e) { console.warn("Evia update service unavailable",e); }
+  });
+})();
+</script>
 </body>
 </html>
