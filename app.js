@@ -43,7 +43,35 @@ hours=hours.map((x,i)=>Object.assign({id:"legacy-"+i,createdAt:x.createdAt||Date
 const $=s=>document.querySelector(s), data=()=>C[course], code=x=>x.split("|")[0], text=x=>x.split("|").slice(1).join("|");
 function persist(){localStorage.setItem("evia7-course",course);localStorage.setItem("evia7-evidence",JSON.stringify(evidence));localStorage.setItem("evia7-hours",JSON.stringify(hours));localStorage.setItem("evia7-otj-batches",JSON.stringify(otjBatches))}
 function picker(){return '<div class="course-picker">'+Object.keys(C).map(k=>'<button class="pill '+(k===course?"active":"")+'" data-c="'+k+'">'+esc(C[k].name)+'</button>').join("")+'</div>'}
-function nav(s){screen=function formatDateTime(ts){
+function nav(s){screen=s;render();}
+function render(){
+ if(screen==="learning")learning();
+ else if(screen==="course")courses();
+ else if(screen==="progress")progress();
+ else if(screen==="portfolio")portfolio();
+ else learning();
+}
+function openUnit(i){
+ unit=i;
+ const u=data().u[i];
+ if(!u){nav("course");return}
+ $("#page-title").textContent=u[0];
+ const existing=evidence.filter(e=>e.c===course&&e.u===u[0]);
+ $("#screen").innerHTML='<button class="secondary" id="back-course" type="button">‹ Back to course</button>'+
+ '<div class="card"><div class="section-title">Unit '+(i+1)+'</div><h2>'+esc(u[0])+'</h2><p>Capture evidence for the work you have completed. Evia helps you gather evidence; your assessor decides whether it meets the required standard.</p></div>'+
+ '<div class="card"><div class="section-title">Linked KSBs</div>'+u[1].map(k=>'<div class="ksb" style="margin-bottom:10px"><span class="code">'+esc(code(k))+'</span><div class="ksbtext">'+esc(text(k))+'</div></div>').join("")+'</div>'+
+ '<div class="card"><div class="section-title">Evidence</div><label class="dropzone">Add photos<input id="unit-photos" type="file" accept="image/*" capture="environment" multiple></label><div id="unit-photo-preview" class="photo-grid"></div><textarea id="unit-notes" placeholder="Add notes about what you completed..."></textarea><div class="row" style="margin-top:12px"><button class="primary" id="save-unit-evidence" type="button">Save evidence</button></div></div>'+
+ (existing.length?'<div class="section-title">Saved evidence</div>'+existing.slice().reverse().map(e=>'<div class="card"><div class="progress-row"><strong>'+esc(e.d)+'</strong><span class="status done">Saved</span></div>'+(e.p&&e.p.length?'<div class="photo-grid">'+e.p.map(p=>'<img class="thumb" src="'+p+'" alt="Evidence photo">').join("")+'</div>':"")+(e.w?'<p style="white-space:pre-wrap">'+esc(e.w)+'</p>':"")+'</div>').join(""):"");
+ const input=$("#unit-photos"), preview=$("#unit-photo-preview"), notes=$("#unit-notes");
+ input.onchange=()=>{photos=[];preview.innerHTML="";[...input.files].slice(0,6).forEach(f=>{const r=new FileReader();r.onload=()=>{photos.push(r.result);preview.insertAdjacentHTML("beforeend",'<img class="thumb" src="'+r.result+'" alt="Evidence photo">')};r.readAsDataURL(f)})};
+ $("#back-course").onclick=()=>nav("course");
+ $("#save-unit-evidence").onclick=()=>{
+   const entry={c:course,u:u[0],d:new Date().toLocaleDateString("en-GB"),savedAt:new Date().toLocaleString("en-GB"),p:photos.slice(),w:notes.value.trim(),k:u[1].filter(k=>/^[SKB]\d+\|/.test(k)).map(k=>code(k))};
+   if(!entry.p.length&&!entry.w){alert("Add at least one photo or a note before saving.");return}
+   evidence.push(entry);persist();openUnit(i);
+ };
+}
+function formatDateTime(ts){
  const d=new Date(ts);
  return d.toLocaleString("en-GB",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
 }
