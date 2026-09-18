@@ -162,10 +162,10 @@
       .evidence-signoff small{font-size:10px;color:#9aa3af}
       .welcome-avatar{cursor:pointer}
       .welcome-avatar .evia-face{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:15px}
-      .welcome-avatar .evia-face i{display:block;flex:0 0 30px;width:30px;height:30px;border:6px solid #e6b800;border-radius:50%;position:relative}
-      .welcome-avatar .evia-face i:after{content:"";position:absolute;width:7.5px;height:7.5px;border-radius:50%;background:#e6b800;left:7.5px;top:7.5px;animation:welcomeLook 4.5s ease-in-out infinite}
+      .welcome-avatar .evia-face i{display:block;flex:0 0 30px;width:30px;height:30px;border:6px solid var(--yellow);border-radius:50%;position:relative}
+      .welcome-avatar .evia-face i:after{content:"";position:absolute;width:7.5px;height:7.5px;border-radius:50%;background:var(--yellow);left:7.5px;top:7.5px;animation:welcomeLook 4.5s ease-in-out infinite}
       .welcome-avatar .evia-face i:nth-child(2):after{animation-delay:.25s}
-      @keyframes welcomeLook{0%,100%{transform:translate(0)}35%{transform:translate(7px,3px)}65%{transform:translate(-4px,-3px)}}
+      @keyframes welcomeLook{0%,100%{transform:translate(0)}35%{transform:translate(7.5px,3px)}65%{transform:translate(-4.5px,-3px)}}
       .welcome-avatar .evia-face{pointer-events:none}
       #welcome-screen{position:fixed;inset:0;z-index:2000;background:#fffdfa;display:grid;place-items:center;opacity:0;transition:opacity .45s ease}
       #welcome-screen.visible{opacity:1}
@@ -176,7 +176,7 @@
       .welcome-pulse{position:absolute;width:150px;height:150px;border:1px solid #e6b800;border-radius:50%;animation:welcomePulse 2.1s ease-out infinite}
       .welcome-copy h2{font-size:28px;letter-spacing:-.045em;margin:0 0 5px}.welcome-copy p{font-size:15px;color:#7b8797;margin:0}
       .welcome-copy button{margin-top:17px;border:0;background:#151c2b;color:#fff;border-radius:14px;padding:12px 18px;font-size:13px}
-      .welcome-flying{position:fixed;z-index:2100;border-radius:50%;border:3px solid #e6b800;background:#fffdfa;object-fit:cover;display:grid;place-items:center;box-shadow:0 10px 25px rgba(16,24,40,.12);transition:transform .62s cubic-bezier(.2,.75,.2,1)}
+      .welcome-flying{position:fixed;z-index:2100;border-radius:50%;border:6px solid var(--yellow);background:#fffdfa;object-fit:cover;display:grid;place-items:center;box-shadow:0 12px 30px rgba(16,24,40,.08);transition:transform .62s cubic-bezier(.2,.75,.2,1)}
       .evia-fab.welcome-target-hidden{opacity:0;pointer-events:none;animation:none}
       .welcome-revealed{animation:revealScreen .42s ease both}
       @keyframes welcomePulse{0%{transform:scale(.75);opacity:.75}70%,100%{transform:scale(1.25);opacity:0}}
