@@ -174,3 +174,42 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text"
  .bottom-nav button{height:62px;font-size:10px}
  .nav-icon{width:22px;height:20px}
 }
+
+/* Progress overview and apprentice-friendly KSB grid. */
+.progress-overview{padding:18px}
+.progress-metric{margin:16px 0}
+.progress-metric-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:7px}
+.progress-metric-head strong{font-size:14px;letter-spacing:-.015em}
+.progress-metric-head span{font-size:11px;color:#7d8795;text-align:right}
+.progress-track{height:9px;border-radius:999px;background:#edf0f3;overflow:hidden}
+.progress-track span{display:block;height:100%;border-radius:inherit;background:var(--yellow);transition:width .35s ease}
+.progress-note{margin-top:14px;padding-top:13px;border-top:1px solid #eef0f3;font-size:11px;line-height:1.45;color:#7d8795}
+.ksb-overview{padding:18px}
+.ksb-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:14px}
+.ksb-tile{position:relative;min-width:0;aspect-ratio:1.35;border:1px solid #e3e7ed;background:#f8f9fb;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#657184;font-weight:750;font-size:13px;cursor:pointer;transition:transform .16s ease,background .16s ease,border-color .16s ease}
+.ksb-tile:hover{transform:translateY(-1px)}
+.ksb-tile.met{background:#f1f8f2;border-color:#cde8d1;color:#2f7d3b}
+.ksb-tile i{position:absolute;right:5px;top:4px;width:18px;height:18px;border-radius:50%;background:#43a047;color:#fff;font-style:normal;font-size:11px;display:grid;place-items:center}
+.ksb-grid-help{margin:13px 0 0;color:#8a94a3;font-size:11px;text-align:center}
+.ksb-modal-overlay{position:fixed;inset:0;z-index:3000;background:rgba(20,28,42,.22);display:flex;align-items:flex-end;justify-content:center;padding:14px}
+.ksb-modal{width:min(640px,100%);max-height:82vh;overflow:auto;background:#fff;border-radius:24px;padding:20px;box-shadow:0 18px 50px rgba(16,24,40,.18)}
+.ksb-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.ksb-modal-head h2{margin:3px 0 0;font-size:21px}
+.ksb-modal-section{padding:14px 0;border-top:1px solid #edf0f3}
+.ksb-modal-section p{margin:7px 0 0;line-height:1.5}
+.ksb-evidence-item{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid #f0f2f4}
+.ksb-evidence-item:last-child{border-bottom:0}
+.ksb-evidence-item span{font-size:11px;color:#8a94a3;text-align:right}
+.ksb-empty{color:#8a94a3}
+.ksb-modal-foot{display:flex;justify-content:space-between;gap:12px;margin-top:14px;padding-top:13px;border-top:1px solid #edf0f3;font-size:11px;color:#8a94a3}
+.ksb-met{color:#2f7d3b;font-weight:750}
+.ksb-not-met{color:#9a6b00;font-weight:700}
+@media(max-width:520px){
+ .progress-metric-head{display:block}
+ .progress-metric-head span{display:block;text-align:left;margin-top:3px}
+ .ksb-grid{gap:6px}
+ .ksb-tile{border-radius:10px;font-size:12px}
+ .ksb-tile i{width:16px;height:16px;font-size:10px}
+ .ksb-modal-overlay{padding:0}
+ .ksb-modal{border-radius:24px 24px 0 0;max-height:86vh}
+}
