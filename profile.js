@@ -161,9 +161,9 @@
       .evidence-signoff img{display:block;width:180px;height:52px;object-fit:contain;object-position:left center}
       .evidence-signoff small{font-size:10px;color:#9aa3af}
       .welcome-avatar{cursor:pointer}
-      .welcome-avatar .evia-face{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:13px}
-      .welcome-avatar .evia-face i{display:block;flex:0 0 26px;width:26px;height:26px;border:3px solid #e6b800;border-radius:50%;position:relative}
-      .welcome-avatar .evia-face i:after{content:"";position:absolute;width:6px;height:6px;border-radius:50%;background:#e6b800;left:7px;top:7px;animation:welcomeLook 4.5s ease-in-out infinite}
+      .welcome-avatar .evia-face{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:15px}
+      .welcome-avatar .evia-face i{display:block;flex:0 0 30px;width:30px;height:30px;border:6px solid #e6b800;border-radius:50%;position:relative}
+      .welcome-avatar .evia-face i:after{content:"";position:absolute;width:7.5px;height:7.5px;border-radius:50%;background:#e6b800;left:7.5px;top:7.5px;animation:welcomeLook 4.5s ease-in-out infinite}
       .welcome-avatar .evia-face i:nth-child(2):after{animation-delay:.25s}
       @keyframes welcomeLook{0%,100%{transform:translate(0)}35%{transform:translate(7px,3px)}65%{transform:translate(-4px,-3px)}}
       .welcome-avatar .evia-face{pointer-events:none}
@@ -171,7 +171,7 @@
       #welcome-screen.visible{opacity:1}
       #welcome-screen.leaving{opacity:0}
       .welcome-inner{text-align:center;position:relative;display:flex;flex-direction:column;align-items:center;gap:22px}
-      .welcome-avatar{width:118px;height:118px;border-radius:50%;border:4px solid #e6b800;background:#fffdfa;box-shadow:0 18px 45px rgba(16,24,40,.12);display:grid;place-items:center;position:relative;z-index:2;overflow:hidden;cursor:pointer}
+      .welcome-avatar{width:138px;height:138px;border-radius:50%;border:6px solid #e6b800;background:#fffdfa;box-shadow:0 18px 45px rgba(16,24,40,.12);display:grid;place-items:center;position:relative;z-index:2;overflow:hidden;cursor:pointer}
       .welcome-avatar .profile-placeholder{width:100%;height:100%;border-radius:50%}
       .welcome-pulse{position:absolute;width:150px;height:150px;border:1px solid #e6b800;border-radius:50%;animation:welcomePulse 2.1s ease-out infinite}
       .welcome-copy h2{font-size:28px;letter-spacing:-.045em;margin:0 0 5px}.welcome-copy p{font-size:15px;color:#7b8797;margin:0}
