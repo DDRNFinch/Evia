@@ -149,7 +149,7 @@ function courses(){
  $("#page-title").textContent="Course";
  $("#screen").innerHTML=picker()+'<div class="card"><div class="section-title">'+esc(data().std)+'</div><h2>'+esc(data().name)+'</h2><p>'+data().u.length+' units. Open a unit to capture evidence.</p></div>'+data().u.map((u,i)=>{
    const level=unitStrengthForCourse(u[0]);
-   return '<div class="card unit-card" data-u="'+i+'"><div><div class="unit-number">UNIT '+(i+1)+'</div><div class="unit-title">'+esc(u[0])+'</div><div class="unit-meta-row">'+strengthBars(level)+'</div></div><span class="arrow">›</span></div>';
+   return '<div class="card unit-card" data-u="'+i+'"><div class="unit-title">'+esc(u[0])+'</div>'+strengthBars(level)+'</div>';
  }).join("");
  bindCourses();document.querySelectorAll("[data-u]").forEach(b=>b.onclick=()=>openUnit(+b.dataset.u));
 }
