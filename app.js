@@ -160,12 +160,12 @@ function chat(){
    return clean?"What is your knowledge like towards "+clean.charAt(0).toLowerCase()+clean.slice(1)+"?":"How confident do you feel about this area?";
  };
  const options=[
-  ["Portfolio check","Check what evidence you have saved and what is still missing."],
-  ["Test me","Answer a short question based on your course."],
-  ["Progress review","Review your activity, learning entries and evidence captured."],
-  ["Confidence check","Rate your confidence across the knowledge areas in your course."]
+  ["Portfolio check",""],
+  ["Test me",""],
+  ["Progress review",""],
+  ["Confidence check",""]
  ];
- $("#modal-root").innerHTML='<div class="overlay"><section class="sheet chat-sheet"><div class="sheet-head"><div><div class="chat-kicker">EVIA</div><h2>What would you like to do?</h2></div><button class="close" id="x" aria-label="Close">×</button></div><div class="chat" id="chat"><div class="bubble evia">I can help you review your learning, evidence and confidence.</div><div class="chat-options">'+options.map((o,i)=>'<button class="chat-pill" data-chat-option="'+i+'"><strong>'+o[0]+'</strong><span>'+o[1]+'</span></button>').join("")+'</div></div></section></div>';
+ $("#modal-root").innerHTML='<div class="overlay"><section class="sheet chat-sheet"><div class="sheet-head"><div><div class="chat-kicker">EVIA</div><h2>What would you like to do?</h2></div><button class="close" id="x" aria-label="Close">×</button></div><div class="chat" id="chat"><div class="bubble evia">I can help you review your learning, evidence and confidence.</div><div class="chat-options">'+options.map((o,i)=>'<button class="chat-pill" data-chat-option="'+i+'"><strong>'+o[0]+'</strong></button>').join("")+'</div></div></section></div>';
  $("#x").onclick=()=>$("#modal-root").innerHTML="";
  const addBubble=v=>$("#chat").insertAdjacentHTML("beforeend",'<div class="bubble user">'+esc(v)+'</div>');
  const confidence=()=>{
