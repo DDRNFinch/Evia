@@ -251,7 +251,6 @@ function chat(){
          document.querySelectorAll(".rating-options").forEach(x=>x.remove());
          index++;
          if(index<3){ask();return}
-         saveConfidenceHistory([...confidenceHistory(),session]);
          const yesNo='<div class="bubble evia">Would you like to do 3 more?</div><div class="rating-options"><button class="rating-pill" data-more="yes"><strong>Yes</strong></button><button class="rating-pill" data-more="no"><strong>No</strong></button></div>';
          $("#chat").insertAdjacentHTML("beforeend",yesNo);scroll();
          document.querySelectorAll("[data-more]").forEach(b=>b.onclick=()=>{
@@ -260,7 +259,7 @@ function chat(){
            if(b.dataset.more==="yes"){
              index=3;
              const askMore=()=>{
-               const q2=bank[(index-3)%bank.length];
+               const q2=bank[index];
                const t2=thinking();
                setTimeout(()=>{
                  t2.outerHTML='<div class="bubble evia">'+esc(q2[1])+'</div><div class="rating-options">'+
@@ -298,7 +297,7 @@ function chat(){
      es.forEach(e=>{
        if(e.stages){stages.beginning+=Number(e.stages.beginning||0);stages.middle+=Number(e.stages.middle||0);stages.end+=Number(e.stages.end||0)}
      });
-     const photoLevel=photos<6?"weak":photos<=10?"good":"strong";
+     const photoLevel=photos<6?"weak":photos<10?"good":"strong";
      const textLevel=words<50?"weak":words<=100?"good":"strong";
      const overall=photoLevel==="strong"&&textLevel==="strong"?"strong":photoLevel==="weak"||textLevel==="weak"?"weak":"good";
      const missingStages=["beginning","middle","end"].filter(s=>stages[s]<2);
