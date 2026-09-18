@@ -73,7 +73,39 @@
       const registration=await navigator.serviceWorker.register("./sw.js",{updateViaCache:"none"});
       await registration.update();
       if(registration.waiting) registration.waiting.postMessage({type:"SKIP_WAITING"});
-    } catch(e) { console.warn("Evia update service unavailable",e); }
+
+      // Check the actual deployed app files on every online load. If any app
+      // file has changed since this device last loaded Evia, clear only the
+      // Service Worker Cache Storage and reload. Learner data in localStorage
+      // is deliberately untouched.
+      const trackedFiles=[
+        "./index.html","./styles.css","./polish.css","./app.js",
+        "./polish.js","./profile.js","./manifest.json","./icon.svg","./sw.js"
+      ];
+      const encoder=new TextEncoder();
+      const hex=buffer=>Array.from(new Uint8Array(buffer)).map(b=>b.toString(16).padStart(2,"0")).join("");
+      const getBuildSignature=async()=>{
+        const parts=[];
+        for(const file of trackedFiles){
+          const response=await fetch(file+"?evia-update-check="+Date.now(),{cache:"no-store"});
+          if(!response.ok) throw new Error("Update check failed for "+file);
+          parts.push(file+"\\n"+await response.text());
+        }
+        return hex(await crypto.subtle.digest("SHA-256",encoder.encode(parts.join("\\n---\\n"))));
+      };
+      const previous=localStorage.getItem("evia7-build-signature");
+      const current=await getBuildSignature();
+      if(previous && previous!==current){
+        const names=await caches.keys();
+        await Promise.all(names.filter(name=>name.startsWith("evia7-")).map(name=>caches.delete(name)));
+        localStorage.setItem("evia7-build-signature",current);
+        sessionStorage.setItem("evia7-cache-reset","1");
+        window.location.reload();
+        return;
+      }
+      localStorage.setItem("evia7-build-signature",current);
+      sessionStorage.removeItem("evia7-cache-reset");
+    } catch(e) { console.warn("Evia update check unavailable",e); }
   });
 })();
 </script>
