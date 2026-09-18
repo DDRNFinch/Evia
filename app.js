@@ -102,9 +102,7 @@ function learning(){
  const dl=$("#download-otj");if(dl)dl.onclick=()=>downloadOTJPDF("new");
  const last=$("#download-last-otj");if(last)last.onclick=()=>downloadOTJPDF("last");
 }
-n)+' hours</strong><p>Off-the-job learning recorded on site</p><small style="color:#9aa7ba">'+esc(x.d)+'</small></div>').join("");
- $("#add").onclick=()=>{let n=Number($("#hrs").value);if(n>0){hours.push({n:n,d:new Date().toLocaleDateString("en-GB")});persist();learning()}};
-}
+
 function courses(){
  $("#page-title").textContent="Course";
  $("#screen").innerHTML=picker()+'<div class="card"><div class="section-title">'+esc(data().std)+'</div><h2>'+esc(data().name)+'</h2><p>'+data().u.length+' units. Open a unit to capture evidence.</p></div>'+data().u.map((u,i)=>'<div class="card unit-card" data-u="'+i+'"><div><div class="unit-number">UNIT '+(i+1)+'</div><div class="unit-title">'+esc(u[0])+'</div><div style="font-size:12px;color:#8e9aab;margin-top:6px">'+u[1].length+' linked KSBs</div></div><span class="arrow">›</span></div>').join("");
