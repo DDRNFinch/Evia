@@ -22,8 +22,8 @@
       '<label>Name<input id="profile-name" value="'+esc(p.name)+'" placeholder="Your name"></label>'+
       '<div class="profile-dates"><label>Start date<input id="profile-start" type="date" value="'+esc(p.start)+'"></label><label>End date<input id="profile-end" type="date" value="'+esc(p.end)+'"></label></div>'+
       '</div>'+
-      '<div class="profile-block"><div class="profile-kicker">YOUR COURSE</div><div class="course-fixed">'+esc(C[course]?.name||"")+'<span>Apprenticeship course</span></div></div>'+
-      '<div class="profile-block"><div class="profile-kicker">YOUR SIGNATURE</div><p>Write your signature with your finger. It will be attached to saved evidence with the time and date.</p><div class="signature-wrap"><canvas id="signature-pad" width="900" height="260"></canvas><button type="button" id="clear-signature">Clear</button></div></div>'+
+      '<div class="profile-block"><div class="profile-kicker">YOUR COURSE</div><div class="course-options">'+Object.keys(C).map(k=>'<button type="button" class="course-option '+(k===course?"selected":"")+'" data-profile-course="'+k+'">'+esc(C[k].name)+'<span>›</span></button>').join("")+'</div></div>'+
+      '<div class="profile-block"><button type="button" class="settings-entry" id="open-settings"><span><strong>Accessibility & settings</strong><small>Personalise how Evia looks, reads and behaves</small></span><span aria-hidden="true">›</span></button></div><div class="profile-block"><div class="profile-kicker">YOUR SIGNATURE</div><p>Write your signature with your finger. It will be attached to saved evidence with the time and date.</p><div class="signature-wrap"><canvas id="signature-pad" width="900" height="260"></canvas><button type="button" id="clear-signature">Clear</button></div></div>'+
       '<div class="profile-actions"><button type="button" class="secondary" id="download-portfolio">Download PDF</button><button type="button" class="primary" id="save-profile">Save profile</button></div>'+
       '</section></div>';
 
@@ -41,6 +41,8 @@
       const f=e.target.files[0];if(!f)return;
       const r=new FileReader();r.onload=()=>{p.avatar=r.result;set(p);refreshProfileButton();openProfile()};r.readAsDataURL(f);
     };
+    document.querySelectorAll("[data-profile-course]").forEach(b=>b.onclick=()=>{course=b.dataset.profileCourse;persist();openProfile();});
+    document.getElementById("open-settings").onclick=()=>openSettings();
     document.getElementById("profile-close").onclick=()=>document.getElementById("modal-root").innerHTML="";
     document.getElementById("save-profile").onclick=()=>{
       const signature=canvasHasInk(canvas)?canvas.toDataURL("image/png"):(p.signature||"");
@@ -48,6 +50,21 @@
       refreshProfileButton();document.getElementById("modal-root").innerHTML="";
     };
     document.getElementById("download-portfolio").onclick=downloadEvidencePack;
+  }
+
+  const SETTINGS_KEY="evia7-accessibility";
+  const defaultSettings={textScale:"100",dyslexiaFont:false,letterSpacing:false,lineSpacing:false,readingGuide:false,focusMode:false,highContrast:false,reducedMotion:false,colourOverlay:"none"};
+  function getSettings(){return Object.assign({},defaultSettings,JSON.parse(localStorage.getItem(SETTINGS_KEY)||"{}"))}
+  function saveSettings(s){localStorage.setItem(SETTINGS_KEY,JSON.stringify(s));applySettings(s)}
+  function applySettings(s){const root=document.documentElement;root.style.setProperty("--evia-text-scale",(Number(s.textScale||100)/100).toFixed(2));root.classList.toggle("evia-dyslexia-font",!!s.dyslexiaFont);root.classList.toggle("evia-letter-spacing",!!s.letterSpacing);root.classList.toggle("evia-line-spacing",!!s.lineSpacing);root.classList.toggle("evia-reading-guide",!!s.readingGuide);root.classList.toggle("evia-focus-mode",!!s.focusMode);root.classList.toggle("evia-high-contrast",!!s.highContrast);root.classList.toggle("evia-reduced-motion",!!s.reducedMotion);root.dataset.eviaOverlay=s.colourOverlay||"none")}
+  function openSettings(){
+    const s=getSettings();
+    const opts=[["dyslexiaFont","Dyslexia-friendly text","Use a clearer, more readable typeface"],["letterSpacing","More letter spacing","Give characters more breathing room"],["lineSpacing","More line spacing","Increase space between lines of text"],["readingGuide","Reading guide","A subtle guide across the page"],["focusMode","Focus mode","Reduce visual distraction"],["highContrast","High contrast","Increase text and interface contrast"],["reducedMotion","Reduce motion","Use calmer transitions and animations"]];
+    document.getElementById("modal-root").innerHTML='<div class="profile-overlay settings-overlay"><section class="profile-sheet settings-sheet"><div class="profile-head"><div><div class="profile-kicker">SETTINGS</div><h2>Accessibility</h2></div><button class="profile-close" id="settings-close">×</button></div><p class="settings-intro">Personalise Evia to make it easier to read, understand and use. Your choices are saved on this device.</p><div class="settings-section"><div class="settings-label">TEXT SIZE</div><div class="settings-segment">'+["100","115","130","150"].map(v=>'<button type="button" data-text-size="'+v+'" class="'+(s.textScale===v?"selected":"")+'">'+v+'%</button>').join("")+'</div></div><div class="settings-section"><div class="settings-label">READABILITY</div>'+opts.map(o=>'<label class="setting-toggle"><span><strong>'+o[1]+'</strong><small>'+o[2]+'</small></span><input type="checkbox" data-setting="'+o[0]+'" '+(s[o[0]]?"checked":"")+'><i aria-hidden="true"></i></label>').join("")+'</div><div class="settings-section"><div class="settings-label">COLOUR OVERLAY</div><div class="overlay-options">'+[["none","None"],["cream","Cream"],["soft-yellow","Soft yellow"],["soft-blue","Soft blue"],["soft-pink","Soft pink"]].map(o=>'<button type="button" data-overlay="'+o[0]+'" class="'+(s.colourOverlay===o[0]?"selected":"")+'"><i></i><span>'+o[1]+'</span></button>').join("")+'</div></div><div class="settings-section settings-about"><div class="settings-label">EVIA</div><p>Version 7.0</p><small>Accessibility preferences do not change course requirements or assessment decisions.</small></div></section></div>';
+    document.getElementById("settings-close").onclick=()=>openProfile();
+    document.querySelectorAll("[data-text-size]").forEach(b=>b.onclick=()=>{s.textScale=b.dataset.textSize;saveSettings(s);openSettings()});
+    document.querySelectorAll("[data-setting]").forEach(i=>i.onchange=()=>{s[i.dataset.setting]=i.checked;saveSettings(s)});
+    document.querySelectorAll("[data-overlay]").forEach(b=>b.onclick=()=>{s.colourOverlay=b.dataset.overlay;saveSettings(s);openSettings()});
   }
 
   function canvasHasInk(canvas){
@@ -179,6 +196,7 @@
   }
 
   window.addEventListener("load",()=>{
+    applySettings(getSettings());
     refreshProfileButton();
     document.getElementById("profile-btn").onclick=openProfile;
     /* Keep course selection exclusively in Profile rather than displaying
@@ -186,6 +204,15 @@
     const style=document.createElement("style");
     style.textContent=`
       .course-picker{display:none!important}
+      .course-options{display:grid;gap:7px;margin-top:9px}.course-option{display:flex;align-items:center;justify-content:space-between;width:100%;padding:13px 14px;border:1px solid #e6e9ed;border-radius:14px;background:#fff;text-align:left;font-size:13px;color:#4e5969}.course-option.selected{background:#fff8d8;border-color:#ead277;color:#5f5200}.course-option span{font-size:20px;color:#a2aab5}
+      .settings-entry{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px;border:1px solid #e4e8ed;border-radius:16px;background:#fff;text-align:left;color:#293449}.settings-entry strong,.settings-entry small{display:block}.settings-entry strong{font-size:14px}.settings-entry small{font-size:11px;color:#8a95a4;margin-top:4px}.settings-entry>span:last-child{font-size:22px;color:#9aa3af}
+      .settings-intro{font-size:12px;color:#748092;line-height:1.55;margin:18px 0 4px}.settings-section{margin-top:22px}.settings-label{font-size:10px;letter-spacing:.14em;color:#9aa3af;font-weight:800;margin-bottom:9px}.settings-segment{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.settings-segment button{border:1px solid #e0e5eb;background:#fff;border-radius:12px;padding:11px 4px;color:#667085;font-weight:700}.settings-segment button.selected{background:#fff7d2;border-color:#e4c33d;color:#5f5200}
+      .setting-toggle{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 0;border-bottom:1px solid #edf0f3;cursor:pointer}.setting-toggle strong,.setting-toggle small{display:block}.setting-toggle strong{font-size:13px;color:#344054}.setting-toggle small{font-size:11px;color:#8a95a4;margin-top:3px;line-height:1.4}.setting-toggle input{position:absolute;opacity:0;pointer-events:none}.setting-toggle i{width:42px;height:24px;border-radius:20px;background:#d9dee5;position:relative;flex:0 0 42px}.setting-toggle i:after{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.16);transition:.18s}.setting-toggle input:checked+i{background:#e6b800}.setting-toggle input:checked+i:after{transform:translateX(18px)}
+      .overlay-options{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}.overlay-options button{border:1px solid #e1e5ea;background:#fff;border-radius:13px;padding:8px 4px;color:#667085;font-size:10px}.overlay-options button.selected{border-color:#e4c33d}.overlay-options i{display:block;width:28px;height:28px;border-radius:50%;margin:0 auto 6px;border:1px solid #dfe4ea;background:#fff}.overlay-options button[data-overlay="cream"] i{background:#fff7df}.overlay-options button[data-overlay="soft-yellow"] i{background:#fffbd6}.overlay-options button[data-overlay="soft-blue"] i{background:#eaf4fb}.overlay-options button[data-overlay="soft-pink"] i{background:#fbecef}
+      .settings-about p{font-size:13px;color:#344054;margin:0 0 4px}.settings-about small{font-size:10px;line-height:1.45;color:#9aa3af}
+      .evia-dyslexia-font body,.evia-dyslexia-font button,.evia-dyslexia-font input,.evia-dyslexia-font textarea{font-family:Arial,Verdana,sans-serif!important}.evia-letter-spacing body,.evia-letter-spacing button,.evia-letter-spacing input,.evia-letter-spacing textarea{letter-spacing:.035em!important}.evia-line-spacing body,.evia-line-spacing button,.evia-line-spacing input,.evia-line-spacing textarea{line-height:1.65!important}.evia-high-contrast body{color:#101828!important}.evia-high-contrast .card,.evia-high-contrast .bottom-nav,.evia-high-contrast .topbar{border-color:#667085!important}.evia-reduced-motion *, .evia-reduced-motion *::before, .evia-reduced-motion *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}
+      html[data-evia-overlay="cream"] body{background:#fff8e8!important}html[data-evia-overlay="soft-yellow"] body{background:#fffde0!important}html[data-evia-overlay="soft-blue"] body{background:#edf7fc!important}html[data-evia-overlay="soft-pink"] body{background:#fdf0f3!important}
+      .evia-reading-guide body::after{content:"";position:fixed;left:0;right:0;top:50%;height:2px;background:rgba(228,182,0,.62);box-shadow:0 0 0 9999px rgba(255,255,255,.08);pointer-events:none;z-index:9998}
       .course-options{display:none!important}
       .course-fixed{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 15px;border:1px solid #e6e9ed;border-radius:15px;background:#fff;color:#303a4a;font-size:14px;font-weight:650}
       .course-fixed span{font-size:10px;font-weight:600;color:#9aa3af;letter-spacing:.03em}
