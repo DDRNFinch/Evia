@@ -64,8 +64,7 @@
       '<div class="entry-meta">'+esc(e.d||e.savedAt||"")+'</div>'+
       '<h2>'+esc(e.u)+'</h2>'+
       (e.p&&e.p.length?'<div class="evidence-photos">'+e.p.map(p=>'<img src="'+p+'" alt="Evidence photo">').join("")+'</div>':"")+
-      (e.w?'<p class="evidence-notes">'+esc(e.w).replace(/
-/g,"<br>")+'</p>':"")+
+      (e.w?'<p class="evidence-notes">'+esc(e.w).replace(/\n/g,"<br>")+'</p>':"")+
       '<div class="evidence-ksbs">'+(e.k||[]).map(k=>'<span>'+esc(k)+'</span>').join("")+'</div>'+
       (e.signature?'<div class="evidence-signature"><img src="'+e.signature+'" alt="Learner signature"><span>Signed by '+esc((e.learnerProfile&&e.learnerProfile.name)||"Apprentice")+' · '+esc(e.savedAt||e.d||"")+'</span></div>':"")+
       '</article>';
