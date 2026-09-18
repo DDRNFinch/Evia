@@ -166,7 +166,7 @@ function chat(){
   ["Confidence check",""]
  ];
  $("#modal-root").innerHTML='<div class="overlay"><section class="sheet chat-sheet"><div class="sheet-head"><div><div class="chat-kicker">EVIA</div><h2>What would you like to do?</h2></div><button class="close" id="x" aria-label="Close">×</button></div><div class="chat" id="chat"><div class="bubble evia">I can help you review your learning, evidence and confidence.</div><div class="chat-options">'+options.map((o,i)=>'<button class="chat-pill" data-chat-option="'+i+'"><strong>'+o[0]+'</strong></button>').join("")+'</div></div></section></div>';
- $("#x").onclick=()=>$("#modal-root").innerHTML="";
+ $("#x").onclick=()=>{ $("#modal-root").innerHTML=""; fab.classList.remove("chat-active"); };
  const scroll=()=>$("#chat").scrollTop=$("#chat").scrollHeight;
  const addBubble=v=>$("#chat").insertAdjacentHTML("beforeend",'<div class="bubble user">'+esc(v)+'</div>');
  const thinking=()=>{
@@ -188,7 +188,7 @@ function chat(){
      const t=thinking();
      setTimeout(()=>{
        t.outerHTML='<div class="bubble evia">'+esc(naturalQuestion(k))+'</div><div class="rating-options">'+
-         ["Need more help","Getting there","Confident","Very confident"].map((label,n)=>'<button class="rating-pill" data-rating="'+(n+1)+'"><strong>'+label+'</strong></button>').join("")+
+         ["I need more help with this","I understand it but need more practice","I can do this confidently on my own","I am very confident and could explain it to someone else"].map((label,n)=>'<button class="rating-pill" data-rating="'+(n+1)+'"><strong>'+label+'</strong></button>').join("")+
          '</div>';
        scroll();
        document.querySelectorAll("[data-rating]").forEach(b=>b.onclick=()=>{
