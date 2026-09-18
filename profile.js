@@ -74,17 +74,35 @@
     const p=get();
     const mine=evidence.filter(e=>e.c===course);
     if(!mine.length){alert("Save evidence before downloading an evidence pack.");return;}
+    openEvidencePackWindow(mine,"Evia evidence pack");
+  }
+
+  function openEvidencePackWindow(mine,title){
+    const p=get();
     const learner=p.name||"Apprentice";
     const printWindow=window.open("","_blank");
-    if(!printWindow){alert("Please allow pop-ups to download your evidence pack.");return;}
-    printWindow.document.write('<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Evia evidence pack</title><style>'+
+    if(!printWindow){alert("Please allow pop-ups to download your evidence pack.");return false;}
+    printWindow.document.write('<!doctype html><html lang="en"><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>'+
       '@page{size:A4;margin:16mm}*{box-sizing:border-box}body{margin:0;color:#172033;font:11pt -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.45}.pack-header{border-bottom:2px solid #e6b800;padding-bottom:14px;margin-bottom:20px}.eyebrow{font-size:9pt;letter-spacing:.12em;color:#667085;font-weight:700}.pack-header h1{font-size:24pt;letter-spacing:-.04em;margin:4px 0}.pack-details{display:grid;grid-template-columns:1fr 1fr;gap:5px;color:#475467}.evidence-entry{break-inside:avoid;page-break-inside:avoid;border:1px solid #e4e7ec;border-radius:12px;padding:15px;margin:0 0 14px}.entry-meta{font-size:9pt;letter-spacing:.08em;text-transform:uppercase;color:#667085}.evidence-entry h2{font-size:16pt;margin:4px 0 10px}.evidence-photos{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0}.evidence-photos img{width:100%;height:115px;object-fit:cover;border-radius:7px;border:1px solid #eaecf0}.evidence-notes{white-space:normal;color:#344054}.evidence-ksbs{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px}.evidence-ksbs span{background:#fff7d6;border-radius:999px;padding:3px 7px;font:700 8pt -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#675600}.evidence-signature{border-top:1px solid #eaecf0;margin-top:13px;padding-top:8px;display:grid;gap:3px;font-size:8pt;color:#667085}.evidence-signature img{width:140px;height:38px;object-fit:contain;object-position:left center}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}</style></head><body>'+
-      '<header class="pack-header"><div class="eyebrow">EVIA · EVIDENCE PACK</div><h1>'+esc(learner)+'</h1><div class="pack-details"><span><strong>Course:</strong> '+esc(data().name)+'</span><span><strong>Standard:</strong> '+esc(data().std)+'</span>'+(p.start?'<span><strong>Start date:</strong> '+esc(p.start)+'</span>':"")+(p.end?'<span><strong>End date:</strong> '+esc(p.end)+'</span>':"")+'</div></header>'+mine.slice().reverse().map(evidenceEntry).join("")+'</body></html>');
+      '<header class="pack-header"><div class="eyebrow">EVIA · EVIDENCE PACK</div><h1>'+esc(learner)+'</h1><div class="pack-details"><span><strong>Course:</strong> '+esc(data().name)+'</span><span><strong>Standard:</strong> '+esc(data().std)+'</span>'+(p.start?'<span><strong>Start date:</strong> '+esc(p.start)+'</span>':"")+(p.end?'<span><strong>End date:</strong> '+esc(p.end)+'</span>':"")+(mine.length===1?'<span><strong>Unit:</strong> '+esc(mine[0].u)+'</span>':"")+'</div></header>'+mine.slice().reverse().map(evidenceEntry).join("")+'</body></html>');
     printWindow.document.close();
     printWindow.focus();
     setTimeout(()=>printWindow.print(),250);
+    return true;
   }
+
+  function downloadUnitEvidencePack(unitName){
+    const mine=evidence.filter(e=>e.c===course&&e.u===unitName);
+    if(!mine.length){alert("Save evidence for this unit before downloading.");return;}
+    const title="Evia evidence pack · "+unitName;
+    openEvidencePackWindow(mine,title);
+    const state=JSON.parse(localStorage.getItem("evia7-downloaded-unit-pdfs")||"{}");
+    state[course+"|"+unitName]=Date.now();
+    localStorage.setItem("evia7-downloaded-unit-pdfs",JSON.stringify(state));
+  }
+
   window.downloadEvidencePack=downloadEvidencePack;
+  window.downloadUnitEvidencePack=downloadUnitEvidencePack;
 
   function refreshProfileButton(){
     const b=document.getElementById("profile-btn");if(!b)return;
