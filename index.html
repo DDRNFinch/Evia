@@ -12,9 +12,9 @@
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="polish.css">
 <style>
-.overlay:has(.chat-sheet){background:transparent;align-items:flex-end;pointer-events:none}
+.overlay:has(.chat-sheet){background:rgba(20,28,42,.16);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);align-items:flex-end;pointer-events:none}
 .overlay:has(.chat-sheet) .chat-sheet{pointer-events:auto}
-.chat-sheet{position:fixed;left:0;right:0;bottom:166px;width:100%;height:72vh;max-height:72vh;padding:20px 20px calc(18px + env(safe-area-inset-bottom));border-radius:26px;box-shadow:0 12px 38px rgba(16,24,40,.14);overflow:visible}
+.chat-sheet{position:fixed;z-index:55;left:0;right:0;bottom:166px;width:100%;height:72vh;max-height:72vh;padding:20px 20px calc(18px + env(safe-area-inset-bottom));border-radius:26px;box-shadow:0 12px 38px rgba(16,24,40,.14);overflow:visible}
 .chat-sheet:after{content:"";position:absolute;left:50%;bottom:-13px;width:24px;height:24px;background:#fff;transform:translateX(-50%) rotate(45deg);border-radius:4px;box-shadow:8px 8px 18px rgba(16,24,40,.05);z-index:-1}
 .chat-kicker{font-size:10px;letter-spacing:.14em;color:#9aa3af;font-weight:800;margin-bottom:4px}
 .chat-sheet .sheet-head{margin-bottom:10px}
@@ -36,7 +36,7 @@
 .thinking-dots i:nth-child(2){animation-delay:.16s}
 .thinking-dots i:nth-child(3){animation-delay:.32s}
 @keyframes eviaThinking{0%,60%,100%{transform:translateY(0);opacity:.45}30%{transform:translateY(-3px);opacity:1}}
-@media(max-width:520px){.chat-sheet{bottom:148px;height:72vh;max-height:72vh}}
+@media(max-width:520px){.chat-sheet{bottom:148px;height:72vh;max-height:72vh}}\n.evia-fab.chat-active{z-index:60;animation:none;opacity:1;filter:none}
 </style>
 </head>
 <body>
