@@ -135,7 +135,7 @@ function unitStrengthForCourse(unitName){
  const es=evidence.filter(e=>e.c===course&&e.u===unitName);
  if(!es.length)return null;
  const photos=es.reduce((n,e)=>n+(Array.isArray(e.p)?e.p.length:0),0);
- const words=es.reduce((n,e)=>n+String(e.w||"").trim().split(/\\s+/).filter(Boolean).length,0);
+ const words=es.reduce((n,e)=>n+String(e.w||"").trim().split(/\s+/).filter(Boolean).length,0);
  const photoLevel=photos<6?"weak":photos<10?"good":"strong";
  const textLevel=words<50?"weak":words<=100?"good":"strong";
  return photoLevel==="strong"&&textLevel==="strong"?"strong":photoLevel==="weak"||textLevel==="weak"?"weak":"good";
@@ -323,7 +323,7 @@ function chat(){
      const es=entries.filter(e=>e.u===u[0]);
      if(!es.length)return null;
      const photos=es.reduce((n,e)=>n+(Array.isArray(e.p)?e.p.length:0),0);
-     const words=es.reduce((n,e)=>n+String(e.w||"").trim().split(/\\s+/).filter(Boolean).length,0);
+     const words=es.reduce((n,e)=>n+String(e.w||"").trim().split(/\s+/).filter(Boolean).length,0);
      const stages={beginning:0,middle:0,end:0};
      es.forEach(e=>{if(e.stages){stages.beginning+=Number(e.stages.beginning||0);stages.middle+=Number(e.stages.middle||0);stages.end+=Number(e.stages.end||0)}});
      const photoLevel=photos<6?"weak":photos<10?"good":"strong";
