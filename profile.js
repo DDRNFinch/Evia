@@ -88,7 +88,7 @@
 
   function refreshProfileButton(){
     const b=document.getElementById("profile-btn");if(!b)return;
-    const p=get();b.innerHTML=p.avatar?'<img src="'+p.avatar+'" alt="Profile">':'<span class="profile-default">●</span>';
+    const p=get();b.innerHTML=p.avatar?'<img src="'+p.avatar+'" alt="Profile">':'<span class="profile-default" aria-hidden="true">+</span>';
   }
 
   function welcome(){
@@ -97,7 +97,7 @@
     root.innerHTML='<div class="welcome-inner">'+
       '<div class="welcome-avatar evia-welcome-face"><span class="evia-face"><i></i><i></i></span></div>'+
       '<div class="welcome-pulse"></div>'+
-      '<div class="welcome-copy"><div class="welcome-small">EVIA</div><h2>Hi'+(p.name?", "+esc(p.name):"")+'.</h2><p>What do you want to work on today?</p></div>'+
+      '<div class="welcome-copy"><div class="welcome-small">EVIA</div><h2>Hi'+(p.name?", "+esc(String(p.name).trim().split(/\\s+/)[0]):"")+'.</h2><p>What do you want to work on today?</p></div>'+
       '</div>';
     document.body.appendChild(root);
     requestAnimationFrame(()=>root.classList.add("visible"));
