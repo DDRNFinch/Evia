@@ -131,9 +131,25 @@ function learning(){
  const last=$("#download-last-otj");if(last)last.onclick=()=>downloadOTJPDF("last");
 }
 
+function unitStrengthForCourse(unitName){
+ const es=evidence.filter(e=>e.c===course&&e.u===unitName);
+ if(!es.length)return null;
+ const photos=es.reduce((n,e)=>n+(Array.isArray(e.p)?e.p.length:0),0);
+ const words=es.reduce((n,e)=>n+String(e.w||"").trim().split(/\\s+/).filter(Boolean).length,0);
+ const photoLevel=photos<6?"weak":photos<10?"good":"strong";
+ const textLevel=words<50?"weak":words<=100?"good":"strong";
+ return photoLevel==="strong"&&textLevel==="strong"?"strong":photoLevel==="weak"||textLevel==="weak"?"weak":"good";
+}
+function strengthBars(level){
+ const n=level==="strong"?3:level==="good"?2:level==="weak"?1:0;
+ return '<span class="unit-strength-bars" aria-label="'+(level?esc(level):"No evidence")+'">'+[0,1,2].map(i=>'<i class="'+(i<n?"filled":"")+'"></i>').join("")+'</span>';
+}
 function courses(){
  $("#page-title").textContent="Course";
- $("#screen").innerHTML=picker()+'<div class="card"><div class="section-title">'+esc(data().std)+'</div><h2>'+esc(data().name)+'</h2><p>'+data().u.length+' units. Open a unit to capture evidence.</p></div>'+data().u.map((u,i)=>'<div class="card unit-card" data-u="'+i+'"><div><div class="unit-number">UNIT '+(i+1)+'</div><div class="unit-title">'+esc(u[0])+'</div><div style="font-size:12px;color:#8e9aab;margin-top:6px">'+u[1].length+' linked KSBs</div></div><span class="arrow">›</span></div>').join("");
+ $("#screen").innerHTML=picker()+'<div class="card"><div class="section-title">'+esc(data().std)+'</div><h2>'+esc(data().name)+'</h2><p>'+data().u.length+' units. Open a unit to capture evidence.</p></div>'+data().u.map((u,i)=>{
+   const level=unitStrengthForCourse(u[0]);
+   return '<div class="card unit-card" data-u="'+i+'"><div><div class="unit-number">UNIT '+(i+1)+'</div><div class="unit-title">'+esc(u[0])+'</div><div class="unit-meta-row">'+(level?'<span class="status done">Evidence added</span>':'<span class="status">Not started</span>')+(level?'<span class="strength-label">'+esc(level.charAt(0).toUpperCase()+level.slice(1))+'</span>'+strengthBars(level):'')+'</div></div><span class="arrow">›</span></div>';
+ }).join("");
  bindCourses();document.querySelectorAll("[data-u]").forEach(b=>b.onclick=()=>openUnit(+b.dataset.u));
 }
 function bindCourses(){document.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{course=b.dataset.c;persist();render()})}
@@ -145,12 +161,25 @@ function progress(){
 }
 function portfolio(){
  $("#page-title").textContent="Portfolio";let es=evidence.filter(e=>e.c===course).slice().reverse();
- $("#screen").innerHTML=picker()+'<div class="card portfolio-intro"><div><div class="section-title">Completed evidence</div><h2>Portfolio</h2><p>Saved evidence for '+esc(data().name)+'.</p></div><button class="secondary pdf-button" id="download-pdf" '+(es.length?"":"disabled")+'>Download PDF</button></div>'+(es.length?es.map(e=>'<div class="card"><div class="progress-row"><div><div class="unit-number">'+esc(e.d)+'</div><h3>'+esc(e.u)+'</h3></div><span class="status done">Saved</span></div>'+(e.p.length?'<div class="photo-grid">'+e.p.map(p=>'<img class="thumb" src="'+p+'" alt="Evidence photo">').join("")+'</div>':"")+(e.w?'<p style="white-space:pre-wrap">'+esc(e.w)+'</p>':"")+
-(e.signature?'<div class="evidence-signoff"><div class="unit-number">LEARNER SIGN-OFF</div><img src="'+e.signature+'" alt="Learner signature"><small>Signed by '+esc((e.learnerProfile&&e.learnerProfile.name)||"apprentice")+' · '+esc(e.savedAt||e.d)+'</small></div>':"")+
-'<div class="row">'+e.k.map(k=>'<span class="pill">'+esc(k)+'</span>').join("")+'</div></div>').join(""):'<div class="empty-home" style="min-height:45vh"></div>');
+ const units=[...new Set(es.map(e=>e.u))];
+ const downloaded=JSON.parse(localStorage.getItem("evia7-downloaded-unit-pdfs")||"{}");
+ const byUnit=name=>es.filter(e=>e.u===name);
+ $("#screen").innerHTML=picker()+'<div class="card portfolio-intro"><div><div class="section-title">Completed evidence</div><h2>Portfolio</h2><p>Each started unit has its own evidence pack. Downloaded packs can be downloaded again.</p></div></div>'+
+ units.map(name=>{
+   const entries=byUnit(name);
+   const wasDownloaded=!!downloaded[course+"|"+name];
+   return '<div class="card"><div class="progress-row"><div><div class="unit-number">EVIDENCE PACK</div><h3>'+esc(name)+'</h3></div><button class="secondary unit-pdf-button" data-unit-pdf="'+esc(name)+'">'+(wasDownloaded?"✓ Downloaded":"Download PDF")+'</button></div>'+
+     entries.map(e=>'<div class="evidence-entry">'+(e.p&&e.p.length?'<div class="photo-grid">'+e.p.map(p=>'<img class="thumb" src="'+p+'" alt="Evidence photo">').join("")+'</div>':"")+(e.w?'<p style="white-space:pre-wrap">'+esc(e.w)+'</p>':"")+'<div class="row">'+e.k.map(k=>'<span class="pill">'+esc(k)+'</span>').join("")+'</div></div>').join("")+'</div>';
+ }).join("");
  bindCourses();
- const download=$("#download-pdf");
- if(download)download.onclick=()=>window.downloadEvidencePack&&window.downloadEvidencePack();
+ document.querySelectorAll("[data-unit-pdf]").forEach(b=>b.onclick=()=>{
+   const name=b.getAttribute("data-unit-pdf");
+   if(window.downloadUnitEvidencePack)window.downloadUnitEvidencePack(name);
+   const state=JSON.parse(localStorage.getItem("evia7-downloaded-unit-pdfs")||"{}");
+   state[course+"|"+name]=Date.now();
+   localStorage.setItem("evia7-downloaded-unit-pdfs",JSON.stringify(state));
+   b.textContent="✓ Downloaded";
+ });
 }
 function confidenceHistory(){
  try{return JSON.parse(localStorage.getItem("evia7-confidence")||"[]")}catch(_){return[]}
@@ -241,7 +270,7 @@ function chat(){
      const t=thinking();
      setTimeout(()=>{
        t.outerHTML='<div class="bubble evia">'+esc(q[1])+'</div><div class="rating-options">'+
-         ["I need more help with this","I understand it but need more practice","I can do this confidently on my own","I am very confident and could explain it to someone else"].map((label,n)=>'<button class="rating-pill" data-rating="'+(n+1)+'"><strong>'+label+'</strong></button>').join("")+
+         ["Need more training","Know the basics","Quite confident","I\'ve mastered this"].map((label,n)=>'<button class="rating-pill" data-rating="'+(n+1)+'"><strong>'+label+'</strong></button>').join("")+
          '</div>';
        scroll();
        document.querySelectorAll("[data-rating]").forEach(b=>b.onclick=()=>{
@@ -263,7 +292,7 @@ function chat(){
                const t2=thinking();
                setTimeout(()=>{
                  t2.outerHTML='<div class="bubble evia">'+esc(q2[1])+'</div><div class="rating-options">'+
-                   ["I need more help with this","I understand it but need more practice","I can do this confidently on my own","I am very confident and could explain it to someone else"].map((label,n)=>'<button class="rating-pill" data-rating-more="'+(n+1)+'"><strong>'+label+'</strong></button>').join("")+
+                   ["Need more training","Know the basics","Quite confident","I\'ve mastered this"].map((label,n)=>'<button class="rating-pill" data-rating-more="'+(n+1)+'"><strong>'+label+'</strong></button>').join("")+
                    '</div>';scroll();
                  document.querySelectorAll("[data-rating-more]").forEach(btn=>btn.onclick=()=>{
                    const score2=Number(btn.dataset.ratingMore);
@@ -289,28 +318,29 @@ function chat(){
  };
  const portfolioReview=()=>{
    const entries=evidence.filter(e=>e.c===course);
+   const startedNames=new Set(entries.map(e=>e.u));
    const rows=data().u.map((u,i)=>{
      const es=entries.filter(e=>e.u===u[0]);
+     if(!es.length)return null;
      const photos=es.reduce((n,e)=>n+(Array.isArray(e.p)?e.p.length:0),0);
-     const words=es.reduce((n,e)=>n+String(e.w||"").trim().split(/\s+/).filter(Boolean).length,0);
+     const words=es.reduce((n,e)=>n+String(e.w||"").trim().split(/\\s+/).filter(Boolean).length,0);
      const stages={beginning:0,middle:0,end:0};
-     es.forEach(e=>{
-       if(e.stages){stages.beginning+=Number(e.stages.beginning||0);stages.middle+=Number(e.stages.middle||0);stages.end+=Number(e.stages.end||0)}
-     });
+     es.forEach(e=>{if(e.stages){stages.beginning+=Number(e.stages.beginning||0);stages.middle+=Number(e.stages.middle||0);stages.end+=Number(e.stages.end||0)}});
      const photoLevel=photos<6?"weak":photos<10?"good":"strong";
      const textLevel=words<50?"weak":words<=100?"good":"strong";
      const overall=photoLevel==="strong"&&textLevel==="strong"?"strong":photoLevel==="weak"||textLevel==="weak"?"weak":"good";
      const missingStages=["beginning","middle","end"].filter(s=>stages[s]<2);
      let advice="";
-     if(overall==="weak") advice="Add more evidence during another job, with more photos and/or a fuller write-up.";
-     else if(overall==="good") advice="Good evidence base. Add more photos and/or detail during another job to make this unit stronger.";
+     if(overall==="weak")advice="Add more evidence during another job, with more photos and/or a fuller write-up.";
+     else if(overall==="good")advice="Good evidence base. Add more photos and/or detail during another job to make this unit stronger.";
      else advice="Strong evidence base. Keep adding evidence naturally during another job where it gives useful extra coverage.";
-     if(missingStages.length) advice+=" Aim for at least 2 photos at "+missingStages.join(", ")+" of the job.";
-     return {i,name:u[0],photos,words,photoLevel,textLevel,overall,advice};
-   });
+     if(missingStages.length)advice+=" Aim for at least 2 photos at "+missingStages.join(", ")+" of the job.";
+     return {i,name:u[0],photos,words,overall,advice};
+   }).filter(Boolean);
+   const remaining=Math.max(0,data().u.length-startedNames.size);
    const label=x=>x.charAt(0).toUpperCase()+x.slice(1);
    const lines=rows.map(r=>'<div class="bubble evia"><strong>'+esc(r.name)+'</strong><br>Evidence: '+label(r.overall)+' · '+r.photos+' photos · '+r.words+' words.<br>'+esc(r.advice)+'</div>').join("");
-   eviaReply('<strong>Portfolio check</strong><br>I’ve reviewed your saved evidence unit by unit. '+(rows.length? "Here is the current evidence strength:":"There is no saved evidence yet.")+lines);
+   eviaReply('<strong>Portfolio check</strong><br>I’ve reviewed the units you have started and saved evidence for. '+(rows.length?"Here is the current evidence strength:":"There is no saved evidence yet.")+lines+'<br><br><strong>Units remaining:</strong> '+remaining+' of '+data().u.length+'.');
  };
  const progressReview=()=>{
    const entries=evidence.filter(e=>e.c===course);
