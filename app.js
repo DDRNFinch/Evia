@@ -79,7 +79,9 @@ function progress(){
 }
 function portfolio(){
  $("#page-title").textContent="Portfolio";let es=evidence.filter(e=>e.c===course).slice().reverse();
- $("#screen").innerHTML=picker()+'<div class="card"><div class="section-title">Completed evidence</div><h2>Portfolio</h2><p>Saved evidence for '+esc(data().name)+'.</p></div>'+(es.length?es.map(e=>'<div class="card"><div class="progress-row"><div><div class="unit-number">'+esc(e.d)+'</div><h3>'+esc(e.u)+'</h3></div><span class="status done">Saved</span></div>'+(e.p.length?'<div class="photo-grid">'+e.p.map(p=>'<img class="thumb" src="'+p+'" alt="Evidence photo">').join("")+'</div>':"")+(e.w?'<p style="white-space:pre-wrap">'+esc(e.w)+'</p>':"")+'<div class="row">'+e.k.map(k=>'<span class="pill">'+esc(k)+'</span>').join("")+'</div></div>').join(""):'<div class="empty-home" style="min-height:45vh"></div>');
+ $("#screen").innerHTML=picker()+'<div class="card"><div class="section-title">Completed evidence</div><h2>Portfolio</h2><p>Saved evidence for '+esc(data().name)+'.</p></div>'+(es.length?es.map(e=>'<div class="card"><div class="progress-row"><div><div class="unit-number">'+esc(e.d)+'</div><h3>'+esc(e.u)+'</h3></div><span class="status done">Saved</span></div>'+(e.p.length?'<div class="photo-grid">'+e.p.map(p=>'<img class="thumb" src="'+p+'" alt="Evidence photo">').join("")+'</div>':"")+(e.w?'<p style="white-space:pre-wrap">'+esc(e.w)+'</p>':"")+
+(e.signature?'<div class="evidence-signoff"><div class="unit-number">LEARNER SIGN-OFF</div><img src="'+e.signature+'" alt="Learner signature"><small>Signed by '+esc((e.learnerProfile&&e.learnerProfile.name)||"apprentice")+' · '+esc(e.savedAt||e.d)+'</small></div>':"")+
+'<div class="row">'+e.k.map(k=>'<span class="pill">'+esc(k)+'</span>').join("")+'</div></div>').join(""):'<div class="empty-home" style="min-height:45vh"></div>');
  bindCourses();
 }
 function chat(){
