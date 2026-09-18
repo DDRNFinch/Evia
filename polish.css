@@ -329,3 +329,35 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text"
   from{opacity:0;transform:translateY(14px)}
   to{opacity:1;transform:translateY(0)}
 }
+
+
+/* Thin-line navigation icon system: polished silhouettes, no emoji glyphs. */
+.bottom-nav .nav-icon{
+  width:24px;
+  height:22px;
+  display:grid;
+  place-items:center;
+  color:currentColor;
+  transform-origin:center;
+}
+.bottom-nav .nav-icon svg{
+  width:22px;
+  height:22px;
+  display:block;
+  overflow:visible;
+}
+.bottom-nav .nav-icon svg path{
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.55;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  vector-effect:non-scaling-stroke;
+}
+.bottom-nav button.active .nav-icon svg path{
+  stroke-width:1.7;
+}
+@media(max-width:520px){
+  .bottom-nav .nav-icon{width:22px;height:20px}
+  .bottom-nav .nav-icon svg{width:21px;height:21px}
+}
