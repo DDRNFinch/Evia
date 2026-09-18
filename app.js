@@ -153,10 +153,12 @@ function portfolio(){
  if(download)download.onclick=()=>window.downloadEvidencePack&&window.downloadEvidencePack();
 }
 function chat(){
- const unitKSBs=()=>data().u.flatMap(u=>u[1]).filter(k=>/^K\\d+\\|/.test(k));
+ const fab=$("#evia-fab");
+ fab.classList.add("chat-active");
+ const unitKSBs=()=>data().u.flatMap(u=>u[1]).filter(k=>/^K\d+\|/.test(k));
  const naturalQuestion=k=>{
-   const raw=text(k).replace(/^.*?:\\s*/,"").trim();
-   const clean=raw.replace(/\\([^)]*\\)/g,"").replace(/\\s+/g," ").replace(/\\.$/,"").trim();
+   const raw=text(k).replace(/^.*?:\s*/,"").trim();
+   const clean=raw.replace(/\([^)]*\)/g,"").replace(/\s+/g," ").replace(/\.$/,"").trim();
    return clean?"What is your knowledge like towards "+clean.charAt(0).toLowerCase()+clean.slice(1)+"?":"How confident do you feel about this area?";
  };
  const options=[
