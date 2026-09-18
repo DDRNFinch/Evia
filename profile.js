@@ -143,7 +143,6 @@
       .welcome-inner{text-align:center;position:relative;display:flex;flex-direction:column;align-items:center;gap:22px}
       .welcome-avatar{width:118px;height:118px;border-radius:50%;border:4px solid #e6b800;background:#fffdfa;box-shadow:0 18px 45px rgba(16,24,40,.12);display:grid;place-items:center;position:relative;z-index:2;overflow:hidden;cursor:pointer}
       .welcome-avatar .profile-placeholder{width:100%;height:100%;border-radius:50%}
-      .welcome-avatar:not(img)::after{content:"";position:absolute;width:18px;height:18px;border:3px solid #e6b800;border-radius:50%;box-shadow:31px 0 0 -3px #fffdfa,31px 0 0 0 #e6b800}
       .welcome-pulse{position:absolute;width:150px;height:150px;border:1px solid #e6b800;border-radius:50%;animation:welcomePulse 2.1s ease-out infinite}
       .welcome-copy h2{font-size:28px;letter-spacing:-.045em;margin:0 0 5px}.welcome-copy p{font-size:15px;color:#7b8797;margin:0}
       .welcome-copy button{margin-top:17px;border:0;background:#151c2b;color:#fff;border-radius:14px;padding:12px 18px;font-size:13px}
