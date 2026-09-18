@@ -1,7 +1,7 @@
 /* Evia7 learner profile, course selection and welcome experience. */
 (function(){
   const KEY="evia7-profile";
-  const defaults={name:"",start:"",end:"",avatar:"",signature:""};
+  const defaults={name:"",start:"",end:"",avatar:"",signature:"",mathsEnabled:false,englishEnabled:false};
   const get=()=>Object.assign({},defaults,JSON.parse(localStorage.getItem(KEY)||"{}"));
   const set=p=>localStorage.setItem(KEY,JSON.stringify(p));
   const esc=s=>String(s??"").replace(/[&<>"]/g,x=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[x]));
@@ -22,7 +22,7 @@
       '<label>Name<input id="profile-name" value="'+esc(p.name)+'" placeholder="Your name"></label>'+
       '<div class="profile-dates"><label>Start date<input id="profile-start" type="date" value="'+esc(p.start)+'"></label><label>End date<input id="profile-end" type="date" value="'+esc(p.end)+'"></label></div>'+
       '</div>'+
-      '<div class="profile-block"><div class="profile-kicker">YOUR COURSE</div><div class="course-options">'+Object.keys(C).map(k=>'<button type="button" class="course-option '+(k===course?"selected":"")+'" data-profile-course="'+k+'">'+esc(C[k].name)+'<span>›</span></button>').join("")+'</div></div>'+
+      '<div class="profile-block"><div class="profile-kicker">YOUR COURSE</div><div class="course-options">'+Object.keys(C).map(k=>'<button type="button" class="course-option '+(k===course?"selected":"")+'" data-profile-course="'+k+'">'+esc(C[k].name)+'<span>›</span></button>').join("")+'</div></div><div class="profile-block"><div class="profile-kicker">MATHS & ENGLISH</div><p>Choose which subjects Evia should include in your tests and progress reviews.</p><label class="study-check"><input id="profile-maths" type="checkbox" ><span>I am studying Maths</span></label><label class="study-check"><input id="profile-english" type="checkbox" ><span>I am studying English</span></label></div>'+
       '<div class="profile-block"><button type="button" class="settings-entry" id="open-settings"><span><strong>Accessibility & settings</strong><small>Personalise how Evia looks, reads and behaves</small></span><span aria-hidden="true">›</span></button></div><div class="profile-block"><div class="profile-kicker">YOUR SIGNATURE</div><p>Write your signature with your finger. It will be attached to saved evidence with the time and date.</p><div class="signature-wrap"><canvas id="signature-pad" width="900" height="260"></canvas><button type="button" id="clear-signature">Clear</button></div></div>'+
       '<div class="profile-actions"><button type="button" class="secondary" id="download-portfolio">Download PDF</button><button type="button" class="primary" id="save-profile">Save profile</button></div>'+
       '</section></div>';
@@ -46,7 +46,7 @@
     document.getElementById("profile-close").onclick=()=>document.getElementById("modal-root").innerHTML="";
     document.getElementById("save-profile").onclick=()=>{
       const signature=canvasHasInk(canvas)?canvas.toDataURL("image/png"):(p.signature||"");
-      set({name:document.getElementById("profile-name").value.trim(),start:document.getElementById("profile-start").value,end:document.getElementById("profile-end").value,avatar:p.avatar,signature});
+      set({name:document.getElementById("profile-name").value.trim(),start:document.getElementById("profile-start").value,end:document.getElementById("profile-end").value,avatar:p.avatar,signature,mathsEnabled:document.getElementById("profile-maths").checked,englishEnabled:document.getElementById("profile-english").checked});
       refreshProfileButton();document.getElementById("modal-root").innerHTML="";
     };
     document.getElementById("download-portfolio").onclick=downloadEvidencePack;
