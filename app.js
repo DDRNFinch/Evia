@@ -102,35 +102,3 @@ function learning(){
  const dl=$("#download-otj");if(dl)dl.onclick=()=>downloadOTJPDF("new");
  const last=$("#download-last-otj");if(last)last.onclick=()=>downloadOTJPDF("last");
 }
-n)+' hours</strong><p>Off-the-job learning recorded on site</p><small style="color:#9aa7ba">'+esc(x.d)+'</small></div>').join("");
- $("#add").onclick=()=>{let n=Number($("#hrs").value);if(n>0){hours.push({n:n,d:new Date().toLocaleDateString("en-GB")});persist();learning()}};
-}
-function courses(){
- $("#page-title").textContent="Course";
- $("#screen").innerHTML=picker()+'<div class="card"><div class="section-title">'+esc(data().std)+'</div><h2>'+esc(data().name)+'</h2><p>'+data().u.length+' units. Open a unit to capture evidence.</p></div>'+data().u.map((u,i)=>'<div class="card unit-card" data-u="'+i+'"><div><div class="unit-number">UNIT '+(i+1)+'</div><div class="unit-title">'+esc(u[0])+'</div><div style="font-size:12px;color:#8e9aab;margin-top:6px">'+u[1].length+' linked KSBs</div></div><span class="arrow">›</span></div>').join("");
- bindCourses();document.querySelectorAll("[data-u]").forEach(b=>b.onclick=()=>openUnit(+b.dataset.u));
-}
-function bindCourses(){document.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{course=b.dataset.c;persist();render()})}
-function allK(){let m=new Map();data().u.forEach(u=>u[1].forEach(k=>m.set(code(k),text(k))));return [...m].sort((a,b)=>a[0][0].localeCompare(b[0][0])||Number(a[0].slice(1))-Number(b[0].slice(1)))}
-function progress(){
- $("#page-title").textContent="Progress";let ev=new Set(evidence.filter(e=>e.c===course).flatMap(e=>e.k));
- $("#screen").innerHTML=picker()+'<div class="card"><div class="section-title">'+esc(data().std)+'</div><h2>KSB Progress</h2><p>Official KSB wording linked to this course. “Evidence captured” records saved evidence only; it is not an assessment decision.</p></div>'+allK().map(x=>'<div class="card progress-row"><div class="ksb"><span class="code">'+esc(x[0])+'</span><div class="ksbtext">'+esc(x[1])+'</div></div><span class="status '+(ev.has(x[0])?"done":"")+'">'+(ev.has(x[0])?"Captured":"Not captured")+'</span></div>').join("");
- bindCourses();
-}
-function portfolio(){
- $("#page-title").textContent="Portfolio";let es=evidence.filter(e=>e.c===course).slice().reverse();
- $("#screen").innerHTML=picker()+'<div class="card portfolio-intro"><div><div class="section-title">Completed evidence</div><h2>Portfolio</h2><p>Saved evidence for '+esc(data().name)+'.</p></div><button class="secondary pdf-button" id="download-pdf" '+(es.length?"":"disabled")+'>Download PDF</button></div>'+(es.length?es.map(e=>'<div class="card"><div class="progress-row"><div><div class="unit-number">'+esc(e.d)+'</div><h3>'+esc(e.u)+'</h3></div><span class="status done">Saved</span></div>'+(e.p.length?'<div class="photo-grid">'+e.p.map(p=>'<img class="thumb" src="'+p+'" alt="Evidence photo">').join("")+'</div>':"")+(e.w?'<p style="white-space:pre-wrap">'+esc(e.w)+'</p>':"")+
-(e.signature?'<div class="evidence-signoff"><div class="unit-number">LEARNER SIGN-OFF</div><img src="'+e.signature+'" alt="Learner signature"><small>Signed by '+esc((e.learnerProfile&&e.learnerProfile.name)||"apprentice")+' · '+esc(e.savedAt||e.d)+'</small></div>':"")+
-'<div class="row">'+e.k.map(k=>'<span class="pill">'+esc(k)+'</span>').join("")+'</div></div>').join(""):'<div class="empty-home" style="min-height:45vh"></div>');
- bindCourses();
- const download=$("#download-pdf");
- if(download)download.onclick=()=>window.downloadEvidencePack&&window.downloadEvidencePack();
-}
-function chat(){
- $("#modal-root").innerHTML='<div class="overlay"><section class="sheet"><div class="sheet-head"><h2>Evia</h2><button class="close" id="x">×</button></div><div class="chat" id="chat"><div class="bubble evia">Hi. I’m Evia. I can help you move around the app and your course.</div><div class="bubble evia">I’m a basic assistant for now — no AI assessment.</div></div><div class="chat-row"><input id="msg" placeholder="Talk to Evia…"><button class="primary" id="send">Send</button></div></section></div>';
- $("#x").onclick=()=>$("#modal-root").innerHTML="";
- const send=()=>{let v=$("#msg").value.trim();if(!v)return;let q=v.toLowerCase(),a=q.includes("course")?"Tap Course to see your units and capture evidence.":q.includes("progress")||q.includes("ksb")?"Progress lists the KSBs linked to your course.":q.includes("portfolio")||q.includes("evidence")?"Portfolio stores the evidence you have saved.":q.includes("learning")||q.includes("hour")?"Learning is where you record off-the-job hours.":"Use the five buttons at the bottom to move around Evia.";$("#chat").insertAdjacentHTML("beforeend",'<div class="bubble user">'+esc(v)+'</div><div class="bubble evia">'+a+'</div>');$("#msg").value="";$("#chat").scrollTop=$("#chat").scrollHeight};$("#send").onclick=send;$("#msg").onkeydown=e=>{if(e.key==="Enter")send()};
-}
-document.querySelectorAll("[data-nav]").forEach(b=>b.onclick=()=>nav(b.dataset.nav));
-$("#evia-fab").onclick=chat;$("#profile-btn").onclick=()=>alert("Profile settings will be added here.");
-render();
