@@ -77,7 +77,7 @@
     const p=get();
     const root=document.createElement("div");root.id="welcome-screen";
     root.innerHTML='<div class="welcome-inner">'+
-      avatarMarkup(p,true)+
+      '<div class="welcome-avatar evia-welcome-face"><span class="evia-eye"></span><span class="evia-eye"></span></div>'+
       '<div class="welcome-pulse"></div>'+
       '<div class="welcome-copy"><div class="welcome-small">EVIA</div><h2>Hi'+(p.name?", "+esc(p.name):"")+'.</h2><p>What do you want to work on today?</p><button id="welcome-start">Let’s get started</button></div>'+
       '</div>';
