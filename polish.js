@@ -79,6 +79,9 @@
     evidence.push({
       id:Date.now(),c:course,u:u[0],d:new Date().toLocaleString("en-GB"),
       p:photos.map(x=>x.src),w:w,k:u[1].map(code),
+      learnerProfile:JSON.parse(localStorage.getItem("evia7-profile")||"{}"),
+      signature:JSON.parse(localStorage.getItem("evia7-profile")||"{}").signature||"",
+      savedAt:new Date().toISOString(),
       stages:{
         beginning:photos.filter(x=>x.stage===0).length,
         middle:photos.filter(x=>x.stage===1).length,
