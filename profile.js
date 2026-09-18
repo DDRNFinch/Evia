@@ -39,7 +39,7 @@
 
     document.getElementById("avatar-file").onchange=e=>{
       const f=e.target.files[0];if(!f)return;
-      const r=new FileReader();r.onload=()=>{p.avatar=r.result;openProfile()};r.readAsDataURL(f);
+      const r=new FileReader();r.onload=()=>{p.avatar=r.result;set(p);refreshProfileButton();openProfile()};r.readAsDataURL(f);
     };
     document.querySelectorAll("[data-profile-course]").forEach(b=>b.onclick=()=>{
       course=b.dataset.profileCourse;persist();openProfile();
