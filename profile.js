@@ -112,10 +112,13 @@
     clone.classList.add("welcome-flying");
     Object.assign(clone.style,{left:start.left+"px",top:start.top+"px",width:start.width+"px",height:start.height+"px"});
     document.body.appendChild(clone);
+    // Hide the small Evia while the large Evia travels to its exact position.
+    // The learner therefore sees one Evia shrinking/moving into the dock, not two avatars overlapping.
+    fab.classList.add("welcome-target-hidden");
     root.classList.add("leaving");
     const dx=target.left+target.width/2-(start.left+start.width/2),dy=target.top+target.height/2-(start.top+start.height/2);
     requestAnimationFrame(()=>{clone.style.transform="translate("+dx+"px,"+dy+"px) scale("+(target.width/start.width)+")"});
-    setTimeout(()=>{root.remove();clone.remove();document.getElementById("screen").classList.add("welcome-revealed")},650);
+    setTimeout(()=>{root.remove();clone.remove();fab.classList.remove("welcome-target-hidden");document.getElementById("screen").classList.add("welcome-revealed")},650);
   }
 
   window.addEventListener("load",()=>{
@@ -174,6 +177,7 @@
       .welcome-copy h2{font-size:28px;letter-spacing:-.045em;margin:0 0 5px}.welcome-copy p{font-size:15px;color:#7b8797;margin:0}
       .welcome-copy button{margin-top:17px;border:0;background:#151c2b;color:#fff;border-radius:14px;padding:12px 18px;font-size:13px}
       .welcome-flying{position:fixed;z-index:2100;border-radius:50%;border:3px solid #e6b800;background:#fffdfa;object-fit:cover;display:grid;place-items:center;box-shadow:0 10px 25px rgba(16,24,40,.12);transition:transform .62s cubic-bezier(.2,.75,.2,1)}
+      .evia-fab.welcome-target-hidden{opacity:0;pointer-events:none;animation:none}
       .welcome-revealed{animation:revealScreen .42s ease both}
       @keyframes welcomePulse{0%{transform:scale(.75);opacity:.75}70%,100%{transform:scale(1.25);opacity:0}}
       @keyframes revealScreen{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
