@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="polish.css">
 <style>
-.overlay:has(.chat-sheet){background:rgba(20,28,42,.16);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);align-items:flex-end;pointer-events:none}
+.overlay:has(.chat-sheet){background:rgba(20,28,42,.16);align-items:flex-end;pointer-events:none}.overlay:has(.chat-sheet)~*{}
 .overlay:has(.chat-sheet) .chat-sheet{pointer-events:auto}
 .chat-sheet{position:fixed;z-index:55;left:0;right:0;bottom:166px;width:100%;height:72vh;max-height:72vh;padding:20px 20px calc(18px + env(safe-area-inset-bottom));border-radius:26px;box-shadow:0 12px 38px rgba(16,24,40,.14);overflow:visible}
 .chat-sheet:after{content:"";position:absolute;left:50%;bottom:-13px;width:24px;height:24px;background:#fff;transform:translateX(-50%) rotate(45deg);border-radius:4px;box-shadow:8px 8px 18px rgba(16,24,40,.05);z-index:-1}
@@ -36,7 +36,7 @@
 .thinking-dots i:nth-child(2){animation-delay:.16s}
 .thinking-dots i:nth-child(3){animation-delay:.32s}
 @keyframes eviaThinking{0%,60%,100%{transform:translateY(0);opacity:.45}30%{transform:translateY(-3px);opacity:1}}
-@media(max-width:520px){.chat-sheet{bottom:148px;height:72vh;max-height:72vh}}\n.evia-fab.chat-active{z-index:60;animation:none;opacity:1;filter:none}
+@media(max-width:520px){.chat-sheet{bottom:148px;height:72vh;max-height:72vh}}\n.overlay:has(.chat-sheet) ~ *{}body:has(.chat-sheet) .topbar,body:has(.chat-sheet) #screen,body:has(.chat-sheet) .bottom-nav{filter:blur(10px);transition:filter .18s ease}.evia-fab.chat-active{z-index:100;animation:none;opacity:1;filter:none!important}
 </style>
 </head>
 <body>
@@ -72,45 +72,27 @@
     try {
       const registration=await navigator.serviceWorker.register("./sw.js",{updateViaCache:"none"});
       await registration.update();
-      if(registration.waiting) registration.waiting.postMessage({type:"SKIP_WAITING"});
 
-      // Check the actual deployed app files on every online load. If any app
-      // file has changed since this device last loaded Evia, clear only the
-      // Service Worker Cache Storage and reload. Learner data in localStorage
-      // is deliberately untouched.
-      const trackedFiles=[
-        "./index.html","./styles.css","./polish.css","./app.js",
-        "./polish.js","./profile.js","./manifest.json","./icon.svg","./sw.js"
-      ];
-      const encoder=new TextEncoder();
-      const hex=buffer=>Array.from(new Uint8Array(buffer)).map(b=>b.toString(16).padStart(2,"0")).join("");
-      const getBuildSignature=async()=>{
-        const parts=[];
-        for(const file of trackedFiles){
-          const response=await fetch(file+"?evia-update-check="+Date.now(),{cache:"no-store"});
-          if(!response.ok) throw new Error("Update check failed for "+file);
-          parts.push(file+"\\n"+await response.text());
-        }
-        return hex(await crypto.subtle.digest("SHA-256",encoder.encode(parts.join("\\n---\\n"))));
+      const activateWaiting=worker=>{
+        if(!worker)return;
+        worker.postMessage({type:"SKIP_WAITING"});
       };
-      const resetMarker="2026-09-18-cache-v2";
-      const previousMarker=localStorage.getItem("evia7-cache-reset-marker");
-      const previous=localStorage.getItem("evia7-build-signature");
-      const current=await getBuildSignature();
-      const changed=Boolean(previous && previous!==current);
-      const firstRun=previousMarker!==resetMarker;
-      if(firstRun || changed){
-        const names=await caches.keys();
-        await Promise.all(names.filter(name=>name.startsWith("evia7-")).map(name=>caches.delete(name)));
-        localStorage.setItem("evia7-build-signature",current);
-        localStorage.setItem("evia7-cache-reset-marker",resetMarker);
-        window.location.reload();
-        return;
-      }
-      localStorage.setItem("evia7-build-signature",current);
-    } catch(e) { console.warn("Evia update check unavailable",e); }
+
+      if(registration.waiting) activateWaiting(registration.waiting);
+
+      registration.addEventListener("updatefound",()=>{
+        const worker=registration.installing;
+        if(!worker)return;
+        worker.addEventListener("statechange",()=>{
+          if(worker.state==="installed" && navigator.serviceWorker.controller){
+            activateWaiting(worker);
+          }
+        });
+      });
+    } catch(e) {
+      console.warn("Evia update service unavailable",e);
+    }
   });
-})();
 </script>
 </body>
 </html>
