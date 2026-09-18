@@ -22,7 +22,7 @@
       '<label>Name<input id="profile-name" value="'+esc(p.name)+'" placeholder="Your name"></label>'+
       '<div class="profile-dates"><label>Start date<input id="profile-start" type="date" value="'+esc(p.start)+'"></label><label>End date<input id="profile-end" type="date" value="'+esc(p.end)+'"></label></div>'+
       '</div>'+
-      '<div class="profile-block"><div class="profile-kicker">CURRENT COURSE</div><div class="course-options">'+Object.keys(C).map(k=>'<button type="button" class="course-option '+(k===course?"selected":"")+'" data-profile-course="'+k+'">'+esc(C[k].name)+'<span>›</span></button>').join("")+'</div></div>'+
+      '<div class="profile-block"><div class="profile-kicker">YOUR COURSE</div><div class="course-fixed">'+esc(C[course]?.name||"")+'<span>Apprenticeship course</span></div></div>'+
       '<div class="profile-block"><div class="profile-kicker">YOUR SIGNATURE</div><p>Write your signature with your finger. It will be attached to saved evidence with the time and date.</p><div class="signature-wrap"><canvas id="signature-pad" width="900" height="260"></canvas><button type="button" id="clear-signature">Clear</button></div></div>'+
       '<div class="profile-actions"><button type="button" class="secondary" id="download-portfolio">Download PDF</button><button type="button" class="primary" id="save-profile">Save profile</button></div>'+
       '</section></div>';
@@ -41,9 +41,6 @@
       const f=e.target.files[0];if(!f)return;
       const r=new FileReader();r.onload=()=>{p.avatar=r.result;set(p);refreshProfileButton();openProfile()};r.readAsDataURL(f);
     };
-    document.querySelectorAll("[data-profile-course]").forEach(b=>b.onclick=()=>{
-      course=b.dataset.profileCourse;persist();openProfile();
-    });
     document.getElementById("profile-close").onclick=()=>document.getElementById("modal-root").innerHTML="";
     document.getElementById("save-profile").onclick=()=>{
       const signature=canvasHasInk(canvas)?canvas.toDataURL("image/png"):(p.signature||"");
@@ -109,6 +106,27 @@
     const p=get();b.innerHTML=p.avatar?'<img src="'+p.avatar+'" alt="Profile">':'<span class="profile-default" aria-hidden="true">+</span>';
   }
 
+  function courseOnboarding(){
+    const root=document.createElement("div");
+    root.id="course-onboarding";
+    root.innerHTML='<div class="course-onboarding-inner">'+
+      '<div class="course-onboarding-kicker">WELCOME TO EVIA</div>'+
+      '<h2>Choose your apprenticeship course</h2>'+
+      '<p>This is the course you will use throughout your apprenticeship.</p>'+
+      '<div class="course-onboarding-options">'+
+        Object.keys(C).map(k=>'<button type="button" class="course-onboarding-option" data-first-course="'+k+'"><strong>'+esc(C[k].name)+'</strong><span>'+esc(C[k].std)+'</span></button>').join("")+
+      '</div>'+
+      '</div>';
+    document.body.appendChild(root);
+    requestAnimationFrame(()=>root.classList.add("visible"));
+    root.querySelectorAll("[data-first-course]").forEach(b=>b.onclick=()=>{
+      course=b.dataset.firstCourse;
+      persist();
+      root.classList.add("leaving");
+      setTimeout(()=>{root.remove();welcome()},320);
+    });
+  }
+
   function welcome(){
     const p=get();
     const root=document.createElement("div");root.id="welcome-screen";root.style.opacity="1";root.style.zIndex="2000";
@@ -168,6 +186,22 @@
     const style=document.createElement("style");
     style.textContent=`
       .course-picker{display:none!important}
+      .course-options{display:none!important}
+      .course-fixed{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 15px;border:1px solid #e6e9ed;border-radius:15px;background:#fff;color:#303a4a;font-size:14px;font-weight:650}
+      .course-fixed span{font-size:10px;font-weight:600;color:#9aa3af;letter-spacing:.03em}
+      #course-onboarding{position:fixed;inset:0;z-index:3000;background:#fffdfa;display:grid;place-items:center;opacity:0;transition:opacity .32s ease;padding:24px;box-sizing:border-box}
+      #course-onboarding.visible{opacity:1}
+      #course-onboarding.leaving{opacity:0}
+      .course-onboarding-inner{width:min(460px,100%);text-align:center}
+      .course-onboarding-kicker{font-size:10px;letter-spacing:.16em;color:#9aa3af;font-weight:800;margin-bottom:9px}
+      .course-onboarding-inner h2{font-size:28px;letter-spacing:-.045em;margin:0 0 8px;color:#182033}
+      .course-onboarding-inner p{font-size:14px;line-height:1.5;color:#7b8797;margin:0 auto 22px;max-width:340px}
+      .course-onboarding-options{display:grid;gap:10px;text-align:left}
+      .course-onboarding-option{width:100%;border:1px solid #e1e5ea;background:#fff;border-radius:17px;padding:16px 17px;display:flex;align-items:center;justify-content:space-between;gap:14px;box-shadow:0 4px 14px rgba(16,24,40,.045);cursor:pointer;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+      .course-onboarding-option:active{transform:scale(.985)}
+      .course-onboarding-option:hover{border-color:#e4c33d;box-shadow:0 7px 20px rgba(16,24,40,.07)}
+      .course-onboarding-option strong{font-size:15px;color:#253044}
+      .course-onboarding-option span{font-size:10px;color:#9aa3af;font-weight:700;white-space:nowrap}
       .profile-btn{overflow:hidden;padding:0;display:grid;place-items:center}
       .profile-btn img,.profile-photo{width:100%;height:100%;object-fit:cover;border-radius:50%}
       .profile-default{font-size:17px;color:#596273}
@@ -222,6 +256,7 @@
       @media(prefers-reduced-motion:reduce){#welcome-screen,.welcome-flying,.welcome-revealed{animation:none!important;transition:none!important}.welcome-pulse{animation:none!important}}
     `;
     document.head.appendChild(style);
-    welcome();
+    if(localStorage.getItem("evia7-course")) welcome();
+    else courseOnboarding();
   });
 })();
