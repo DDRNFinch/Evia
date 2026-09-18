@@ -115,7 +115,8 @@
     const avatar=root.querySelector(".welcome-avatar");
     const target=fab.getBoundingClientRect();
     const start=avatar.getBoundingClientRect();
-    const dx=target.left+target.width/2-(start.left+start.width/2);
+    // The welcome Evia is centred with the navigation Evia. Keep the
+    // transition locked to the vertical axis so it travels straight down.
     const dy=target.top+target.height/2-(start.top+start.height/2);
 
     avatar.style.position="fixed";
@@ -131,7 +132,7 @@
     requestAnimationFrame(()=>{
       avatar.style.width=target.width+"px";
       avatar.style.height=target.height+"px";
-      avatar.style.transform="translate("+dx+"px,"+dy+"px)";
+      avatar.style.transform="translate(0,"+dy+"px)";
     });
 
     setTimeout(()=>{
