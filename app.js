@@ -155,12 +155,69 @@ function courses(){
 }
 function bindCourses(){document.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{course=b.dataset.c;persist();render()})}
 function allK(){let m=new Map();data().u.forEach(u=>u[1].forEach(k=>m.set(code(k),text(k))));return [...m].sort((a,b)=>a[0][0].localeCompare(b[0][0])||Number(a[0].slice(1))-Number(b[0].slice(1)))}
-function progress(){
- $("#page-title").textContent="Progress";let ev=new Set(evidence.filter(e=>e.c===course).flatMap(e=>e.k));
- $("#screen").innerHTML=picker()+'<div class="card"><div class="section-title">'+esc(data().std)+'</div><h2>KSB Progress</h2><p>Official KSB wording linked to this course. “Evidence captured” records saved evidence only; it is not an assessment decision.</p></div>'+allK().map(x=>'<div class="card progress-row"><div class="ksb"><span class="code">'+esc(x[0])+'</span><div class="ksbtext">'+esc(x[1])+'</div></div><span class="status '+(ev.has(x[0])?"done":"")+'">'+(ev.has(x[0])?"Captured":"Not captured")+'</span></div>').join("");
- bindCourses();
+function courseProgressMeta(){
+ const metas={
+  bricklayer:{durationMonths:24,epaMonths:3,otjTarget:null},
+  site:{durationMonths:24,epaMonths:3,otjTarget:null},
+  joiner:{durationMonths:24,epaMonths:3,otjTarget:null}
+ };
+ return metas[course]||metas.bricklayer;
 }
-function portfolio(){
+function progressBar(label,pct,detail){
+ const safe=Math.max(0,Math.min(100,Number(pct)||0));
+ return '<div class="progress-metric"><div class="progress-metric-head"><strong>'+esc(label)+'</strong><span>'+esc(detail)+'</span></div><div class="progress-track"><span style="width:'+safe+'%"></span></div></div>';
+}
+function ksbDetail(codeValue,wording,mapped){
+ const mappedEntries=evidence.filter(e=>e.c===course&&Array.isArray(e.k)&&e.k.includes(codeValue));
+ const units=[...new Set(mappedEntries.map(e=>e.u))];
+ const evidenceHtml=mappedEntries.length
+   ? mappedEntries.map(e=>'<div class="ksb-evidence-item"><strong>'+esc(e.u)+'</strong><span>'+esc(e.d||e.savedAt||"Saved evidence")+'</span></div>').join("")
+   : '<p class="ksb-empty">No saved evidence is currently mapped to this KSB.</p>';
+ document.getElementById("modal-root").innerHTML=
+   '<div class="ksb-modal-overlay"><section class="ksb-modal">'+
+   '<div class="ksb-modal-head"><div><div class="code">'+esc(codeValue)+'</div><h2>'+esc(codeValue)+'</h2></div><button class="close" id="ksb-close" aria-label="Close">×</button></div>'+
+   '<div class="ksb-modal-section"><div class="section-title">KSB wording</div><p>'+esc(wording)+'</p></div>'+
+   '<div class="ksb-modal-section"><div class="section-title">Evidence mapped</div>'+evidenceHtml+'</div>'+
+   '<div class="ksb-modal-foot">'+(mapped?'<span class="ksb-met">✓ Evidence captured</span>':'<span class="ksb-not-met">Not yet captured</span>')+(units.length?'<span>'+units.length+' unit'+(units.length===1?"":"s")+' mapped</span>':"")+'</div>'+
+   '</section></div>';
+ document.getElementById("ksb-close").onclick=()=>document.getElementById("modal-root").innerHTML="";
+}
+function progress(){
+ $("#page-title").textContent="Progress";
+ const all=allK();
+ const ev=new Set(evidence.filter(e=>e.c===course).flatMap(e=>Array.isArray(e.k)?e.k:[]));
+ const met=all.filter(x=>ev.has(x[0])).length;
+ const completion=all.length?Math.round(met/all.length*100):0;
+ const totalOTJ=hours.reduce((n,x)=>n+Number(x.n||0),0);
+ const meta=courseProgressMeta();
+ const p=JSON.parse(localStorage.getItem("evia7-profile")||"{}");
+ const startDate=p.start?new Date(p.start+"T00:00:00"):null;
+ const endDate=p.end?new Date(p.end+"T23:59:59"):null;
+ let timePct=0,timeDetail="Add your start and end dates in Profile";
+ if(startDate&&!isNaN(startDate)&&endDate&&!isNaN(endDate)&&endDate>startDate){
+   const now=Date.now();
+   timePct=Math.round(Math.max(0,Math.min(1,(now-startDate.getTime())/(endDate.getTime()-startDate.getTime())))*100);
+   const epaEnd=new Date(endDate);
+   epaEnd.setMonth(epaEnd.getMonth()+meta.epaMonths);
+   timeDetail="Course end "+endDate.toLocaleDateString("en-GB")+" · EPA window to "+epaEnd.toLocaleDateString("en-GB");
+ }
+ const otjDetail=meta.otjTarget?totalOTJ.toFixed(1)+" / "+meta.otjTarget+" hours":totalOTJ.toFixed(1)+" hours logged";
+ const otjPct=meta.otjTarget?Math.round(totalOTJ/meta.otjTarget*100):0;
+ const otjBar=meta.otjTarget?progressBar("Off-the-job",otjPct,otjDetail):progressBar("Off-the-job",0,otjDetail+" · target follows funding rules");
+ $("#screen").innerHTML=
+   '<div class="card progress-overview"><div class="section-title">'+esc(data().std)+'</div><h2>Progress</h2>'+
+   progressBar("Course time",timePct,timeDetail)+
+   progressBar("Course completion",completion,met+" of "+all.length+" KSBs with evidence")+
+   otjBar+
+   '<div class="progress-note">EPA is a separate assessment phase after the planned course end. It does not count as on-programme course time.</div></div>'+
+   '<div class="card ksb-overview"><div class="section-title">KSB progress</div><div class="ksb-grid">'+
+   all.map(x=>'<button type="button" class="ksb-tile '+(ev.has(x[0])?"met":"")+'" data-ksb-code="'+esc(x[0])+'"><span>'+esc(x[0])+'</span>'+(ev.has(x[0])?'<i aria-label="Evidence captured">✓</i>':"")+'</button>').join("")+
+   '</div><p class="ksb-grid-help">Tap a KSB to see the full wording and the evidence mapped to it.</p></div>';
+ document.querySelectorAll("[data-ksb-code]").forEach(b=>b.onclick=()=>{
+   const item=all.find(x=>x[0]===b.dataset.ksbCode);
+   if(item)ksbDetail(item[0],item[1],ev.has(item[0]));
+ });
+}function portfolio(){
  $("#page-title").textContent="Portfolio";let es=evidence.filter(e=>e.c===course).slice().reverse();
  const units=[...new Set(es.map(e=>e.u))];
  const downloaded=JSON.parse(localStorage.getItem("evia7-downloaded-unit-pdfs")||"{}");
