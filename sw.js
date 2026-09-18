@@ -1,4 +1,4 @@
-const VERSION = "2026-09-18-evia7-v3";
+const VERSION = "2026-09-18-evia7-v4";
 const CACHE_NAME = "evia7-offline-" + VERSION;
 
 const APP_SHELL = [
@@ -49,7 +49,14 @@ self.addEventListener("fetch", event => {
     try {
       // Online: always obtain the newest deployed resource.
       // The cache is only the offline fallback.
-      const response = await fetch(event.request, { cache: "no-store" });
+      // Always bypass the browser/CDN resource cache while online. The
+      // service-worker cache remains an offline fallback only.
+      const networkUrl = new URL(event.request.url);
+      networkUrl.searchParams.set("_evia_refresh", Date.now().toString());
+      const response = await fetch(networkUrl.toString(), {
+        cache: "no-store",
+        credentials: event.request.credentials
+      });
 
       if (response && response.ok) {
         const cache = await caches.open(CACHE_NAME);
