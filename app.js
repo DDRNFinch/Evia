@@ -153,9 +153,47 @@ function portfolio(){
  if(download)download.onclick=()=>window.downloadEvidencePack&&window.downloadEvidencePack();
 }
 function chat(){
- $("#modal-root").innerHTML='<div class="overlay"><section class="sheet"><div class="sheet-head"><h2>Evia</h2><button class="close" id="x">×</button></div><div class="chat" id="chat"><div class="bubble evia">Hi. I’m Evia. I can help you move around the app and your course.</div><div class="bubble evia">I’m a basic assistant for now — no AI assessment.</div></div><div class="chat-row"><input id="msg" placeholder="Talk to Evia…"><button class="primary" id="send">Send</button></div></section></div>';
+ const unitKSBs=()=>data().u.flatMap(u=>u[1]).filter(k=>/^K\\d+\\|/.test(k));
+ const naturalQuestion=k=>{
+   const raw=text(k).replace(/^.*?:\\s*/,"").trim();
+   const clean=raw.replace(/\\([^)]*\\)/g,"").replace(/\\s+/g," ").replace(/\\.$/,"").trim();
+   return clean?"What is your knowledge like towards "+clean.charAt(0).toLowerCase()+clean.slice(1)+"?":"How confident do you feel about this area?";
+ };
+ const options=[
+  ["Portfolio check","Check what evidence you have saved and what is still missing."],
+  ["Test me","Answer a short question based on your course."],
+  ["Progress review","Review your activity, learning entries and evidence captured."],
+  ["Confidence check","Rate your confidence across the knowledge areas in your course."]
+ ];
+ $("#modal-root").innerHTML='<div class="overlay"><section class="sheet chat-sheet"><div class="sheet-head"><div><div class="chat-kicker">EVIA</div><h2>What would you like to do?</h2></div><button class="close" id="x" aria-label="Close">×</button></div><div class="chat" id="chat"><div class="bubble evia">I can help you review your learning, evidence and confidence.</div><div class="chat-options">'+options.map((o,i)=>'<button class="chat-pill" data-chat-option="'+i+'"><strong>'+o[0]+'</strong><span>'+o[1]+'</span></button>').join("")+'</div></div></section></div>';
  $("#x").onclick=()=>$("#modal-root").innerHTML="";
- const send=()=>{let v=$("#msg").value.trim();if(!v)return;let q=v.toLowerCase(),a=q.includes("course")?"Tap Course to see your units and capture evidence.":q.includes("progress")||q.includes("ksb")?"Progress lists the KSBs linked to your course.":q.includes("portfolio")||q.includes("evidence")?"Portfolio stores the evidence you have saved.":q.includes("learning")||q.includes("hour")?"Learning is where you record off-the-job hours.":"Use the five buttons at the bottom to move around Evia.";$("#chat").insertAdjacentHTML("beforeend",'<div class="bubble user">'+esc(v)+'</div><div class="bubble evia">'+a+'</div>');$("#msg").value="";$("#chat").scrollTop=$("#chat").scrollHeight};$("#send").onclick=send;$("#msg").onkeydown=e=>{if(e.key==="Enter")send()};
+ const addBubble=v=>$("#chat").insertAdjacentHTML("beforeend",'<div class="bubble user">'+esc(v)+'</div>');
+ const confidence=()=>{
+   const ks=unitKSBs().slice(0,12);
+   if(!ks.length){$("#chat").insertAdjacentHTML("beforeend",'<div class="bubble evia">I do not have any knowledge areas loaded for this course yet.</div>');return}
+   let index=0;
+   const ask=()=>{
+     const k=ks[index];
+     $("#chat").insertAdjacentHTML("beforeend",'<div class="bubble evia">'+esc(naturalQuestion(k))+'</div><div class="rating-options">'+[1,2,3,4].map(n=>'<button class="rating-pill" data-rating="'+n+'">'+n+'<span>'+(n===1?"Need more help":n===2?"Getting there":n===3?"Confident":"Very confident")+'</span></button>').join("")+'</div>');
+     $("#chat").scrollTop=$("#chat").scrollHeight;
+     document.querySelectorAll("[data-rating]").forEach(b=>b.onclick=()=>{
+       addBubble("I’d rate myself "+b.dataset.rating+" out of 4.");
+       index++;
+       document.querySelectorAll(".rating-options").forEach(x=>x.remove());
+       if(index<ks.length)ask();else $("#chat").insertAdjacentHTML("beforeend",'<div class="bubble evia">That confidence check is complete. Your ratings are for your own reflection and are not an assessment.</div>');
+     });
+   };
+   ask();
+ };
+ document.querySelectorAll("[data-chat-option]").forEach(b=>b.onclick=()=>{
+   const choice=options[Number(b.dataset.chatOption)];
+   addBubble(choice[0]);
+   if(choice[0]==="Portfolio check")$("#chat").insertAdjacentHTML("beforeend",'<div class="bubble evia">Open Portfolio to see the evidence you have saved. I can help you identify areas you may want to revisit.</div>');
+   else if(choice[0]==="Progress review")$("#chat").insertAdjacentHTML("beforeend",'<div class="bubble evia">You have '+evidence.filter(e=>e.c===course).length+' saved evidence entries and '+hours.length+' learning entries. Use Progress to review the knowledge areas linked to your course.</div>');
+   else if(choice[0]==="Confidence check")confidence();
+   else $("#chat").insertAdjacentHTML("beforeend",'<div class="bubble evia">I can test you on the knowledge areas linked to your course. This will be a learning check, not an assessment.</div>');
+   $("#chat").scrollTop=$("#chat").scrollHeight;
+ });
 }
 document.querySelectorAll("[data-nav]").forEach(b=>b.onclick=()=>nav(b.dataset.nav));
 $("#evia-fab").onclick=chat;$("#profile-btn").onclick=()=>alert("Profile settings will be added here.");
