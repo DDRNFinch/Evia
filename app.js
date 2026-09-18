@@ -142,7 +142,7 @@ function unitStrengthForCourse(unitName){
 }
 function strengthBars(level){
  const n=level==="strong"?3:level==="good"?2:level==="weak"?1:0;
- return '<span class="unit-strength-bars" aria-label="'+(level?esc(level):"No evidence")+'">'+[0,1,2].map(i=>'<i class="'+(i<n?"filled":"")+'"></i>').join("")+'</span>';
+ return '<span class="unit-strength-bars" style="display:inline-flex;gap:3px;align-items:flex-end;transform:skewX(-12deg)" aria-label="'+(level?esc(level):"No evidence")+'">'+[0,1,2].map(i=>'<i style="display:block;width:10px;height:16px;border-radius:2px;background:'+(i<n?"#172033":"#e4e7ec")+'"></i>').join("")+'</span>';
 }
 function courses(){
  $("#page-title").textContent="Course";
