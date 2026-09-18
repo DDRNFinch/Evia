@@ -59,18 +59,6 @@ function courses(){
  bindCourses();document.querySelectorAll("[data-u]").forEach(b=>b.onclick=()=>openUnit(+b.dataset.u));
 }
 function bindCourses(){document.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{course=b.dataset.c;persist();render()})}
-function openUnit(i){
- screen="unit";unit=i;photos=[];$("#page-title").textContent=data().u[i][0];
- const u=data().u[i];
- $("#screen").innerHTML='<button class="secondary" id="back">‹ Course</button><div class="card" style="margin-top:12px"><div class="unit-number">UNIT '+(i+1)+'</div><h2>'+esc(u[0])+'</h2><p>Capture as many useful photos as you need, then add your write-up.</p></div><div class="guidance"><strong>What to photograph</strong><ul><li>Show the work clearly from useful angles.</li><li>Include key stages and the finished result.</li><li>Show measurements, tools, materials, drawings and safety controls when relevant.</li></ul><strong style="margin-top:12px">What to write</strong><ul><li>Explain what you were asked to do and how you carried it out.</li><li>Describe tools, materials, measurements, drawings, safety and quality checks.</li><li>Explain decisions, problems and adjustments you made.</li></ul></div><div class="section-title">Photos</div><label class="dropzone">Tap to take or choose photos<input id="files" type="file" accept="image/*" capture="environment" multiple></label><div id="photos" class="photo-grid"></div><div class="section-title">Your write-up</div><textarea id="write" placeholder="Write about what you did, how you did it, the tools and materials used, checks made, and anything you solved or adjusted."></textarea><div class="section-title">Linked KSBs</div><div class="card">'+u[1].map(k=>'<div class="ksb" style="margin-bottom:10px"><span class="code">'+esc(code(k))+'</span><div class="ksbtext">'+esc(text(k))+'</div></div>').join("")+'</div><button class="primary" id="save">Save evidence</button>';
- $("#back").onclick=courses;$("#files").onchange=e=>{photos=[...e.target.files];draw()};$("#save").onclick=saveEvidence;
-}
-function draw(){let g=$("#photos");g.innerHTML="";photos.forEach((f,i)=>{let w=document.createElement("div"),img=document.createElement("img");img.className="thumb";img.alt="Evidence photo";let r=new FileReader();r.onload=()=>img.src=r.result;r.readAsDataURL(f);w.appendChild(img);g.appendChild(w)})}
-function saveEvidence(){
- let u=data().u[unit], w=$("#write").value.trim();
- if(!photos.length&&!w){alert("Add at least one photo or some written evidence.");return}
- Promise.all(photos.map(f=>new Promise(res=>{let r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(f)}))).then(ps=>{evidence.push({id:Date.now(),c:course,u:u[0],d:new Date().toLocaleString("en-GB"),p:ps,w:w,k:u[1].map(code)});persist();screen="portfolio";render()});
-}
 function allK(){let m=new Map();data().u.forEach(u=>u[1].forEach(k=>m.set(code(k),text(k))));return [...m].sort((a,b)=>a[0][0].localeCompare(b[0][0])||Number(a[0].slice(1))-Number(b[0].slice(1)))}
 function progress(){
  $("#page-title").textContent="Progress";let ev=new Set(evidence.filter(e=>e.c===course).flatMap(e=>e.k));
@@ -79,10 +67,12 @@ function progress(){
 }
 function portfolio(){
  $("#page-title").textContent="Portfolio";let es=evidence.filter(e=>e.c===course).slice().reverse();
- $("#screen").innerHTML=picker()+'<div class="card"><div class="section-title">Completed evidence</div><h2>Portfolio</h2><p>Saved evidence for '+esc(data().name)+'.</p></div>'+(es.length?es.map(e=>'<div class="card"><div class="progress-row"><div><div class="unit-number">'+esc(e.d)+'</div><h3>'+esc(e.u)+'</h3></div><span class="status done">Saved</span></div>'+(e.p.length?'<div class="photo-grid">'+e.p.map(p=>'<img class="thumb" src="'+p+'" alt="Evidence photo">').join("")+'</div>':"")+(e.w?'<p style="white-space:pre-wrap">'+esc(e.w)+'</p>':"")+
+ $("#screen").innerHTML=picker()+'<div class="card portfolio-intro"><div><div class="section-title">Completed evidence</div><h2>Portfolio</h2><p>Saved evidence for '+esc(data().name)+'.</p></div><button class="secondary pdf-button" id="download-pdf" '+(es.length?"":"disabled")+'>Download PDF</button></div>'+(es.length?es.map(e=>'<div class="card"><div class="progress-row"><div><div class="unit-number">'+esc(e.d)+'</div><h3>'+esc(e.u)+'</h3></div><span class="status done">Saved</span></div>'+(e.p.length?'<div class="photo-grid">'+e.p.map(p=>'<img class="thumb" src="'+p+'" alt="Evidence photo">').join("")+'</div>':"")+(e.w?'<p style="white-space:pre-wrap">'+esc(e.w)+'</p>':"")+
 (e.signature?'<div class="evidence-signoff"><div class="unit-number">LEARNER SIGN-OFF</div><img src="'+e.signature+'" alt="Learner signature"><small>Signed by '+esc((e.learnerProfile&&e.learnerProfile.name)||"apprentice")+' · '+esc(e.savedAt||e.d)+'</small></div>':"")+
 '<div class="row">'+e.k.map(k=>'<span class="pill">'+esc(k)+'</span>').join("")+'</div></div>').join(""):'<div class="empty-home" style="min-height:45vh"></div>');
  bindCourses();
+ const download=$("#download-pdf");
+ if(download)download.onclick=()=>window.downloadEvidencePack&&window.downloadEvidencePack();
 }
 function chat(){
  $("#modal-root").innerHTML='<div class="overlay"><section class="sheet"><div class="sheet-head"><h2>Evia</h2><button class="close" id="x">×</button></div><div class="chat" id="chat"><div class="bubble evia">Hi. I’m Evia. I can help you move around the app and your course.</div><div class="bubble evia">I’m a basic assistant for now — no AI assessment.</div></div><div class="chat-row"><input id="msg" placeholder="Talk to Evia…"><button class="primary" id="send">Send</button></div></section></div>';

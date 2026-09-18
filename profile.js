@@ -24,7 +24,7 @@
       '</div>'+
       '<div class="profile-block"><div class="profile-kicker">CURRENT COURSE</div><div class="course-options">'+Object.keys(C).map(k=>'<button type="button" class="course-option '+(k===course?"selected":"")+'" data-profile-course="'+k+'">'+esc(C[k].name)+'<span>›</span></button>').join("")+'</div></div>'+
       '<div class="profile-block"><div class="profile-kicker">YOUR SIGNATURE</div><p>Write your signature with your finger. It will be attached to saved evidence with the time and date.</p><div class="signature-wrap"><canvas id="signature-pad" width="900" height="260"></canvas><button type="button" id="clear-signature">Clear</button></div></div>'+
-      '<div class="profile-actions"><button type="button" class="secondary" id="save-portfolio">Save portfolio</button><button type="button" class="primary" id="save-profile">Save profile</button></div>'+
+      '<div class="profile-actions"><button type="button" class="secondary" id="download-portfolio">Download PDF</button><button type="button" class="primary" id="save-profile">Save profile</button></div>'+
       '</section></div>';
 
     const canvas=document.getElementById("signature-pad"),ctx=canvas.getContext("2d");
@@ -50,7 +50,7 @@
       set({name:document.getElementById("profile-name").value.trim(),start:document.getElementById("profile-start").value,end:document.getElementById("profile-end").value,avatar:p.avatar,signature});
       refreshProfileButton();document.getElementById("modal-root").innerHTML="";
     };
-    document.getElementById("save-portfolio").onclick=savePortfolio;
+    document.getElementById("download-portfolio").onclick=downloadEvidencePack;
   }
 
   function canvasHasInk(canvas){
@@ -59,14 +59,32 @@
     return false;
   }
 
-  function savePortfolio(){
+  function evidenceEntry(e){
+    return '<article class="evidence-entry">'+
+      '<div class="entry-meta">'+esc(e.d||e.savedAt||"")+'</div>'+
+      '<h2>'+esc(e.u)+'</h2>'+
+      (e.p&&e.p.length?'<div class="evidence-photos">'+e.p.map(p=>'<img src="'+p+'" alt="Evidence photo">').join("")+'</div>':"")+
+      (e.w?'<p class="evidence-notes">'+esc(e.w).replace(/\n/g,"<br>")+'</p>':"")+
+      '<div class="evidence-ksbs">'+(e.k||[]).map(k=>'<span>'+esc(k)+'</span>').join("")+'</div>'+
+      (e.signature?'<div class="evidence-signature"><img src="'+e.signature+'" alt="Learner signature"><span>Signed by '+esc((e.learnerProfile&&e.learnerProfile.name)||"Apprentice")+' · '+esc(e.savedAt||e.d||"")+'</span></div>':"")+
+      '</article>';
+  }
+
+  function downloadEvidencePack(){
     const p=get();
     const mine=evidence.filter(e=>e.c===course);
-    const payload={learner:p.name,course:data().name,standard:data().std,startDate:p.start,endDate:p.end,evidence:mine,savedAt:new Date().toISOString()};
-    const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
-    const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="Evia-portfolio-"+(p.name||"apprentice").replace(/[^a-z0-9]+/gi,"-")+".json";a.click();
-    setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+    if(!mine.length){alert("Save evidence before downloading an evidence pack.");return;}
+    const learner=p.name||"Apprentice";
+    const printWindow=window.open("","_blank");
+    if(!printWindow){alert("Please allow pop-ups to download your evidence pack.");return;}
+    printWindow.document.write('<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Evia evidence pack</title><style>'+
+      '@page{size:A4;margin:16mm}*{box-sizing:border-box}body{margin:0;color:#172033;font:11pt -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.45}.pack-header{border-bottom:2px solid #e6b800;padding-bottom:14px;margin-bottom:20px}.eyebrow{font-size:9pt;letter-spacing:.12em;color:#667085;font-weight:700}.pack-header h1{font-size:24pt;letter-spacing:-.04em;margin:4px 0}.pack-details{display:grid;grid-template-columns:1fr 1fr;gap:5px;color:#475467}.evidence-entry{break-inside:avoid;page-break-inside:avoid;border:1px solid #e4e7ec;border-radius:12px;padding:15px;margin:0 0 14px}.entry-meta{font-size:9pt;letter-spacing:.08em;text-transform:uppercase;color:#667085}.evidence-entry h2{font-size:16pt;margin:4px 0 10px}.evidence-photos{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0}.evidence-photos img{width:100%;height:115px;object-fit:cover;border-radius:7px;border:1px solid #eaecf0}.evidence-notes{white-space:normal;color:#344054}.evidence-ksbs{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px}.evidence-ksbs span{background:#fff7d6;border-radius:999px;padding:3px 7px;font:700 8pt -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#675600}.evidence-signature{border-top:1px solid #eaecf0;margin-top:13px;padding-top:8px;display:grid;gap:3px;font-size:8pt;color:#667085}.evidence-signature img{width:140px;height:38px;object-fit:contain;object-position:left center}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}</style></head><body>'+
+      '<header class="pack-header"><div class="eyebrow">EVIA · EVIDENCE PACK</div><h1>'+esc(learner)+'</h1><div class="pack-details"><span><strong>Course:</strong> '+esc(data().name)+'</span><span><strong>Standard:</strong> '+esc(data().std)+'</span>'+(p.start?'<span><strong>Start date:</strong> '+esc(p.start)+'</span>':"")+(p.end?'<span><strong>End date:</strong> '+esc(p.end)+'</span>':"")+'</div></header>'+mine.slice().reverse().map(evidenceEntry).join("")+'</body></html>');
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(()=>printWindow.print(),250);
   }
+  window.downloadEvidencePack=downloadEvidencePack;
 
   function refreshProfileButton(){
     const b=document.getElementById("profile-btn");if(!b)return;
