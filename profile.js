@@ -198,7 +198,7 @@
     },650);
   }
 
-  window.addEventListener("load",()=>{
+  function initEviaProfile(){
     applySettings(getSettings());
     refreshProfileButton();
     document.getElementById("profile-btn").onclick=openProfile;
@@ -286,5 +286,7 @@
     `;
     document.head.appendChild(style);
     welcome();
-  });
+  }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",initEviaProfile,{once:true});
+  else initEviaProfile();
 })();
