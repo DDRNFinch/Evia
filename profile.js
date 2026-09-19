@@ -62,6 +62,44 @@
   function saveSettings(s){const next=Object.assign({},defaultSettings,s);localStorage.setItem(SETTINGS_KEY,JSON.stringify(next));applySettings(next)}
   function ensureAccessibilityStyles(){
     if(document.getElementById("evia-accessibility-styles"))return;
+  function enforceAccessibilityDom(s){
+    const root=document.documentElement;
+    const app=document.getElementById("app"), modal=document.getElementById("modal-root"), welcome=document.getElementById("welcome-screen");
+    const areas=[app,modal,welcome].filter(Boolean);
+    const textNodes=[];
+    areas.forEach(area=>area.querySelectorAll("p,h1,h2,h3,h4,h5,h6,button,label,small,strong,span,li,textarea,input,output").forEach(el=>textNodes.push(el)));
+    textNodes.forEach(el=>{
+      if(s.dyslexiaFont){el.style.setProperty("font-family",'Arial Rounded MT Bold, Trebuchet MS, Verdana, Arial, sans-serif',"important")}
+      else el.style.removeProperty("font-family");
+      if(s.letterSpacing){el.style.setProperty("letter-spacing",".14em","important");el.style.setProperty("word-spacing",".08em","important")}
+      else {el.style.removeProperty("letter-spacing");el.style.removeProperty("word-spacing")}
+      if(s.lineSpacing)el.style.setProperty("line-height","2.15","important");else el.style.removeProperty("line-height");
+    });
+    const screen=document.getElementById("screen");
+    if(screen){
+      [...screen.children].forEach(el=>{
+        if(s.focusMode){el.style.setProperty("opacity",".32","important");el.style.setProperty("filter","saturate(.25) blur(.2px)","important")}
+        else {el.style.removeProperty("opacity");el.style.removeProperty("filter")}
+      });
+      if(s.focusMode){screen.style.setProperty("max-width","600px","important")}else screen.style.removeProperty("max-width");
+    }
+    if(s.highContrast){
+      document.body.style.setProperty("background","#000","important");
+      document.body.style.setProperty("color","#fff","important");
+    }else{
+      document.body.style.removeProperty("background");document.body.style.removeProperty("color");
+    }
+  }
+  function watchAccessibilityDom(){
+    if(window.__eviaAccessibilityObserver)return;
+    window.__eviaAccessibilityObserver=new MutationObserver(()=>{
+      if(window.__eviaAccessibilityApplying)return;
+      window.__eviaAccessibilityApplying=true;
+      try{enforceAccessibilityDom(getSettings())}finally{window.__eviaAccessibilityApplying=false}
+    });
+    window.__eviaAccessibilityObserver.observe(document.body,{childList:true,subtree:true});
+  }
+
     const style=document.createElement("style");
     style.id="evia-accessibility-styles";
     style.textContent=`
@@ -102,6 +140,7 @@
     root.style.setProperty("--evia-reading-guide-background","rgba("+gc.join(",")+","+alpha.toFixed(2)+")");
     root.dataset.eviaReadingGuide=s.readingGuide?"on":"off";
     root.dataset.eviaOverlay=s.colourOverlay||"none";
+    enforceAccessibilityDom(s);watchAccessibilityDom();
     let guide=document.getElementById("evia-reading-guide");
     if(s.readingGuide){
       if(!guide){guide=document.createElement("div");guide.id="evia-reading-guide";guide.setAttribute("aria-label","Reading guide. Hold and drag up or down to move it.");document.body.appendChild(guide)}
