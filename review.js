@@ -245,7 +245,8 @@
   function showReview(id){const review=read(REVIEW_KEY,[]).find(x=>x.id===id);if(!review)return;if(review.course===course){const fresh=metrics();review.metrics={...review.metrics,totalPhotos:fresh.totalPhotos,unitDetails:fresh.unitDetails,timePercent:fresh.timePercent,elapsed:fresh.elapsed};const all=read(REVIEW_KEY,[]),idx=all.findIndex(x=>x.id===id);if(idx>=0){all[idx]=review;write(REVIEW_KEY,all)}}startReviewConversation(review)}
   function saveReviewUpdate(review){const all=read(REVIEW_KEY,[]),idx=all.findIndex(x=>x.id===review.id);if(idx>=0){all[idx]=review;write(REVIEW_KEY,all)}}
   function askReviewText(review,key,prompt,next){
-    const chatEl=$("#chat");if(!chatEl){next();return;}
+    const chatEl=$("#chat");
+    if(!chatEl){next();return}
     const blockId="review-text-"+Date.now()+"-"+Math.random().toString(36).slice(2,7);
     chatEl.insertAdjacentHTML("beforeend",'<div id="'+blockId+'" class="review-text-block"><div class="bubble evia"><strong>'+escLocal(prompt)+'</strong></div><textarea class="test-response" data-review-answer placeholder="Type your answer..."></textarea><button type="button" class="chat-pill test-submit" data-review-submit><strong>Save answer</strong></button></div>');
     const block=document.getElementById(blockId);
@@ -253,26 +254,37 @@
     const input=block.querySelector("[data-review-answer]");
     const submit=block.querySelector("[data-review-submit]");
     if(!input||!submit){next();return}
+    let advancing=false;
     const advance=()=>{
-      if(block.dataset.completed==="1")return;
-      block.dataset.completed="1";
+      if(advancing)return;
       const answer=String(input.value||"").trim();
       if(!answer)return;
+      advancing=true;
+      input.disabled=true;
+      submit.disabled=true;
       try{
         review.reflection=review.reflection||{};
         review.reflection[key]=answer;
         saveReviewUpdate(review);
-      }catch(err){console.error("Evia review save failed",err)}
-      input.disabled=true;
-      submit.disabled=true;
+      }catch(err){
+        console.error("Evia review save failed",err);
+      }
       submit.remove();
       chatEl.insertAdjacentHTML("beforeend",'<div class="bubble user">'+escLocal(answer)+'</div>');
       chatEl.scrollTop=chatEl.scrollHeight;
-      window.setTimeout(next,0);
+      // The next question must not depend on the save operation or on the old DOM block.
+      next();
     };
-    submit.onclick=e=>{e.preventDefault();e.stopPropagation();advance()};
+    submit.addEventListener("click",e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      advance();
+    });
     input.addEventListener("keydown",e=>{
-      if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){e.preventDefault();advance()}
+      if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){
+        e.preventDefault();
+        advance();
+      }
     });
     chatEl.scrollTop=chatEl.scrollHeight;
   }
