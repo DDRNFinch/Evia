@@ -165,7 +165,20 @@
       if(btn)btn.disabled=!ready;
       if(hint)hint.textContent=ready?"Your evidence pack is ready to submit.":"Add at least one photo and complete the write-up before submitting.";
     };
-    $("#submit-evidence").onclick=()=>submitPack(pack);
+    let submitting=false;
+    $("#submit-evidence").onclick=async()=>{
+      if(submitting)return;
+      submitting=true;
+      const btn=$("#submit-evidence");
+      if(btn){btn.disabled=true;btn.textContent="Saving to Portfolio…";}
+      try{await submitPack(pack)}
+      catch(err){
+        console.error("Evia evidence submission failed",err);
+        submitting=false;
+        if(btn){btn.disabled=false;btn.textContent="Submit to Portfolio";}
+        alert("Evia could not save this evidence to your portfolio. Please try again.");
+      }
+    };
     renderPhotos(pack);
   }
 
