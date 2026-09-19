@@ -44,7 +44,7 @@
       const r=new FileReader();r.onload=()=>{p.avatar=r.result;set(p);refreshProfileButton();openProfile()};r.readAsDataURL(f);
     };
     document.querySelectorAll("[data-profile-course]").forEach(b=>b.onclick=()=>{course=b.dataset.profileCourse;persist();openProfile();});
-    document.getElementById("open-settings").onclick=()=>openSettings();
+    document.getElementById("open-settings").onclick=()=>openSettings();document.getElementById("open-settings").onkeydown=e=>{if(e.key==="Enter"||e.key===" ")openSettings()};
     document.getElementById("profile-close").onclick=()=>document.getElementById("modal-root").innerHTML="";
     document.getElementById("save-profile").onclick=()=>{
       const signature=canvasHasInk(canvas)?canvas.toDataURL("image/png"):(p.signature||"");
