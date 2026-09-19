@@ -186,7 +186,8 @@
   window.addEventListener("load",()=>{
     const style=document.createElement("style");
     style.textContent=`
-      .evidence-pack-page{padding:18px 16px 28px}
+      body:has(.evidence-pack-page) .topbar{display:none}
+            .evidence-pack-page{padding:18px 16px 28px}
       .evidence-heading{padding:0 2px}
       .evidence-label{font-size:11px;font-weight:700;letter-spacing:.1em;color:#98a2b3}
       .evidence-heading h2{margin:6px 0 7px;font-size:26px;line-height:1.16;letter-spacing:-.025em}
