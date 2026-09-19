@@ -443,7 +443,7 @@ function chat(){
    const rows=data().u.map((u,i)=>{
      const es=entries.filter(e=>e.u===u[0]);
      if(!es.length)return null;
-     const photos=es.reduce((n,e)=>n+(Array.isArray(e.p)?e.p.length:0),0);
+     const photos=es.reduce((n,e)=>n+(Array.isArray(e.photoIds)?e.photoIds.length:(Array.isArray(e.p)?e.p.length:0)),0);
      const words=es.reduce((n,e)=>n+String(e.w||"").trim().split(/\s+/).filter(Boolean).length,0);
      const photoLevel=photos<6?"weak":photos<10?"good":"strong";
      const textLevel=words<100?"weak":words<=200?"good":"strong";
