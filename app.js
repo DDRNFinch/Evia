@@ -447,7 +447,10 @@ function chat(){
    const choice=options[Number(b.dataset.chatOption)];
    addBubble(choice[0]);
    if(choice[0]==="Portfolio check")portfolioReview();
-   else if(choice[0]==="Progress review")progressReview();
+   else if(choice[0]==="Progress review"){
+     if(window.eviaProgressReview)window.eviaProgressReview();
+     else progressReview();
+   }
    else if(choice[0]==="Confidence check")confidence();
    else window.eviaTestMe();
    scroll();
