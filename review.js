@@ -32,6 +32,7 @@
   };
   const latestTests=()=>({discussion:latestTest("discussion"),epa:latestTest("epa"),maths:latestTest("maths"),english:latestTest("english")});
   const testLabel=t=>({discussion:"Discussion",epa:"EPA MCQ",maths:"Maths",english:"English"}[t]||t);
+  const reply=(html,delay=700)=>{const chat=$("#chat");if(!chat)return;const el=document.createElement("div");el.className="bubble evia evia-thinking";el.innerHTML='<span class="thinking-label">Evia is thinking</span><span class="thinking-dots"><i></i><i></i><i></i></span>';chat.appendChild(el);chat.scrollTop=chat.scrollHeight;setTimeout(()=>{el.outerHTML='<div class="bubble evia">'+html+'</div>';chat.scrollTop=chat.scrollHeight},delay)};
 
   function eviaTestMe(){
     const options=[["discussion","Discussion"],["epa","EPA MCQ"]];
@@ -180,7 +181,7 @@
     const name=String(read("evia7-profile",{}).name||"").split(/\s+/)[0];
     const test=latestTests();
     const testSummary=["epa","maths","english"].filter(t=>test[t]).map(t=>testLabel(t)+" "+test[t].pct+"%").join(" · ");
-    eviaReply('<strong>Progress review'+(name?", "+escLocal(name):"")+'</strong><br>Course evidence: '+m.completion+'% ('+m.covered+'/'+m.units+' units).<br>Off-the-job learning: '+m.totalOTJ.toFixed(1)+(m.otjTarget?" / "+m.otjTarget:"")+" hours."+(testSummary?"<br>Test results: "+escLocal(testSummary)+".":"")+
+    reply('<strong>Progress review'+(name?", "+escLocal(name):"")+'</strong><br>Course evidence: '+m.completion+'% ('+m.covered+'/'+m.units+' units).<br>Off-the-job learning: '+m.totalOTJ.toFixed(1)+(m.otjTarget?" / "+m.otjTarget:"")+" hours."+(testSummary?"<br>Test results: "+escLocal(testSummary)+".":"")+
       '<br><br><strong>Quick target</strong><br>I’ve set a target to help you catch up: '+escLocal(target.title)+'. Aim to complete it by '+escLocal(new Date(target.deadline+"T00:00:00").toLocaleDateString("en-GB"))+'.<br><br><button class="chat-pill" id="start-full-review"><strong>Start full review</strong></button>');
     setTimeout(()=>{const b=$("#start-full-review");if(b)b.onclick=()=>fullReview();},950);
   }
@@ -200,7 +201,7 @@
     const m=review.metrics;
     const testBits=[["Discussion",review.tests.discussion],["EPA MCQ",review.tests.epa],["Maths",review.tests.maths],["English",review.tests.english]].filter(([,v])=>v!==null).map(([l,v])=>'<span class="pill">'+l+': '+v+'%</span>').join("");
     const targets=review.targets.map(targetHtml).join("");
-    eviaReply(`<strong>Full progress review complete</strong><br>I’ve saved this review to your Portfolio. It includes your course evidence, OTJ learning, tests, confidence and five targets.<br><br><div class="review-report"><p><strong>Evidence:</strong> ${m.completion}% of units with saved evidence.</p><p><strong>OTJ:</strong> ${m.totalOTJ.toFixed(1)}${m.otjTarget?" / "+m.otjTarget:""} hours.</p><div class="row">${testBits}</div><h3>Targets</h3>${targets}</div><br><button class="chat-pill" id="open-saved-review"><strong>Open saved review</strong></button>`);
+    reply(`<strong>Full progress review complete</strong><br>I’ve saved this review to your Portfolio. It includes your course evidence, OTJ learning, tests, confidence and five targets.<br><br><div class="review-report"><p><strong>Evidence:</strong> ${m.completion}% of units with saved evidence.</p><p><strong>OTJ:</strong> ${m.totalOTJ.toFixed(1)}${m.otjTarget?" / "+m.otjTarget:""} hours.</p><div class="row">${testBits}</div><h3>Targets</h3>${targets}</div><br><button class="chat-pill" id="open-saved-review"><strong>Open saved review</strong></button>`);
     setTimeout(()=>{const b=$("#open-saved-review");if(b)b.onclick=()=>showReview(review.id);},950);
   }
   function showReview(id){
