@@ -235,7 +235,14 @@
     const submit=document.querySelector("[data-review-submit]");if(!submit)return;submit.onclick=()=>{const input=document.querySelector("[data-review-answer]"),answer=String(input?.value||"").trim();if(!answer)return;review.reflection=review.reflection||{};review.reflection[key]=answer;saveReviewUpdate(review);input.disabled=true;submit.remove();chatEl.insertAdjacentHTML("beforeend",'<div class="bubble user">'+escLocal(answer)+'</div>');next()};
   }
   function runReviewLesson(review,subjects,index,done){
-    if(index>=subjects.length){review.reviewLearning=review.reviewLearning||{};review.reviewLearning.completedAt=new Date().toISOString();review.reviewLearning.subjects=subjects;saveReviewUpdate(review);done();return}
+    if(index>=subjects.length){
+      review.reviewLearning=review.reviewLearning||{};
+      review.reviewLearning.completedAt=new Date().toISOString();
+      review.reviewLearning.subjects=subjects;
+      saveReviewUpdate(review);
+      done();
+      return;
+    }
     const subject=subjects[index], lessons={
       "EDI":{q:"Which approach best supports an inclusive workplace?",a:["Treat everyone exactly the same regardless of their circumstances","Make reasonable adjustments and treat people fairly and respectfully","Only involve people who have the same background as you"],correct:1,why:"Equality, diversity and inclusion means treating people fairly, respecting differences and removing unnecessary barriers."},
       "Prevent":{q:"What should you do if you are concerned that someone may be being drawn towards extremist ideas?",a:["Ignore it unless they directly ask for help","Challenge them yourself and investigate their beliefs","Follow your organisation's safeguarding or Prevent reporting route"],correct:2,why:"Prevent concerns should be handled through the appropriate safeguarding and Prevent procedures. Do not investigate or confront someone yourself."},
@@ -243,24 +250,42 @@
       "British Values":{q:"Which set is commonly used for the fundamental British Values in education and training?",a:["Democracy, rule of law, individual liberty, mutual respect and tolerance","Competition, profit, speed, strength and independence","Attendance, punctuality, productivity, teamwork and promotion"],correct:0,why:"The commonly referenced British Values are democracy, the rule of law, individual liberty, and mutual respect and tolerance for those with different faiths and beliefs."},
       "Health & Safety":{q:"What is the safest approach when you identify a workplace hazard?",a:["Carry on if the job is nearly finished","Ignore it if nobody has been injured","Stop or make the situation safe and follow the relevant risk assessment and reporting procedure"],correct:2,why:"Hazards should be controlled promptly using the relevant safe system of work, risk assessment and reporting arrangements."}
     }[subject];
-    const chatEl=$("#chat"), questionId="review-lesson-"+Date.now()+"-"+index;
+    if(!lesson){done();return;}
+    const chatEl=$("#chat");
+    const questionId="review-lesson-"+Date.now()+"-"+index+"-"+Math.random().toString(36).slice(2,7);
     chatEl.insertAdjacentHTML("beforeend",'<div id="'+questionId+'" class="review-lesson-block"><div class="bubble evia"><strong>'+escLocal(subject)+' quick lesson</strong><br>'+escLocal(lesson.why)+'</div><div class="bubble evia"><strong>Quick check</strong><br>'+escLocal(lesson.q)+'</div><div class="rating-options">'+lesson.a.map((a,n)=>'<button type="button" class="rating-pill" data-review-lesson="'+n+'"><strong>'+String.fromCharCode(65+n)+'. '+escLocal(a)+'</strong></button>').join("")+'</div></div>');
-    const block=document.getElementById(questionId);if(!block)return;
+    const block=document.getElementById(questionId);
+    if(!block)return;
     chatEl.scrollTop=chatEl.scrollHeight;
-    block.querySelectorAll("[data-review-lesson]").forEach(b=>b.onclick=()=>{
-      const chosen=Number(b.dataset.reviewLesson);
-      block.querySelectorAll("[data-review-lesson]").forEach(x=>{x.disabled=true});
-      b.classList.add(chosen===lesson.correct?"correct":"wrong");
-      const correctButton=block.querySelector('[data-review-lesson="'+lesson.correct+'"]');
-      if(correctButton)correctButton.classList.add("correct");
-      review.reviewLearning=review.reviewLearning||{subjects:subjects,results:[]};
-      review.reviewLearning.results=review.reviewLearning.results||[];
-      review.reviewLearning.results.push({subject,correct:chosen===lesson.correct,completedAt:new Date().toISOString()});
-      saveReviewUpdate(review);
-      block.insertAdjacentHTML("beforeend",'<div class="bubble evia">'+(chosen===lesson.correct?"Correct. ":"Not quite. ")+escLocal(lesson.why)+'</div><button type="button" class="chat-pill test-submit" data-review-lesson-next><strong>'+(index+1<subjects.length?"Next lesson":"Finish review questions")+'</strong></button>');
-      const next=block.querySelector("[data-review-lesson-next]");
-      if(next)next.onclick=()=>{next.disabled=true;runReviewLesson(review,subjects,index+1,done)};
-      chatEl.scrollTop=chatEl.scrollHeight;
+    const answerButtons=Array.from(block.querySelectorAll("[data-review-lesson]"));
+    answerButtons.forEach(button=>{
+      button.onclick=e=>{
+        e.preventDefault();
+        e.stopPropagation();
+        if(block.dataset.answered==="1")return;
+        block.dataset.answered="1";
+        const chosen=Number(button.dataset.reviewLesson);
+        answerButtons.forEach(x=>{x.disabled=true;x.setAttribute("aria-disabled","true")});
+        answerButtons.forEach(x=>{
+          if(Number(x.dataset.reviewLesson)===lesson.correct)x.classList.add("correct");
+        });
+        if(chosen!==lesson.correct)button.classList.add("wrong");
+        review.reviewLearning=review.reviewLearning||{subjects:subjects,results:[]};
+        review.reviewLearning.results=review.reviewLearning.results||[];
+        review.reviewLearning.results.push({subject,correct:chosen===lesson.correct,chosen,correctAnswer:lesson.correct,completedAt:new Date().toISOString()});
+        saveReviewUpdate(review);
+        const nextLabel=index+1<subjects.length?"Next lesson":"Finish review questions";
+        block.insertAdjacentHTML("beforeend",'<div class="bubble evia">'+(chosen===lesson.correct?"Correct. ":"Not quite. ")+escLocal(lesson.why)+'</div><button type="button" class="chat-pill test-submit" data-review-lesson-next><strong>'+nextLabel+'</strong></button>');
+        const next=block.querySelector("[data-review-lesson-next]");
+        if(next)next.onclick=e=>{
+          e.preventDefault();
+          e.stopPropagation();
+          if(next.disabled)return;
+          next.disabled=true;
+          runReviewLesson(review,subjects,index+1,done);
+        };
+        chatEl.scrollTop=chatEl.scrollHeight;
+      };
     });
   }
   function startReviewConversation(review){
