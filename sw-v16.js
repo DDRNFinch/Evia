@@ -1,4 +1,4 @@
-const VERSION = "2026-09-19-evia7-v16";
+const VERSION = "2026-09-19-evia7-v19";
 const CACHE_NAME = "evia7-offline-" + VERSION;
 
 const APP_SHELL = [
@@ -11,6 +11,7 @@ const APP_SHELL = [
   "./profile.js",
   "./test-banks.js",
   "./review.js",
+  "./repair.js",
   "./manifest.json",
   "./icon.svg"
 ];
@@ -36,35 +37,26 @@ self.addEventListener("activate", event => {
 });
 
 self.addEventListener("message", event => {
-  if (event.data && event.data.type === "SKIP_WAITING") {
-    self.skipWaiting();
-  }
+  if (event.data && event.data.type === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") return;
-
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
   event.respondWith((async () => {
     try {
-      // Online: always obtain the newest deployed resource.
-      // The cache is only the offline fallback.
-      // Always bypass the browser/CDN resource cache while online. The
-      // service-worker cache remains an offline fallback only.
       const networkUrl = new URL(event.request.url);
       networkUrl.searchParams.set("_evia_refresh", Date.now().toString());
       const response = await fetch(networkUrl.toString(), {
         cache: "no-store",
         credentials: event.request.credentials
       });
-
       if (response && response.ok) {
         const cache = await caches.open(CACHE_NAME);
         await cache.put(event.request, response.clone());
       }
-
       return response;
     } catch (_) {
       const cached = await caches.match(event.request);
