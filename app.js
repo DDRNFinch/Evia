@@ -224,7 +224,8 @@ function progress(){
  const downloaded=JSON.parse(localStorage.getItem("evia7-downloaded-unit-pdfs")||"{}");
  const byUnit=name=>es.filter(e=>e.u===name);
  const reviews=window.eviaGetReviews?window.eviaGetReviews():[];
- $("#screen").innerHTML=picker()+'<div class="card portfolio-intro"><div><div class="section-title">Completed evidence</div><h2>Portfolio</h2><p>Each started unit has its own evidence pack. Downloaded packs can be downloaded again.</p></div></div>'+
+ $("#screen").innerHTML='<div class="card portfolio-intro"><div><div class="section-title">Completed evidence</div><h2>Portfolio</h2><p>Each started unit has its own evidence pack. Downloaded packs can be downloaded again.</p></div></div>'+(reviews.length?'<div class="card portfolio-reviews"><div class="section-title">PROGRESS REVIEWS</div>'+reviews.map(r=>'<div class="review-card"><div><div class="portfolio-review-title">Progress review - '+new Date(r.date).toLocaleDateString("en-GB")+'</div><div class="portfolio-review-meta">Saved from Evia progress review</div></div><button class="secondary" data-review-id="'+esc(r.id)+'">Download PDF</button></div>').join("")+'</div>':"")+
+
  units.map(name=>{
    const entries=byUnit(name);
    const wasDownloaded=!!downloaded[course+"|"+name];
