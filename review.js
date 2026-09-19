@@ -248,20 +248,65 @@
     const chatEl=$("#chat");if(!chatEl){next();return;}
     const blockId="review-text-"+Date.now()+"-"+Math.random().toString(36).slice(2,7);
     chatEl.insertAdjacentHTML("beforeend",'<div id="'+blockId+'" class="review-text-block"><div class="bubble evia"><strong>'+escLocal(prompt)+'</strong></div><textarea class="test-response" data-review-answer placeholder="Type your answer..."></textarea><button type="button" class="chat-pill test-submit" data-review-submit><strong>Save answer</strong></button></div>');
-    const block=document.getElementById(blockId);if(!block){next();return;}
-    const input=block.querySelector("[data-review-answer]"),submit=block.querySelector("[data-review-submit]");
-    chatEl.scrollTop=chatEl.scrollHeight;
-    submit.onclick=e=>{
-      e.preventDefault();e.stopPropagation();
-      const answer=String(input?.value||"").trim();
+    const block=document.getElementById(blockId);
+    if(!block){next();return}
+    const input=block.querySelector("[data-review-answer]");
+    const submit=block.querySelector("[data-review-submit]");
+    if(!input||!submit){next();return}
+    const advance=()=>{
+      if(block.dataset.completed==="1")return;
+      block.dataset.completed="1";
+      const answer=String(input.value||"").trim();
       if(!answer)return;
-      review.reflection=review.reflection||{};
-      review.reflection[key]=answer;
-      saveReviewUpdate(review);
-      input.disabled=true;submit.disabled=true;submit.remove();
+      try{
+        review.reflection=review.reflection||{};
+        review.reflection[key]=answer;
+        saveReviewUpdate(review);
+      }catch(err){console.error("Evia review save failed",err)}
+      input.disabled=true;
+      submit.disabled=true;
+      submit.remove();
       chatEl.insertAdjacentHTML("beforeend",'<div class="bubble user">'+escLocal(answer)+'</div>');
-      next();
+      chatEl.scrollTop=chatEl.scrollHeight;
+      window.setTimeout(next,0);
     };
+    submit.onclick=e=>{e.preventDefault();e.stopPropagation();advance()};
+    input.addEventListener("keydown",e=>{
+      if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){e.preventDefault();advance()}
+    });
+    chatEl.scrollTop=chatEl.scrollHeight;
+  }
+  function startReviewReflectionQuestions(review){
+    const questions=[
+      ["wellbeing","How are things going for you at the moment? Is there anything affecting your learning, work or wellbeing that you would like to tell me?"],
+      ["support","Is there anything you need help or support with? If not, type “Nothing at the moment”."],
+      ["courseComments","How are you finding your course?"],
+      ["successes","What have you been most successful with since your last review?"],
+      ["challenges","What have you found challenging?"]
+    ];
+    let index=0;
+    const askNext=()=>{
+      if(index>=questions.length){
+        const subjects=shuffle(["EDI","Prevent","Safeguarding","British Values","Health & Safety"]).slice(0,2);
+        review.reviewLearning=review.reviewLearning||{};
+        review.reviewLearning.subjects=subjects;
+        saveReviewUpdate(review);
+        runReviewLesson(review,subjects,0,()=>{
+          const employer=review.employerFeedback;
+          const chatEl=$("#chat");
+          chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>Employer feedback</strong><br>'+(employer?'Your employer has submitted feedback for this review.':'I can include employer feedback, but it must be submitted directly by the employer through an authenticated employer review form. I won\'t treat learner-entered comments as an employer statement.')+'</div>');
+          if(!employer)chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia">For this test version, the verified employer portal is not connected yet. The review will continue without an employer statement.</div>');
+          chatEl.insertAdjacentHTML("beforeend",'<button type="button" class="chat-pill test-submit" data-open-review-final><strong>Open full review</strong></button>');
+          const open=chatEl.querySelector("[data-open-review-final");
+          if(open)open.onclick=e=>{e.preventDefault();open.remove();openSavedReview(review)};
+          chatEl.scrollTop=chatEl.scrollHeight;
+        });
+        return;
+      }
+      const [key,prompt]=questions[index++];
+      askReviewText(review,key,prompt,askNext);
+    };
+    askNext();
   }
   function runReviewLesson(review,subjects,index,done){
     if(index>=subjects.length){
@@ -319,14 +364,9 @@
   }
   function startReviewConversation(review){
     const chatEl=$("#chat");if(!chatEl){openSavedReview(review);return}
-    chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>Let\'s complete your review reflection</strong><br>Before we open the full review, I\'ll ask a few short questions about wellbeing, your course and your progress.</div>');chatEl.scrollTop=chatEl.scrollHeight;
-    askReviewText(review,"wellbeing","How are things going for you at the moment? Is there anything affecting your learning, work or wellbeing that you would like to tell me?",()=>askReviewText(review,"support","Is there anything you need help or support with? If not, type “Nothing at the moment”.",()=>askReviewText(review,"courseComments","How are you finding your course?",()=>askReviewText(review,"successes","What have you been most successful with since your last review?",()=>askReviewText(review,"challenges","What have you found challenging?",()=>{
-      const subjects=shuffle(["EDI","Prevent","Safeguarding","British Values","Health & Safety"]).slice(0,2);review.reviewLearning=review.reviewLearning||{};review.reviewLearning.subjects=subjects;saveReviewUpdate(review);runReviewLesson(review,subjects,0,()=>{
-        const employer=review.employerFeedback;chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>Employer feedback</strong><br>'+ (employer?'Your employer has submitted feedback for this review.':'I can include employer feedback, but it must be submitted directly by the employer through an authenticated employer review form. I won\'t treat learner-entered comments as an employer statement.')+'</div>');
-        if(!employer){chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia">For this test version, the verified employer portal is not connected yet. The review will continue without an employer statement.</div>')}
-        chatEl.insertAdjacentHTML("beforeend",'<button class="chat-pill test-submit" data-open-review-final><strong>Open full review</strong></button>');document.querySelector("[data-open-review-final]").onclick=()=>{document.querySelector("[data-open-review-final]").remove();openSavedReview(review)};
-      });
-    })))));
+    chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>Let\'s complete your review reflection</strong><br>Before we open the full review, I\'ll ask a few short questions about wellbeing, your course and your progress.</div>');
+    chatEl.scrollTop=chatEl.scrollHeight;
+    startReviewReflectionQuestions(review);
   }
   function openSavedReview(review){ensureReviewStyles();$("#modal-root").innerHTML='<div class="overlay"><section class="sheet review-sheet"><div class="sheet-head"><div><div class="chat-kicker">EVIA</div><h2>Full progress review · '+formatUKDate(review.date)+'</h2></div><button class="close" id="review-close" aria-label="Close">×</button></div><div class="review-content">'+reviewDashboardHtml(review)+'<section class="review-section"><h3>Your review reflection</h3><p class="review-sub">Your answers are included as part of this review.</p><div class="review-generated">'+Object.entries(review.reflection||{}).map(([k,v])=>'<p><strong>'+escLocal({wellbeing:"Wellbeing",support:"Support",courseComments:"Course comments",successes:"Successes",challenges:"Challenges"}[k]||k)+':</strong> '+escLocal(v)+'</p>').join("")+'</div></section><section class="review-section"><h3>Review learning</h3><p class="review-sub">Two short learning sessions completed as part of this review.</p><div class="review-pills">'+((review.reviewLearning?.subjects||[]).map(s=>'<span class="review-pill">'+escLocal(s)+'</span>').join("")||'<span class="review-pill">Not completed</span>')+'</div></section><section class="review-section"><h3>Employer feedback</h3><p class="review-sub">Employer feedback is only shown here as employer-submitted when it has been entered through the authenticated employer review process.</p>'+(review.employerFeedback?'<p class="review-generated"><strong>Submitted by:</strong> '+escLocal(review.employerFeedback.name)+'<br><strong>Company:</strong> '+escLocal(review.employerFeedback.company)+'<br><strong>Date:</strong> '+escLocal(review.employerFeedback.date)+'</p><p class="review-generated">'+escLocal(review.employerFeedback.comments||"")+'</p>' : '<p>No verified employer feedback has been submitted for this review.</p>')+'</section></div><div class="review-actions"><button class="secondary" id="review-pdf">Download PDF</button></div></section></div>';$("#review-close").onclick=()=>$("#modal-root").innerHTML="";$("#review-pdf").onclick=()=>downloadReviewPdf(review)}
     function downloadReviewPdf(review){
