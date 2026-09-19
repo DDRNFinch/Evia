@@ -316,8 +316,9 @@ function chat(){
  };
  const eviaReply=(html,delay=900)=>{
    const t=thinking();
-   setTimeout(()=>{t.outerHTML='<div class="bubble evia">'+html+'</div>';scroll()},delay);
+   setTimeout(()=>{t.outerHTML='<div class="bubble evia" data-thought-complete="1">'+html+'</div>';scroll()},delay);
  };
+ const chatObserver=new MutationObserver(mutations=>{mutations.forEach(m=>m.addedNodes.forEach(node=>{if(!(node instanceof HTMLElement))return;const list=[];if(node.matches&&node.matches(".bubble.evia"))list.push(node);if(node.querySelectorAll)list.push(...node.querySelectorAll(".bubble.evia"));list.forEach(el=>{if(el.classList.contains("evia-thinking")||el.dataset.thoughtComplete==="1"||el.dataset.thoughtQueued==="1")return;el.dataset.thoughtQueued="1";const html=el.innerHTML;el.className="bubble evia evia-thinking";el.innerHTML='<span class="thinking-label">Evia is thinking</span><span class="thinking-dots"><i></i><i></i><i></i></span>';scroll();setTimeout(()=>{el.className="bubble evia";el.dataset.thoughtComplete="1";el.innerHTML=html;scroll()},1200);});}));});chatObserver.observe($("#chat"),{childList:true,subtree:true});
  const firstName=()=>{
    const p=JSON.parse(localStorage.getItem("evia7-profile")||"{}");
    return String(p.name||"").trim().split(/\s+/)[0]||"";
