@@ -261,9 +261,19 @@
     return false;
   }
 
+  function formatUKDate(value){
+    if(!value)return "";
+    const s=String(value);
+    const m=s.match(/^(\\d{4})-(\\d{2})-(\\d{2})(?:$|T|\\s)/);
+    if(m)return m[3]+"/"+m[2]+"/"+m[1];
+    const d=new Date(s);
+    if(Number.isNaN(d.getTime()))return s;
+    return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear();
+  }
+
   function evidenceEntry(e){
     return '<article class="evidence-entry">'+
-      '<div class="entry-meta">'+esc(e.d||e.savedAt||"")+'</div>'+
+      '<div class="entry-meta">'+esc(formatUKDate(e.d||e.savedAt||""))+'</div>'+
       '<h2>'+esc(e.u)+'</h2>'+
       (e.p&&e.p.length?'<div class="evidence-photos">'+e.p.map(p=>'<img src="'+p+'" alt="Evidence photo">').join("")+'</div>':"")+
       (e.w?'<p class="evidence-notes">'+esc(e.w).replace(/\n/g,"<br>")+'</p>':"")+
@@ -283,11 +293,12 @@
     if(window.eviaGetEvidencePhotoData)mine=await Promise.all(mine.map(async e=>Object.assign({},e,{p:await window.eviaGetEvidencePhotoData(e)})));
     const p=get();
     const learner=p.name||"Apprentice";
+    const pdfDate=formatUKDate(new Date().toISOString());
     const printWindow=window.open("","_blank");
     if(!printWindow){alert("Please allow pop-ups to download your evidence pack.");return false;}
     printWindow.document.write('<!doctype html><html lang="en"><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>'+
-      '@page{size:A4;margin:16mm}*{box-sizing:border-box}body{margin:0;color:#172033;font:11pt -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.45}.pack-header{border-bottom:2px solid #e6b800;padding-bottom:14px;margin-bottom:20px}.eyebrow{font-size:9pt;letter-spacing:.12em;color:#667085;font-weight:700}.pack-header h1{font-size:24pt;letter-spacing:-.04em;margin:4px 0}.pack-details{display:grid;grid-template-columns:1fr 1fr;gap:5px;color:#475467}.evidence-entry{break-inside:avoid;page-break-inside:avoid;border:1px solid #e4e7ec;border-radius:12px;padding:15px;margin:0 0 14px}.entry-meta{font-size:9pt;letter-spacing:.08em;text-transform:uppercase;color:#667085}.evidence-entry h2{font-size:16pt;margin:4px 0 10px}.evidence-photos{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:10px 0}.evidence-photos img{width:100%;aspect-ratio:1/1;height:auto;object-fit:cover;object-position:center center;border-radius:7px;border:1px solid #eaecf0;background:#f5f6f8}.evidence-notes{white-space:normal;color:#344054}.evidence-ksbs{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px}.evidence-ksbs span{background:#fff7d6;border-radius:999px;padding:3px 7px;font:700 8pt -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#675600}.evidence-signature{border-top:1px solid #eaecf0;margin-top:13px;padding-top:8px;display:grid;gap:3px;font-size:8pt;color:#667085}.evidence-signature img{width:140px;height:38px;object-fit:contain;object-position:left center}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}</style></head><body>'+
-      '<header class="pack-header"><div class="eyebrow">EVIA · EVIDENCE PACK</div><h1>'+esc(learner)+'</h1><div class="pack-details"><span><strong>Course:</strong> '+esc(data().name)+'</span><span><strong>Standard:</strong> '+esc(data().std)+'</span>'+(p.start?'<span><strong>Start date:</strong> '+esc(p.start)+'</span>':"")+(p.end?'<span><strong>End date:</strong> '+esc(p.end)+'</span>':"")+(mine.length===1?'<span><strong>Unit:</strong> '+esc(mine[0].u)+'</span>':"")+'</div></header>'+mine.slice().reverse().map(evidenceEntry).join("")+'</body></html>');
+      '@page{size:A4;margin:16mm}*{box-sizing:border-box}body{margin:0;color:#172033;font:11pt -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.45}.pack-header{border-bottom:2px solid #e6b800;padding-bottom:14px;margin-bottom:20px}.eyebrow{font-size:9pt;letter-spacing:.12em;color:#667085;font-weight:700}.pack-header h1{font-size:24pt;letter-spacing:-.04em;margin:4px 0}.pack-details{display:grid;grid-template-columns:1fr 1fr;gap:5px;color:#475467}.evidence-entry{break-inside:avoid;page-break-inside:avoid;border:1px solid #e4e7ec;border-radius:12px;padding:15px;margin:0 0 14px}.entry-meta{font-size:9pt;letter-spacing:.08em;text-transform:uppercase;color:#667085}.evidence-entry h2{font-size:16pt;margin:4px 0 10px}.evidence-photos{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:10px 0}.evidence-photos img{width:100%;aspect-ratio:1/1;height:auto;object-fit:cover;object-position:center center;border-radius:7px;border:1px solid #eaecf0;background:#f5f6f8}.evidence-notes{white-space:normal;color:#344054}.evidence-ksbs{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px}.evidence-ksbs span{background:#fff7d6;border-radius:999px;padding:3px 7px;font:700 8pt -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#675600}.evidence-signature{border-top:1px solid #eaecf0;margin-top:13px;padding-top:8px;display:grid;gap:3px;font-size:8pt;color:#667085}.evidence-signature img{width:140px;height:38px;object-fit:contain;object-position:left center}.learner-signature{break-inside:avoid;page-break-inside:avoid;margin-top:28px;padding-top:18px;border-top:2px solid #e6b800;display:grid;gap:5px}.learner-signature-title{font-size:10pt;font-weight:700;color:#172033}.learner-signature-meta{display:grid;gap:2px;font-size:9pt;color:#475467}.learner-signature img{width:220px;height:70px;object-fit:contain;object-position:left center;margin-top:8px}.learner-signature-line{width:220px;border-top:1px solid #98a2b3;margin-top:-1px}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}</style></head><body>'+
+      '<header class="pack-header"><div class="eyebrow">EVIA · EVIDENCE PACK</div><h1>'+esc(learner)+'</h1><div class="pack-details"><span><strong>Course:</strong> '+esc(data().name)+'</span><span><strong>Standard:</strong> '+esc(data().std)+'</span>'+(p.start?'<span><strong>Start date:</strong> '+esc(formatUKDate(p.start))+'</span>':"")+(p.end?'<span><strong>End date:</strong> '+esc(formatUKDate(p.end))+'</span>':"")+(mine.length===1?'<span><strong>Unit:</strong> '+esc(mine[0].u)+'</span>':"")+'</div></header>'+mine.slice().reverse().map(evidenceEntry).join("")+(p.signature?'<section class="learner-signature"><div class="learner-signature-title">Learner signature</div><div class="learner-signature-meta"><span><strong>Learner:</strong> '+esc(learner)+'</span><span><strong>Date:</strong> '+esc(pdfDate)+'</span></div><img src="'+p.signature+'" alt="Learner signature"><div class="learner-signature-line"></div></section>':"")+'</body></html>');
     printWindow.document.close();
     printWindow.focus();
     setTimeout(()=>printWindow.print(),250);
