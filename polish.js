@@ -119,8 +119,6 @@
     $("#screen").innerHTML=
       '<div class="evidence-pack-page">'+
         '<div class="evidence-heading">'+
-          '<div class="evidence-label">EVIDENCE PACK</div>'+
-          '<h2>'+esc(u[0])+'</h2>'+
           '<p>Capture the whole job in one pack. Take photos from the <strong>beginning, middle and end</strong> of the job.</p>'+
         '</div>'+
         '<div class="evidence-photo-actions">'+
