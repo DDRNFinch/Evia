@@ -33,14 +33,17 @@
 
   function syncA11y(){
     const s=getA11y(),root=document.documentElement;
-    root.dataset.eviaScale=String(s.textScale||"100");
-    root.dataset.eviaDyslexia=s.dyslexiaFont?"on":"off";
-    root.dataset.eviaLetterSpacing=s.letterSpacing?"on":"off";
-    root.dataset.eviaLineSpacing=s.lineSpacing?"on":"off";
-    root.dataset.eviaFocus=s.focusMode?"on":"off";
-    root.dataset.eviaContrast=s.highContrast?"on":"off";
-    root.dataset.eviaOverlay=s.colourOverlay||"none";
-    root.dataset.eviaReadingGuide=s.readingGuide?"on":"off";
+    const values={
+      eviaScale:String(s.textScale||"100"),
+      eviaDyslexia:s.dyslexiaFont?"on":"off",
+      eviaLetterSpacing:s.letterSpacing?"on":"off",
+      eviaLineSpacing:s.lineSpacing?"on":"off",
+      eviaFocus:s.focusMode?"on":"off",
+      eviaContrast:s.highContrast?"on":"off",
+      eviaOverlay:s.colourOverlay||"none",
+      eviaReadingGuide:s.readingGuide?"on":"off"
+    };
+    Object.keys(values).forEach(k=>{if(root.dataset[k]!==values[k])root.dataset[k]=values[k]});
   }
   syncA11y();
   new MutationObserver(syncA11y).observe(document.documentElement,{attributes:true,attributeFilter:["data-evia-scale","data-evia-dyslexia","data-evia-letter-spacing","data-evia-line-spacing","data-evia-focus","data-evia-contrast","data-evia-overlay","data-evia-reading-guide"]});
