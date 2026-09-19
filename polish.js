@@ -183,11 +183,20 @@
   }
 
   async function submitPack(pack){
-    if(!(pack.photos||[]).length||!String(pack.write||"").trim())return;
+    if(!(pack.photos||[]).length||!String(pack.write||"").trim())return false;
     const u=data().u[unit],profile=JSON.parse(localStorage.getItem("evia7-profile")||"{}");
+    const id=Date.now()+"-"+Math.random().toString(36).slice(2,8);
     const photoData=await Promise.all((pack.photos||[]).map(async p=>{if(p.src)return p.src;const rec=await idbGet(p.id);return rec?await blobToDataUrl(rec.blob):""}));
-    evidence.push({id:Date.now(),c:course,u:u[0],d:new Date().toLocaleString("en-GB"),p:photoData.filter(Boolean),w:pack.write.trim(),k:u[1].map(code),learnerProfile:profile,signature:profile.signature||"",savedAt:new Date().toISOString(),photoCount:pack.photos.length});
-    persist();await removePack();screen="portfolio";render();
+    evidence.push({id,c:course,u:u[0],d:new Date().toLocaleString("en-GB"),p:photoData.filter(Boolean),w:pack.write.trim(),k:u[1].map(code),learnerProfile:profile,signature:profile.signature||"",savedAt:new Date().toISOString(),photoCount:pack.photos.length});
+    try{persist()}catch(err){
+      let saved=false;
+      try{saved=JSON.parse(localStorage.getItem("evia7-evidence")||"[]").some(e=>String(e.id)===String(id))}catch(_){}
+      if(!saved)throw err;
+    }
+    await removePack();
+    screen="portfolio";
+    render();
+    return true;
   }
 
   window.openUnit=function(i){
