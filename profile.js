@@ -283,7 +283,7 @@
     window.speechSynthesis.speak(utterance);
   }
   function findReadAloudPanel(target){
-    const panel=target.closest(".card,.profile-sheet,.settings-preview-card,.evidence-entry,.welcome-copy,.chat-message,.panel,.section");
+    const panel=target.closest(".card,.profile-sheet,.settings-preview-card,.evidence-entry,.welcome-copy,.chat-message,.panel,.section,#screen > *,#modal-root > *");
     if(!panel)return null;
     if(!document.body.contains(panel))return null;
     return panel;
@@ -297,6 +297,7 @@
       if(panel)speakPanel(panel);
     });
     document.addEventListener("click",e=>{
+      if(Date.now()-(window.__eviaLastTouchRead||0)<550)return;
       if(e.detail!==2)return;
       if(e.target.closest("button,a,input,textarea,select,label,canvas,[contenteditable=true]"))return;
       const panel=findReadAloudPanel(e.target);
@@ -312,6 +313,7 @@
       window.__eviaLastTap={time:now,panel};
       if(last&&last.panel===panel&&now-last.time<420){
         window.__eviaLastTap=null;
+        window.__eviaLastTouchRead=Date.now();
         speakPanel(panel);
       }
     },{passive:true});
