@@ -65,15 +65,15 @@
     const style=document.createElement("style");
     style.id="evia-accessibility-styles";
     style.textContent=`
-      html[data-evia-dyslexia="on"] #app,html[data-evia-dyslexia="on"] #app *,html[data-evia-dyslexia="on"] #modal-root,html[data-evia-dyslexia="on"] #modal-root *,html[data-evia-dyslexia="on"] #welcome-screen,html[data-evia-dyslexia="on"] #welcome-screen *{font-family:"Trebuchet MS",Verdana,Arial,sans-serif!important}
+      html[data-evia-dyslexia="on"] body,html[data-evia-dyslexia="on"] body *{font-family:"Trebuchet MS",Verdana,Arial,sans-serif!important}
       html[data-evia-dyslexia="on"] #app *,html[data-evia-dyslexia="on"] #modal-root *,html[data-evia-dyslexia="on"] #welcome-screen *{font-synthesis:none!important}
-      html[data-evia-letter-spacing="on"] #app *,html[data-evia-letter-spacing="on"] #modal-root *,html[data-evia-letter-spacing="on"] #welcome-screen *{letter-spacing:.12em!important;word-spacing:.08em!important}
-      html[data-evia-line-spacing="on"] #app *,html[data-evia-line-spacing="on"] #modal-root *,html[data-evia-line-spacing="on"] #welcome-screen *{line-height:2!important}
+      html[data-evia-letter-spacing="on"] body *{letter-spacing:.12em!important;word-spacing:.08em!important}
+      html[data-evia-line-spacing="on"] body *{line-height:2!important}
       html[data-evia-focus="on"] #app .bottom-nav,html[data-evia-focus="on"] #app .evia-fab{opacity:.12!important;filter:grayscale(1)!important}
       html[data-evia-focus="on"] #app #screen>*{opacity:.32!important;filter:saturate(.25) blur(.2px)!important;transition:opacity .18s ease,filter .18s ease!important}
       html[data-evia-focus="on"] #app #screen>*:hover,html[data-evia-focus="on"] #app #screen>*:focus-within{opacity:1!important;filter:none!important}
       html[data-evia-focus="on"] #app #screen{max-width:600px!important}
-      html[data-evia-contrast="on"] #app,html[data-evia-contrast="on"] #screen,html[data-evia-contrast="on"] #modal-root,html[data-evia-contrast="on"] #welcome-screen{background:#000!important;color:#fff!important}
+      html[data-evia-contrast="on"] body,html[data-evia-contrast="on"] #app,html[data-evia-contrast="on"] #screen,html[data-evia-contrast="on"] #modal-root,html[data-evia-contrast="on"] #welcome-screen{background:#000!important;color:#fff!important}
       html[data-evia-contrast="on"] #app *,html[data-evia-contrast="on"] #screen *,html[data-evia-contrast="on"] #modal-root *,html[data-evia-contrast="on"] #welcome-screen *{color:#fff!important;border-color:#fff!important;box-shadow:none!important}
       html[data-evia-contrast="on"] #app .card,html[data-evia-contrast="on"] #app .panel,html[data-evia-contrast="on"] #app .section,html[data-evia-contrast="on"] #app .bottom-nav,html[data-evia-contrast="on"] #app button,html[data-evia-contrast="on"] #modal-root .profile-sheet,html[data-evia-contrast="on"] #modal-root button{background:#000!important}
       html[data-evia-contrast="on"] #app button,html[data-evia-contrast="on"] #modal-root button{border:2px solid #fff!important}
@@ -107,7 +107,7 @@
     root.classList.toggle("evia-line-spacing",!!s.lineSpacing);
     root.classList.toggle("evia-reading-guide",!!s.readingGuide);
     root.classList.toggle("evia-focus-mode",!!s.focusMode);
-    root.classList.toggle("evia-high-contrast",!!s.highContrast);
+    root.classList.toggle("evia-high-contrast",!!s.highContrast);document.body.classList.toggle("evia-dyslexia-font",!!s.dyslexiaFont);document.body.classList.toggle("evia-letter-spacing",!!s.letterSpacing);document.body.classList.toggle("evia-line-spacing",!!s.lineSpacing);document.body.classList.toggle("evia-focus-mode",!!s.focusMode);document.body.classList.toggle("evia-high-contrast",!!s.highContrast);
     root.dataset.eviaOverlay=s.colourOverlay||"none";
     let guide=document.getElementById("evia-reading-guide");
     if(s.readingGuide){
@@ -170,7 +170,7 @@
     const modal=document.getElementById("modal-root");
     const main=()=>{
       const saved=getSettings();
-      const rows=[["textScale","Text size",saved.textScale+"%"],["dyslexiaFont","Dyslexia-friendly text",saved.dyslexiaFont?"On":"Off"],["letterSpacing","More letter spacing",saved.letterSpacing?"On":"Off"],["lineSpacing","More line spacing",saved.lineSpacing?"On":"Off"],["readingGuide","Reading guide",saved.readingGuide?"On":"Off"],["focusMode","Focus mode",saved.focusMode?"On":"Off"],["highContrast","High contrast",saved.highContrast?"On":"Off"],["colourOverlay","Colour overlay",saved.colourOverlay==="none"?"None":saved.colourOverlay.replace("soft-","").replace(/\b\w/g,m=>m.toUpperCase())]];
+      const rows=[["textScale","Text size",saved.textScale+"%"],["dyslexiaFont","Dyslexia-friendly text",saved.dyslexiaFont?"On":"Off"],["letterSpacing","More letter spacing",saved.letterSpacing?"On":"Off"],["lineSpacing","More line spacing",saved.lineSpacing?"On":"Off"],["readingGuide","Reading guide",saved.readingGuide?"On":"Off"],["focusMode","Focus mode",saved.focusMode?"On":"Off"],["highContrast","High contrast",saved.highContrast?"On":"Off"],["colourOverlay","Colour overlay",saved.colourOverlay==="none"?"None":saved.colourOverlay.replace("soft-","").replace(/\b\w/g,m=>m.toUpperCase())],["readAloud","Read aloud","Double-tap text"]];
       modal.innerHTML='<div class="profile-overlay settings-overlay"><section class="profile-sheet settings-sheet"><div class="profile-head"><div><div class="profile-kicker">ACCESSIBILITY & SETTINGS</div><h2>Make Evia work for you</h2></div><button class="profile-close" id="settings-close" aria-label="Close">×</button></div><p class="settings-intro">Choose a setting to see a real before-and-after preview. The main app only changes when you confirm.</p><div class="settings-list">'+rows.map(r=>'<button type="button" class="settings-row" data-open-setting="'+r[0]+'"><span><strong>'+r[1]+'</strong><small>'+settingDescription(r[0])+'</small></span><span class="settings-row-value">'+r[2]+' <b>›</b></span></button>').join("")+'</div><div class="settings-section settings-about"><div class="settings-label">APPLIES ACROSS EVIA</div><p>Confirmed choices apply across the whole app, including learning, course, progress, portfolio, profile, settings and Evia content.</p></div></section></div>';
       document.getElementById("settings-close").onclick=()=>openProfile();
       document.querySelectorAll("[data-open-setting]").forEach(b=>b.onclick=()=>openSetting(b.dataset.openSetting));
@@ -397,7 +397,7 @@
     window.speechSynthesis.speak(utterance);
   }
   function findReadAloudPanel(target){
-    const panel=target.closest(".card,.profile-sheet,.settings-preview-card,.evidence-entry,.welcome-copy,.chat-message,.panel,.section,#screen > *,#modal-root > *");
+    const panel=target.closest(".card,.profile-sheet,.settings-preview-card,.evidence-entry,.welcome-copy,.chat-message,.panel,.section,.screen,#screen > *,#modal-root > *");
     if(!panel)return null;
     if(!document.body.contains(panel))return null;
     return panel;
