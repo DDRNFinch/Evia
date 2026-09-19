@@ -114,47 +114,48 @@
   }
 
   function renderPack(pack){
-    const u=data().u[unit],groups=ksbGroups(),photos=pack.photos||[];
+    const u=data().u[unit],photos=pack.photos||[],prompts=learnerPrompts();
     $("#page-title").textContent=u[0];
     $("#screen").innerHTML=
       '<div class="evidence-pack-page">'+
-        '<div class="card unit-hero"><div class="unit-number">EVIDENCE PACK</div><h2>'+esc(u[0])+'</h2>'+
-        '<p>Capture the whole job in one pack. Take photos from the <strong>beginning, middle and end</strong> of the job.</p></div>'+
-        '<section class="card capture-card">'+
-          '<div class="section-title">ADD PHOTOS</div>'+
-          '<p class="capture-intro">Use the prompts below to guide your photos. You can add photos from your camera or gallery and add more at any time.</p>'+
-          '<label class="stage-camera"><span>＋</span> Add photos<input id="evidence-file" class="stage-file" type="file" accept="image/*" capture="environment" multiple></label>'+
-          '<div class="photo-guide">'+
-            '<div><strong>Beginning</strong><span>Show preparation, setting out, tools, materials and safety.</span></div>'+
-            '<div><strong>Middle</strong><span>Show the work in progress and the practical skills being demonstrated.</span></div>'+
-            '<div><strong>End</strong><span>Show the finished work, quality, accuracy and final checks.</span></div>'+
-          '</div>'+
-          '<div class="evidence-photos" id="evidence-photos"></div>'+
+        '<div class="evidence-heading">'+
+          '<div class="evidence-label">EVIDENCE PACK</div>'+
+          '<h2>'+esc(u[0])+'</h2>'+
+          '<p>Capture the whole job in one pack. Take photos from the <strong>beginning, middle and end</strong> of the job.</p>'+
+        '</div>'+
+        '<div class="evidence-photo-actions">'+
+          '<label class="evidence-photo-button"><span>Camera</span><input id="evidence-camera" type="file" accept="image/*" capture="environment"></label>'+
+          '<label class="evidence-photo-button"><span>Gallery</span><input id="evidence-gallery" type="file" accept="image/*" multiple></label>'+
+        '</div>'+
+        '<div class="evidence-thumbs" id="evidence-photos"></div>'+
+        '<section class="evidence-section">'+
+          '<div class="evidence-section-title">THINGS TO CAPTURE</div>'+
+          '<div class="compact-prompts">'+esc(prompts.photos)+'</div>'+
         '</section>'+
-        '<section class="card prompt-card">'+
-          '<div class="section-title">THINGS TO CAPTURE</div>'+
-          ''+
-          '<div class="compact-prompts">'+esc(learnerPrompts().photos)+'</div>'+
+        '<section class="evidence-section writeup-section">'+
+          '<div class="evidence-section-title">EXPLAIN THE PROCESS AND WHAT YOU DID</div>'+
+          '<div class="evidence-section-title evidence-subtitle">THINGS TO MENTION</div>'+
+          '<div class="compact-prompts">'+esc(prompts.writeup)+'</div>'+
+          '<textarea id="write" placeholder="Write about the process and what you did…">'+esc(pack.write||"")+'</textarea>'+
         '</section>'+
-        '<section class="card writeup-card">'+
-          '<div class="section-title">EXPLAIN THE PROCESS AND WHAT YOU DID</div>'+
-          '<div class="section-title prompt-subtitle">THINGS TO MENTION</div>'+
-          '<textarea id="write" placeholder="Describe what you did, how you did it, the tools and materials you used, the checks you made, and anything you solved or adjusted…">'+esc(pack.write||"")+'</textarea>'+
-          '<div class="compact-prompts">'+esc(learnerPrompts().writeup)+'</div>'+
-        '</section>'+
-        '<div class="pack-actions"><button class="secondary" id="exit-evidence">Exit</button><button class="primary" id="submit-evidence" '+(photos.length&&String(pack.write||"").trim()?"":"disabled")+'>Submit evidence</button></div>'+
-        '<p class="submit-hint">'+(photos.length&&String(pack.write||"").trim()?"Your evidence pack is ready to submit.":"Add at least one photo and complete the write-up before submitting.")+'</p>'+
+        '<div class="pack-actions">'+
+          '<button class="secondary" id="continue-later">Continue later</button>'+
+          '<button class="primary" id="submit-evidence" '+(photos.length&&String(pack.write||"").trim()?"":"disabled")+'>Submit to Portfolio</button>'+
+        '</div>'+
+        '<p class="submit-hint">Add at least one photo and complete the write-up before submitting.</p>'+
       '</div>';
 
-    $("#exit-evidence").onclick=()=>{savePack(pack);courses()};
-    $("#evidence-file").onchange=async e=>{
-      const files=[...e.target.files];if(!files.length)return;
+    $("#continue-later").onclick=()=>{savePack(pack);courses()};
+    const addFiles=async files=>{
+      if(!files.length)return;
       try{
         const thumbs=await Promise.all(files.map(makeThumb));
         thumbs.forEach(src=>pack.photos.push({src,addedAt:new Date().toISOString()}));
-        e.target.value="";savePack(pack);renderPack(pack);
+        savePack(pack);renderPack(pack);
       }catch(_){alert("That photo could not be added. Please try again.")}
     };
+    $("#evidence-camera").onchange=async e=>{await addFiles([...e.target.files]);e.target.value=""};
+    $("#evidence-gallery").onchange=async e=>{await addFiles([...e.target.files]);e.target.value=""};
     $("#write").oninput=e=>{
       pack.write=e.target.value;savePack(pack);
       const ready=pack.photos.length>0&&String(pack.write||"").trim();
@@ -185,52 +186,29 @@
   window.addEventListener("load",()=>{
     const style=document.createElement("style");
     style.textContent=`
-      .evidence-pack-page{padding-bottom:18px}
-      .unit-hero{margin-top:8px}
-      .capture-card,.prompt-card,.writeup-card{margin-top:10px}
-      .capture-intro,.prompt-card>p,.writeup-card>p{font-size:12.5px;line-height:1.5;color:#707b8b}
-      .stage-camera{display:flex;align-items:center;gap:7px;width:max-content;padding:10px 13px;border:1px solid #e1e5ea;border-radius:13px;font-size:12px;color:#4e5969;background:#fafbfc}
-      .stage-camera span{font-size:18px;line-height:12px}
-      .stage-file{display:none}
-      .photo-guide{display:grid;gap:8px;margin-top:14px}
-      .photo-guide>div{display:grid;grid-template-columns:74px 1fr;gap:8px;align-items:start}
-      .photo-guide strong{font-size:12px;color:#344054}
-      .photo-guide span{font-size:12px;line-height:1.45;color:#778293}
-      .evidence-photos{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:12px}
-      .evidence-photos:empty{display:none}
+      .evidence-pack-page{padding:10px 14px 18px}
+      .evidence-heading{padding:0 2px}
+      .evidence-label{font-size:12px;font-weight:800;letter-spacing:.08em;color:#596577}
+      .evidence-heading h2{margin:5px 0 5px;font-size:22px;line-height:1.2}
+      .evidence-heading p{margin:0;font-size:12px;line-height:1.45;color:#707b8b}
+      .evidence-photo-actions{display:flex;gap:8px;margin-top:12px}
+      .evidence-photo-button{display:flex;align-items:center;justify-content:center;min-width:78px;padding:8px 11px;border:1px solid #e1e5ea;border-radius:11px;background:#fafbfc;font-size:11.5px;color:#4e5969;cursor:pointer}
+      .evidence-photo-button input{display:none}
+      .evidence-thumbs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px}
+      .evidence-thumbs:empty{display:none}
       .photo-item{position:relative;min-width:0}
-      .thumb{display:block;width:100%;height:74px;object-fit:cover;border-radius:10px}
-      .photo-remove{position:absolute;right:4px;top:4px;width:22px;height:22px;border:0;border-radius:50%;background:rgba(16,24,40,.72);color:#fff;line-height:18px}
-      .prompt-list,.writeup-prompts{display:grid;gap:8px;margin-top:12px}
-      .prompt-row{display:flex;gap:9px;align-items:flex-start;padding:10px 11px;background:#fff;border:1px solid #edf0f3;border-radius:13px}
-      .prompt-row>span:last-child{font-size:12.5px;line-height:1.5;color:#596577}
-      .prompt-dot{flex:0 0 auto;font-size:10px!important;font-weight:700;color:#6b7280!important;background:#f5f6f8;border-radius:8px;padding:3px 6px}
-      #write{width:100%;min-height:190px;box-sizing:border-box;margin-top:12px}
-      .pack-actions{display:flex;gap:10px;margin-top:14px}
-      .pack-actions button{flex:1}
-      .submit-hint{text-align:center;font-size:11.5px;line-height:1.45;color:#7b8696;margin:9px 4px 0}
-      .evidence-pack-page{padding:2px 0 12px}
-      .unit-hero{margin:0;padding:8px 12px;background:transparent;border:0;box-shadow:none}
-      .unit-hero h2{margin:2px 0;font-size:21px}
-      .unit-hero p{margin:0;font-size:12px}
-      .capture-card,.prompt-card,.writeup-card{margin-top:7px;padding:11px 12px}
-      .capture-intro{display:none}
-      .photo-guide{display:flex;gap:8px;margin-top:9px}
-      .photo-guide>div{display:block;flex:1}
-      .photo-guide strong{display:block;font-size:10.5px}
-      .photo-guide span{display:none}
-      .stage-camera{padding:8px 10px;font-size:11px}
-      .prompt-card>p,.writeup-card>p{display:none}
-      .prompt-list,.writeup-prompts{display:block;margin-top:7px}
+      .thumb{display:block;width:100%;height:68px;object-fit:cover;border-radius:9px}
+      .photo-remove{position:absolute;right:3px;top:3px;width:20px;height:20px;border:0;border-radius:50%;background:rgba(16,24,40,.72);color:#fff;line-height:16px}
+      .evidence-section{margin-top:14px}
+      .evidence-section-title{margin-bottom:5px;font-size:10.5px;font-weight:800;letter-spacing:.055em;color:#344054}
       .compact-prompts{font-size:11.5px;line-height:1.45;color:#596577}
-      .prompt-row{display:inline;padding:0;margin:0;background:none;border:0;border-radius:0}
-      .prompt-row>span:last-child{font-size:11.5px;line-height:1.45}
-      .prompt-row:not(:last-child)>span:last-child:after{content:" · ";color:#a0a7b2}
-      .prompt-dot{display:none}
-      .prompt-subtitle{margin-top:9px}
-      #write{min-height:120px;margin-top:7px}
-      .section-title{margin-bottom:5px}
-      .pack-actions{margin-top:7px}
+      .writeup-section{margin-top:16px}
+      .evidence-subtitle{margin-top:9px}
+      #write{width:100%;min-height:120px;box-sizing:border-box;margin-top:8px}
+      .pack-actions{display:flex;gap:8px;margin-top:12px}
+      .pack-actions button{flex:1}
+      .submit-hint{text-align:center;font-size:11px;line-height:1.4;color:#7b8696;margin:7px 2px 0}
+      .prompt-list,.writeup-prompts,.photo-guide,.capture-intro{display:none}
       button:disabled{opacity:.45;cursor:not-allowed}
       @media(min-width:600px){.evidence-photos{grid-template-columns:repeat(6,minmax(0,1fr))}}
     `;
