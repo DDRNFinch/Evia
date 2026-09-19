@@ -189,7 +189,7 @@ function learning(){
 function unitStrengthForCourse(unitName){
  const es=evidence.filter(e=>e.c===course&&e.u===unitName);
  if(!es.length)return null;
- const photos=es.reduce((n,e)=>n+(Array.isArray(e.p)?e.p.length:0),0);
+ const photos=es.reduce((n,e)=>n+(Array.isArray(e.photoIds)?e.photoIds.length:(Array.isArray(e.p)?e.p.length:0)),0);
  const words=es.reduce((n,e)=>n+String(e.w||"").trim().split(/\s+/).filter(Boolean).length,0);
  const photoLevel=photos<6?"weak":photos<10?"good":"strong";
  const textLevel=words<100?"weak":words<=200?"good":"strong";
