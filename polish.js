@@ -1,51 +1,52 @@
 /* Evia7 evidence UX: single-page working evidence pack. */
 (function(){
   const WORKING_KEY="evia7-working-evidence-packs";
-
+  const DB_NAME="evia7-evidence-db";
+  const DB_VERSION=1;
+  const PHOTO_STORE="photos";
+  let dbPromise=null;
+  const openDB=()=>dbPromise||(dbPromise=new Promise((resolve,reject)=>{
+    if(!("indexedDB" in window))return reject(new Error("IndexedDB unavailable"));
+    const req=indexedDB.open(DB_NAME,DB_VERSION);
+    req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(PHOTO_STORE))db.createObjectStore(PHOTO_STORE,{keyPath:"id"})};
+    req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||new Error("IndexedDB unavailable"));
+  }));
+  const idbPut=value=>openDB().then(db=>new Promise((resolve,reject)=>{
+    const tx=db.transaction(PHOTO_STORE,"readwrite");tx.objectStore(PHOTO_STORE).put(value);
+    tx.oncomplete=()=>resolve(value);tx.onerror=()=>reject(tx.error||new Error("Photo save failed"));
+  }));
+  const idbGet=id=>openDB().then(db=>new Promise((resolve,reject)=>{
+    const tx=db.transaction(PHOTO_STORE,"readonly"),req=tx.objectStore(PHOTO_STORE).get(id);
+    req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error||new Error("Photo load failed"));
+  }));
+  const idbDelete=id=>openDB().then(db=>new Promise((resolve,reject)=>{
+    const tx=db.transaction(PHOTO_STORE,"readwrite");tx.objectStore(PHOTO_STORE).delete(id);
+    tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error||new Error("Photo delete failed"));
+  }));
+  const dataUrlToBlob=src=>fetch(src).then(r=>r.blob());
+  const blobToDataUrl=blob=>new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(r.error||new Error("Photo conversion failed"));r.readAsDataURL(blob)});
   const makeThumb=file=>new Promise((resolve,reject)=>{
-    const r=new FileReader();
-    r.onload=()=>{
-      const img=new Image();
-      img.onload=()=>{
-        const max=640,scale=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
-        const c=document.createElement("canvas");
-        c.width=Math.max(1,Math.round(img.naturalWidth*scale));
-        c.height=Math.max(1,Math.round(img.naturalHeight*scale));
+    const r=new FileReader();r.onload=()=>{
+      const img=new Image();img.onload=()=>{
+        const max=1280,scale=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
+        const c=document.createElement("canvas");c.width=Math.max(1,Math.round(img.naturalWidth*scale));c.height=Math.max(1,Math.round(img.naturalHeight*scale));
         c.getContext("2d",{alpha:false}).drawImage(img,0,0,c.width,c.height);
-        c.toBlob(blob=>{
-          if(!blob)return reject(new Error("thumbnail"));
-          const rr=new FileReader();
-          rr.onload=()=>resolve(rr.result);
-          rr.onerror=reject;
-          rr.readAsDataURL(blob);
-        },"image/jpeg",.72);
-      };
-      img.onerror=reject;
-      img.src=r.result;
-    };
-    r.onerror=reject;
-    r.readAsDataURL(file);
+        c.toBlob(blob=>blob?resolve(blob):reject(new Error("photo compression")),"image/jpeg",.78);
+      };img.onerror=reject;img.src=r.result;
+    };r.onerror=reject;r.readAsDataURL(file);
   });
-
   function readWorking(){try{return JSON.parse(localStorage.getItem(WORKING_KEY)||"{}")}catch(_){return{}}}
-  function writeWorking(all){
-    try{localStorage.setItem(WORKING_KEY,JSON.stringify(all));return true}
-    catch(_){alert("Evia could not save this working evidence pack. Please remove some photos and try again.");return false}
-  }
+  function writeWorking(all){try{localStorage.setItem(WORKING_KEY,JSON.stringify(all));return true}catch(_){alert("Evia could not save this evidence pack. Please try again.");return false}}
   function packKey(){return course+"|"+data().u[unit][0]}
-  function newPack(){
-    return {course,unit:data().u[unit][0],unitIndex:unit,photos:[],write:"",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}
+  function newPack(){return {course,unit:data().u[unit][0],unitIndex:unit,photos:[],write:"",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}}
+  async function getPack(){const all=readWorking(),key=packKey();if(!all[key]){all[key]=newPack();writeWorking(all)}const pack=all[key];pack.photos=Array.isArray(pack.photos)?pack.photos:[];return pack}
+  async function savePack(pack){const all=readWorking();pack.updatedAt=new Date().toISOString();all[packKey()]=pack;return writeWorking(all)}
+  async function removePack(){const all=readWorking(),pack=all[packKey()];if(pack&&Array.isArray(pack.photos))for(const p of pack.photos)if(p.id)await idbDelete(p.id);delete all[packKey()];writeWorking(all)}
+  async function migrateLegacyPack(pack){
+    if(!pack||!Array.isArray(pack.photos))return pack;let changed=false;const next=[];
+    for(const p of pack.photos){if(p&&p.id){next.push(p);continue}if(p&&p.src){const id="photo-"+Date.now()+"-"+Math.random().toString(36).slice(2);await idbPut({id,blob:await dataUrlToBlob(p.src),addedAt:p.addedAt||new Date().toISOString()});next.push({id,addedAt:p.addedAt||new Date().toISOString()});changed=true}}
+    if(changed){pack.photos=next;await savePack(pack)}return pack;
   }
-  function getPack(){
-    const all=readWorking(),key=packKey();
-    if(!all[key]){all[key]=newPack();writeWorking(all)}
-    return all[key];
-  }
-  function savePack(pack){
-    const all=readWorking();pack.updatedAt=new Date().toISOString();all[packKey()]=pack;return writeWorking(all);
-  }
-  function removePack(){const all=readWorking();delete all[packKey()];writeWorking(all)}
-
   function ksbGroups(){
     const items=data().u[unit][1]||[];
     return {
@@ -102,18 +103,16 @@
     const coursePrompts=LEARNER_PROMPTS[course]||{};
     return coursePrompts[data().u[unit][0]]||{photos:"",writeup:""};
   }
-  function renderPhotos(pack){
+  async function renderPhotos(pack){
     const g=$("#evidence-photos");
-    g.innerHTML=(pack.photos||[]).map((p,i)=>
-      '<div class="photo-item"><img class="thumb" src="'+p.src+'" alt="Evidence photo">'+
-      '<button type="button" class="photo-remove" data-remove-photo="'+i+'" aria-label="Remove photo">×</button></div>'
-    ).join("");
-    g.querySelectorAll("[data-remove-photo]").forEach(b=>b.onclick=()=>{
-      pack.photos.splice(+b.dataset.removePhoto,1);savePack(pack);renderPhotos(pack);
-    });
+    const items=await Promise.all((pack.photos||[]).map(async(p,i)=>{
+      try{const rec=p.id?await idbGet(p.id):null,src=rec?URL.createObjectURL(rec.blob):p.src||"";return '<div class="photo-item"><img class="thumb" src="'+src+'" alt="Evidence photo"><button type="button" class="photo-remove" data-remove-photo="'+i+'" aria-label="Remove photo">×</button></div>'}catch(_){return ""}
+    }));
+    g.innerHTML=items.join("");
+    g.querySelectorAll("[data-remove-photo]").forEach(b=>b.onclick=async()=>{const i=+b.dataset.removePhoto,p=pack.photos[i];if(p&&p.id)await idbDelete(p.id);pack.photos.splice(i,1);await savePack(pack);await renderPhotos(pack)});
   }
 
-  function renderPack(pack){
+  async function renderPack(pack){
     const u=data().u[unit],photos=pack.photos||[],prompts=learnerPrompts();
     $("#page-title").textContent=u[0];
     $("#screen").innerHTML=
@@ -149,10 +148,13 @@
     const addFiles=async files=>{
       if(!files.length)return;
       try{
-        const thumbs=await Promise.all(files.map(makeThumb));
-        thumbs.forEach(src=>pack.photos.push({src,addedAt:new Date().toISOString()}));
-        savePack(pack);renderPack(pack);
-      }catch(_){alert("That photo could not be added. Please try again.")}
+        for(const file of files.filter(f=>f&&f.size>0)){
+          const blob=await makeThumb(file),id="photo-"+Date.now()+"-"+Math.random().toString(36).slice(2);
+          await idbPut({id,blob,addedAt:new Date().toISOString()});
+          pack.photos.push({id,addedAt:new Date().toISOString()});
+        }
+        await savePack(pack);await renderPack(pack);
+      }catch(err){console.error("Evia evidence photo save failed",err);alert("That photo could not be added. Please try again.")}
     };
     $("#evidence-camera").onchange=async e=>{await addFiles([...e.target.files]);e.target.value=""};
     $("#evidence-gallery").onchange=async e=>{await addFiles([...e.target.files]);e.target.value=""};
@@ -167,22 +169,18 @@
     renderPhotos(pack);
   }
 
-  function submitPack(pack){
+  async function submitPack(pack){
     if(!(pack.photos||[]).length||!String(pack.write||"").trim())return;
     const u=data().u[unit],profile=JSON.parse(localStorage.getItem("evia7-profile")||"{}");
-    evidence.push({
-      id:Date.now(),c:course,u:u[0],d:new Date().toLocaleString("en-GB"),
-      p:pack.photos.map(x=>x.src),w:pack.write.trim(),k:u[1].map(code),
-      learnerProfile:profile,signature:profile.signature||"",savedAt:new Date().toISOString(),
-      photoCount:pack.photos.length
-    });
-    persist();removePack();screen="portfolio";render();
+    const photoData=await Promise.all((pack.photos||[]).map(async p=>{if(p.src)return p.src;const rec=await idbGet(p.id);return rec?await blobToDataUrl(rec.blob):""}));
+    evidence.push({id:Date.now(),c:course,u:u[0],d:new Date().toLocaleString("en-GB"),p:photoData.filter(Boolean),w:pack.write.trim(),k:u[1].map(code),learnerProfile:profile,signature:profile.signature||"",savedAt:new Date().toISOString(),photoCount:pack.photos.length});
+    persist();await removePack();screen="portfolio";render();
   }
 
   window.openUnit=function(i){
     const profileBtn=document.getElementById("profile-btn");
     if(profileBtn)profileBtn.style.display="none";
-    screen="unit";unit=i;renderPack(getPack());
+    screen="unit";unit=i;getPack().then(p=>migrateLegacyPack(p)).then(renderPack).catch(err=>{console.error(err);alert("Evia could not open this evidence pack.")});
   };
 
   window.addEventListener("load",()=>{
