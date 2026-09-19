@@ -2,7 +2,8 @@
 (function(){
   const KEY="evia7-profile";
   const defaults={name:"",start:"",end:"",avatar:"",signature:"",mathsEnabled:false,englishEnabled:false};
-  const get=()=>Object.assign({},defaults,JSON.parse(localStorage.getItem(KEY)||"{}"));
+  const readObject=(key,fallback={})=>{try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):fallback}catch(e){return fallback}};
+  const get=()=>Object.assign({},defaults,readObject(KEY,{}));
   const set=p=>localStorage.setItem(KEY,JSON.stringify(p));
   const esc=s=>String(s??"").replace(/[&<>"]/g,x=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[x]));
 
@@ -57,7 +58,7 @@
 
   const SETTINGS_KEY="evia7-accessibility";
   const defaultSettings={textScale:"100",dyslexiaFont:false,letterSpacing:false,lineSpacing:false,readingGuide:false,focusMode:false,highContrast:false,reducedMotion:false,colourOverlay:"none"};
-  function getSettings(){return Object.assign({},defaultSettings,JSON.parse(localStorage.getItem(SETTINGS_KEY)||"{}"))}
+  function getSettings(){return Object.assign({},defaultSettings,readObject(SETTINGS_KEY,{}))}
   function saveSettings(s){localStorage.setItem(SETTINGS_KEY,JSON.stringify(s));applySettings(s)}
   function applySettings(s){const root=document.documentElement;root.style.setProperty("--evia-text-scale",(Number(s.textScale||100)/100).toFixed(2));root.classList.toggle("evia-dyslexia-font",!!s.dyslexiaFont);root.classList.toggle("evia-letter-spacing",!!s.letterSpacing);root.classList.toggle("evia-line-spacing",!!s.lineSpacing);root.classList.toggle("evia-reading-guide",!!s.readingGuide);root.classList.toggle("evia-focus-mode",!!s.focusMode);root.classList.toggle("evia-high-contrast",!!s.highContrast);root.classList.toggle("evia-reduced-motion",!!s.reducedMotion);root.dataset.eviaOverlay=s.colourOverlay||"none")}
   function openSettings(){
@@ -148,6 +149,7 @@
   }
 
   function welcome(){
+    if(document.getElementById("welcome-screen"))return;
     const p=get();
     const root=document.createElement("div");root.id="welcome-screen";root.style.opacity="1";root.style.zIndex="2000";
     root.innerHTML='<div class="welcome-inner">'+
@@ -199,9 +201,11 @@
   }
 
   function initEviaProfile(){
-    applySettings(getSettings());
-    refreshProfileButton();
-    document.getElementById("profile-btn").onclick=openProfile;
+    try{applySettings(getSettings())}catch(e){}
+    try{refreshProfileButton()}catch(e){}
+    const profileButton=document.getElementById("profile-btn");
+    if(profileButton)profileButton.onclick=openProfile;
+    window.eviaOpenProfile=openProfile;
     /* Keep course selection exclusively in Profile rather than displaying
        course-switching controls throughout Course/Progress/Portfolio. */
     const style=document.createElement("style");
