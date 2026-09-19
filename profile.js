@@ -57,7 +57,7 @@
   }
 
   const SETTINGS_KEY="evia7-accessibility";
-  const defaultSettings={textScale:"100",dyslexiaFont:false,letterSpacing:false,lineSpacing:false,readingGuide:false,readingGuidePosition:48,readingGuideTransparency:42,readingGuideColour:"clear",focusMode:false,highContrast:false,colourOverlay:"none"};
+  const defaultSettings={textScale:"100",dyslexiaFont:false,letterSpacing:false,lineSpacing:false,readingGuide:false,readingGuidePosition:48,readingGuideTransparency:42,readingGuideColour:"clear",focusMode:false,highContrast:false,colourOverlay:"none",readAloud:true};
   function getSettings(){return Object.assign({},defaultSettings,readObject(SETTINGS_KEY,{}))}
   function saveSettings(s){const next=Object.assign({},defaultSettings,s);localStorage.setItem(SETTINGS_KEY,JSON.stringify(next));applySettings(next)}
   function ensureAccessibilityStyles(){
@@ -178,8 +178,8 @@
       if(guide)guide.dataset.dragging="false";
     });
   }
-  function settingLabel(key){return ({textScale:"Text size",dyslexiaFont:"Dyslexia-friendly text",letterSpacing:"More letter spacing",lineSpacing:"More line spacing",readingGuide:"Reading guide",focusMode:"Focus mode",highContrast:"High contrast",colourOverlay:"Colour overlay"})[key]||key}
-  function settingDescription(key){return ({textScale:"See exactly how the text size will change.",dyslexiaFont:"Use a clearer, more spacious typeface for easier reading.",letterSpacing:"Add visible space between each letter.",lineSpacing:"Add visible space between lines of text.",readingGuide:"Add a movable reading guide and choose its colour.",focusMode:"Reduce visual distraction and keep attention on the main content.",highContrast:"Increase the contrast between text and interface elements.",colourOverlay:"Add a soft colour tint across the Evia interface."})[key]||""}
+  function settingLabel(key){return ({textScale:"Text size",dyslexiaFont:"Dyslexia-friendly text",letterSpacing:"More letter spacing",lineSpacing:"More line spacing",readingGuide:"Reading guide",focusMode:"Focus mode",highContrast:"High contrast",colourOverlay:"Colour overlay",readAloud:"Read aloud"})[key]||key}
+  function settingDescription(key){return ({textScale:"See exactly how the text size will change.",dyslexiaFont:"Use a clearer, more spacious typeface for easier reading.",letterSpacing:"Add visible space between each letter.",lineSpacing:"Add visible space between lines of text.",readingGuide:"Add a movable reading guide and choose its colour.",focusMode:"Reduce visual distraction and keep attention on the main content.",highContrast:"Increase the contrast between text and interface elements.",colourOverlay:"Add a soft colour tint across the Evia interface.",readAloud:"Double tap the example to hear it read aloud."})[key]||""}
   function forcedPreviewSettings(key,saved){
     const d=Object.assign({},saved);
     if(key==="textScale")d.textScale=saved.textScale==="150"?"150":"130";
@@ -196,13 +196,13 @@
     return (key==="textScale"?"preview-scale-"+String(draft.textScale)+" ":"")+(draft.dyslexiaFont?"preview-dyslexia ":"")+(draft.letterSpacing?"preview-letter ":"")+(draft.lineSpacing?"preview-lines ":"")+(draft.highContrast?"preview-contrast ":"")+(draft.colourOverlay!=="none"?"preview-overlay-"+draft.colourOverlay:"")+(draft.focusMode?"preview-focus ":"")+(key==="readingGuide"?"preview-guide ":"");
   }
   function previewSample(draft,key){
-    const guideAlpha=draft.readingGuideColour==="clear"?0:(100-Math.max(0,Math.min(100,Number(draft.readingGuideTransparency??42))))/100;const guideRgb=({clear:[255,255,255],yellow:[255,220,0],blue:[80,160,255],pink:[255,100,160]})[draft.readingGuideColour||"yellow"]||[255,220,0];const guideStyle=key==="readingGuide"?' style="--preview-guide-position:'+(Number(draft.readingGuidePosition??48))+'%;--preview-guide-background:rgba('+guideRgb.join(",")+","+guideAlpha.toFixed(2)+')"' : "";return '<div class="settings-preview-card '+previewClass(draft,key)+'"'+guideStyle+'><span class="preview-eyebrow">EVIA</span><h3>Read this example</h3><p>Making a change here lets you see exactly how Evia will look when this accessibility setting is applied.</p><button type="button">Example button</button></div>';
+    const guideAlpha=draft.readingGuideColour==="clear"?0:(100-Math.max(0,Math.min(100,Number(draft.readingGuideTransparency??42))))/100;const guideRgb=({clear:[255,255,255],yellow:[255,220,0],blue:[80,160,255],pink:[255,100,160]})[draft.readingGuideColour||"yellow"]||[255,220,0];const guideStyle=key==="readingGuide"?' style="--preview-guide-position:'+(Number(draft.readingGuidePosition??48))+'%;--preview-guide-background:rgba('+guideRgb.join(",")+","+guideAlpha.toFixed(2)+')"' : "";return '<div class="settings-preview-card '+previewClass(draft,key)+'"'+guideStyle+'><span class="preview-eyebrow">EVIA</span><h3>Read this example</h3><p>Double tap to read aloud. Making a change here lets you see exactly how Evia will look when this accessibility setting is applied.</p><button type="button">Example button</button></div>';
   }
   function openSettings(){
     const modal=document.getElementById("modal-root");
     const main=()=>{
       const saved=getSettings();
-      const rows=[["textScale","Text size",saved.textScale+"%"],["dyslexiaFont","Dyslexia-friendly text",saved.dyslexiaFont?"On":"Off"],["letterSpacing","More letter spacing",saved.letterSpacing?"On":"Off"],["lineSpacing","More line spacing",saved.lineSpacing?"On":"Off"],["readingGuide","Reading guide",saved.readingGuide?"On":"Off"],["focusMode","Focus mode",saved.focusMode?"On":"Off"],["highContrast","High contrast",saved.highContrast?"On":"Off"],["colourOverlay","Colour overlay",saved.colourOverlay==="none"?"None":saved.colourOverlay.replace("soft-","").replace(/\b\w/g,m=>m.toUpperCase())],["readAloud","Read aloud","Double-tap text"]];
+      const rows=[["textScale","Text size",saved.textScale+"%"],["dyslexiaFont","Dyslexia-friendly text",saved.dyslexiaFont?"On":"Off"],["letterSpacing","More letter spacing",saved.letterSpacing?"On":"Off"],["lineSpacing","More line spacing",saved.lineSpacing?"On":"Off"],["readingGuide","Reading guide",saved.readingGuide?"On":"Off"],["focusMode","Focus mode",saved.focusMode?"On":"Off"],["highContrast","High contrast",saved.highContrast?"On":"Off"],["colourOverlay","Colour overlay",saved.colourOverlay==="none"?"None":saved.colourOverlay.replace("soft-","").replace(/\b\w/g,m=>m.toUpperCase())],["readAloud","Read aloud",saved.readAloud?"On":"Off"]];
       modal.innerHTML='<div class="profile-overlay settings-overlay"><section class="profile-sheet settings-sheet"><div class="profile-head"><div><div class="profile-kicker">ACCESSIBILITY & SETTINGS</div><h2>Make Evia work for you</h2></div><button class="profile-close" id="settings-close" aria-label="Close">×</button></div><p class="settings-intro">Choose a setting to see a real before-and-after preview. The main app only changes when you confirm.</p><div class="settings-list">'+rows.map(r=>'<button type="button" class="settings-row" data-open-setting="'+r[0]+'"><span><strong>'+r[1]+'</strong><small>'+settingDescription(r[0])+'</small></span><span class="settings-row-value">'+r[2]+' <b>›</b></span></button>').join("")+'</div><div class="settings-section settings-about"><div class="settings-label">APPLIES ACROSS EVIA</div><p>Confirmed choices apply across the whole app, including learning, course, progress, portfolio, profile, settings and Evia content.</p></div></section></div>';
       document.getElementById("settings-close").onclick=()=>openProfile();
       document.querySelectorAll("[data-open-setting]").forEach(b=>b.onclick=()=>openSetting(b.dataset.openSetting));
@@ -227,7 +227,7 @@
       }
       document.getElementById("setting-close").onclick=()=>main();
       document.getElementById("setting-cancel").onclick=()=>main();
-      const toggleKeys=["dyslexiaFont","letterSpacing","lineSpacing","readingGuide","focusMode","highContrast"];
+      const toggleKeys=["dyslexiaFont","letterSpacing","lineSpacing","readingGuide","focusMode","highContrast","readAloud"];
       if(toggleKeys.includes(key)){
         const action=document.getElementById("setting-toggle-action");
         action.innerHTML='<label class="setting-switch setting-switch-large"><input id="setting-enabled" type="checkbox"><i></i><em>Off</em></label>';
