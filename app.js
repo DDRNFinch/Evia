@@ -65,12 +65,30 @@ function openUnit(i){
  $("#screen").innerHTML='<button class="secondary" id="back-course" type="button">‹ Back to course</button>'+
  '<div class="card"><div class="section-title">Unit '+(i+1)+'</div><h2>'+esc(u[0])+'</h2><p>Capture evidence for the work you have completed. Evia helps you gather evidence; your assessor decides whether it meets the required standard.</p></div>'+
  '<div class="card"><div class="section-title">Linked KSBs</div>'+u[1].map(k=>'<div class="ksb" style="margin-bottom:10px"><span class="code">'+esc(code(k))+'</span><div class="ksbtext">'+esc(text(k))+'</div></div>').join("")+'</div>'+
- '<div class="card"><div class="section-title">Evidence</div><label class="dropzone">Add photos<input id="unit-photos" type="file" accept="image/*" capture="environment" multiple></label><div id="unit-photo-preview" class="photo-grid"></div><textarea id="unit-notes" placeholder="Add notes about what you completed..."></textarea><div class="row" style="margin-top:12px"><button class="primary" id="save-unit-evidence" type="button">Save evidence</button></div></div>'+
+ '<div class="card"><div class="section-title">Evidence</div><div class="evidence-photo-actions"><button type="button" class="primary" id="take-evidence-photo">Take photo</button><button type="button" class="secondary" id="choose-evidence-photos">Choose photos</button><input id="unit-camera" type="file" accept="image/*" capture="environment"><input id="unit-gallery" type="file" accept="image/*" multiple></div><div id="unit-photo-preview" class="photo-grid"></div><textarea id="unit-notes" placeholder="Add notes about what you completed..."></textarea><div class="row" style="margin-top:12px"><button class="primary" id="save-unit-evidence" type="button">Save evidence</button></div></div>'+
  (existing.length?'<div class="section-title">Saved evidence</div>'+existing.slice().reverse().map(e=>'<div class="card"><div class="progress-row"><strong>'+esc(e.d)+'</strong><span class="status done">Saved</span></div>'+(e.p&&e.p.length?'<div class="photo-grid">'+e.p.map(p=>'<img class="thumb" src="'+p+'" alt="Evidence photo">').join("")+'</div>':"")+(e.w?'<p style="white-space:pre-wrap">'+esc(e.w)+'</p>':"")+'</div>').join(""):"");
- const input=$("#unit-photos"), preview=$("#unit-photo-preview"), notes=$("#unit-notes");
- input.onchange=()=>{photos=[];preview.innerHTML="";[...input.files].slice(0,6).forEach(f=>{const r=new FileReader();r.onload=()=>{photos.push(r.result);preview.insertAdjacentHTML("beforeend",'<img class="thumb" src="'+r.result+'" alt="Evidence photo">')};r.readAsDataURL(f)})};
+ const camera=$("#unit-camera"),gallery=$("#unit-gallery"),preview=$("#unit-photo-preview"),notes=$("#unit-notes"),saveEvidence=$("#save-unit-evidence");
+ const takePhoto=$("#take-evidence-photo"),choosePhotos=$("#choose-evidence-photos");
+ let photoReadBusy=false;
+ const readPhoto=f=>new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(r.error||new Error("Could not read photo"));r.readAsDataURL(f)});
+ const addPhotoFiles=async files=>{
+   const selected=[...files].filter(f=>/^image\//i.test(f.type)).slice(0,Math.max(0,6-photos.length));
+   if(!selected.length)return;
+   photoReadBusy=true;saveEvidence.disabled=true;saveEvidence.textContent="Adding photos…";
+   try{
+     const loaded=await Promise.all(selected.map(readPhoto));
+     photos.push(...loaded);
+     preview.innerHTML=photos.map(p=>'<img class="thumb" src="'+p+'" alt="Evidence photo">').join("");
+   }catch(e){alert("The photo could not be added. Please try again.");}
+   finally{photoReadBusy=false;saveEvidence.disabled=false;saveEvidence.textContent="Save evidence"}
+ };
+ takePhoto.onclick=()=>camera.click();
+ choosePhotos.onclick=()=>gallery.click();
+ camera.onchange=()=>{addPhotoFiles(camera.files);camera.value=""};
+ gallery.onchange=()=>{addPhotoFiles(gallery.files);gallery.value=""};
  $("#back-course").onclick=()=>nav("course");
- $("#save-unit-evidence").onclick=()=>{
+ $("#save-unit-evidence").onclick=async()=>{
+   if(photoReadBusy)return;
    const entry={c:course,u:u[0],d:new Date().toLocaleDateString("en-GB"),savedAt:new Date().toLocaleString("en-GB"),p:photos.slice(),w:notes.value.trim(),k:u[1].filter(k=>/^[SKB]\d+\|/.test(k)).map(k=>code(k))};
    if(!entry.p.length&&!entry.w){alert("Add at least one photo or a note before saving.");return}
    evidence.push(entry);persist();openUnit(i);
@@ -466,3 +484,12 @@ function chat(){
 document.querySelectorAll("[data-nav]").forEach(b=>b.onclick=()=>nav(b.dataset.nav));
 $("#evia-fab").onclick=chat;
 render();
+
+
+// Keep the fixed navigation out of the way of the on-screen keyboard on touch devices.
+(function(){
+  if(!window.matchMedia || !window.matchMedia("(hover: none) and (pointer: coarse)").matches)return;
+  const update=()=>document.body.classList.toggle("evia-keyboard-editing",!!document.activeElement&&/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName));
+  document.addEventListener("focusin",update);
+  document.addEventListener("focusout",()=>setTimeout(update,120));
+})();
