@@ -70,31 +70,55 @@ function openUnit(i){
  const camera=$("#unit-camera"),gallery=$("#unit-gallery"),preview=$("#unit-photo-preview"),notes=$("#unit-notes"),saveEvidence=$("#save-unit-evidence");
  const takePhoto=$("#take-evidence-photo"),choosePhotos=$("#choose-evidence-photos");
  let photoReadBusy=false;
- const readPhoto=f=>new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(r.error||new Error("Could not read photo"));r.readAsDataURL(f)});
+ const bytesToDataUrl=(bytes,type)=>{
+   let binary="";
+   const chunk=0x8000;
+   for(let i=0;i<bytes.length;i+=chunk)binary+=String.fromCharCode(...bytes.subarray(i,Math.min(i+chunk,bytes.length)));
+   return "data:"+(type||"image/jpeg")+";base64,"+btoa(binary);
+ };
+ const readPhoto=async f=>{
+   if(!f)throw new Error("No photo selected");
+   if(!/^image\\//i.test(f.type))throw new Error("Unsupported photo type");
+   if(!f.size)throw new Error("The selected photo is empty");
+   if(typeof f.arrayBuffer==="function"){
+     try{
+       const buffer=await f.arrayBuffer();
+       if(buffer&&buffer.byteLength)return bytesToDataUrl(new Uint8Array(buffer),f.type);
+     }catch(e){}
+   }
+   return new Promise((resolve,reject)=>{
+     const r=new FileReader();
+     r.onload=()=>r.result?resolve(r.result):reject(new Error("Photo data was empty"));
+     r.onerror=()=>reject(r.error||new Error("Could not read photo"));
+     r.onabort=()=>reject(new Error("Photo read was cancelled"));
+     try{r.readAsDataURL(f)}catch(e){reject(e)}
+   });
+ };
  const addPhotoFiles=async files=>{
-   const selected=[...files].filter(f=>/^image\//i.test(f.type)).slice(0,Math.max(0,6-photos.length));
-   if(!selected.length)return;
+   const selected=[...files].filter(f=>/^image\\//i.test(f.type)&&f.size>0).slice(0,Math.max(0,6-photos.length));
+   if(!selected.length){
+     alert("Please choose a valid image photo.");
+     return;
+   }
    photoReadBusy=true;saveEvidence.disabled=true;saveEvidence.textContent="Adding photos…";
    try{
-     const loaded=await Promise.all(selected.map(readPhoto));
+     const loaded=[];
+     for(const file of selected)loaded.push(await readPhoto(file));
      photos.push(...loaded);
      preview.innerHTML=photos.map(p=>'<img class="thumb" src="'+p+'" alt="Evidence photo">').join("");
-   }catch(e){alert("The photo could not be added. Please try again.");}
-   finally{photoReadBusy=false;saveEvidence.disabled=false;saveEvidence.textContent="Save evidence"}
+   }catch(e){
+     console.error("Evia evidence photo read failed",e);
+     alert("The photo could not be added. Please try again.");
+   }finally{
+     photoReadBusy=false;saveEvidence.disabled=false;saveEvidence.textContent="Save evidence";
+   }
  };
  takePhoto.onclick=()=>camera.click();
  choosePhotos.onclick=()=>gallery.click();
- camera.onchange=()=>{addPhotoFiles(camera.files);camera.value=""};
- gallery.onchange=()=>{addPhotoFiles(gallery.files);gallery.value=""};
+ camera.onchange=()=>{const files=camera.files;addPhotoFiles(files).finally(()=>{camera.value=""})};
+ gallery.onchange=()=>{const files=gallery.files;addPhotoFiles(files).finally(()=>{gallery.value=""})};
  $("#back-course").onclick=()=>nav("course");
- $("#save-unit-evidence").onclick=async()=>{
-   if(photoReadBusy)return;
-   const entry={c:course,u:u[0],d:new Date().toLocaleDateString("en-GB"),savedAt:new Date().toLocaleString("en-GB"),p:photos.slice(),w:notes.value.trim(),k:u[1].filter(k=>/^[SKB]\d+\|/.test(k)).map(k=>code(k))};
-   if(!entry.p.length&&!entry.w){alert("Add at least one photo or a note before saving.");return}
-   evidence.push(entry);persist();openUnit(i);
- };
-}
-function formatDateTime(ts){
+ $("#save-unit-evidence").onclick=async()=>{(ts){
  const d=new Date(ts);
  return d.toLocaleString("en-GB",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
 }
