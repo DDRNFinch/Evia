@@ -87,15 +87,15 @@
           '<div class="evidence-photos" id="evidence-photos"></div>'+
         '</section>'+
         '<section class="card prompt-card">'+
-          '<div class="section-title">PHOTO PROMPTS</div>'+
-          '<p>These are the practical skills involved in this job. Use the beginning, middle and end photos to show them in practice.</p>'+
-          '<div class="prompt-list">'+groups.skills.map(k=>'<div class="prompt-row"><span class="prompt-dot">Photo</span><span>'+esc(clean(k,true))+'</span></div>').join("")+'</div>'+
+          '<div class="section-title">THINGS TO CAPTURE</div>'+
+          ''+
+          '<div class="prompt-list">'+groups.skills.map(k=>'<div class="prompt-row"><span class="prompt-dot">•</span><span>'+esc(clean(k,true))+'</span></div>').join("")+'</div>'+
         '</section>'+
         '<section class="card writeup-card">'+
-          '<div class="section-title">YOUR WRITE-UP</div>'+
-          '<p>Use the prompts below to explain what you did. Write in your own words and cover the knowledge and behaviours involved in the job.</p>'+
+          '<div class="section-title">EXPLAIN THE PROCESS AND WHAT YOU DID</div>'+
+          '<div class="section-title prompt-subtitle">THINGS TO MENTION</div>'+
           '<textarea id="write" placeholder="Describe what you did, how you did it, the tools and materials you used, the checks you made, and anything you solved or adjusted…">'+esc(pack.write||"")+'</textarea>'+
-          '<div class="writeup-prompts">'+groups.writeups.map(k=>'<div class="prompt-row"><span class="prompt-dot">Write</span><span>'+esc(clean(k,false))+'</span></div>').join("")+'</div>'+
+          '<div class="writeup-prompts">'+groups.writeups.map(k=>'<div class="prompt-row"><span class="prompt-dot">•</span><span>'+esc(clean(k,false))+'</span></div>').join("")+'</div>'+
         '</section>'+
         '<div class="pack-actions"><button class="secondary" id="exit-evidence">Exit</button><button class="primary" id="submit-evidence" '+(photos.length&&String(pack.write||"").trim()?"":"disabled")+'>Submit evidence</button></div>'+
         '<p class="submit-hint">'+(photos.length&&String(pack.write||"").trim()?"Your evidence pack is ready to submit.":"Add at least one photo and complete the write-up before submitting.")+'</p>'+
@@ -164,6 +164,27 @@
       .pack-actions{display:flex;gap:10px;margin-top:14px}
       .pack-actions button{flex:1}
       .submit-hint{text-align:center;font-size:11.5px;line-height:1.45;color:#7b8696;margin:9px 4px 0}
+      .evidence-pack-page{padding:2px 0 12px}
+      .unit-hero{margin:0;padding:8px 12px;background:transparent;border:0;box-shadow:none}
+      .unit-hero h2{margin:2px 0;font-size:21px}
+      .unit-hero p{margin:0;font-size:12px}
+      .capture-card,.prompt-card,.writeup-card{margin-top:7px;padding:11px 12px}
+      .capture-intro{display:none}
+      .photo-guide{display:flex;gap:8px;margin-top:9px}
+      .photo-guide>div{display:block;flex:1}
+      .photo-guide strong{display:block;font-size:10.5px}
+      .photo-guide span{display:none}
+      .stage-camera{padding:8px 10px;font-size:11px}
+      .prompt-card>p,.writeup-card>p{display:none}
+      .prompt-list,.writeup-prompts{display:block;margin-top:7px}
+      .prompt-row{display:inline;padding:0;margin:0;background:none;border:0;border-radius:0}
+      .prompt-row>span:last-child{font-size:11.5px;line-height:1.45}
+      .prompt-row:not(:last-child)>span:last-child:after{content:" · ";color:#a0a7b2}
+      .prompt-dot{display:none}
+      .prompt-subtitle{margin-top:9px}
+      #write{min-height:120px;margin-top:7px}
+      .section-title{margin-bottom:5px}
+      .pack-actions{margin-top:7px}
       button:disabled{opacity:.45;cursor:not-allowed}
       @media(min-width:600px){.evidence-photos{grid-template-columns:repeat(6,minmax(0,1fr))}}
     `;
