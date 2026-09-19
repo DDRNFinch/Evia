@@ -279,7 +279,8 @@
     openEvidencePackWindow(mine,"Evia evidence pack");
   }
 
-  function openEvidencePackWindow(mine,title){
+  async function openEvidencePackWindow(mine,title){
+    if(window.eviaGetEvidencePhotoData)mine=await Promise.all(mine.map(async e=>Object.assign({},e,{p:await window.eviaGetEvidencePhotoData(e)})));
     const p=get();
     const learner=p.name||"Apprentice";
     const printWindow=window.open("","_blank");

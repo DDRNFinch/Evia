@@ -54,14 +54,15 @@ function render(){
  else if(screen==="portfolio")portfolio();
  else learning();
 }
-function openUnit(i){
+async function openUnit(i){
  const profileBtn=document.getElementById("profile-btn");
  if(profileBtn)profileBtn.style.display="none";
  unit=i;
  const u=data().u[i];
  if(!u){nav("course");return}
  $("#page-title").textContent=u[0];
- const existing=evidence.filter(e=>e.c===course&&e.u===u[0]);
+ const existingRaw=evidence.filter(e=>e.c===course&&e.u===u[0]);
+ const existing=window.eviaGetEvidencePhotoData?await Promise.all(existingRaw.map(async e=>Object.assign({},e,{p:await window.eviaGetEvidencePhotoData(e)}))):existingRaw;
  $("#screen").innerHTML='<button class="secondary" id="back-course" type="button">‹ Back to course</button>'+
  '<div class="card"><div class="section-title">Unit '+(i+1)+'</div><h2>'+esc(u[0])+'</h2><p>Capture evidence for the work you have completed. Evia helps you gather evidence; your assessor decides whether it meets the required standard.</p></div>'+
  '<div class="card"><div class="section-title">Linked KSBs</div>'+u[1].map(k=>'<div class="ksb" style="margin-bottom:10px"><span class="code">'+esc(code(k))+'</span><div class="ksbtext">'+esc(text(k))+'</div></div>').join("")+'</div>'+
@@ -271,11 +272,12 @@ function progress(){
    if(item)ksbDetail(item[0],item[1],ev.has(item[0]));
  });
  if(window.eviaBindTargets)window.eviaBindTargets();
-}function portfolio(){
+}async function portfolio(){
  $("#page-title").textContent="Portfolio";let es=evidence.filter(e=>e.c===course).slice().reverse();
  const units=[...new Set(es.map(e=>e.u))];
  const downloaded=JSON.parse(localStorage.getItem("evia7-downloaded-unit-pdfs")||"{}");
  const byUnit=name=>es.filter(e=>e.u===name);
+ if(window.eviaGetEvidencePhotoData)es=await Promise.all(es.map(async e=>Object.assign({},e,{p:await window.eviaGetEvidencePhotoData(e)})));
  const reviews=window.eviaGetReviews?window.eviaGetReviews():[];
  $("#screen").innerHTML='<div class="card portfolio-intro"><div><div class="section-title">Completed evidence</div><h2>Portfolio</h2><p>Each started unit has its own evidence pack. Downloaded packs can be downloaded again.</p></div></div>'+(reviews.length?'<div class="card portfolio-reviews"><div class="section-title">PROGRESS REVIEWS</div>'+reviews.map(r=>'<div class="review-card"><div><div class="portfolio-review-title">Progress review - '+new Date(r.date).toLocaleDateString("en-GB")+'</div><div class="portfolio-review-meta">Saved from Evia progress review</div></div><button class="secondary" data-review-id="'+esc(r.id)+'">Download PDF</button></div>').join("")+'</div>':"")+
 
