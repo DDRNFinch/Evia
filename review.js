@@ -15,10 +15,10 @@
   const shuffle=a=>[...a].sort(()=>Math.random()-.5);
   const bankFor=subject=>{
     const key=courseMap[course]||"bricklaying";
-    if(subject==="discussion")return Array.isArray(window.EPA_DISCUSSIONS?.[key])?EPA_DISCUSSIONS[key]:[];
-    if(subject==="epa")return Array.isArray(window.EPA_QUESTIONS?.[key])?EPA_QUESTIONS[key]:[];
-    if(subject==="maths")return Array.isArray(window.EPA_MATHS_QUESTIONS)?EPA_MATHS_QUESTIONS:[];
-    if(subject==="english")return Array.isArray(window.EPA_ENGLISH_QUESTIONS)?EPA_ENGLISH_QUESTIONS:[];
+    if(subject==="discussion")return Array.isArray(EPA_DISCUSSIONS?.[key])?EPA_DISCUSSIONS[key]:[];
+    if(subject==="epa")return Array.isArray(EPA_QUESTIONS?.[key])?EPA_QUESTIONS[key]:[];
+    if(subject==="maths")return Array.isArray(EPA_MATHS_QUESTIONS)?EPA_MATHS_QUESTIONS:[];
+    if(subject==="english")return Array.isArray(EPA_ENGLISH_QUESTIONS)?EPA_ENGLISH_QUESTIONS:[];
     return [];
   };
   const saveTest=(type,result)=>{
