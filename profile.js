@@ -219,17 +219,13 @@
     document.head.appendChild(style);
     welcome();
   }
-  function startEviaProfile(){
-    const run=()=>{try{initEviaProfile()}catch(e){console.error("Evia profile initialisation failed",e)}};
-    if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",run,{once:true});else run();
-  }
-  window.eviaOpenProfile=openProfile;
-  window.addEventListener("load",()=>{try{refreshProfileButton()}catch(e){};try{welcome()}catch(e){console.error("Evia welcome failed",e)}});
-  startEviaProfile();  function startEviaProfile(){
-    const run=()=>{try{initEviaProfile()}catch(e){console.error("Evia profile initialisation failed",e)}};
-    if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",run,{once:true});else run();
-  }
-  window.eviaOpenProfile=openProfile;
-  window.addEventListener("load",()=>{try{refreshProfileButton()}catch(e){};try{welcome()}catch(e){console.error("Evia welcome failed",e)}});
+  window.addEventListener("load",()=>{
+    try{applySettings(getSettings())}catch(e){console.error("Evia settings initialisation failed",e)}
+    try{refreshProfileButton()}catch(e){console.error("Evia profile button initialisation failed",e)}
+    const profileButton=document.getElementById("profile-btn");
+    if(profileButton)profileButton.onclick=openProfile;
+    window.eviaOpenProfile=openProfile;
+    try{welcome()}catch(e){console.error("Evia welcome failed",e)}
+  });
 
 })();
