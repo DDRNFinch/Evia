@@ -127,13 +127,17 @@
       const toggleKeys=["dyslexiaFont","letterSpacing","lineSpacing","readingGuide","focusMode","highContrast"];
       if(toggleKeys.includes(key)){
         const action=document.getElementById("setting-toggle-action");
-        action.innerHTML='<label class="setting-switch setting-switch-large"><input id="setting-enabled" type="checkbox" checked><i></i><em>On</em></label><button type="button" class="primary" id="setting-apply">Apply</button>';
+        action.innerHTML='<label class="setting-switch setting-switch-large"><input id="setting-enabled" type="checkbox"><i></i><em>Off</em></label>';
         const enabled=document.getElementById("setting-enabled");
-        enabled.onchange=()=>{preview[key]=enabled.checked;renderAfter()};
-        document.getElementById("setting-apply").onclick=()=>{
-          draft[key]=!!preview[key];
+        enabled.checked=!!saved[key];
+        preview[key]=enabled.checked;
+        enabled.onchange=()=>{
+          preview[key]=enabled.checked;
+          renderAfter();
+          draft[key]=enabled.checked;
           if(key==="readingGuide"){draft.readingGuidePosition=preview.readingGuidePosition;draft.readingGuideColour=preview.readingGuideColour}
-          saveSettings(draft);main();
+          saveSettings(draft);
+          main();
         };
       }else{
         const action=document.getElementById("setting-toggle-action");
