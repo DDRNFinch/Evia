@@ -122,29 +122,44 @@
           document.querySelectorAll("[data-test-answer]").forEach(x=>x.disabled=true);
           document.querySelectorAll("[data-test-answer]").forEach(x=>{if(decodeURIComponent(x.dataset.testAnswer)===correct)x.classList.add("correct")});
           if(!ok)btn.classList.add("wrong");
-          document.querySelector(".rating-options")?.remove();
-          const mini=( !ok && isAcademic && q[5] && Array.isArray(q[6]) ) ? '<div class="micro-teach"><div class="tag">Mini-session</div><p><strong>'+escLocal(q[5])+'</strong></p><div class="rating-options">'+q[6].map((a,n)=>'<button class="rating-pill" data-micro-answer="'+encodeURIComponent(a)+'"><strong>'+String.fromCharCode(65+n)+'. '+escLocal(a)+'</strong></button>').join("")+'</div><div class="micro-result" id="micro-result"></div></div>' : ( !ok ? '<br><br><strong>Mini-session:</strong> Read the explanation, then say the key point back to yourself before continuing.' : '' );
-          chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>'+(ok?"Correct":"Not quite")+'</strong><br>'+(ok?"That is correct.":"The correct answer is: "+escLocal(correct)+".")+'<br><br>'+escLocal(explanation)+mini+'</div>'+(mini?'':'<button class="chat-pill test-submit" data-next-test><strong>'+(i+1<qs.length?"Next question":"Finish")+'</strong></button>'));
-          if(mini){
-            document.querySelectorAll("[data-micro-answer]").forEach(mb=>mb.onclick=()=>{
-              const microChosen=decodeURIComponent(mb.dataset.microAnswer),microCorrect=String(q[7]??q[6][0]);
-              document.querySelectorAll("[data-micro-answer]").forEach(x=>x.disabled=true);
-              const box=document.getElementById("micro-result");
+          const currentOptions=btn.closest(".rating-options");
+          if(currentOptions)currentOptions.remove();
+          const hasMini=!ok && isAcademic && q[5] && Array.isArray(q[6]);
+          const microId="micro-"+Date.now()+"-"+i+"-"+Math.random().toString(36).slice(2,7);
+          const miniHtml=hasMini
+            ? '<div id="'+microId+'" class="micro-teach"><div class="tag">Mini-session</div><p><strong>'+escLocal(q[5])+'</strong></p><div class="rating-options micro-options">'+q[6].map((a,n)=>'<button type="button" class="rating-pill" data-micro-answer="'+encodeURIComponent(a)+'"><strong>'+String.fromCharCode(65+n)+'. '+escLocal(a)+'</strong></button>').join("")+'</div><div class="micro-result"></div></div>'
+            : '';
+          chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>'+(ok?"Correct":"Not quite")+'</strong><br>'+(ok?"That is correct.":"The correct answer is: "+escLocal(correct)+".")+'<br><br>'+escLocal(explanation)+'</div>'+miniHtml+(hasMini?'':'<button type="button" class="chat-pill test-submit" data-next-test><strong>'+(i+1<qs.length?"Next question":"Finish")+'</strong></button>'));
+          if(hasMini){
+            const microBlock=document.getElementById(microId);
+            const microButtons=Array.from(microBlock.querySelectorAll("[data-micro-answer]"));
+            microButtons.forEach(mb=>mb.onclick=e=>{
+              e.preventDefault();
+              e.stopPropagation();
+              if(microBlock.dataset.answered==="1")return;
+              microBlock.dataset.answered="1";
+              const microChosen=decodeURIComponent(mb.dataset.microAnswer);
+              const microCorrect=String(q[7]??q[6][0]);
+              microButtons.forEach(x=>x.disabled=true);
+              const box=microBlock.querySelector(".micro-result");
               if(microChosen===microCorrect){
                 mb.classList.add("correct");
                 box.innerHTML='<strong>Mini-session complete.</strong> You can move on.';
-                chatEl.insertAdjacentHTML("beforeend",'<button class="chat-pill test-submit" data-next-test><strong>'+(i+1<qs.length?"Next question":"Finish")+'</strong></button>');
               }else{
                 mb.classList.add("wrong");
+                microButtons.forEach(x=>{if(decodeURIComponent(x.dataset.microAnswer)===microCorrect)x.classList.add("correct")});
                 box.innerHTML='Not quite. The correct answer is <strong>'+escLocal(microCorrect)+'</strong>.';
-                document.querySelectorAll("[data-micro-answer]").forEach(x=>{if(decodeURIComponent(x.dataset.microAnswer)===microCorrect){x.disabled=false;x.classList.add("correct")}});
               }
+              const nextWrap=document.createElement("div");
+              nextWrap.innerHTML='<button type="button" class="chat-pill test-submit" data-next-test><strong>'+(i+1<qs.length?"Next question":"Finish")+'</strong></button>';
+              microBlock.appendChild(nextWrap.firstElementChild);
+              const next=microBlock.querySelector("[data-next-test]");
+              next.onclick=e=>{e.preventDefault();e.stopPropagation();next.remove();i++;ask()};
               scroll();
-              const next=document.querySelector("[data-next-test]");
-              if(next)next.onclick=()=>{next.remove();i++;ask()};
             });
           }else{
-            document.querySelector("[data-next-test]").onclick=()=>{document.querySelector("[data-next-test]").remove();i++;ask()};
+            const next=document.querySelector("[data-next-test]");
+            if(next)next.onclick=()=>{next.remove();i++;ask()};
           }
           scroll();
         });
