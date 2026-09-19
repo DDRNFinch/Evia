@@ -152,8 +152,6 @@
     };
     if(metrics.unitGap>0)add("Capture evidence for your next outstanding unit","You have "+metrics.unitGap+" course unit"+(metrics.unitGap===1?"":"s")+" without saved evidence.",2,"units");
     else if(metrics.weakUnits>0)add("Strengthen weaker portfolio evidence","Some started units need additional photos or written detail.",2,"portfolio");
-    if(metrics.otjBehind)add("Build your off-the-job learning hours","Your recorded OTJ progress is behind the planned course timeline.",4,"otj");
-    else add("Keep your off-the-job learning record current","Continue recording eligible learning activity so your progress remains visible.",4,"otj");
     if(academicEnabled("maths"))add(metrics.mathsPct!==null&&metrics.mathsPct<70?"Practise Maths Level 2":"Maintain Maths Level 2 practice",metrics.mathsPct===null?"No Maths test has been recorded yet.":"Your latest Maths result was "+metrics.mathsPct+"%.",6,"maths");
     if(academicEnabled("english"))add(metrics.englishPct!==null&&metrics.englishPct<70?"Practise English Level 2":"Maintain English Level 2 practice",metrics.englishPct===null?"No English test has been recorded yet.":"Your latest English result was "+metrics.englishPct+"%.",6,"english");
     if(metrics.epaPct===null)add("Complete EPA MCQ practice","No EPA MCQ result has been recorded yet.",8,"epa");
@@ -226,6 +224,12 @@
   }
   function showReview(id){
     const review=read(REVIEW_KEY,[]).find(x=>x.id===id);if(!review)return;
+    // Refresh saved review evidence counts so older reviews do not retain stale photo totals.
+    if(review.course===course){
+      const fresh=metrics();
+      review.metrics={...review.metrics,totalPhotos:fresh.totalPhotos,unitDetails:fresh.unitDetails};
+      const all=read(REVIEW_KEY,[]),idx=all.findIndex(x=>x.id===id);if(idx>=0){all[idx]=review;write(REVIEW_KEY,all)}
+    }
     const m=review.metrics, bits=[["Discussion",review.tests.discussion],["EPA MCQ",review.tests.epa],["Maths",review.tests.maths],["English",review.tests.english]].filter(([,v])=>v!==null).map(([l,v])=>'<span class="pill">'+l+': '+v+'%</span>').join("");
     const units=m.unitDetails.map(u=>'<div class="target-item"><div><strong>'+escLocal(u.unit)+'</strong><p>'+u.entries+' evidence entries · '+u.photos+' photos · '+u.words+' words · '+u.ksbs.length+' KSBs captured</p></div></div>').join("");
     const conf=m.confidenceRatings.length?m.confidenceRatings.map(x=>'<span class="pill">'+escLocal(x.area)+': '+x.score+'/4</span>').join(""):'<span class="pill">No confidence check</span>';
