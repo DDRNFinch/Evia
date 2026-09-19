@@ -180,6 +180,8 @@
   }
 
   window.openUnit=function(i){
+    const profileBtn=document.getElementById("profile-btn");
+    if(profileBtn)profileBtn.style.display="none";
     screen="unit";unit=i;renderPack(getPack());
   };
 
