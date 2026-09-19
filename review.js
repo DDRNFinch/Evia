@@ -242,9 +242,9 @@
     win.document.close();win.focus();setTimeout(()=>win.print(),250);
   }
   function targetsCardHtml(){
-    const targets=eviaGetTargets().filter(t=>targetStatus(t)!=="complete").sort((a,b)=>a.priority-b.priority);
+    const targets=eviaGetTargets().sort((a,b)=>a.priority-b.priority);
     if(!targets.length)return '<div class="card targets-card"><div class="section-title">TARGETS</div><h2>My targets</h2><p>No active targets yet. Complete a full progress review to create five.</p></div>';
-    return '<div class="card targets-card"><div class="section-title">TARGETS</div><h2>My targets</h2>'+targets.map(t=>'<div class="target-item '+targetStatus(t)+'"><div><strong>'+escLocal(t.title)+'</strong><p>'+escLocal(t.reason)+'</p><small>Due '+new Date(t.deadline+"T00:00:00").toLocaleDateString("en-GB")+(targetStatus(t)==="overdue"?" · Overdue":"")+'</small></div><button class="secondary" data-target-complete="'+escLocal(t.id||"")+'">Mark complete</button></div>').join("")+'</div>';
+    return '<div class="card targets-card"><div class="section-title">TARGETS</div><h2>My targets</h2>'+targets.map(t=>'<div class="target-item '+targetStatus(t)+'"><div><strong>'+escLocal(t.title)+'</strong><p>'+escLocal(t.reason)+'</p><small>Due '+new Date(t.deadline+"T00:00:00").toLocaleDateString("en-GB")+(targetStatus(t)==="overdue"?" · Overdue":"")+'</small></div>'+(targetStatus(t)==="complete"?'<b>Completed</b>':'<button class="secondary" data-target-complete="'+escLocal(t.id||"")+'">Mark complete</button>')+'</div>').join("")+'</div>';
   }
   function bindTargets(){
     document.querySelectorAll("[data-target-complete]").forEach(b=>b.onclick=()=>{
