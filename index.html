@@ -48,7 +48,7 @@
 <script src="polish.js"></script>
 <script src="profile.js?v=da39e3a"></script>
 <script src="test-banks.js"></script>
-<script src="review.js?v=4aa9b92"></script>
+<script src="review.js?v=790f563"></script>
 <script src="repair.js?v=evia7-idb-test"></script>
 <script>
 (function(){
@@ -57,7 +57,7 @@
   navigator.serviceWorker.addEventListener("controllerchange",function(){if(reloading)return;reloading=true;window.location.reload();});
   window.addEventListener("load", async function(){
     try {
-      const registration=await navigator.serviceWorker.register("./sw-v16.js?v=evia7-v19",{updateViaCache:"none"});
+      const registration=await navigator.serviceWorker.register("./sw-v16.js?v=evia7-v20",{updateViaCache:"none"});
       await registration.update();
       const activateWaiting=worker=>{if(!worker)return;worker.postMessage({type:"SKIP_WAITING"});};
       if(registration.waiting) activateWaiting(registration.waiting);
