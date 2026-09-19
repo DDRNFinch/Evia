@@ -55,6 +55,8 @@ function render(){
  else learning();
 }
 function openUnit(i){
+ const profileBtn=document.getElementById("profile-btn");
+ if(profileBtn)profileBtn.style.display="none";
  unit=i;
  const u=data().u[i];
  if(!u){nav("course");return}
