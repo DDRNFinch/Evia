@@ -165,7 +165,7 @@
   function metrics(){
     const entries=evidence.filter(e=>e.c===course), units=data().u;
     const covered=new Set(entries.map(e=>e.u));
-    const totalPhotos=entries.reduce((n,e)=>n+(Array.isArray(e.p)?e.p.length:0),0);
+    const totalPhotos=entries.reduce((n,e)=>n+(Array.isArray(e.photoIds)?e.photoIds.length:(Number.isFinite(Number(e.photoCount))?Number(e.photoCount):(Array.isArray(e.p)?e.p.length:0))),0);
     const totalWords=entries.reduce((n,e)=>n+String(e.w||"").trim().split(/\s+/).filter(Boolean).length,0);
     const allKsb=new Map(); units.forEach(u=>u[1].forEach(k=>allKsb.set(code(k),text(k))));
     const captured=new Set(entries.flatMap(e=>Array.isArray(e.k)?e.k:[]));
@@ -174,7 +174,7 @@
     captured.forEach(k=>{if(groups["captured"+k[0]]!==undefined)groups["captured"+k[0]]++});
     const unitDetails=units.map(u=>{
       const es=entries.filter(e=>e.u===u[0]);
-      return {unit:u[0],entries:es.length,photos:es.reduce((n,e)=>n+(Array.isArray(e.p)?e.p.length:0),0),words:es.reduce((n,e)=>n+String(e.w||"").trim().split(/\s+/).filter(Boolean).length,0),ksbs:[...new Set(es.flatMap(e=>Array.isArray(e.k)?e.k:[]))],evidence:es.map(e=>({date:e.savedAt||e.d||"",photos:Array.isArray(e.p)?e.p.length:0,notes:e.w||"",ksbs:Array.isArray(e.k)?e.k:[]}))};
+      return {unit:u[0],entries:es.length,photos:es.reduce((n,e)=>n+(Array.isArray(e.photoIds)?e.photoIds.length:(Number.isFinite(Number(e.photoCount))?Number(e.photoCount):(Array.isArray(e.p)?e.p.length:0))),0),words:es.reduce((n,e)=>n+String(e.w||"").trim().split(/\s+/).filter(Boolean).length,0),ksbs:[...new Set(es.flatMap(e=>Array.isArray(e.k)?e.k:[]))],evidence:es.map(e=>({date:e.savedAt||e.d||"",photos:Array.isArray(e.p)?e.p.length:0,notes:e.w||"",ksbs:Array.isArray(e.k)?e.k:[]}))};
     });
     const totalOTJ=hours.reduce((n,x)=>n+Number(x.n||0),0), meta=courseProgressMeta(), p=read("evia7-profile",{});
     let elapsed=0;
