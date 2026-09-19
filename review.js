@@ -246,8 +246,22 @@
   function saveReviewUpdate(review){const all=read(REVIEW_KEY,[]),idx=all.findIndex(x=>x.id===review.id);if(idx>=0){all[idx]=review;write(REVIEW_KEY,all)}}
   function askReviewText(review,key,prompt,next){
     const chatEl=$("#chat");if(!chatEl){next();return;}
-    chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>'+escLocal(prompt)+'</strong></div><textarea class="test-response" data-review-answer placeholder="Type your answer..."></textarea><button class="chat-pill test-submit" data-review-submit><strong>Save answer</strong></button>');chatEl.scrollTop=chatEl.scrollHeight;
-    const submit=document.querySelector("[data-review-submit]");if(!submit)return;submit.onclick=()=>{const input=document.querySelector("[data-review-answer]"),answer=String(input?.value||"").trim();if(!answer)return;review.reflection=review.reflection||{};review.reflection[key]=answer;saveReviewUpdate(review);input.disabled=true;submit.remove();chatEl.insertAdjacentHTML("beforeend",'<div class="bubble user">'+escLocal(answer)+'</div>');next()};
+    const blockId="review-text-"+Date.now()+"-"+Math.random().toString(36).slice(2,7);
+    chatEl.insertAdjacentHTML("beforeend",'<div id="'+blockId+'" class="review-text-block"><div class="bubble evia"><strong>'+escLocal(prompt)+'</strong></div><textarea class="test-response" data-review-answer placeholder="Type your answer..."></textarea><button type="button" class="chat-pill test-submit" data-review-submit><strong>Save answer</strong></button></div>');
+    const block=document.getElementById(blockId);if(!block){next();return;}
+    const input=block.querySelector("[data-review-answer]"),submit=block.querySelector("[data-review-submit]");
+    chatEl.scrollTop=chatEl.scrollHeight;
+    submit.onclick=e=>{
+      e.preventDefault();e.stopPropagation();
+      const answer=String(input?.value||"").trim();
+      if(!answer)return;
+      review.reflection=review.reflection||{};
+      review.reflection[key]=answer;
+      saveReviewUpdate(review);
+      input.disabled=true;submit.disabled=true;submit.remove();
+      chatEl.insertAdjacentHTML("beforeend",'<div class="bubble user">'+escLocal(answer)+'</div>');
+      next();
+    };
   }
   function runReviewLesson(review,subjects,index,done){
     if(index>=subjects.length){
