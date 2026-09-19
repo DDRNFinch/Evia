@@ -200,7 +200,10 @@
     },650);
   }
 
+  let eviaProfileInitialised=false;
   function initEviaProfile(){
+    if(eviaProfileInitialised)return;
+    eviaProfileInitialised=true;
     try{applySettings(getSettings())}catch(e){}
     try{refreshProfileButton()}catch(e){}
     const profileButton=document.getElementById("profile-btn");
@@ -219,6 +222,10 @@
     document.head.appendChild(style);
     welcome();
   }
+  // The profile script is loaded at the end of index.html, so the DOM is already
+  // available. Initialise immediately rather than relying on a later load event.
+  // The guard above prevents duplicate initialisation if the load event also fires.
+  try{initEviaProfile()}catch(e){console.error("Evia profile initialisation failed",e)}
   window.addEventListener("load",()=>{
     try{initEviaProfile()}catch(e){console.error("Evia profile initialisation failed",e)}
   });
