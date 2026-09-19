@@ -106,26 +106,32 @@
     };
     const openSetting=(key)=>{
       const saved=getSettings();
-      const before=Object.assign({},defaultSettings);
-      const after=forcedPreviewSettings(key,saved);
-      let draft=Object.assign({},after);
-      const renderAfter=()=>{const el=document.getElementById("setting-after");if(el)el.innerHTML=previewSample(draft,key)};
+      const draft=Object.assign({},saved);
+      const preview=forcedPreviewSettings(key,defaultSettings);
+      const renderAfter=()=>{const el=document.getElementById("setting-after");if(el)el.innerHTML=previewSample(preview,key)};
       let controls="";
-      if(key==="textScale")controls='<div class="settings-segment">'+["100","115","130","150"].map(v=>'<button type="button" data-choice="'+v+'" class="'+(draft.textScale===v?"selected":"")+'">'+v+'%</button>').join("")+'</div>';
-      else if(key==="colourOverlay")controls='<div class="overlay-options">'+[["cream","Cream"],["soft-yellow","Soft yellow"],["soft-blue","Soft blue"],["soft-pink","Soft pink"]].map(o=>'<button type="button" data-choice="'+o[0]+'" class="'+(draft.colourOverlay===o[0]?"selected":"")+'"><i></i><span>'+o[1]+'</span></button>').join("")+'</div>';
-      else if(key==="readingGuide")controls='<label class="guide-position-control"><span>Position</span><input id="guide-position" type="range" min="8" max="92" value="'+draft.readingGuidePosition+'"><output id="guide-position-value">'+draft.readingGuidePosition+'%</output></label><div class="guide-colour-options">'+[["yellow","Yellow"],["blue","Blue"],["pink","Pink"],["green","Green"]].map(o=>'<button type="button" data-choice="'+o[0]+'" class="'+(draft.readingGuideColour===o[0]?"selected":"")+'"><i></i>'+o[1]+'</button>').join("")+'</div>';
-      else if(key==="textScale"){} else controls='<div class="setting-preview-note">The AFTER panel above shows this setting switched on.</div>';
-      modal.innerHTML='<div class="profile-overlay settings-overlay"><section class="profile-sheet settings-sheet setting-detail"><div class="profile-head"><div><div class="profile-kicker">PREVIEW</div><h2>'+settingLabel(key)+'</h2></div><button class="profile-close" id="setting-close" aria-label="Close">×</button></div><p class="settings-intro">'+settingDescription(key)+'</p><div class="settings-preview"><div class="settings-preview-head"><strong>BEFORE — EVIA AS NORMAL</strong><strong>AFTER — SETTING ON</strong></div><div class="settings-preview-grid"><div class="settings-preview-card"><span class="preview-eyebrow">EVIA</span><h3>Read this example</h3><p>Making a change here lets you see exactly how Evia will look when this accessibility setting is applied.</p><button type="button">Example button</button></div><div id="setting-after">'+previewSample(draft,key)+'</div></div></div><div class="setting-detail-controls">'+controls+'</div><div class="settings-actions"><button type="button" class="secondary" id="setting-cancel">Cancel</button><button type="button" class="primary" id="setting-confirm">Confirm</button></div></section></div>';
+      if(key==="textScale")controls='<div class="settings-segment">'+["100","115","130","150"].map(v=>'<button type="button" data-choice="'+v+'" class="'+(preview.textScale===v?"selected":"")+'">'+v+'%</button>').join("")+'</div>';
+      else if(key==="colourOverlay")controls='<div class="overlay-options">'+[["cream","Cream"],["soft-yellow","Soft yellow"],["soft-blue","Soft blue"],["soft-pink","Soft pink"]].map(o=>'<button type="button" data-choice="'+o[0]+'" class="'+(preview.colourOverlay===o[0]?"selected":"")+'"><i></i><span>'+o[1]+'</span></button>').join("")+'</div>';
+      else if(key==="readingGuide")controls='<label class="guide-position-control"><span>Position</span><input id="guide-position" type="range" min="8" max="92" value="48"><output id="guide-position-value">48%</output></label><div class="guide-colour-options">'+[["yellow","Yellow"],["blue","Blue"],["pink","Pink"],["green","Green"]].map(o=>'<button type="button" data-choice="'+o[0]+'" class="'+(o[0]==="yellow"?"selected":"")+'"><i></i>'+o[1]+'</button>').join("")+'</div>';
+      else controls='<div class="setting-preview-note">The AFTER panel shows this setting switched on. Confirm applies it to the whole app.</div>';
+      modal.innerHTML='<div class="profile-overlay settings-overlay"><section class="profile-sheet settings-sheet setting-detail"><div class="profile-head"><div><div class="profile-kicker">PREVIEW</div><h2>'+settingLabel(key)+'</h2></div><button class="profile-close" id="setting-close" aria-label="Close">×</button></div><p class="settings-intro">'+settingDescription(key)+'</p><div class="settings-preview"><div class="settings-preview-head"><strong>BEFORE — EVIA AS NORMAL</strong><strong>AFTER — SETTING ON</strong></div><div class="settings-preview-grid"><div class="settings-preview-card"><span class="preview-eyebrow">EVIA</span><h3>Read this example</h3><p>Making a change here lets you see exactly how Evia will look when this accessibility setting is applied.</p><button type="button">Example button</button></div><div id="setting-after"></div></div></div><div class="setting-detail-controls">'+controls+'</div><div class="settings-actions"><button type="button" class="secondary" id="setting-cancel">Cancel</button><button type="button" class="primary" id="setting-confirm">Confirm</button></div></section></div>';
       if(key==="readingGuide"){
         const pos=document.getElementById("guide-position");
-        pos.oninput=()=>{draft.readingGuidePosition=Number(pos.value);document.getElementById("guide-position-value").value=pos.value+"%";renderAfter()};
-        document.querySelectorAll("[data-choice]").forEach(b=>b.onclick=()=>{draft.readingGuideColour=b.dataset.choice;document.querySelectorAll("[data-choice]").forEach(x=>x.classList.toggle("selected",x.dataset.choice===draft.readingGuideColour));renderAfter()});
+        pos.oninput=()=>{preview.readingGuidePosition=Number(pos.value);document.getElementById("guide-position-value").value=pos.value+"%";renderAfter()};
+        document.querySelectorAll("[data-choice]").forEach(b=>b.onclick=()=>{preview.readingGuideColour=b.dataset.choice;document.querySelectorAll("[data-choice]").forEach(x=>x.classList.toggle("selected",x.dataset.choice===preview.readingGuideColour));renderAfter()});
       }else if(key==="textScale"||key==="colourOverlay"){
-        document.querySelectorAll("[data-choice]").forEach(b=>b.onclick=()=>{draft[key]=b.dataset.choice;document.querySelectorAll("[data-choice]").forEach(x=>x.classList.toggle("selected",x.dataset.choice===b.dataset.choice));renderAfter()});
+        document.querySelectorAll("[data-choice]").forEach(b=>b.onclick=()=>{preview[key]=b.dataset.choice;document.querySelectorAll("[data-choice]").forEach(x=>x.classList.toggle("selected",x.dataset.choice===b.dataset.choice));renderAfter()});
       }
       document.getElementById("setting-close").onclick=()=>main();
       document.getElementById("setting-cancel").onclick=()=>main();
-      document.getElementById("setting-confirm").onclick=()=>{saveSettings(draft);main()};
+      document.getElementById("setting-confirm").onclick=()=>{
+        if(key==="textScale")draft.textScale=preview.textScale;
+        else if(key==="colourOverlay")draft.colourOverlay=preview.colourOverlay;
+        else if(key==="readingGuide"){draft.readingGuide=true;draft.readingGuidePosition=preview.readingGuidePosition;draft.readingGuideColour=preview.readingGuideColour}
+        else draft[key]=true;
+        saveSettings(draft);main();
+      };
+      renderAfter();
     };
     main();
   }
