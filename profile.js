@@ -156,7 +156,7 @@
       appEl.classList.add("welcome-app-hidden");
     }
     const p=get();
-    const root=document.createElement("div");root.id="welcome-screen";root.style.opacity="1";root.style.zIndex="2000";
+    const root=document.createElement("div");root.id="welcome-screen";root.style.zIndex="2000";
     root.innerHTML='<div class="welcome-inner">'+
       '<div class="welcome-avatar evia-welcome-face"><span class="evia-face"><i></i><i></i></span></div>'+
       '<div class="welcome-pulse"></div>'+
