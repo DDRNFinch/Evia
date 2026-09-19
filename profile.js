@@ -65,9 +65,9 @@
     const style=document.createElement("style");
     style.id="evia-accessibility-styles";
     style.textContent=`
-      html[data-evia-dyslexia="on"] #app,html[data-evia-dyslexia="on"] #app *,html[data-evia-dyslexia="on"] #modal-root,html[data-evia-dyslexia="on"] #modal-root *,html[data-evia-dyslexia="on"] #welcome-screen,html[data-evia-dyslexia="on"] #welcome-screen *{font-family:"Trebuchet MS",Verdana,Arial,sans-serif!important;font-synthesis:none!important}
-      html[data-evia-letter-spacing="on"] #app *,html[data-evia-letter-spacing="on"] #modal-root *,html[data-evia-letter-spacing="on"] #welcome-screen *{letter-spacing:.12em!important;word-spacing:.08em!important}
-      html[data-evia-line-spacing="on"] #app *,html[data-evia-line-spacing="on"] #modal-root *,html[data-evia-line-spacing="on"] #welcome-screen *{line-height:2!important}
+      html[data-evia-dyslexia="on"] #app,html[data-evia-dyslexia="on"] #app *,html[data-evia-dyslexia="on"] #modal-root,html[data-evia-dyslexia="on"] #modal-root *,html[data-evia-dyslexia="on"] #welcome-screen,html[data-evia-dyslexia="on"] #welcome-screen *{font-family:"Arial Rounded MT Bold","Trebuchet MS",Verdana,Arial,sans-serif!important;font-size:1.03em!important;font-weight:500!important;font-synthesis:none!important}
+      html[data-evia-letter-spacing="on"] #app *,html[data-evia-letter-spacing="on"] #modal-root *,html[data-evia-letter-spacing="on"] #welcome-screen *{letter-spacing:.14em!important;word-spacing:.08em!important}
+      html[data-evia-line-spacing="on"] #app *,html[data-evia-line-spacing="on"] #modal-root *,html[data-evia-line-spacing="on"] #welcome-screen *{line-height:2.15!important}
       html[data-evia-focus="on"] #app .bottom-nav,html[data-evia-focus="on"] #app .evia-fab{opacity:.12!important;filter:grayscale(1)!important}
       html[data-evia-focus="on"] #app #screen{max-width:600px!important}
       html[data-evia-focus="on"] #app #screen>*{opacity:.32!important;filter:saturate(.25) blur(.2px)!important;transition:opacity .18s ease,filter .18s ease!important}
