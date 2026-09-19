@@ -32,7 +32,7 @@
   };
   const latestTests=()=>({discussion:latestTest("discussion"),epa:latestTest("epa"),maths:latestTest("maths"),english:latestTest("english")});
   const testLabel=t=>({discussion:"Discussion",epa:"EPA MCQ",maths:"Maths",english:"English"}[t]||t);
-  const reply=(html,delay=700)=>{const chat=$("#chat");if(!chat)return;const el=document.createElement("div");el.className="bubble evia evia-thinking";el.innerHTML='<span class="thinking-label">Evia is thinking</span><span class="thinking-dots"><i></i><i></i><i></i></span>';chat.appendChild(el);chat.scrollTop=chat.scrollHeight;setTimeout(()=>{el.outerHTML='<div class="bubble evia">'+html+'</div>';chat.scrollTop=chat.scrollHeight},delay)};
+  const reply=(html,delay=700)=>{const chat=$("#chat");if(!chat)return;const el=document.createElement("div");el.className="bubble evia evia-thinking";el.innerHTML='<span class="thinking-label">Evia is thinking</span><span class="thinking-dots"><i></i><i></i><i></i></span>';chat.appendChild(el);chat.scrollTop=chat.scrollHeight;setTimeout(()=>{el.outerHTML='<div class="bubble evia" data-thought-complete="1">'+html+'</div>';chat.scrollTop=chat.scrollHeight},delay)};
 
   function eviaTestMe(){
     const options=[["discussion","Discussion"],["epa","EPA MCQ"]];
@@ -163,25 +163,28 @@
     return targets.slice(0,5).map((t,i)=>({...t,id:"target-"+Date.now()+"-"+i,priority:i+1,createdAt:new Date().toISOString(),completed:false,progress:0}));
   }
   function metrics(){
-    const entries=evidence.filter(e=>e.c===course);
-    const units=data().u;
-    const covered=new Set(entries.map(e=>e.u)).size;
-    const weakUnits=units.filter(u=>{
-      const es=entries.filter(e=>e.u===u[0]);if(!es.length)return false;
-      const photos=es.reduce((n,e)=>n+(Array.isArray(e.p)?e.p.length:0),0);
-      const words=es.reduce((n,e)=>n+String(e.w||"").trim().split(/\s+/).filter(Boolean).length,0);
-      return photos<10||words<201;
-    }).length;
-    const totalOTJ=hours.reduce((n,x)=>n+Number(x.n||0),0);
-    const meta=courseProgressMeta();
-    const p=read("evia7-profile",{});
+    const entries=evidence.filter(e=>e.c===course), units=data().u;
+    const covered=new Set(entries.map(e=>e.u));
+    const totalPhotos=entries.reduce((n,e)=>n+(Array.isArray(e.p)?e.p.length:0),0);
+    const totalWords=entries.reduce((n,e)=>n+String(e.w||"").trim().split(/\s+/).filter(Boolean).length,0);
+    const allKsb=new Map(); units.forEach(u=>u[1].forEach(k=>allKsb.set(code(k),text(k))));
+    const captured=new Set(entries.flatMap(e=>Array.isArray(e.k)?e.k:[]));
+    const groups={S:0,K:0,B:0,capturedS:0,capturedK:0,capturedB:0};
+    allKsb.forEach((_,k)=>{if(groups[k[0]]!==undefined)groups[k[0]]++});
+    captured.forEach(k=>{if(groups["captured"+k[0]]!==undefined)groups["captured"+k[0]]++});
+    const unitDetails=units.map(u=>{
+      const es=entries.filter(e=>e.u===u[0]);
+      return {unit:u[0],entries:es.length,photos:es.reduce((n,e)=>n+(Array.isArray(e.p)?e.p.length:0),0),words:es.reduce((n,e)=>n+String(e.w||"").trim().split(/\s+/).filter(Boolean).length,0),ksbs:[...new Set(es.flatMap(e=>Array.isArray(e.k)?e.k:[]))]};
+    });
+    const totalOTJ=hours.reduce((n,x)=>n+Number(x.n||0),0), meta=courseProgressMeta(), p=read("evia7-profile",{});
     let elapsed=0;
     if(p.start&&p.end){const s=new Date(p.start+"T00:00:00").getTime(),e=new Date(p.end+"T23:59:59").getTime();if(e>s)elapsed=Math.max(0,Math.min(1,(Date.now()-s)/(e-s)));}
-    const currentConfidence=confidenceHistory().filter(x=>x.course===course).slice(-1)[0];
-    const lowConfidence=currentConfidence?.scores?.some(x=>x.score<=2)||false;
-    const pctOf=type=>{const t=latestTest(type);return t&&typeof t.pct==="number"?t.pct:null};
-    const epaPct=pctOf("epa"),mathsPct=pctOf("maths"),englishPct=pctOf("english");
-    return {covered,units:units.length,unitGap:Math.max(0,units.length-covered),completion:units.length?Math.round(covered/units.length*100):0,weakUnits,totalOTJ,otjTarget:meta.otjTarget,otjBehind:meta.otjTarget?totalOTJ<Math.max(1,meta.otjTarget*elapsed):false,epaPct,mathsPct,englishPct,lowConfidence,elapsed};
+    const history=confidenceHistory().filter(x=>x.course===course&&Array.isArray(x.scores)), current=history[history.length-1]||null, previous=history[history.length-2]||null;
+    const confidenceAverage=current&&current.scores.length?Math.round(current.scores.reduce((n,x)=>n+x.score,0)/current.scores.length*100)/100:null;
+    const pct=type=>{const t=latestTest(type);return t&&typeof t.pct==="number"?t.pct:null};
+    const tests={discussion:latestTest("discussion"),epa:latestTest("epa"),maths:latestTest("maths"),english:latestTest("english")};
+    const testDetails={};Object.keys(tests).forEach(k=>{const t=tests[k];testDetails[k]=t?{pct:t.pct,score:t.score,total:t.total,questions:t.questions||[],savedAt:t.savedAt||null}:null});
+    return {covered:covered.size,units:units.length,unitGap:Math.max(0,units.length-covered.size),completion:units.length?Math.round(covered.size/units.length*100):0,entries:entries.length,totalPhotos,totalWords,unitDetails,ksbTotal:allKsb.size,ksbCaptured:captured.size,ksbCompletion:allKsb.size?Math.round(captured.size/allKsb.size*100):0,ksbGroups:groups,totalOTJ,otjEntries:hours.length,otjBatches:otjBatches.length,otjTarget:meta.otjTarget,otjBehind:meta.otjTarget?totalOTJ<Math.max(1,meta.otjTarget*elapsed):false,elapsed,tests:testDetails,confidenceAverage,confidenceRatings:current?.scores||[],previousConfidenceRatings:previous?.scores||[],confidenceChecks:history.length,lowConfidence:(current?.scores||[]).filter(x=>x.score<=2).map(x=>x.area)};
   }
   function targetStatus(t){
     if(t.completed||t.progress>=100)return "complete";
@@ -207,23 +210,18 @@
     setTimeout(()=>{const b=$("#start-full-review");if(b)b.onclick=()=>fullReview();},950);
   }
   function fullReview(){
-    const m=metrics(), targets=targetReasoning(m).map(t=>({...t,course}));
-    const test=latestTests();
-    const history=confidenceHistory().filter(x=>x.course===course&&Array.isArray(x.scores));
-    const latestConfidence=history[history.length-1]||null;
-    const name=String(read("evia7-profile",{}).name||"").trim();
-    const id="review-"+Date.now();
-    const review={id,course,date:new Date().toISOString(),learner:name,metrics:m,tests:{discussion:test.discussion?.pct??null,epa:test.epa?.pct??null,maths:academicEnabled("maths")?(test.maths?.pct??null):null,english:academicEnabled("english")?(test.english?.pct??null):null},confidence:latestConfidence?.scores||[],targets};
+    const m=metrics(), targets=targetReasoning(m).map(t=>({...t,course})), test=latestTests(), history=confidenceHistory().filter(x=>x.course===course&&Array.isArray(x.scores)), p=read("evia7-profile",{}), name=String(p.name||"").trim(), id="review-"+Date.now();
+    const review={id,course,date:new Date().toISOString(),learner:name,profile:{start:p.start||"",end:p.end||""},metrics:m,tests:{discussion:test.discussion?.pct??null,epa:test.epa?.pct??null,maths:academicEnabled("maths")?(test.maths?.pct??null):null,english:academicEnabled("english")?(test.english?.pct??null):null},testDetails:m.tests,confidence:m.confidenceRatings,previousConfidence:m.previousConfidenceRatings,targets};
     const all=read(REVIEW_KEY,[]);all.push(review);write(REVIEW_KEY,all.slice(-30));
     const existing=read(TARGET_KEY,[]).filter(t=>t.course!==course||t.completed);write(TARGET_KEY,existing.concat(targets));
     renderFullReview(review);
   }
   function renderFullReview(review){
-    const m=review.metrics;
-    const testBits=[["Discussion",review.tests.discussion],["EPA MCQ",review.tests.epa],["Maths",review.tests.maths],["English",review.tests.english]].filter(([,v])=>v!==null).map(([l,v])=>'<span class="pill">'+l+': '+v+'%</span>').join("");
-    const targets=review.targets.map(targetHtml).join("");
-    reply(`<strong>Full progress review complete</strong><br>I’ve saved this review to your Portfolio. It includes your course evidence, OTJ learning, tests, confidence and five targets.<br><br><div class="review-report"><p><strong>Evidence:</strong> ${m.completion}% of units with saved evidence.</p><p><strong>OTJ:</strong> ${m.totalOTJ.toFixed(1)}${m.otjTarget?" / "+m.otjTarget:""} hours.</p><div class="row">${testBits}</div><h3>Targets</h3>${targets}</div><br><button class="chat-pill" id="open-saved-review"><strong>Open saved review</strong></button>`);
-    setTimeout(()=>{const b=$("#open-saved-review");if(b)b.onclick=()=>showReview(review.id);},950);
+    const m=review.metrics, testBits=[["Discussion",review.tests.discussion],["EPA MCQ",review.tests.epa],["Maths",review.tests.maths],["English",review.tests.english]].filter(([,v])=>v!==null).map(([l,v])=>'<span class="pill">'+l+': '+v+'%</span>').join("");
+    const units=m.unitDetails.map(u=>'<div class="target-item"><div><strong>'+escLocal(u.unit)+'</strong><p>'+u.entries+' evidence entries · '+u.photos+' photos · '+u.words+' words · '+u.ksbs.length+' KSBs captured</p></div></div>').join("");
+    const conf=m.confidenceRatings.length?m.confidenceRatings.map(x=>'<span class="pill">'+escLocal(x.area)+': '+x.score+'/4</span>').join(""):'<span class="pill">No confidence check yet</span>';
+    reply('<strong>Full progress review complete</strong><br>I’ve saved the complete review to your Portfolio.<br><br><div class="review-report"><h3>Course progress</h3><p><strong>Evidence:</strong> '+m.completion+'% ('+m.covered+'/'+m.units+' units) · '+m.entries+' entries · '+m.totalPhotos+' photos · '+m.totalWords+' written words.</p><p><strong>KSB coverage:</strong> '+m.ksbCompletion+'% ('+m.ksbCaptured+'/'+m.ksbTotal+') — S '+m.ksbGroups.capturedS+'/'+m.ksbGroups.S+' · K '+m.ksbGroups.capturedK+'/'+m.ksbGroups.K+' · B '+m.ksbGroups.capturedB+'/'+m.ksbGroups.B+'.</p><h3>Unit tracking</h3>'+units+'<h3>Off-the-job learning</h3><p>'+m.totalOTJ.toFixed(2)+' hours across '+m.otjEntries+' entries and '+m.otjBatches+' downloads.</p><h3>Practice & tests</h3><div class="row">'+testBits+'</div><h3>Confidence tracking</h3><p>'+m.confidenceChecks+' checks recorded'+(m.confidenceAverage!==null?' · latest average '+m.confidenceAverage+'/4':'')+'.</p><div class="row">'+conf+'</div><h3>Targets</h3>'+review.targets.map(targetHtml).join("")+'</div><br><button class="chat-pill" id="open-saved-review"><strong>Open saved review</strong></button>');
+    setTimeout(()=>{const b=$("#open-saved-review");if(b)b.onclick=()=>showReview(review.id)},950);
   }
   function showReview(id){
     const review=read(REVIEW_KEY,[]).find(x=>x.id===id);if(!review)return;
