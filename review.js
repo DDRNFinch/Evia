@@ -160,7 +160,7 @@
     else add(metrics.epaPct<70?"Build EPA MCQ knowledge":"Maintain EPA MCQ practice","Your latest EPA MCQ result was "+metrics.epaPct+"%.",8,"epa");
     if(metrics.lowConfidence)add("Revisit a low-confidence practical area","Your latest confidence check identifies a practical area to revisit.",8,"confidence");
     while(targets.length<5)add("Strengthen your next practical task","Use your next job to gather stronger evidence and reflect on what you have learned.",8+targets.length*2,"practical");
-    return targets.slice(0,5).map((t,i)=>({...t,priority:i+1,createdAt:new Date().toISOString(),completed:false,progress:0}));
+    return targets.slice(0,5).map((t,i)=>({...t,id:"target-"+Date.now()+"-"+i,priority:i+1,createdAt:new Date().toISOString(),completed:false,progress:0}));
   }
   function metrics(){
     const entries=evidence.filter(e=>e.c===course);
