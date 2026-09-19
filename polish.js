@@ -186,9 +186,7 @@
   window.addEventListener("load",()=>{
     const style=document.createElement("style");
     style.textContent=`
-      #page-title{display:none}
-      .topbar{height:68px;padding:12px 20px;justify-content:flex-end}
-            body:has(.evidence-pack-page) .topbar{display:none}
+      .topbar{display:none}
             .evidence-pack-page{padding:18px 16px 28px}
       .evidence-heading{padding:0 2px}
       .evidence-label{font-size:11px;font-weight:700;letter-spacing:.1em;color:#98a2b3}
