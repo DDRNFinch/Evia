@@ -78,7 +78,7 @@ function openUnit(i){
  };
  const readPhoto=async f=>{
    if(!f)throw new Error("No photo selected");
-   if(!/^image\\//i.test(f.type))throw new Error("Unsupported photo type");
+   if(!/^image\//i.test(f.type))throw new Error("Unsupported photo type");
    if(!f.size)throw new Error("The selected photo is empty");
    if(typeof f.arrayBuffer==="function"){
      try{
@@ -95,7 +95,7 @@ function openUnit(i){
    });
  };
  const addPhotoFiles=async files=>{
-   const selected=[...files].filter(f=>/^image\\//i.test(f.type)&&f.size>0).slice(0,Math.max(0,6-photos.length));
+   const selected=[...files].filter(f=>/^image\//i.test(f.type)&&f.size>0).slice(0,Math.max(0,6-photos.length));
    if(!selected.length){
      alert("Please choose a valid image photo.");
      return;
@@ -118,7 +118,14 @@ function openUnit(i){
  camera.onchange=()=>{const files=camera.files;addPhotoFiles(files).finally(()=>{camera.value=""})};
  gallery.onchange=()=>{const files=gallery.files;addPhotoFiles(files).finally(()=>{gallery.value=""})};
  $("#back-course").onclick=()=>nav("course");
- $("#save-unit-evidence").onclick=async()=>{(ts){
+ $("#save-unit-evidence").onclick=async()=>{
+   if(photoReadBusy)return;
+   const entry={c:course,u:u[0],d:new Date().toLocaleDateString("en-GB"),savedAt:new Date().toLocaleString("en-GB"),p:photos.slice(),w:notes.value.trim(),k:u[1].filter(k=>/^[SKB]\d+\|/.test(k)).map(k=>code(k))};
+   if(!entry.p.length&&!entry.w){alert("Add at least one photo or a note before saving.");return}
+   evidence.push(entry);persist();openUnit(i);
+ };
+}
+function formatDateTime(ts){
  const d=new Date(ts);
  return d.toLocaleString("en-GB",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
 }
