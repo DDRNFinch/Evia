@@ -45,6 +45,8 @@ function persist(){localStorage.setItem("evia7-course",course);localStorage.setI
 function picker(){return '<div class="course-picker">'+Object.keys(C).map(k=>'<button class="pill '+(k===course?"active":"")+'" data-c="'+k+'">'+esc(C[k].name)+'</button>').join("")+'</div>'}
 function nav(s){screen=s;render();}
 function render(){
+ const profileBtn=document.getElementById("profile-btn");
+ if(profileBtn)profileBtn.style.display=["learning","course","progress","portfolio"].includes(screen)?"flex":"none";
  document.querySelectorAll("[data-nav]").forEach(b=>b.classList.toggle("active",b.dataset.nav===screen));
  if(screen==="learning")learning();
  else if(screen==="course")courses();
