@@ -182,22 +182,49 @@
     renderPhotos(pack);
   }
 
+  async function migrateSubmittedEvidence(){
+    let changed=false;
+    for(const e of evidence){
+      if(!e||!Array.isArray(e.p)||!e.p.length||Array.isArray(e.photoIds))continue;
+      const ids=[];
+      for(const src of e.p){
+        if(!src)continue;
+        const id="submitted-"+Date.now()+"-"+Math.random().toString(36).slice(2);
+        await idbPut({id,blob:await dataUrlToBlob(src),addedAt:e.savedAt||new Date().toISOString()});
+        ids.push(id);
+      }
+      e.photoIds=ids;e.p=[];changed=true;
+    }
+    if(changed)persist();
+    return evidence;
+  }
+  async function getEvidencePhotoData(e){
+    if(!e)return[];
+    if(Array.isArray(e.p)&&e.p.length)return e.p;
+    if(!Array.isArray(e.photoIds))return[];
+    const out=[];
+    for(const id of e.photoIds){
+      const rec=await idbGet(id);
+      if(rec&&rec.blob)out.push(await blobToDataUrl(rec.blob));
+    }
+    return out;
+  }
+  window.eviaGetEvidencePhotoData=getEvidencePhotoData;
+
   async function submitPack(pack){
     if(!(pack.photos||[]).length||!String(pack.write||"").trim())return false;
     const u=data().u[unit],profile=JSON.parse(localStorage.getItem("evia7-profile")||"{}");
     const id=Date.now()+"-"+Math.random().toString(36).slice(2,8);
-    const photoData=await Promise.all((pack.photos||[]).map(async p=>{if(p.src)return p.src;const rec=await idbGet(p.id);return rec?await blobToDataUrl(rec.blob):""}));
-    evidence.push({id,c:course,u:u[0],d:new Date().toLocaleString("en-GB"),p:photoData.filter(Boolean),w:pack.write.trim(),k:u[1].map(code),learnerProfile:profile,signature:profile.signature||"",savedAt:new Date().toISOString(),photoCount:pack.photos.length});
-    try{persist()}catch(err){
-      let saved=false;
-      try{saved=JSON.parse(localStorage.getItem("evia7-evidence")||"[]").some(e=>String(e.id)===String(id))}catch(_){}
-      if(!saved)throw err;
-    }
+    const photoIds=(pack.photos||[]).map(p=>p.id).filter(Boolean);
+    evidence.push({id,c:course,u:u[0],d:new Date().toLocaleString("en-GB"),p:[],photoIds,w:pack.write.trim(),k:u[1].map(code),learnerProfile:profile,signature:profile.signature||"",savedAt:new Date().toISOString(),photoCount:photoIds.length});
+    persist();
     await removePack();
     screen="portfolio";
     render();
     return true;
   }
+
+  migrateSubmittedEvidence().catch(err=>console.error("Evia evidence migration failed",err));
 
   window.openUnit=function(i){
     const profileBtn=document.getElementById("profile-btn");
