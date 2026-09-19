@@ -445,22 +445,18 @@ function chat(){
      if(!es.length)return null;
      const photos=es.reduce((n,e)=>n+(Array.isArray(e.photoIds)?e.photoIds.length:(Array.isArray(e.p)?e.p.length:0)),0);
      const words=es.reduce((n,e)=>n+String(e.w||"").trim().split(/\s+/).filter(Boolean).length,0);
-     const photoLevel=photos<6?"weak":photos<10?"good":"strong";
-     const textLevel=words<100?"weak":words<=200?"good":"strong";
-     const overall=photoLevel==="strong"&&textLevel==="strong"?"strong":photoLevel==="weak"||textLevel==="weak"?"weak":"good";
-     let advice="";
-     if(overall==="strong"){
-       advice="This evidence is sufficient.";
-     }else if(overall==="good"){
-       advice="Good evidence base. I recommend gathering more evidence during another job to strengthen this portfolio pack.";
-     }else{
-       const needsPhotos=photoLevel==="weak";
-       const needsText=textLevel==="weak";
-       if(needsPhotos&&needsText)advice="This pack needs more photos and more written detail. Repeat this unit during another job and add both.";
-       else if(needsPhotos)advice="This pack needs more photos. Repeat this unit during another job and add more photos.";
-       else advice="This pack needs more written detail. Repeat this unit during another job and add a fuller write-up.";
-     }
-     return {i,name:u[0],photos,words,overall,advice};
+     const photoLevel=photos<=4?"weak":photos<=9?"good":"strong";
+   const textLevel=words<=49?"weak":words<=99?"good":"strong";
+   const levelValue={weak:1,good:2,strong:3};
+   const average=(levelValue[photoLevel]+levelValue[textLevel])/2;
+   const overall=average<1.5?"weak":average<2.5?"good":"strong";
+   let advice="";
+   if(photoLevel==="weak"&&textLevel==="weak")advice="Collect more photos and add more written detail towards this unit.";
+   else if(photoLevel==="weak")advice="Collect more photos towards this unit.";
+   else if(textLevel==="weak")advice="Add more written detail towards this unit.";
+   else if(overall==="strong")advice="You have built a strong evidence base for this unit.";
+   else advice="This is a good evidence base. You can strengthen it further with more photos or written detail.";
+
    }).filter(Boolean);
    const remaining=Math.max(0,data().u.length-startedNames.size);
    const label=x=>x.charAt(0).toUpperCase()+x.slice(1);
