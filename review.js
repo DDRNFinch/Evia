@@ -243,8 +243,25 @@
       "British Values":{q:"Which set is commonly used for the fundamental British Values in education and training?",a:["Democracy, rule of law, individual liberty, mutual respect and tolerance","Competition, profit, speed, strength and independence","Attendance, punctuality, productivity, teamwork and promotion"],correct:0,why:"The commonly referenced British Values are democracy, the rule of law, individual liberty, and mutual respect and tolerance for those with different faiths and beliefs."},
       "Health & Safety":{q:"What is the safest approach when you identify a workplace hazard?",a:["Carry on if the job is nearly finished","Ignore it if nobody has been injured","Stop or make the situation safe and follow the relevant risk assessment and reporting procedure"],correct:2,why:"Hazards should be controlled promptly using the relevant safe system of work, risk assessment and reporting arrangements."}
     }[subject];
-    const chatEl=$("#chat");chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>'+escLocal(subject)+' quick lesson</strong><br>'+escLocal(lesson.why)+'</div><div class="bubble evia"><strong>Quick check</strong><br>'+escLocal(lesson.q)+'</div><div class="rating-options">'+lesson.a.map((a,n)=>'<button class="rating-pill" data-review-lesson="'+n+'"><strong>'+String.fromCharCode(65+n)+'. '+escLocal(a)+'</strong></button>').join("")+'</div>');chatEl.scrollTop=chatEl.scrollHeight;
-    document.querySelectorAll("[data-review-lesson]").forEach(b=>b.onclick=()=>{const chosen=Number(b.dataset.reviewLesson);document.querySelectorAll("[data-review-lesson]").forEach(x=>x.disabled=true);b.classList.add(chosen===lesson.correct?"correct":"wrong");if(chosen!==lesson.correct)document.querySelectorAll("[data-review-lesson]").forEach(x=>{if(Number(x.dataset.reviewLesson)===lesson.correct)x.classList.add("correct")});review.reviewLearning=review.reviewLearning||{subjects:subjects,results:[]};review.reviewLearning.results=review.reviewLearning.results||[];review.reviewLearning.results.push({subject,correct:chosen===lesson.correct,completedAt:new Date().toISOString()});saveReviewUpdate(review);chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia">'+(chosen===lesson.correct?"Correct. ":"Not quite. ")+escLocal(lesson.why)+'</div><button class="chat-pill test-submit" data-review-lesson-next><strong>'+(index+1<subjects.length?"Next lesson":"Finish review questions")+'</strong></button>');document.querySelector("[data-review-lesson-next]").onclick=()=>{document.querySelector("[data-review-lesson-next]").remove();runReviewLesson(review,subjects,index+1,done)}});
+    const chatEl=$("#chat"), questionId="review-lesson-"+Date.now()+"-"+index;
+    chatEl.insertAdjacentHTML("beforeend",'<div id="'+questionId+'" class="review-lesson-block"><div class="bubble evia"><strong>'+escLocal(subject)+' quick lesson</strong><br>'+escLocal(lesson.why)+'</div><div class="bubble evia"><strong>Quick check</strong><br>'+escLocal(lesson.q)+'</div><div class="rating-options">'+lesson.a.map((a,n)=>'<button type="button" class="rating-pill" data-review-lesson="'+n+'"><strong>'+String.fromCharCode(65+n)+'. '+escLocal(a)+'</strong></button>').join("")+'</div></div>');
+    const block=document.getElementById(questionId);if(!block)return;
+    chatEl.scrollTop=chatEl.scrollHeight;
+    block.querySelectorAll("[data-review-lesson]").forEach(b=>b.onclick=()=>{
+      const chosen=Number(b.dataset.reviewLesson);
+      block.querySelectorAll("[data-review-lesson]").forEach(x=>{x.disabled=true});
+      b.classList.add(chosen===lesson.correct?"correct":"wrong");
+      const correctButton=block.querySelector('[data-review-lesson="'+lesson.correct+'"]');
+      if(correctButton)correctButton.classList.add("correct");
+      review.reviewLearning=review.reviewLearning||{subjects:subjects,results:[]};
+      review.reviewLearning.results=review.reviewLearning.results||[];
+      review.reviewLearning.results.push({subject,correct:chosen===lesson.correct,completedAt:new Date().toISOString()});
+      saveReviewUpdate(review);
+      block.insertAdjacentHTML("beforeend",'<div class="bubble evia">'+(chosen===lesson.correct?"Correct. ":"Not quite. ")+escLocal(lesson.why)+'</div><button type="button" class="chat-pill test-submit" data-review-lesson-next><strong>'+(index+1<subjects.length?"Next lesson":"Finish review questions")+'</strong></button>');
+      const next=block.querySelector("[data-review-lesson-next]");
+      if(next)next.onclick=()=>{next.disabled=true;runReviewLesson(review,subjects,index+1,done)};
+      chatEl.scrollTop=chatEl.scrollHeight;
+    });
   }
   function startReviewConversation(review){
     const chatEl=$("#chat");if(!chatEl){openSavedReview(review);return}
