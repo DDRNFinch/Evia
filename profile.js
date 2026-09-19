@@ -231,6 +231,5 @@
   }
   window.eviaOpenProfile=openProfile;
   window.addEventListener("load",()=>{try{refreshProfileButton()}catch(e){};try{welcome()}catch(e){console.error("Evia welcome failed",e)}});
-  startEviaProfile();
 
 })();
