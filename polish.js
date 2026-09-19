@@ -187,7 +187,7 @@
     const style=document.createElement("style");
     style.textContent=`
       .topbar{display:none}
-      .profile-btn{position:fixed;z-index:30;top:16px;right:20px;display:flex;align-items:center;justify-content:center}
+      .profile-btn{position:fixed;z-index:9999;top:12px;right:12px;width:43px;height:43px;display:flex;align-items:center;justify-content:center}
             .evidence-pack-page{padding:18px 16px 28px}
       .evidence-heading{padding:0 2px}
       .evidence-label{font-size:11px;font-weight:700;letter-spacing:.1em;color:#98a2b3}
