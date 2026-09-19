@@ -215,7 +215,15 @@
     if(!(pack.photos||[]).length||!String(pack.write||"").trim())return false;
     const u=data().u[unit],profile=JSON.parse(localStorage.getItem("evia7-profile")||"{}");
     const id=Date.now()+"-"+Math.random().toString(36).slice(2,8);
-    const photoIds=(pack.photos||[]).map(p=>p.id).filter(Boolean);
+    const photoIds=[];
+    for(const p of (pack.photos||[])){
+      if(!p||!p.id)continue;
+      const rec=await idbGet(p.id);
+      if(!rec||!rec.blob)throw new Error("Evidence photo could not be loaded");
+      const permanentId="submitted-"+Date.now()+"-"+Math.random().toString(36).slice(2);
+      await idbPut({id:permanentId,blob:rec.blob,addedAt:rec.addedAt||new Date().toISOString()});
+      photoIds.push(permanentId);
+    }
     evidence.push({id,c:course,u:u[0],d:new Date().toLocaleString("en-GB"),p:[],photoIds,w:pack.write.trim(),k:u[1].map(code),learnerProfile:profile,signature:profile.signature||"",savedAt:new Date().toISOString(),photoCount:photoIds.length});
     persist();
     await removePack();
