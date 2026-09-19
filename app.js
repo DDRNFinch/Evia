@@ -191,8 +191,8 @@ function unitStrengthForCourse(unitName){
  if(!es.length)return null;
  const photos=es.reduce((n,e)=>n+(Array.isArray(e.photoIds)?e.photoIds.length:(Array.isArray(e.p)?e.p.length:0)),0);
  const words=es.reduce((n,e)=>n+String(e.w||"").trim().split(/\s+/).filter(Boolean).length,0);
- const photoLevel=photos<6?"weak":photos<10?"good":"strong";
- const textLevel=words<100?"weak":words<=200?"good":"strong";
+ const photoLevel=photos<=4?"weak":photos<=9?"good":"strong";
+ const textLevel=words<=49?"weak":words<=99?"good":"strong";
  return photoLevel==="strong"&&textLevel==="strong"?"strong":photoLevel==="weak"||textLevel==="weak"?"weak":"good";
 }
 function strengthBars(level){
