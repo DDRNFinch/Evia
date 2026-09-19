@@ -76,38 +76,56 @@
     root.dataset.eviaOverlay=s.colourOverlay||"none";
   }
   function settingLabel(key){return ({textScale:"Text size",dyslexiaFont:"Dyslexia-friendly text",letterSpacing:"More letter spacing",lineSpacing:"More line spacing",readingGuide:"Reading guide",focusMode:"Focus mode",highContrast:"High contrast",colourOverlay:"Colour overlay"})[key]||key}
-  function settingDescription(key){return ({textScale:"Make text easier to read without changing the app layout.",dyslexiaFont:"Use a more distinct, rounded typeface with clearer letter shapes.",letterSpacing:"Add space between characters while keeping the rest of Evia unchanged.",lineSpacing:"Add more space between lines while keeping the rest of Evia unchanged.",readingGuide:"Place a reading guide across the page and choose its colour and position.",focusMode:"Reduce visual distraction around the content you are currently reading.",highContrast:"Increase contrast between text, controls and backgrounds.",colourOverlay:"Add a soft colour tint to the whole Evia interface."})[key]||""}
-  function previewClass(draft){return (draft.dyslexiaFont?"preview-dyslexia ":"")+(draft.letterSpacing?"preview-letter ":"")+(draft.lineSpacing?"preview-lines ":"")+(draft.highContrast?"preview-contrast ":"")+(draft.colourOverlay!=="none"?"preview-overlay-"+draft.colourOverlay:"")+(draft.focusMode?" preview-focus":"")}
-  function previewSample(draft){return '<div class="settings-preview-card '+previewClass(draft)+'"><span class="preview-eyebrow">EVIA</span><h3>Read this example</h3><p>This is an example of how your text will look with this setting.</p><button type="button">Example button</button></div>'}
+  function settingDescription(key){return ({textScale:"See exactly how the text size will change.",dyslexiaFont:"Use a clearer, more spacious typeface for easier reading.",letterSpacing:"Add visible space between each letter.",lineSpacing:"Add visible space between lines of text.",readingGuide:"Add a movable reading guide and choose its colour.",focusMode:"Reduce visual distraction and keep attention on the main content.",highContrast:"Increase the contrast between text and interface elements.",colourOverlay:"Add a soft colour tint across the Evia interface."})[key]||""}
+  function forcedPreviewSettings(key,saved){
+    const d=Object.assign({},saved);
+    if(key==="textScale")d.textScale=saved.textScale==="150"?"150":"130";
+    if(key==="dyslexiaFont")d.dyslexiaFont=true;
+    if(key==="letterSpacing")d.letterSpacing=true;
+    if(key==="lineSpacing")d.lineSpacing=true;
+    if(key==="readingGuide"){d.readingGuide=true;d.readingGuidePosition=48;d.readingGuideColour="yellow"}
+    if(key==="focusMode")d.focusMode=true;
+    if(key==="highContrast")d.highContrast=true;
+    if(key==="colourOverlay")d.colourOverlay=saved.colourOverlay==="none"?"cream":saved.colourOverlay;
+    return d;
+  }
+  function previewClass(draft,key){
+    return (draft.dyslexiaFont?"preview-dyslexia ":"")+(draft.letterSpacing?"preview-letter ":"")+(draft.lineSpacing?"preview-lines ":"")+(draft.highContrast?"preview-contrast ":"")+(draft.colourOverlay!=="none"?"preview-overlay-"+draft.colourOverlay:"")+(draft.focusMode?"preview-focus ":"")+(key==="readingGuide"?"preview-guide ":"");
+  }
+  function previewSample(draft,key){
+    return '<div class="settings-preview-card '+previewClass(draft,key)+'"><span class="preview-eyebrow">EVIA</span><h3>Read this example</h3><p>Making a change here lets you see exactly how Evia will look when this accessibility setting is applied.</p><button type="button">Example button</button></div>';
+  }
   function openSettings(){
-    const saved=getSettings(),modal=document.getElementById("modal-root");
-    const rows=[["textScale","Text size",saved.textScale+"%"],["dyslexiaFont","Dyslexia-friendly text",saved.dyslexiaFont?"On":"Off"],["letterSpacing","More letter spacing",saved.letterSpacing?"On":"Off"],["lineSpacing","More line spacing",saved.lineSpacing?"On":"Off"],["readingGuide","Reading guide",saved.readingGuide?"On":"Off"],["focusMode","Focus mode",saved.focusMode?"On":"Off"],["highContrast","High contrast",saved.highContrast?"On":"Off"],["colourOverlay","Colour overlay",saved.colourOverlay==="none"?"None":saved.colourOverlay.replace("soft-","").replace(/\b\w/g,m=>m.toUpperCase())]];
+    const modal=document.getElementById("modal-root");
     const main=()=>{
-      modal.innerHTML='<div class="profile-overlay settings-overlay"><section class="profile-sheet settings-sheet"><div class="profile-head"><div><div class="profile-kicker">ACCESSIBILITY & SETTINGS</div><h2>Make Evia work for you</h2></div><button class="profile-close" id="settings-close" aria-label="Close">×</button></div><p class="settings-intro">Choose a setting to preview it before you decide whether to apply it.</p><div class="settings-list">'+rows.map(r=>'<button type="button" class="settings-row" data-open-setting="'+r[0]+'"><span><strong>'+r[1]+'</strong><small>'+settingDescription(r[0])+'</small></span><span class="settings-row-value">'+r[2]+' <b>›</b></span></button>').join("")+'</div><div class="settings-section settings-about"><div class="settings-label">APPLIES ACROSS EVIA</div><p>Confirmed accessibility choices apply across the whole app, including learning, course, progress, portfolio, profile, settings and Evia content.</p></div></section></div>';
+      const saved=getSettings();
+      const rows=[["textScale","Text size",saved.textScale+"%"],["dyslexiaFont","Dyslexia-friendly text",saved.dyslexiaFont?"On":"Off"],["letterSpacing","More letter spacing",saved.letterSpacing?"On":"Off"],["lineSpacing","More line spacing",saved.lineSpacing?"On":"Off"],["readingGuide","Reading guide",saved.readingGuide?"On":"Off"],["focusMode","Focus mode",saved.focusMode?"On":"Off"],["highContrast","High contrast",saved.highContrast?"On":"Off"],["colourOverlay","Colour overlay",saved.colourOverlay==="none"?"None":saved.colourOverlay.replace("soft-","").replace(/\b\w/g,m=>m.toUpperCase())]];
+      modal.innerHTML='<div class="profile-overlay settings-overlay"><section class="profile-sheet settings-sheet"><div class="profile-head"><div><div class="profile-kicker">ACCESSIBILITY & SETTINGS</div><h2>Make Evia work for you</h2></div><button class="profile-close" id="settings-close" aria-label="Close">×</button></div><p class="settings-intro">Choose a setting to see a real before-and-after preview. The main app only changes when you confirm.</p><div class="settings-list">'+rows.map(r=>'<button type="button" class="settings-row" data-open-setting="'+r[0]+'"><span><strong>'+r[1]+'</strong><small>'+settingDescription(r[0])+'</small></span><span class="settings-row-value">'+r[2]+' <b>›</b></span></button>').join("")+'</div><div class="settings-section settings-about"><div class="settings-label">APPLIES ACROSS EVIA</div><p>Confirmed choices apply across the whole app, including learning, course, progress, portfolio, profile, settings and Evia content.</p></div></section></div>';
       document.getElementById("settings-close").onclick=()=>openProfile();
       document.querySelectorAll("[data-open-setting]").forEach(b=>b.onclick=()=>openSetting(b.dataset.openSetting));
     };
     const openSetting=(key)=>{
-      const draft=Object.assign({},saved);
-      const renderAfter=()=>{const el=document.getElementById("setting-after");if(el)el.innerHTML=previewSample(draft)};
+      const saved=getSettings();
+      const before=Object.assign({},defaultSettings);
+      const after=forcedPreviewSettings(key,saved);
+      let draft=Object.assign({},after);
+      const renderAfter=()=>{const el=document.getElementById("setting-after");if(el)el.innerHTML=previewSample(draft,key)};
       let controls="";
       if(key==="textScale")controls='<div class="settings-segment">'+["100","115","130","150"].map(v=>'<button type="button" data-choice="'+v+'" class="'+(draft.textScale===v?"selected":"")+'">'+v+'%</button>').join("")+'</div>';
-      else if(key==="colourOverlay")controls='<div class="overlay-options">'+[["none","None"],["cream","Cream"],["soft-yellow","Soft yellow"],["soft-blue","Soft blue"],["soft-pink","Soft pink"]].map(o=>'<button type="button" data-choice="'+o[0]+'" class="'+(draft.colourOverlay===o[0]?"selected":"")+'"><i></i><span>'+o[1]+'</span></button>').join("")+'</div>';
+      else if(key==="colourOverlay")controls='<div class="overlay-options">'+[["cream","Cream"],["soft-yellow","Soft yellow"],["soft-blue","Soft blue"],["soft-pink","Soft pink"]].map(o=>'<button type="button" data-choice="'+o[0]+'" class="'+(draft.colourOverlay===o[0]?"selected":"")+'"><i></i><span>'+o[1]+'</span></button>').join("")+'</div>';
       else if(key==="readingGuide")controls='<label class="guide-position-control"><span>Position</span><input id="guide-position" type="range" min="8" max="92" value="'+draft.readingGuidePosition+'"><output id="guide-position-value">'+draft.readingGuidePosition+'%</output></label><div class="guide-colour-options">'+[["yellow","Yellow"],["blue","Blue"],["pink","Pink"],["green","Green"]].map(o=>'<button type="button" data-choice="'+o[0]+'" class="'+(draft.readingGuideColour===o[0]?"selected":"")+'"><i></i>'+o[1]+'</button>').join("")+'</div>';
-      else controls='<label class="setting-big-toggle"><span>Turn this setting on</span><input id="setting-choice" type="checkbox" '+(draft[key]?"checked":"")+'><i></i></label>';
-      modal.innerHTML='<div class="profile-overlay settings-overlay"><section class="profile-sheet settings-sheet setting-detail"><div class="profile-head"><div><div class="profile-kicker">PREVIEW</div><h2>'+settingLabel(key)+'</h2></div><button class="profile-close" id="setting-close" aria-label="Close">×</button></div><p class="settings-intro">'+settingDescription(key)+'</p><div class="settings-preview"><div class="settings-preview-head"><strong>BEFORE</strong><strong>AFTER</strong></div><div class="settings-preview-grid"><div class="settings-preview-card"><span class="preview-eyebrow">EVIA</span><h3>Read this example</h3><p>This is how your text looks now.</p><button type="button">Example button</button></div><div id="setting-after"></div></div></div><div class="setting-detail-controls">'+controls+'</div><div class="settings-actions"><button type="button" class="secondary" id="setting-cancel">Cancel</button><button type="button" class="primary" id="setting-confirm">Confirm</button></div></section></div>';
+      else if(key==="textScale"){} else controls='<div class="setting-preview-note">The AFTER panel above shows this setting switched on.</div>';
+      modal.innerHTML='<div class="profile-overlay settings-overlay"><section class="profile-sheet settings-sheet setting-detail"><div class="profile-head"><div><div class="profile-kicker">PREVIEW</div><h2>'+settingLabel(key)+'</h2></div><button class="profile-close" id="setting-close" aria-label="Close">×</button></div><p class="settings-intro">'+settingDescription(key)+'</p><div class="settings-preview"><div class="settings-preview-head"><strong>BEFORE — EVIA AS NORMAL</strong><strong>AFTER — SETTING ON</strong></div><div class="settings-preview-grid"><div class="settings-preview-card"><span class="preview-eyebrow">EVIA</span><h3>Read this example</h3><p>Making a change here lets you see exactly how Evia will look when this accessibility setting is applied.</p><button type="button">Example button</button></div><div id="setting-after">'+previewSample(draft,key)+'</div></div></div><div class="setting-detail-controls">'+controls+'</div><div class="settings-actions"><button type="button" class="secondary" id="setting-cancel">Cancel</button><button type="button" class="primary" id="setting-confirm">Confirm</button></div></section></div>';
       if(key==="readingGuide"){
         const pos=document.getElementById("guide-position");
         pos.oninput=()=>{draft.readingGuidePosition=Number(pos.value);document.getElementById("guide-position-value").value=pos.value+"%";renderAfter()};
         document.querySelectorAll("[data-choice]").forEach(b=>b.onclick=()=>{draft.readingGuideColour=b.dataset.choice;document.querySelectorAll("[data-choice]").forEach(x=>x.classList.toggle("selected",x.dataset.choice===draft.readingGuideColour));renderAfter()});
-      }else{
+      }else if(key==="textScale"||key==="colourOverlay"){
         document.querySelectorAll("[data-choice]").forEach(b=>b.onclick=()=>{draft[key]=b.dataset.choice;document.querySelectorAll("[data-choice]").forEach(x=>x.classList.toggle("selected",x.dataset.choice===b.dataset.choice));renderAfter()});
-        const checkbox=document.getElementById("setting-choice");if(checkbox)checkbox.onchange=()=>{draft[key]=checkbox.checked;renderAfter()};
       }
-      renderAfter();
       document.getElementById("setting-close").onclick=()=>main();
       document.getElementById("setting-cancel").onclick=()=>main();
-      document.getElementById("setting-confirm").onclick=()=>{if(key==="readingGuide")draft.readingGuide=true;saveSettings(draft);main()};
+      document.getElementById("setting-confirm").onclick=()=>{saveSettings(draft);main()};
     };
     main();
   }
