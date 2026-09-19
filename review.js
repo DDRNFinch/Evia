@@ -298,7 +298,7 @@
           review.reviewLearning.subjects=subjects;
           runReviewLesson(review,subjects,0,()=>{
             const employer=review.employerFeedback;
-            chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>Employer feedback</strong><br>'+(employer?'Your employer has submitted feedback for this review.':'I can include employer feedback, but it must be submitted directly by the employer through an authenticated employer review form. I won\\'t treat learner-entered comments as an employer statement.')+'</div>');
+            chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>Employer feedback</strong><br>'+(employer?'Your employer has submitted feedback for this review.':'I can include employer feedback, but it must be submitted directly by the employer through an authenticated employer review form. I won\'t treat learner-entered comments as an employer statement.')+'</div>');
             if(!employer)chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia">For this test version, the verified employer portal is not connected yet. The review will continue without an employer statement.</div>');
             chatEl.insertAdjacentHTML("beforeend",'<button type="button" class="chat-pill test-submit" data-open-review-final><strong>Open full review</strong></button>');
             const open=chatEl.querySelector("[data-open-review-final]");
