@@ -220,12 +220,7 @@
     welcome();
   }
   window.addEventListener("load",()=>{
-    try{applySettings(getSettings())}catch(e){console.error("Evia settings initialisation failed",e)}
-    try{refreshProfileButton()}catch(e){console.error("Evia profile button initialisation failed",e)}
-    const profileButton=document.getElementById("profile-btn");
-    if(profileButton)profileButton.onclick=openProfile;
-    window.eviaOpenProfile=openProfile;
-    try{welcome()}catch(e){console.error("Evia welcome failed",e)}
+    try{initEviaProfile()}catch(e){console.error("Evia profile initialisation failed",e)}
   });
 
 })();
