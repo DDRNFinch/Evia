@@ -147,7 +147,7 @@ function strengthBars(level){
 }
 function courses(){
  $("#page-title").textContent="Course";
- $("#screen").innerHTML=picker()+'<div class="card"><div class="section-title">'+esc(data().std)+'</div><h2>'+esc(data().name)+'</h2><p>'+data().u.length+' units. Open a unit to capture evidence.</p></div>'+data().u.map((u,i)=>{
+ $("#screen").innerHTML='<div class="card"><div class="section-title">'+esc(data().std)+'</div><h2>'+esc(data().name)+'</h2><p>'+data().u.length+' units. Open a unit to capture evidence.</p></div>'+data().u.map((u,i)=>{
    const level=unitStrengthForCourse(u[0]);
    return '<div class="card unit-card" data-u="'+i+'"><div class="unit-title">'+esc(u[0])+'</div>'+strengthBars(level)+'</div>';
  }).join("");
@@ -225,7 +225,6 @@ function progress(){
  const byUnit=name=>es.filter(e=>e.u===name);
  const reviews=window.eviaGetReviews?window.eviaGetReviews():[];
  $("#screen").innerHTML=picker()+'<div class="card portfolio-intro"><div><div class="section-title">Completed evidence</div><h2>Portfolio</h2><p>Each started unit has its own evidence pack. Downloaded packs can be downloaded again.</p></div></div>'+
- (reviews.length?'<div class="card portfolio-reviews"><div class="section-title">PROGRESS REVIEWS</div>'+reviews.map(r=>'<div class="review-card"><div><div class="portfolio-review-title">Progress review - '+new Date(r.date).toLocaleDateString("en-GB")+'</div><div class="portfolio-review-meta">Saved from Evia progress review</div></div><button class="secondary" data-review-id="'+esc(r.id)+'">Download PDF</button></div>').join("")+'</div>':"")+''+
  units.map(name=>{
    const entries=byUnit(name);
    const wasDownloaded=!!downloaded[course+"|"+name];
@@ -447,7 +446,7 @@ function chat(){
    const choice=options[Number(b.dataset.chatOption)];
    addBubble(choice[0]);
    if(choice[0]==="Portfolio check")portfolioReview();
-   else if(choice[0]==="Progress review")window.eviaProgressReview();
+   else if(choice[0]==="Progress review")progressReview();
    else if(choice[0]==="Confidence check")confidence();
    else window.eviaTestMe();
    scroll();
