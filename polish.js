@@ -119,6 +119,8 @@
     $("#screen").innerHTML=
       '<div class="evidence-pack-page">'+
         '<div class="evidence-heading">'+
+          '<div class="evidence-label">EVIDENCE PACK</div>'+
+          '<h2>'+esc(u[0])+'</h2>'+
           '<p>Capture the whole job in one pack. Take photos from the <strong>beginning, middle and end</strong> of the job.</p>'+
         '</div>'+
         '<div class="evidence-photo-actions">'+
@@ -189,8 +191,8 @@
       .evidence-label{font-size:11px;font-weight:700;letter-spacing:.1em;color:#98a2b3}
       .evidence-heading h2{margin:6px 0 7px;font-size:26px;line-height:1.16;letter-spacing:-.025em}
       .evidence-heading p{max-width:560px;margin:0;font-size:13px;line-height:1.55;color:#667085}
-      .evidence-photo-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
-      .evidence-photo-button{min-height:52px;display:flex;align-items:center;justify-content:center;border:1px solid #e3e7ed;border-radius:15px;background:#fff;font-size:13px;font-weight:650;color:#273244;cursor:pointer;box-shadow:0 2px 8px rgba(25,36,55,.035);transition:transform .15s ease,background .15s ease,border-color .15s ease}
+      .evidence-photo-actions{display:flex;gap:8px;margin-top:16px}
+      .evidence-photo-button{min-height:40px;display:flex;align-items:center;justify-content:center;padding:0 14px;border:1px solid #e3e7ed;border-radius:11px;background:#fff;font-size:12px;font-weight:650;color:#273244;cursor:pointer;transition:transform .15s ease,background .15s ease,border-color .15s ease}
       .evidence-photo-button:active{transform:scale(.985);background:#f8fafb}
       .evidence-photo-button input{display:none}
       .evidence-thumbs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
