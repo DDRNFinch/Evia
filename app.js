@@ -212,11 +212,12 @@ function progress(){
    '<div class="progress-note">EPA is a separate assessment phase after the planned course end. It does not count as on-programme course time.</div></div>'+
    '<div class="card ksb-overview"><div class="section-title">KSB progress</div><div class="ksb-grid">'+
    all.map(x=>'<button type="button" class="ksb-tile '+(ev.has(x[0])?"met":"")+'" data-ksb-code="'+esc(x[0])+'"><span>'+esc(x[0])+'</span>'+(ev.has(x[0])?'<i aria-label="Evidence captured">✓</i>':"")+'</button>').join("")+
-   '</div><p class="ksb-grid-help">Tap a KSB to see the full wording and the evidence mapped to it.</p></div>';
+   '</div><p class="ksb-grid-help">Tap a KSB to see the full wording and the evidence mapped to it.</p></div>'+(window.eviaTargetsCardHtml?window.eviaTargetsCardHtml():"");
  document.querySelectorAll("[data-ksb-code]").forEach(b=>b.onclick=()=>{
    const item=all.find(x=>x[0]===b.dataset.ksbCode);
    if(item)ksbDetail(item[0],item[1],ev.has(item[0]));
  });
+ if(window.eviaBindTargets)window.eviaBindTargets();
 }function portfolio(){
  $("#page-title").textContent="Portfolio";let es=evidence.filter(e=>e.c===course).slice().reverse();
  const units=[...new Set(es.map(e=>e.u))];
