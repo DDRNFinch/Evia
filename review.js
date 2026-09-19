@@ -113,8 +113,29 @@
           document.querySelectorAll("[data-test-answer]").forEach(x=>{if(decodeURIComponent(x.dataset.testAnswer)===correct)x.classList.add("correct")});
           if(!ok)btn.classList.add("wrong");
           document.querySelector(".rating-options")?.remove();
-          chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>'+(ok?"Correct":"Not quite")+'</strong><br>'+(ok?"That is correct.":"The correct answer is: "+escLocal(correct)+".")+'<br><br>'+escLocal(explanation)+(ok?"":"<br><br><strong>Mini-session:</strong> Read the explanation, then say the key point back to yourself before continuing.")+'</div><button class="chat-pill test-submit" data-next-test><strong>'+(i+1<qs.length?"Next question":"Finish")+'</strong></button>');
-          document.querySelector("[data-next-test]").onclick=()=>{document.querySelector("[data-next-test]").remove();i++;ask()};
+          const mini=( !ok && isAcademic && q[5] && Array.isArray(q[6]) ) ? '<div class="micro-teach"><div class="tag">Mini-session</div><p><strong>'+escLocal(q[5])+'</strong></p><div class="rating-options">'+q[6].map((a,n)=>'<button class="rating-pill" data-micro-answer="'+encodeURIComponent(a)+'"><strong>'+String.fromCharCode(65+n)+'. '+escLocal(a)+'</strong></button>').join("")+'</div><div class="micro-result" id="micro-result"></div></div>' : ( !ok ? '<br><br><strong>Mini-session:</strong> Read the explanation, then say the key point back to yourself before continuing.' : '' );
+          chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>'+(ok?"Correct":"Not quite")+'</strong><br>'+(ok?"That is correct.":"The correct answer is: "+escLocal(correct)+".")+'<br><br>'+escLocal(explanation)+mini+'</div>'+(mini?'':'<button class="chat-pill test-submit" data-next-test><strong>'+(i+1<qs.length?"Next question":"Finish")+'</strong></button>'));
+          if(mini){
+            document.querySelectorAll("[data-micro-answer]").forEach(mb=>mb.onclick=()=>{
+              const microChosen=decodeURIComponent(mb.dataset.microAnswer),microCorrect=String(q[7]??q[6][0]);
+              document.querySelectorAll("[data-micro-answer]").forEach(x=>x.disabled=true);
+              const box=document.getElementById("micro-result");
+              if(microChosen===microCorrect){
+                mb.classList.add("correct");
+                box.innerHTML='<strong>Mini-session complete.</strong> You can move on.';
+                chatEl.insertAdjacentHTML("beforeend",'<button class="chat-pill test-submit" data-next-test><strong>'+(i+1<qs.length?"Next question":"Finish")+'</strong></button>');
+              }else{
+                mb.classList.add("wrong");
+                box.innerHTML='Not quite. The correct answer is <strong>'+escLocal(microCorrect)+'</strong>.';
+                document.querySelectorAll("[data-micro-answer]").forEach(x=>{if(decodeURIComponent(x.dataset.microAnswer)===microCorrect){x.disabled=false;x.classList.add("correct")}});
+              }
+              scroll();
+              const next=document.querySelector("[data-next-test]");
+              if(next)next.onclick=()=>{next.remove();i++;ask()};
+            });
+          }else{
+            document.querySelector("[data-next-test]").onclick=()=>{document.querySelector("[data-next-test]").remove();i++;ask()};
+          }
           scroll();
         });
       };
@@ -220,6 +241,20 @@
     win.document.write(`<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Progress review - ${new Date(review.date).toLocaleDateString("en-GB")}</title><style>@page{size:A4;margin:16mm}body{font:11pt -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172033;line-height:1.5}header{border-bottom:2px solid #e6b800;padding-bottom:12px;margin-bottom:18px}h1{font-size:24pt;margin:0 0 5px}h2{font-size:16pt}article{border:1px solid #e4e7ec;border-radius:10px;padding:10px;margin:8px 0;break-inside:avoid}.pill{display:inline-block;border:1px solid #ddd;padding:4px 7px;border-radius:999px;margin:2px}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}</style></head><body><header><small>EVIA · PROGRESS REVIEW</small><h1>Progress review - ${new Date(review.date).toLocaleDateString("en-GB")}</h1><p>${escLocal(p.name||"Apprentice")} · ${escLocal(data().name)} · ${escLocal(data().std)}</p></header><h2>Progress summary</h2><p><strong>Course evidence:</strong> ${m.completion}% (${m.covered}/${m.units} units)</p><p><strong>Off-the-job learning:</strong> ${m.totalOTJ.toFixed(1)}${m.otjTarget?" / "+m.otjTarget:""} hours</p><h2>Test results</h2><ul>${tests}</ul><h2>Targets</h2>${targets}</body></html>`);
     win.document.close();win.focus();setTimeout(()=>win.print(),250);
   }
+  function targetsCardHtml(){
+    const targets=eviaGetTargets().filter(t=>targetStatus(t)!=="complete").sort((a,b)=>a.priority-b.priority);
+    if(!targets.length)return '<div class="card targets-card"><div class="section-title">TARGETS</div><h2>My targets</h2><p>No active targets yet. Complete a full progress review to create five.</p></div>';
+    return '<div class="card targets-card"><div class="section-title">TARGETS</div><h2>My targets</h2>'+targets.map(t=>'<div class="target-item '+targetStatus(t)+'"><div><strong>'+escLocal(t.title)+'</strong><p>'+escLocal(t.reason)+'</p><small>Due '+new Date(t.deadline+"T00:00:00").toLocaleDateString("en-GB")+(targetStatus(t)==="overdue"?" · Overdue":"")+'</small></div><button class="secondary" data-target-complete="'+escLocal(t.id||"")+'">Mark complete</button></div>').join("")+'</div>';
+  }
+  function bindTargets(){
+    document.querySelectorAll("[data-target-complete]").forEach(b=>b.onclick=()=>{
+      const all=read(TARGET_KEY,[]),idx=all.findIndex(t=>t.course===course&&String(t.id)===String(b.dataset.targetComplete));
+      if(idx<0)return;all[idx].completed=true;all[idx].progress=100;all[idx].completedAt=new Date().toISOString();write(TARGET_KEY,all);
+      if(typeof progress==="function")progress();
+    });
+  }
+  window.eviaTargetsCardHtml=targetsCardHtml;
+  window.eviaBindTargets=bindTargets;
   window.eviaTestMe=eviaTestMe;
   window.eviaProgressReview=progressReview;
   window.eviaFullReview=fullReview;
