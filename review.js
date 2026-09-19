@@ -174,7 +174,7 @@
     captured.forEach(k=>{if(groups["captured"+k[0]]!==undefined)groups["captured"+k[0]]++});
     const unitDetails=units.map(u=>{
       const es=entries.filter(e=>e.u===u[0]);
-      return {unit:u[0],entries:es.length,photos:es.reduce((n,e)=>n+(Array.isArray(e.p)?e.p.length:0),0),words:es.reduce((n,e)=>n+String(e.w||"").trim().split(/\s+/).filter(Boolean).length,0),ksbs:[...new Set(es.flatMap(e=>Array.isArray(e.k)?e.k:[]))]};
+      return {unit:u[0],entries:es.length,photos:es.reduce((n,e)=>n+(Array.isArray(e.p)?e.p.length:0),0),words:es.reduce((n,e)=>n+String(e.w||"").trim().split(/\s+/).filter(Boolean).length,0),ksbs:[...new Set(es.flatMap(e=>Array.isArray(e.k)?e.k:[]))],evidence:es.map(e=>({date:e.savedAt||e.d||"",photos:Array.isArray(e.p)?e.p.length:0,notes:e.w||"",ksbs:Array.isArray(e.k)?e.k:[]}))};
     });
     const totalOTJ=hours.reduce((n,x)=>n+Number(x.n||0),0), meta=courseProgressMeta(), p=read("evia7-profile",{});
     let elapsed=0;
@@ -184,7 +184,8 @@
     const pct=type=>{const t=latestTest(type);return t&&typeof t.pct==="number"?t.pct:null};
     const tests={discussion:latestTest("discussion"),epa:latestTest("epa"),maths:latestTest("maths"),english:latestTest("english")};
     const testDetails={};Object.keys(tests).forEach(k=>{const t=tests[k];testDetails[k]=t?{pct:t.pct,score:t.score,total:t.total,questions:t.questions||[],savedAt:t.savedAt||null}:null});
-    return {covered:covered.size,units:units.length,unitGap:Math.max(0,units.length-covered.size),completion:units.length?Math.round(covered.size/units.length*100):0,entries:entries.length,totalPhotos,totalWords,unitDetails,ksbTotal:allKsb.size,ksbCaptured:captured.size,ksbCompletion:allKsb.size?Math.round(captured.size/allKsb.size*100):0,ksbGroups:groups,totalOTJ,otjEntries:hours.length,otjBatches:otjBatches.length,otjTarget:meta.otjTarget,otjBehind:meta.otjTarget?totalOTJ<Math.max(1,meta.otjTarget*elapsed):false,elapsed,tests:testDetails,confidenceAverage,confidenceRatings:current?.scores||[],previousConfidenceRatings:previous?.scores||[],confidenceChecks:history.length,lowConfidence:(current?.scores||[]).filter(x=>x.score<=2).map(x=>x.area)};
+    const otjDetails=hours.map(x=>({date:x.savedAt||x.d||"",hours:Number(x.n||0),description:x.description||""}));
+    return {covered:covered.size,units:units.length,unitGap:Math.max(0,units.length-covered.size),completion:units.length?Math.round(covered.size/units.length*100):0,entries:entries.length,totalPhotos,totalWords,unitDetails,otjDetails,ksbTotal:allKsb.size,ksbCaptured:captured.size,ksbCompletion:allKsb.size?Math.round(captured.size/allKsb.size*100):0,ksbGroups:groups,totalOTJ,otjEntries:hours.length,otjBatches:otjBatches.length,otjTarget:meta.otjTarget,otjBehind:meta.otjTarget?totalOTJ<Math.max(1,meta.otjTarget*elapsed):false,elapsed,tests:testDetails,confidenceAverage,confidenceRatings:current?.scores||[],previousConfidenceRatings:previous?.scores||[],confidenceChecks:history.length,lowConfidence:(current?.scores||[]).filter(x=>x.score<=2).map(x=>x.area)};
   }
   function targetStatus(t){
     if(t.completed||t.progress>=100)return "complete";
