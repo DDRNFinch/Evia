@@ -216,7 +216,6 @@
       .evia-dyslexia-font body,.evia-dyslexia-font button,.evia-dyslexia-font input,.evia-dyslexia-font textarea{font-family:Arial,Verdana,sans-serif!important}.evia-letter-spacing body,.evia-letter-spacing button,.evia-letter-spacing input,.evia-letter-spacing textarea{letter-spacing:.035em!important}.evia-line-spacing body,.evia-line-spacing button,.evia-line-spacing input,.evia-line-spacing textarea{line-height:1.65!important}.evia-high-contrast body{color:#101828!important}.evia-high-contrast .card,.evia-high-contrast .bottom-nav,.evia-high-contrast .topbar{border-color:#667085!important}.evia-reduced-motion *, .evia-reduced-motion *::before, .evia-reduced-motion *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}
       html[data-evia-overlay="cream"] body{background:#fff8e8!important}html[data-evia-overlay="soft-yellow"] body{background:#fffde0!important}html[data-evia-overlay="soft-blue"] body{background:#edf7fc!important}html[data-evia-overlay="soft-pink"] body{background:#fdf0f3!important}
       .evia-reading-guide body::after{content:"";position:fixed;left:0;right:0;top:50%;height:2px;background:rgba(228,182,0,.62);box-shadow:0 0 0 9999px rgba(255,255,255,.08);pointer-events:none;z-index:9998}
-      .course-options{display:none!important}
       .course-fixed{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 15px;border:1px solid #e6e9ed;border-radius:15px;background:#fff;color:#303a4a;font-size:14px;font-weight:650}
       .course-fixed span{font-size:10px;font-weight:600;color:#9aa3af;letter-spacing:.03em}
       #course-onboarding{position:fixed;inset:0;z-index:3000;background:#fffdfa;display:grid;place-items:center;opacity:0;transition:opacity .32s ease;padding:24px;box-sizing:border-box}
@@ -286,7 +285,6 @@
       @media(prefers-reduced-motion:reduce){#welcome-screen,.welcome-flying,.welcome-revealed{animation:none!important;transition:none!important}.welcome-pulse{animation:none!important}}
     `;
     document.head.appendChild(style);
-    if(localStorage.getItem("evia7-course")) welcome();
-    else courseOnboarding();
+    welcome();
   });
 })();
