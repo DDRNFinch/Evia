@@ -60,13 +60,44 @@
   const defaultSettings={textScale:"100",dyslexiaFont:false,letterSpacing:false,lineSpacing:false,readingGuide:false,readingGuidePosition:48,readingGuideTransparency:42,readingGuideColour:"clear",focusMode:false,highContrast:false,colourOverlay:"none"};
   function getSettings(){return Object.assign({},defaultSettings,readObject(SETTINGS_KEY,{}))}
   function saveSettings(s){localStorage.setItem(SETTINGS_KEY,JSON.stringify(s));applySettings(s)}
+  function ensureAccessibilityStyles(){
+    if(document.getElementById("evia-accessibility-styles"))return;
+    const style=document.createElement("style");
+    style.id="evia-accessibility-styles";
+    style.textContent=`
+      html[data-evia-dyslexia="on"] #app,html[data-evia-dyslexia="on"] #app *,html[data-evia-dyslexia="on"] #modal-root,html[data-evia-dyslexia="on"] #modal-root *,html[data-evia-dyslexia="on"] #welcome-screen,html[data-evia-dyslexia="on"] #welcome-screen *{font-family:"Trebuchet MS",Verdana,Arial,sans-serif!important}
+      html[data-evia-dyslexia="on"] #app *,html[data-evia-dyslexia="on"] #modal-root *,html[data-evia-dyslexia="on"] #welcome-screen *{font-synthesis:none!important}
+      html[data-evia-letter-spacing="on"] #app *,html[data-evia-letter-spacing="on"] #modal-root *,html[data-evia-letter-spacing="on"] #welcome-screen *{letter-spacing:.12em!important;word-spacing:.08em!important}
+      html[data-evia-line-spacing="on"] #app *,html[data-evia-line-spacing="on"] #modal-root *,html[data-evia-line-spacing="on"] #welcome-screen *{line-height:2!important}
+      html[data-evia-focus="on"] #app .bottom-nav,html[data-evia-focus="on"] #app .evia-fab{opacity:.12!important;filter:grayscale(1)!important}
+      html[data-evia-focus="on"] #app #screen>*{opacity:.32!important;filter:saturate(.25) blur(.2px)!important;transition:opacity .18s ease,filter .18s ease!important}
+      html[data-evia-focus="on"] #app #screen>*:hover,html[data-evia-focus="on"] #app #screen>*:focus-within{opacity:1!important;filter:none!important}
+      html[data-evia-focus="on"] #app #screen{max-width:600px!important}
+      html[data-evia-contrast="on"] #app,html[data-evia-contrast="on"] #screen,html[data-evia-contrast="on"] #modal-root,html[data-evia-contrast="on"] #welcome-screen{background:#000!important;color:#fff!important}
+      html[data-evia-contrast="on"] #app *,html[data-evia-contrast="on"] #screen *,html[data-evia-contrast="on"] #modal-root *,html[data-evia-contrast="on"] #welcome-screen *{color:#fff!important;border-color:#fff!important;box-shadow:none!important}
+      html[data-evia-contrast="on"] #app .card,html[data-evia-contrast="on"] #app .panel,html[data-evia-contrast="on"] #app .section,html[data-evia-contrast="on"] #app .bottom-nav,html[data-evia-contrast="on"] #app button,html[data-evia-contrast="on"] #modal-root .profile-sheet,html[data-evia-contrast="on"] #modal-root button{background:#000!important}
+      html[data-evia-contrast="on"] #app button,html[data-evia-contrast="on"] #modal-root button{border:2px solid #fff!important}
+      html[data-evia-contrast="on"] #app input,html[data-evia-contrast="on"] #app textarea,html[data-evia-contrast="on"] #modal-root input,html[data-evia-contrast="on"] #modal-root textarea{background:#000!important;color:#fff!important;border:2px solid #fff!important}
+      html[data-evia-scale="115"] #app{zoom:1.15!important}html[data-evia-scale="130"] #app{zoom:1.30!important}html[data-evia-scale="150"] #app{zoom:1.50!important}
+      html[data-evia-scale="115"] #modal-root,html[data-evia-scale="115"] #welcome-screen{zoom:1.15!important}html[data-evia-scale="130"] #modal-root,html[data-evia-scale="130"] #welcome-screen{zoom:1.30!important}html[data-evia-scale="150"] #modal-root,html[data-evia-scale="150"] #welcome-screen{zoom:1.50!important}
+    `;
+    document.head.appendChild(style);
+  }
   function applySettings(s){
+    ensureAccessibilityStyles();
     const root=document.documentElement;
     const transparency=Math.max(0,Math.min(100,Number(s.readingGuideTransparency??42)));
     const guideColours={yellow:[255,220,0],blue:[80,160,255],pink:[255,100,160],clear:[255,255,255]};
     const gc=guideColours[s.readingGuideColour||"clear"]||guideColours.clear;
     const alpha=s.readingGuideColour==="clear"?0:(100-transparency)/100;
-    root.style.setProperty("--evia-text-scale",(Number(s.textScale||100)/100).toFixed(2));
+    const scale=String(s.textScale||"100");
+    root.style.setProperty("--evia-text-scale",(Number(scale)/100).toFixed(2));
+    root.dataset.eviaScale=scale;
+    root.dataset.eviaDyslexia=s.dyslexiaFont?"on":"off";
+    root.dataset.eviaLetterSpacing=s.letterSpacing?"on":"off";
+    root.dataset.eviaLineSpacing=s.lineSpacing?"on":"off";
+    root.dataset.eviaFocus=s.focusMode?"on":"off";
+    root.dataset.eviaContrast=s.highContrast?"on":"off";
     root.style.setProperty("--evia-reading-guide-position",(Number(s.readingGuidePosition??48))+"%");
     root.style.setProperty("--evia-reading-guide-background","rgba("+gc.join(",")+","+alpha.toFixed(2)+")");
     root.classList.remove("evia-text-scale-115","evia-text-scale-130","evia-text-scale-150");
