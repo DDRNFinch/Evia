@@ -244,48 +244,16 @@
   function renderFullReview(review){ensureReviewStyles();reply('<strong>Full progress review complete</strong><br>I’ve saved the complete review to your Portfolio.<br><br>'+reviewDashboardHtml(review)+'<br><button class="chat-pill" id="open-saved-review"><strong>Open saved review</strong></button>');setTimeout(()=>{const b=document.querySelector("#open-saved-review");if(b)b.onclick=()=>showReview(review.id)},950)}
   function showReview(id){const review=read(REVIEW_KEY,[]).find(x=>x.id===id);if(!review)return;if(review.course===course){const fresh=metrics();review.metrics={...review.metrics,totalPhotos:fresh.totalPhotos,unitDetails:fresh.unitDetails,timePercent:fresh.timePercent,elapsed:fresh.elapsed};const all=read(REVIEW_KEY,[]),idx=all.findIndex(x=>x.id===id);if(idx>=0){all[idx]=review;write(REVIEW_KEY,all)}}startReviewConversation(review)}
   function saveReviewUpdate(review){const all=read(REVIEW_KEY,[]),idx=all.findIndex(x=>x.id===review.id);if(idx>=0){all[idx]=review;write(REVIEW_KEY,all)}}
-  function askReviewText(review,key,prompt,next){
+  function askReviewText(review,key,prompt,index){
     const chatEl=$("#chat");
-    if(!chatEl){next();return}
+    if(!chatEl)return;
     const blockId="review-text-"+Date.now()+"-"+Math.random().toString(36).slice(2,7);
-    chatEl.insertAdjacentHTML("beforeend",'<div id="'+blockId+'" class="review-text-block"><div class="bubble evia"><strong>'+escLocal(prompt)+'</strong></div><textarea class="test-response" data-review-answer placeholder="Type your answer..."></textarea><button type="button" class="chat-pill test-submit" data-review-submit><strong>Save answer</strong></button></div>');
+    chatEl.insertAdjacentHTML("beforeend",'<div id="'+blockId+'" class="review-text-block" data-review-reflection-block="1" data-review-index="'+index+'" data-review-key="'+escLocal(key)+'"><div class="bubble evia"><strong>'+escLocal(prompt)+'</strong></div><textarea class="test-response" data-review-answer placeholder="Type your answer..."></textarea><button type="button" class="chat-pill test-submit" data-review-submit><strong>Save answer</strong></button></div>');
     const block=document.getElementById(blockId);
-    if(!block){next();return}
+    if(!block)return;
     const input=block.querySelector("[data-review-answer]");
     const submit=block.querySelector("[data-review-submit]");
-    if(!input||!submit){next();return}
-    let advancing=false;
-    const advance=()=>{
-      if(advancing)return;
-      const answer=String(input.value||"").trim();
-      if(!answer)return;
-      advancing=true;
-      input.disabled=true;
-      submit.disabled=true;
-      try{
-        review.reflection=review.reflection||{};
-        review.reflection[key]=answer;
-        saveReviewUpdate(review);
-      }catch(err){
-        console.error("Evia review save failed",err);
-      }
-      submit.remove();
-      chatEl.insertAdjacentHTML("beforeend",'<div class="bubble user">'+escLocal(answer)+'</div>');
-      chatEl.scrollTop=chatEl.scrollHeight;
-      // The next question must not depend on the save operation or on the old DOM block.
-      next();
-    };
-    submit.addEventListener("click",e=>{
-      e.preventDefault();
-      e.stopPropagation();
-      advance();
-    });
-    input.addEventListener("keydown",e=>{
-      if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){
-        e.preventDefault();
-        advance();
-      }
-    });
+    if(!input||!submit)return;
     chatEl.scrollTop=chatEl.scrollHeight;
   }
   function startReviewReflectionQuestions(review){
@@ -296,28 +264,60 @@
       ["successes","What have you been most successful with since your last review?"],
       ["challenges","What have you found challenging?"]
     ];
-    let index=0;
-    const askNext=()=>{
-      if(index>=questions.length){
-        const subjects=shuffle(["EDI","Prevent","Safeguarding","British Values","Health & Safety"]).slice(0,2);
-        review.reviewLearning=review.reviewLearning||{};
-        review.reviewLearning.subjects=subjects;
-        runReviewLesson(review,subjects,0,()=>{
-          const employer=review.employerFeedback;
-          const chatEl=$("#chat");
-          chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>Employer feedback</strong><br>'+(employer?'Your employer has submitted feedback for this review.':'I can include employer feedback, but it must be submitted directly by the employer through an authenticated employer review form. I won\'t treat learner-entered comments as an employer statement.')+'</div>');
-          if(!employer)chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia">For this test version, the verified employer portal is not connected yet. The review will continue without an employer statement.</div>');
-          chatEl.insertAdjacentHTML("beforeend",'<button type="button" class="chat-pill test-submit" data-open-review-final><strong>Open full review</strong></button>');
-          const open=chatEl.querySelector("[data-open-review-final]");
-          if(open)open.onclick=e=>{e.preventDefault();open.remove();openSavedReview(review)};
-          chatEl.scrollTop=chatEl.scrollHeight;
-        });
-        return;
-      }
-      const [key,prompt]=questions[index++];
-      askReviewText(review,key,prompt,askNext);
-    };
-    askNext();
+    const chatEl=$("#chat");
+    if(!chatEl)return;
+    if(chatEl.dataset.reviewReflectionBound!=="1"){
+      chatEl.dataset.reviewReflectionBound="1";
+      chatEl.addEventListener("click",e=>{
+        const submit=e.target.closest("[data-review-submit]");
+        if(!submit)return;
+        const block=submit.closest("[data-review-reflection-block]");
+        if(!block||block.dataset.completed==="1")return;
+        e.preventDefault();
+        e.stopPropagation();
+        const input=block.querySelector("[data-review-answer]");
+        const answer=String(input?.value||"").trim();
+        if(!answer)return;
+        block.dataset.completed="1";
+        const key=String(block.dataset.reviewKey||"");
+        const index=Number(block.dataset.reviewIndex||0);
+        input.disabled=true;
+        submit.disabled=true;
+        review.reflection=review.reflection||{};
+        review.reflection[key]=answer;
+        try{saveReviewUpdate(review)}catch(err){console.error("Evia review save failed",err)}
+        submit.remove();
+        chatEl.insertAdjacentHTML("beforeend",'<div class="bubble user">'+escLocal(answer)+'</div>');
+        chatEl.scrollTop=chatEl.scrollHeight;
+        if(index+1<questions.length){
+          const next=questions[index+1];
+          askReviewText(review,next[0],next[1],index+1);
+        }else{
+          const subjects=shuffle(["EDI","Prevent","Safeguarding","British Values","Health & Safety"]).slice(0,2);
+          review.reviewLearning=review.reviewLearning||{};
+          review.reviewLearning.subjects=subjects;
+          runReviewLesson(review,subjects,0,()=>{
+            const employer=review.employerFeedback;
+            chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>Employer feedback</strong><br>'+(employer?'Your employer has submitted feedback for this review.':'I can include employer feedback, but it must be submitted directly by the employer through an authenticated employer review form. I won\\'t treat learner-entered comments as an employer statement.')+'</div>');
+            if(!employer)chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia">For this test version, the verified employer portal is not connected yet. The review will continue without an employer statement.</div>');
+            chatEl.insertAdjacentHTML("beforeend",'<button type="button" class="chat-pill test-submit" data-open-review-final><strong>Open full review</strong></button>');
+            const open=chatEl.querySelector("[data-open-review-final]");
+            if(open)open.onclick=e=>{e.preventDefault();e.stopPropagation();open.remove();openSavedReview(review)};
+            chatEl.scrollTop=chatEl.scrollHeight;
+          });
+        }
+      });
+      chatEl.addEventListener("keydown",e=>{
+        if(e.key!=="Enter"||(!e.ctrlKey&&!e.metaKey))return;
+        const input=e.target.closest("[data-review-answer]");
+        if(!input)return;
+        e.preventDefault();
+        const block=input.closest("[data-review-reflection-block]");
+        const submit=block?.querySelector("[data-review-submit]");
+        if(submit)submit.click();
+      });
+    }
+    askReviewText(review,questions[0][0],questions[0][1],0);
   }
   function runReviewLesson(review,subjects,index,done){
     if(index>=subjects.length){
