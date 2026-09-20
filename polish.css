@@ -385,5 +385,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text"
 .micro-result{margin-top:9px;font-size:13px;line-height:1.4}
 .review-text-block{margin:10px 0 14px}
 
-/* KSB status positioning: the status layer must cover the full tile so the tick can be centred. */
-.ksb-statuses{inset:0!important;right:auto!important;bottom:auto!important;display:block!important;}
+/* KSB status positioning: keep the tick centred in every tile and the supporting dot top-right. */
+.ksb-statuses{position:absolute!important;inset:0!important;right:auto!important;bottom:auto!important;display:block!important;}
+.ksb-tile .ksb-statuses i:not(.ksb-supporting-dot){
+  position:absolute!important;
+  left:50%!important;
+  right:auto!important;
+  top:auto!important;
+  bottom:7px!important;
+  transform:translateX(-50%)!important;
+}
+.ksb-tile .ksb-statuses .ksb-supporting-dot{
+  position:absolute!important;
+  left:auto!important;
+  right:6px!important;
+  top:5px!important;
+  bottom:auto!important;
+}
