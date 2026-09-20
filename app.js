@@ -315,6 +315,7 @@ function progress(){
    units.map((u,i)=>card(u[0],i)).join("")+
    '<button type="button" class="portfolio-app-tile portfolio-app-special" id="supporting-portfolio-file"><span class="portfolio-app-count">'+supporting.length+'</span><span class="portfolio-app-name">Supporting Evidence</span></button>'+
    '<button type="button" class="portfolio-app-tile portfolio-app-special" id="open-review-files"><span class="portfolio-app-count">'+reviews.length+'</span><span class="portfolio-app-name">Reviews</span></button>'+
+   '<button type="button" class="portfolio-app-tile portfolio-app-special" id="open-learning-log-files"><span class="portfolio-app-count">'+hours.length+'</span><span class="portfolio-app-name">Learning Logs</span></button>'+
  '</div>';
  document.querySelectorAll("[data-unit-open]").forEach(b=>b.onclick=()=>{
    const name=b.getAttribute("data-unit-open");
