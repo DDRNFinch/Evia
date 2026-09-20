@@ -327,6 +327,15 @@ function progress(){
  if(supportingCard)supportingCard.onclick=()=>openSupportingPortfolio();
  const reviewOpen=$("#open-review-files");
  if(reviewOpen)reviewOpen.onclick=()=>openSavedReviews();
+ const learningOpen=$("#open-learning-log-files");
+ if(learningOpen)learningOpen.onclick=()=>openSavedLearningLogs();
+}
+function openSavedLearningLogs(){
+ const entries=hours.slice().reverse();
+ $("#page-title").textContent="Learning Logs";
+ $("#screen").innerHTML='<button class="secondary" id="back-learning-logs-portfolio" type="button">‹ Back to portfolio</button><div class="card portfolio-intro"><div class="section-title">PORTFOLIO</div><h2>Learning Logs</h2><p>All off-the-job learning entries saved for this course.</p></div>'+
+ (entries.length?'<div class="saved-learning-list">'+entries.map(x=>'<div class="card saved-learning-item"><div class="saved-learning-top"><strong>'+esc(Number(x.n||0).toFixed(2))+' hours</strong><span>'+esc(x.savedAt||formatDateTime(x.createdAt))+'</span></div><p>'+esc(x.description||"No description recorded.")+'</p></div>').join("")+'</div>':'<div class="card"><p>No learning logs have been added yet.</p></div>');
+ $("#back-learning-logs-portfolio").onclick=()=>nav("portfolio");
 }
 function openSavedReviews(){
  const reviews=window.eviaGetReviews?window.eviaGetReviews():[];
