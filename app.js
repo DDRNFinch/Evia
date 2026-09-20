@@ -295,30 +295,33 @@ function progress(){
  });
  if(window.eviaBindTargets)window.eviaBindTargets();
 }async function portfolio(){
- $("#page-title").textContent="Portfolio";let es=evidence.filter(e=>e.c===course).slice().reverse();
- const units=[...new Set(es.map(e=>e.u))];
+ $("#page-title").textContent="Portfolio";
+ const es=evidence.filter(e=>e.c===course);
  const downloaded=JSON.parse(localStorage.getItem("evia7-downloaded-unit-pdfs")||"{}");
  const reviews=window.eviaGetReviews?window.eviaGetReviews():[];
  const supporting=supportingMeta().filter(x=>x.course===course);
- $("#screen").innerHTML='<div class="card portfolio-intro"><div class="section-title">PORTFOLIO</div><h2>Evidence files</h2><p>Open a file to download its evidence pack.</p></div><div class="portfolio-grid">'+
-   units.map(name=>{
-     const entries=es.filter(e=>e.u===name);
-     const wasDownloaded=!!downloaded[course+"|"+name];
-     return '<div class="card portfolio-file"><div><div class="portfolio-file-icon">▤</div><div class="portfolio-file-title">'+esc(name)+'</div><div class="portfolio-file-meta">'+entries.length+' entr'+(entries.length===1?"y":"ies")+'</div></div><button class="secondary unit-pdf-button" data-unit-pdf="'+esc(name)+'">'+(wasDownloaded?"✓ PDF":"PDF")+'</button></div>';
-   }).join("")+
-   '<div class="card portfolio-file portfolio-special" id="supporting-portfolio-file"><div><div class="portfolio-file-icon">○</div><div class="portfolio-file-title">Supporting Evidence</div><div class="portfolio-file-meta">'+supporting.length+' item'+(supporting.length===1?"":"s")+'</div></div><button class="secondary" id="download-supporting-evidence" type="button">ZIP</button></div>'+
-   (reviews.length?'<div class="card portfolio-file portfolio-special"><div><div class="portfolio-file-icon">✓</div><div class="portfolio-file-title">Reviews</div><div class="portfolio-file-meta">'+reviews.length+' saved review'+(reviews.length===1?"":"s")+'</div></div><button class="secondary" id="open-review-files" type="button">Open</button></div>':"")+
+ const units=data().u;
+ const evidenceCount=name=>es.filter(e=>e.u===name).length;
+ const card=(name,index)=>'<button type="button" class="portfolio-app-tile" data-unit-open="'+esc(name)+'"><span class="portfolio-app-count">'+evidenceCount(name)+'</span><span class="portfolio-app-name">'+esc(name)+'</span></button>';
+ $("#screen").innerHTML='<div class="card portfolio-intro"><div class="section-title">PORTFOLIO</div><h2>Evidence</h2></div><div class="portfolio-grid portfolio-app-grid">'+
+   units.map((u,i)=>card(u[0],i)).join("")+
+   '<button type="button" class="portfolio-app-tile portfolio-app-special" id="supporting-portfolio-file"><span class="portfolio-app-count">'+supporting.length+'</span><span class="portfolio-app-name">Supporting Evidence</span></button>'+
+   '<button type="button" class="portfolio-app-tile portfolio-app-special" id="open-review-files"><span class="portfolio-app-count">'+reviews.length+'</span><span class="portfolio-app-name">Reviews</span></button>'+
  '</div>';
- document.querySelector("#supporting-portfolio-file").onclick=e=>{if(e.target.closest("button"))return;openSupportingEvidence()};
- const supportingDownload=$("#download-supporting-evidence");if(supportingDownload)supportingDownload.onclick=downloadSupportingEvidenceZip;
- const reviewOpen=$("#open-review-files");if(reviewOpen)reviewOpen.onclick=()=>{const latest=reviews[reviews.length-1];if(latest&&window.eviaDownloadReviewPdf)window.eviaDownloadReviewPdf(latest)};document.querySelectorAll("[data-unit-pdf]").forEach(b=>b.onclick=()=>{
-   const name=b.getAttribute("data-unit-pdf");
+ document.querySelectorAll("[data-unit-open]").forEach(b=>b.onclick=()=>{
+   const name=b.getAttribute("data-unit-open");
    if(window.downloadUnitEvidencePack)window.downloadUnitEvidencePack(name);
    const state=JSON.parse(localStorage.getItem("evia7-downloaded-unit-pdfs")||"{}");
    state[course+"|"+name]=Date.now();
    localStorage.setItem("evia7-downloaded-unit-pdfs",JSON.stringify(state));
-   b.textContent="✓ PDF";
  });
+ const supportingCard=$("#supporting-portfolio-file");
+ if(supportingCard)supportingCard.onclick=()=>openSupportingEvidence();
+ const reviewOpen=$("#open-review-files");
+ if(reviewOpen)reviewOpen.onclick=()=>{
+   const latest=reviews[reviews.length-1];
+   if(latest&&window.eviaDownloadReviewPdf)window.eviaDownloadReviewPdf(latest);
+ };
 }function confidenceHistory(){
  try{return JSON.parse(localStorage.getItem("evia7-confidence")||"[]")}catch(_){return[]}
 }
