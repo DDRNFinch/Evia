@@ -123,7 +123,7 @@ async function openUnit(i){
    if(photoReadBusy)return;
    const entry={c:course,u:u[0],d:new Date().toLocaleDateString("en-GB"),savedAt:new Date().toLocaleString("en-GB"),p:photos.slice(),w:notes.value.trim(),k:u[1].filter(k=>/^[SKB]\d+\|/.test(k)).map(k=>code(k))};
    if(!entry.p.length&&!entry.w){alert("Add at least one photo or a note before saving.");return}
-   evidence.push(entry);persist();openUnit(i);
+   evidence.push(entry);persist();if(window.eviaCheckTargets)window.eviaCheckTargets();openUnit(i);
  };
 }
 function formatDateTime(ts){
@@ -181,7 +181,7 @@ function learning(){
  '<div class="card otj-download-card"><div><div class="section-title">Off-the-job evidence</div><h3>'+pending+' new '+(pending===1?"entry":"entries")+' ready for PDF</h3><p>Each saved entry includes the date and time. Downloading creates a PDF batch; anything added afterwards waits for the next PDF.</p></div><div class="row"><button class="primary" id="download-otj" '+(pending?"":"disabled")+'>Download new PDF</button>'+(lastBatch?'<button class="secondary" id="download-last-otj">Download last PDF again</button>':"")+'</div></div>'+
  '<div class="stats"><div class="card stat"><strong>'+total.toFixed(2)+'</strong><span>Total OTJ hours</span></div><div class="card stat"><strong>'+hours.length+'</strong><span>Learning entries</span></div></div>'+
  hours.slice().reverse().map(x=>'<div class="card otj-entry"><div class="progress-row"><strong>'+esc(Number(x.n).toFixed(2))+' hours</strong><span class="status '+(lastBatch&&Number(x.createdAt)<=Number(lastBatch.cutoff)?"done":"")+'">'+(lastBatch&&Number(x.createdAt)<=Number(lastBatch.cutoff)?"Downloaded":"New")+'</span></div><small class="otj-date">'+esc(x.savedAt||formatDateTime(x.createdAt))+'</small><p>'+esc(x.description||"No description recorded.")+'</p></div>').join("");
- $("#add").onclick=()=>{let n=Number($("#hrs").value),description=$("#otj-description").value.trim();if(n>0&&description){const now=Date.now();hours.push({id:"otj-"+now+"-"+Math.random().toString(36).slice(2,8),n:n,description:description,createdAt:now,savedAt:formatDateTime(now)});persist();learning()}else if(n>0){alert("Add a short description of what you did or learned before saving.")}};
+ $("#add").onclick=()=>{let n=Number($("#hrs").value),description=$("#otj-description").value.trim();if(n>0&&description){const now=Date.now();hours.push({id:"otj-"+now+"-"+Math.random().toString(36).slice(0,8),n:n,description:description,createdAt:now,savedAt:formatDateTime(now)});persist();learning();if(window.eviaCheckTargets)window.eviaCheckTargets()}else if(n>0){alert("Add a short description of what you did or learned before saving.")}};
  const dl=$("#download-otj");if(dl)dl.onclick=()=>downloadOTJPDF("new");
  const last=$("#download-last-otj");if(last)last.onclick=()=>downloadOTJPDF("last");
 }
