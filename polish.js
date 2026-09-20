@@ -2,13 +2,14 @@
 (function(){
   const WORKING_KEY="evia7-working-evidence-packs";
   const DB_NAME="evia7-evidence-db";
-  const DB_VERSION=1;
+  const DB_VERSION=2;
   const PHOTO_STORE="photos";
+  const SUPPORT_STORE="supporting";
   let dbPromise=null;
   const openDB=()=>dbPromise||(dbPromise=new Promise((resolve,reject)=>{
     if(!("indexedDB" in window))return reject(new Error("IndexedDB unavailable"));
     const req=indexedDB.open(DB_NAME,DB_VERSION);
-    req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(PHOTO_STORE))db.createObjectStore(PHOTO_STORE,{keyPath:"id"})};
+    req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(PHOTO_STORE))db.createObjectStore(PHOTO_STORE,{keyPath:"id"});if(!db.objectStoreNames.contains(SUPPORT_STORE))db.createObjectStore(SUPPORT_STORE,{keyPath:"id"})};
     req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||new Error("IndexedDB unavailable"));
   }));
   const idbPut=value=>openDB().then(db=>new Promise((resolve,reject)=>{
@@ -210,6 +211,10 @@
     return out;
   }
   window.eviaGetEvidencePhotoData=getEvidencePhotoData;
+  const supportingPut=value=>openDB().then(db=>new Promise((resolve,reject)=>{const tx=db.transaction(SUPPORT_STORE,"readwrite");tx.objectStore(SUPPORT_STORE).put(value);tx.oncomplete=()=>resolve(value);tx.onerror=()=>reject(tx.error||new Error("Supporting evidence save failed"))}));
+  const supportingGet=id=>openDB().then(db=>new Promise((resolve,reject)=>{const tx=db.transaction(SUPPORT_STORE,"readonly"),req=tx.objectStore(SUPPORT_STORE).get(id);req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error||new Error("Supporting evidence load failed"))}));
+  window.eviaSupportingFilePut=supportingPut;
+  window.eviaSupportingFileGet=supportingGet;
 
   async function submitPack(pack){
     if(!(pack.photos||[]).length||!String(pack.write||"").trim())return false;

@@ -32,6 +32,16 @@
   };
   const latestTests=()=>({discussion:latestTest("discussion"),epa:latestTest("epa"),maths:latestTest("maths"),english:latestTest("english")});
   const testLabel=t=>({discussion:"Discussion",epa:"EPA MCQ",maths:"Maths",english:"English"}[t]||t);
+  const formatUKDate=value=>{if(!value)return "";const s=String(value);const m=s.match(/^(\\d{4})-(\\d{2})-(\\d{2})(?:$|T|\\s)/);if(m)return m[3]+"/"+m[2]+"/"+m[1];const d=new Date(s);return Number.isNaN(d.getTime())?s:d.toLocaleDateString("en-GB",{day:"2-digit",month:"2-digit",year:"numeric"})};
+  const wordCount=s=>String(s||"").trim().split(/\\s+/).filter(Boolean).length;
+  const evidenceStrength=(photos,words)=>{const p=photos<=4?"weak":photos<=9?"good":"strong",w=words<=49?"weak":words<=99?"good":"strong";return p==="strong"&&w==="strong"?"strong":p==="weak"||w==="weak"?"weak":"good"};
+  const strengthLabel=s=>s==="strong"?"Strong":s==="good"?"Good":s==="weak"?"Weak":"No evidence";
+  const meaningfulTerms=text=>{const stop=new Set("the and for with from that this have has was were are is to of a an in on at by as it i we our my you your they them did do done then than into using used use about what when where how while after before very also just more less good great completed complete evidence task job work".split(" "));const raw=String(text||"").toLowerCase().replace(/[^a-z0-9' -]/g," ").split(/\\s+/).filter(Boolean);const counts=new Map();for(let i=0;i<raw.length;i++){const w=raw[i];if(w.length>=4&&!stop.has(w))counts.set(w,(counts.get(w)||0)+1);if(i<raw.length-1){const b=w+" "+raw[i+1];if(w.length>=3&&raw[i+1].length>=3&&!stop.has(w)&&!stop.has(raw[i+1]))counts.set(b,(counts.get(b)||0)+1)}}return [...counts.entries()].sort((a,b)=>b[1]-a[1]||b[0].length-a[0].length).map(x=>x[0]).filter((x,i,a)=>!a.some((y,j)=>j<i&&y.includes(x))).slice(0,3)};
+  const unitStatement=(u,name)=>{const es=evidence.filter(e=>e.c===course&&e.u===u);if(!es.length)return "No evidence has been submitted for this unit yet.";const photos=es.reduce((n,e)=>n+(Array.isArray(e.photoIds)?e.photoIds.length:(Number.isFinite(Number(e.photoCount))?Number(e.photoCount):(Array.isArray(e.p)?e.p.length:0))),0),words=es.reduce((n,e)=>n+wordCount(e.w),0),strength=evidenceStrength(photos,words),terms=meaningfulTerms(es.map(e=>e.w||"").join(" "));const area=terms.length?" and has referenced areas such as "+terms.join(", "):"";const opening=strength==="strong"?"has built a strong evidence pack for":strength==="good"?"has built a good evidence pack for":"has started the evidence pack for";const close=strength==="strong"?"This is currently classed as a strong evidence pack based on the amount of supporting material provided.":strength==="good"?"This is currently classed as a good evidence pack based on the amount of supporting material provided.":"Further evidence or written detail would strengthen the pack.";return name+" "+opening+" "+u+area+". They have provided "+es.length+" "+(es.length===1?"occasion":"occasions")+" consisting of "+photos+" photos and "+words+" written words. "+close};
+  const bar=(label,value)=>'<div class="review-bar-row"><div><strong>'+escLocal(label)+'</strong><span>'+value+'%</span></div><div class="review-bar-track"><i style="width:'+Math.max(0,Math.min(100,Number(value)||0))+'%"></i></div></div>';
+  const stat=(label,value,sub="")=>'<div class="review-stat"><span>'+escLocal(label)+'</span><strong>'+escLocal(value)+'</strong>'+(sub?'<small>'+escLocal(sub)+'</small>':"")+'</div>';
+  const ensureReviewStyles=()=>{if(document.getElementById("evia-review-dashboard-style"))return;const s=document.createElement("style");s.id="evia-review-dashboard-style";s.textContent='.review-dashboard{display:grid;gap:14px}.review-section{border:1px solid #e4e7ec;border-radius:16px;padding:15px;background:#fff}.review-section h3{margin:0 0 11px}.review-sub{color:#667085;font-size:12px;margin:0 0 12px}.review-stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.review-stat{border:1px solid #edf0f3;border-radius:12px;padding:11px;display:grid;gap:3px}.review-stat span{font-size:11px;color:#667085}.review-stat strong{font-size:18px}.review-stat small{font-size:10px;color:#98a2b3}.review-bar-row{margin:10px 0}.review-bar-row>div:first-child{display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px}.review-bar-track{height:9px;border-radius:999px;background:#eef1f4;overflow:hidden}.review-bar-track i{display:block;height:100%;border-radius:999px;background:#1b2435}.review-chart{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;align-items:end;height:110px;padding-top:8px}.review-chart-col{height:100%;display:flex;flex-direction:column;justify-content:end;align-items:center;gap:5px}.review-chart-col i{display:block;width:70%;max-width:28px;min-height:3px;border-radius:6px 6px 2px 2px;background:#1b2435}.review-chart-col span{font-size:9px;color:#667085;text-align:center}.review-pills{display:flex;flex-wrap:wrap;gap:6px}.review-pill{border:1px solid #e1e5ea;border-radius:999px;padding:7px 9px;font-size:11px}.review-generated{line-height:1.55;color:#344054}.review-unit-strength{display:flex;align-items:center;gap:8px}.review-strength-bars{display:flex;gap:3px}.review-strength-bars i{width:7px;height:13px;border-radius:2px;background:#e5e7eb}.review-strength-bars i.filled{background:#1b2435}.target-complete-overlay{position:fixed;inset:0;z-index:300;background:rgba(20,28,42,.28);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:22px}.target-complete-modal{position:relative;width:min(92vw,390px);background:#fff;border-radius:28px;padding:28px 24px 30px;text-align:center;box-shadow:0 24px 70px rgba(16,24,40,.22);overflow:hidden}.target-complete-close{position:absolute;top:10px;right:12px;border:0;background:transparent;font-size:28px;line-height:1;color:#667085;cursor:pointer}.target-evia{width:82px;height:82px;margin:4px auto 14px;border-radius:50%;background:#f5c400;display:flex;align-items:center;justify-content:center;animation:targetEviaJump 900ms cubic-bezier(.2,.8,.2,1) both}.target-evia .evia-face{display:flex;gap:12px;align-items:center}.target-evia .evia-face i{display:block;width:10px;height:15px;border-radius:50%;background:#174b5b}.target-complete-kicker{font-size:11px;letter-spacing:.16em;font-weight:900;color:#159447;margin-top:3px}.target-complete-modal h2{margin:7px 20px 5px;font-size:22px}.target-complete-modal p{margin:0 0 18px;color:#667085}.target-complete-bar{height:16px;border-radius:999px;background:#eceff2;overflow:hidden}.target-complete-bar i{display:block;width:0;height:100%;border-radius:999px;background:linear-gradient(90deg,#d92d20 0%,#f79009 50%,#12b76a 100%);transition:width 1.4s cubic-bezier(.2,.8,.2,1)}.target-complete-bar i.complete{box-shadow:0 0 18px rgba(18,183,106,.38)}.target-complete-percent{font-size:24px;font-weight:900;margin-top:9px}.target-complete-message{opacity:0;transform:translateY(8px) scale(.94);font-size:16px;font-weight:900;color:#159447;margin-top:12px;transition:opacity .35s ease,transform .35s ease}.target-complete-message.show{opacity:1;transform:none}@keyframes targetEviaJump{0%{transform:translateY(18px) scale(.88)}35%{transform:translateY(-12px) scale(1.04)}58%{transform:translateY(2px) scale(.98)}78%{transform:translateY(-5px) scale(1.01)}100%{transform:none}}@media(min-width:700px){.review-stat-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}';document.head.appendChild(s)};
+
   const reply=(html,delay=700)=>{const chat=$("#chat");if(!chat)return;const el=document.createElement("div");el.className="bubble evia evia-thinking";el.innerHTML='<span class="thinking-label">Evia is thinking</span><span class="thinking-dots"><i></i><i></i><i></i></span>';chat.appendChild(el);chat.scrollTop=chat.scrollHeight;setTimeout(()=>{el.outerHTML='<div class="bubble evia" data-thought-complete="1">'+html+'</div>';chat.scrollTop=chat.scrollHeight},delay)};
 
   function eviaTestMe(){
@@ -112,29 +122,44 @@
           document.querySelectorAll("[data-test-answer]").forEach(x=>x.disabled=true);
           document.querySelectorAll("[data-test-answer]").forEach(x=>{if(decodeURIComponent(x.dataset.testAnswer)===correct)x.classList.add("correct")});
           if(!ok)btn.classList.add("wrong");
-          document.querySelector(".rating-options")?.remove();
-          const mini=( !ok && isAcademic && q[5] && Array.isArray(q[6]) ) ? '<div class="micro-teach"><div class="tag">Mini-session</div><p><strong>'+escLocal(q[5])+'</strong></p><div class="rating-options">'+q[6].map((a,n)=>'<button class="rating-pill" data-micro-answer="'+encodeURIComponent(a)+'"><strong>'+String.fromCharCode(65+n)+'. '+escLocal(a)+'</strong></button>').join("")+'</div><div class="micro-result" id="micro-result"></div></div>' : ( !ok ? '<br><br><strong>Mini-session:</strong> Read the explanation, then say the key point back to yourself before continuing.' : '' );
-          chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>'+(ok?"Correct":"Not quite")+'</strong><br>'+(ok?"That is correct.":"The correct answer is: "+escLocal(correct)+".")+'<br><br>'+escLocal(explanation)+mini+'</div>'+(mini?'':'<button class="chat-pill test-submit" data-next-test><strong>'+(i+1<qs.length?"Next question":"Finish")+'</strong></button>'));
-          if(mini){
-            document.querySelectorAll("[data-micro-answer]").forEach(mb=>mb.onclick=()=>{
-              const microChosen=decodeURIComponent(mb.dataset.microAnswer),microCorrect=String(q[7]??q[6][0]);
-              document.querySelectorAll("[data-micro-answer]").forEach(x=>x.disabled=true);
-              const box=document.getElementById("micro-result");
+          const currentOptions=btn.closest(".rating-options");
+          if(currentOptions)currentOptions.remove();
+          const hasMini=!ok && isAcademic && q[5] && Array.isArray(q[6]);
+          const microId="micro-"+Date.now()+"-"+i+"-"+Math.random().toString(36).slice(2,7);
+          const miniHtml=hasMini
+            ? '<div id="'+microId+'" class="micro-teach"><div class="tag">Mini-session</div><p><strong>'+escLocal(q[5])+'</strong></p><div class="rating-options micro-options">'+q[6].map((a,n)=>'<button type="button" class="rating-pill" data-micro-answer="'+encodeURIComponent(a)+'"><strong>'+String.fromCharCode(65+n)+'. '+escLocal(a)+'</strong></button>').join("")+'</div><div class="micro-result"></div></div>'
+            : '';
+          chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>'+(ok?"Correct":"Not quite")+'</strong><br>'+(ok?"That is correct.":"The correct answer is: "+escLocal(correct)+".")+'<br><br>'+escLocal(explanation)+'</div>'+miniHtml+(hasMini?'':'<button type="button" class="chat-pill test-submit" data-next-test><strong>'+(i+1<qs.length?"Next question":"Finish")+'</strong></button>'));
+          if(hasMini){
+            const microBlock=document.getElementById(microId);
+            const microButtons=Array.from(microBlock.querySelectorAll("[data-micro-answer]"));
+            microButtons.forEach(mb=>mb.onclick=e=>{
+              e.preventDefault();
+              e.stopPropagation();
+              if(microBlock.dataset.answered==="1")return;
+              microBlock.dataset.answered="1";
+              const microChosen=decodeURIComponent(mb.dataset.microAnswer);
+              const microCorrect=String(q[7]??q[6][0]);
+              microButtons.forEach(x=>x.disabled=true);
+              const box=microBlock.querySelector(".micro-result");
               if(microChosen===microCorrect){
                 mb.classList.add("correct");
                 box.innerHTML='<strong>Mini-session complete.</strong> You can move on.';
-                chatEl.insertAdjacentHTML("beforeend",'<button class="chat-pill test-submit" data-next-test><strong>'+(i+1<qs.length?"Next question":"Finish")+'</strong></button>');
               }else{
                 mb.classList.add("wrong");
+                microButtons.forEach(x=>{if(decodeURIComponent(x.dataset.microAnswer)===microCorrect)x.classList.add("correct")});
                 box.innerHTML='Not quite. The correct answer is <strong>'+escLocal(microCorrect)+'</strong>.';
-                document.querySelectorAll("[data-micro-answer]").forEach(x=>{if(decodeURIComponent(x.dataset.microAnswer)===microCorrect){x.disabled=false;x.classList.add("correct")}});
               }
+              const nextWrap=document.createElement("div");
+              nextWrap.innerHTML='<button type="button" class="chat-pill test-submit" data-next-test><strong>'+(i+1<qs.length?"Next question":"Finish")+'</strong></button>';
+              microBlock.appendChild(nextWrap.firstElementChild);
+              const next=microBlock.querySelector("[data-next-test]");
+              next.onclick=e=>{e.preventDefault();e.stopPropagation();next.remove();i++;ask()};
               scroll();
-              const next=document.querySelector("[data-next-test]");
-              if(next)next.onclick=()=>{next.remove();i++;ask()};
             });
           }else{
-            document.querySelector("[data-next-test]").onclick=()=>{document.querySelector("[data-next-test]").remove();i++;ask()};
+            const next=document.querySelector("[data-next-test]");
+            if(next)next.onclick=()=>{next.remove();i++;ask()};
           }
           scroll();
         });
@@ -146,12 +171,13 @@
   function targetReasoning(metrics){
     const targets=[];
     const now=new Date();
-    const add=(title,reason,weeks,kind)=>{
+    const add=(title,reason,weeks,kind,targetValue,measure)=>{
       const deadline=new Date(now);deadline.setDate(deadline.getDate()+weeks*7);
-      targets.push({title,reason,deadline:deadline.toISOString().slice(0,10),kind});
+      targets.push({title,reason,deadline:deadline.toISOString().slice(0,10),kind,targetValue:targetValue||null,measure:measure||null});
     };
+    add("Gather 15 learning hours","Build your off-the-job learning record.",8,"otj_hours",15,"otj_hours");
     if(metrics.unitGap>0)add("Capture evidence for your next outstanding unit","You have "+metrics.unitGap+" course unit"+(metrics.unitGap===1?"":"s")+" without saved evidence.",2,"units");
-    else if(metrics.weakUnits>0)add("Strengthen weaker portfolio evidence","Some started units need additional photos or written detail.",2,"portfolio");
+    else if(metrics.weakUnits>0)add("Strengthen weaker evidence","Some started units need additional photos or written detail.",2,"portfolio");
     if(academicEnabled("maths"))add(metrics.mathsPct!==null&&metrics.mathsPct<70?"Practise Maths Level 2":"Maintain Maths Level 2 practice",metrics.mathsPct===null?"No Maths test has been recorded yet.":"Your latest Maths result was "+metrics.mathsPct+"%.",6,"maths");
     if(academicEnabled("english"))add(metrics.englishPct!==null&&metrics.englishPct<70?"Practise English Level 2":"Maintain English Level 2 practice",metrics.englishPct===null?"No English test has been recorded yet.":"Your latest English result was "+metrics.englishPct+"%.",6,"english");
     if(metrics.epaPct===null)add("Complete EPA MCQ practice","No EPA MCQ result has been recorded yet.",8,"epa");
@@ -159,6 +185,58 @@
     if(metrics.lowConfidence)add("Revisit a low-confidence practical area","Your latest confidence check identifies a practical area to revisit.",8,"confidence");
     while(targets.length<5)add("Strengthen your next practical task","Use your next job to gather stronger evidence and reflect on what you have learned.",8+targets.length*2,"practical");
     return targets.slice(0,5).map((t,i)=>({...t,id:"target-"+Date.now()+"-"+i,priority:i+1,createdAt:new Date().toISOString(),completed:false,progress:0}));
+  }
+  function targetProgress(t){
+    const value=String(t.measure||"");
+    if(value==="otj_hours"){
+      const total=hours.filter(x=>x.course===course||!x.course).reduce((n,x)=>n+Number(x.n||0),0);
+      return t.targetValue?Math.max(0,Math.min(100,total/Number(t.targetValue)*100)):0;
+    }
+    return Number(t.progress||0);
+  }
+  function targetStatus(t){
+    const progress=targetProgress(t);
+    if(t.completed||progress>=100)return "complete";
+    if(new Date(t.deadline+"T23:59:59").getTime()<Date.now())return "overdue";
+    return "active";
+  }
+  function showTargetComplete(t){
+    const key="evia7-target-notified-"+String(t.id);
+    if(localStorage.getItem(key)==="1")return;
+    localStorage.setItem(key,"1");
+    const pct=Math.round(Math.max(0,Math.min(100,targetProgress(t))));
+    const root=document.getElementById("modal-root");
+    if(!root)return;
+    root.innerHTML='<div class="target-complete-overlay"><section class="target-complete-modal" role="dialog" aria-modal="true" aria-label="Target complete"><button class="target-complete-close" aria-label="Close">×</button><div class="target-evia"><span class="evia-face"><i></i><i></i></span></div><div class="target-complete-kicker">TARGET COMPLETE</div><h2>'+escLocal(t.title)+'</h2><p>You reached '+pct+'% of this target.</p><div class="target-complete-bar"><i></i></div><div class="target-complete-percent">0%</div><div class="target-complete-message">Target complete</div></section></div>';
+    const close=root.querySelector(".target-complete-close");
+    const bar=root.querySelector(".target-complete-bar i"),percent=root.querySelector(".target-complete-percent"),message=root.querySelector(".target-complete-message");
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      bar.style.width="100%";
+      let start=performance.now();
+      const animate=now=>{
+        const p=Math.min(1,(now-start)/1400);
+        const shown=Math.round(p*100);
+        percent.textContent=shown+"%";
+        if(p<1)requestAnimationFrame(animate);else{message.classList.add("show");bar.classList.add("complete")}
+      };
+      requestAnimationFrame(animate);
+    }));
+    close.onclick=()=>root.innerHTML="";
+  }
+  function syncTargets(showNotification=true){
+    const all=read(TARGET_KEY,[]);
+    let changed=false;
+    all.forEach(t=>{
+      if(t.course!==course)return;
+      const progress=Math.round(Math.max(0,Math.min(100,targetProgress(t))));
+      if(Number(t.progress||0)!==progress){t.progress=progress;changed=true}
+      if(progress>=100&&!t.completed){
+        t.completed=true;t.completedAt=t.completedAt||new Date().toISOString();changed=true;
+        if(showNotification)showTargetComplete(t);
+      }
+    });
+    if(changed)write(TARGET_KEY,all);
+    return all.filter(t=>t.course===course);
   }
   function metrics(){
     const entries=evidence.filter(e=>e.c===course), units=data().u;
@@ -172,7 +250,7 @@
     captured.forEach(k=>{if(groups["captured"+k[0]]!==undefined)groups["captured"+k[0]]++});
     const unitDetails=units.map(u=>{
       const es=entries.filter(e=>e.u===u[0]);
-      return {unit:u[0],entries:es.length,photos:es.reduce((n,e)=>n+(Array.isArray(e.photoIds)?e.photoIds.length:(Number.isFinite(Number(e.photoCount))?Number(e.photoCount):(Array.isArray(e.p)?e.p.length:0))),0),words:es.reduce((n,e)=>n+String(e.w||"").trim().split(/\s+/).filter(Boolean).length,0),ksbs:[...new Set(es.flatMap(e=>Array.isArray(e.k)?e.k:[]))],evidence:es.map(e=>({date:e.savedAt||e.d||"",photos:Array.isArray(e.photoIds)?e.photoIds.length:(Number.isFinite(Number(e.photoCount))?Number(e.photoCount):(Array.isArray(e.p)?e.p.length:0)),notes:e.w||"",ksbs:Array.isArray(e.k)?e.k:[]}))};
+      return {unit:u[0],entries:es.length,photos:es.reduce((n,e)=>n+(Array.isArray(e.photoIds)?e.photoIds.length:(Number.isFinite(Number(e.photoCount))?Number(e.photoCount):(Array.isArray(e.p)?e.p.length:0))),0),words:es.reduce((n,e)=>n+String(e.w||"").trim().split(/\s+/).filter(Boolean).length,0),ksbs:[...new Set(es.flatMap(e=>Array.isArray(e.k)?e.k:[]))],evidence:es.map(e=>({date:formatUKDate(e.savedAt||e.d||""),photos:Array.isArray(e.photoIds)?e.photoIds.length:(Number.isFinite(Number(e.photoCount))?Number(e.photoCount):(Array.isArray(e.p)?e.p.length:0)),notes:e.w||"",ksbs:Array.isArray(e.k)?e.k:[]}))};
     });
     const totalOTJ=hours.reduce((n,x)=>n+Number(x.n||0),0), meta=courseProgressMeta(), p=read("evia7-profile",{});
     let elapsed=0;
@@ -182,22 +260,51 @@
     const pct=type=>{const t=latestTest(type);return t&&typeof t.pct==="number"?t.pct:null};
     const tests={discussion:latestTest("discussion"),epa:latestTest("epa"),maths:latestTest("maths"),english:latestTest("english")};
     const testDetails={};Object.keys(tests).forEach(k=>{const t=tests[k];testDetails[k]=t?{pct:t.pct,score:t.score,total:t.total,questions:t.questions||[],savedAt:t.savedAt||null}:null});
-    const otjDetails=hours.map(x=>({date:x.savedAt||x.d||"",hours:Number(x.n||0),description:x.description||""}));
-    return {covered:covered.size,units:units.length,unitGap:Math.max(0,units.length-covered.size),completion:units.length?Math.round(covered.size/units.length*100):0,entries:entries.length,totalPhotos,totalWords,unitDetails,otjDetails,ksbTotal:allKsb.size,ksbCaptured:captured.size,ksbCompletion:allKsb.size?Math.round(captured.size/allKsb.size*100):0,ksbGroups:groups,totalOTJ,otjEntries:hours.length,otjBatches:otjBatches.length,otjTarget:meta.otjTarget,otjBehind:meta.otjTarget?totalOTJ<Math.max(1,meta.otjTarget*elapsed):false,elapsed,tests:testDetails,confidenceAverage,confidenceRatings:current?.scores||[],previousConfidenceRatings:previous?.scores||[],confidenceChecks:history.length,lowConfidence:(current?.scores||[]).filter(x=>x.score<=2).map(x=>x.area)};
-  }
-  function targetStatus(t){
-    if(t.completed||t.progress>=100)return "complete";
-    if(new Date(t.deadline+"T23:59:59").getTime()<Date.now())return "overdue";
-    return "active";
+    const otjDetails=hours.map(x=>({date:formatUKDate(x.savedAt||x.d||""),hours:Number(x.n||0),description:x.description||""}));
+    return {covered:covered.size,units:units.length,unitGap:Math.max(0,units.length-covered.size),completion:units.length?Math.round(covered.size/units.length*100):0,entries:entries.length,totalPhotos,totalWords,unitDetails,otjDetails,ksbTotal:allKsb.size,ksbCaptured:captured.size,ksbCompletion:allKsb.size?Math.round(captured.size/allKsb.size*100):0,ksbGroups:groups,totalOTJ,otjEntries:hours.length,otjBatches:otjBatches.length,otjTarget:meta.otjTarget,otjBehind:meta.otjTarget?totalOTJ<Math.max(1,meta.otjTarget*elapsed):false,elapsed,timePercent:Math.round(elapsed*100),tests:testDetails,confidenceAverage,confidenceRatings:current?.scores||[],previousConfidenceRatings:previous?.scores||[],confidenceChecks:history.length,lowConfidence:(current?.scores||[]).filter(x=>x.score<=2).map(x=>x.area)};
   }
   function targetHtml(t){
-    const status=targetStatus(t), label=status==="complete"?"Completed":status==="overdue"?"Overdue":"Active";
-    return '<div class="target-item '+status+'"><div><strong>'+escLocal(t.title)+'</strong><p>'+escLocal(t.reason)+'</p><small>Due '+escLocal(new Date(t.deadline+"T00:00:00").toLocaleDateString("en-GB"))+' · '+label+'</small></div><b>'+Math.min(100,Math.max(0,Number(t.progress||0)))+'%</b></div>';
+    const status=targetStatus(t), progress=Math.round(targetProgress(t)), label=status==="complete"?"Completed":status==="overdue"?"Overdue":"Active";
+    return '<div class="target-item '+status+'"><div><strong>'+escLocal(t.title)+'</strong><p>'+escLocal(t.reason)+'</p><small>Due '+escLocal(new Date(t.deadline+"T00:00:00").toLocaleDateString("en-GB"))+' · '+label+'</small></div><b>'+progress+'%</b></div>';
   }
   function quickTarget(m){
-    const targets=read(TARGET_KEY,[]).filter(t=>t.course===course&&!t.completed);
-    if(targets.length)return targets[0];
-    const t=targetReasoning(m)[0];t.course=course;write(TARGET_KEY,[t]);return t;
+    const existing=syncTargets(false).filter(t=>!t.completed);
+    if(existing.length)return existing[0];
+    const t=targetReasoning(m)[0];t.course=course;write(TARGET_KEY,read(TARGET_KEY,[]).concat(t));return t;
+  }
+  function reviewKsbFollowUp(metrics){
+    const captured=new Set(evidence.filter(e=>e.c===course).flatMap(e=>Array.isArray(e.k)?e.k:[]));
+    const areas=[
+      {key:"Teamwork",question:"Can you describe a recent time when you worked effectively as part of a team?",match:k=>/^B5$/i.test(code(k))||/team[- ]?focus|team work|teamwork|team goals|wider build team/i.test(text(k))},
+      {key:"Equality, diversity and inclusion",question:"Can you describe a recent example of treating people fairly, respectfully and inclusively at work?",match:k=>/^B3$/i.test(code(k))||/inclusive|inclusion|divers|equity/i.test(text(k))},
+      {key:"Health & safety",question:"Can you describe a recent example of how you worked safely and followed the correct health and safety procedures?",match:k=>/^S1$/i.test(code(k))||/^S2$/i.test(code(k))||/health and safety|safe systems of work|safety control|risk assessment|hazard/i.test(text(k))},
+      {key:"Wellbeing",question:"Can you describe how you recognise wellbeing needs for yourself or others and know where to get support?",match:k=>/^S13$/i.test(code(k))||/^K20$/i.test(code(k))||/well-being|wellbeing|mental and physical health|access support/i.test(text(k))},
+      {key:"Communication",question:"Can you describe a recent example of communicating clearly with others at work?",match:k=>/^S8$/i.test(code(k))||/^K13$/i.test(code(k))||/verbal communication|communication techniques|communicate with others/i.test(text(k))}
+    ];
+    const all=data().u.flatMap(u=>u[1]);
+    for(const area of areas){
+      const relevant=all.filter(area.match);
+      const outstanding=relevant.filter(k=>!captured.has(code(k)));
+      if(outstanding.length)return {area:area.key,question:area.question,ksbs:outstanding.map(k=>code(k))};
+    }
+    return null;
+  }
+  function reviewAutoSummary(m){
+    const active=m.unitDetails.filter(u=>u.entries>0);
+    const outstanding=m.unitDetails.filter(u=>u.entries===0);
+    const strong=active.filter(u=>evidenceStrength(u.photos,u.words)==="strong");
+    const good=active.filter(u=>evidenceStrength(u.photos,u.words)==="good");
+    const successes=[];
+    if(strong.length)successes.push("You have built strong evidence in "+strong.slice(0,3).map(u=>u.unit).join(", ")+".");
+    else if(good.length)successes.push("You have built good evidence in "+good.slice(0,3).map(u=>u.unit).join(", ")+".");
+    else if(active.length)successes.push("You have started building evidence across "+active.length+" course "+(active.length===1?"unit":"units")+".");
+    if(m.ksbCaptured>0)successes.push("You have evidenced "+m.ksbCaptured+" of "+m.ksbTotal+" mapped KSBs.");
+    const development=[];
+    if(outstanding.length)development.push("Evidence is still outstanding for "+outstanding.slice(0,3).map(u=>u.unit).join(", ")+".");
+    const weak=active.filter(u=>evidenceStrength(u.photos,u.words)==="weak");
+    if(weak.length)development.push(weak.slice(0,3).map(u=>u.unit).join(", ")+" would benefit from more supporting evidence or written detail.");
+    if(!development.length)development.push("Continue building evidence across your remaining learning activities and strengthen existing evidence where needed.");
+    return {successes:successes.join(" "),development:development.join(" ")};
   }
   function progressReview(){
     const m=metrics(), target=quickTarget(m);
@@ -209,38 +316,70 @@
     setTimeout(()=>{const b=$("#start-full-review");if(b)b.onclick=()=>fullReview();},950);
   }
   function fullReview(){
-    const m=metrics(), targets=targetReasoning(m).map(t=>({...t,course})), test=latestTests(), history=confidenceHistory().filter(x=>x.course===course&&Array.isArray(x.scores)), p=read("evia7-profile",{}), name=String(p.name||"").trim(), id="review-"+Date.now();
-    const review={id,course,date:new Date().toISOString(),learner:name,profile:{start:p.start||"",end:p.end||""},metrics:m,tests:{discussion:test.discussion?.pct??null,epa:test.epa?.pct??null,maths:academicEnabled("maths")?(test.maths?.pct??null):null,english:academicEnabled("english")?(test.english?.pct??null):null},testDetails:m.tests,confidence:m.confidenceRatings,previousConfidence:m.previousConfidenceRatings,targets};
+    const m=metrics(), targets=targetReasoning(m).map(t=>({...t,course})), test=latestTests(), p=read("evia7-profile",{}), name=String(p.name||"").trim(), id="review-"+Date.now();
+    const auto=reviewAutoSummary(m), followUp=reviewKsbFollowUp(m);
+    const review={id,course,date:new Date().toISOString(),learner:name,profile:{start:p.start||"",end:p.end||""},metrics:m,tests:{discussion:test.discussion?.pct??null,epa:test.epa?.pct??null,maths:academicEnabled("maths")?(test.maths?.pct??null):null,english:academicEnabled("english")?(test.english?.pct??null):null},testDetails:m.tests,confidence:m.confidenceRatings,previousConfidence:m.previousConfidenceRatings,targets,autoSummary:auto,ksbFollowUp:followUp};
     const all=read(REVIEW_KEY,[]);all.push(review);write(REVIEW_KEY,all.slice(-30));
     const existing=read(TARGET_KEY,[]).filter(t=>t.course!==course||t.completed);write(TARGET_KEY,existing.concat(targets));
     renderFullReview(review);
   }
-  function renderFullReview(review){
-    const m=review.metrics, testBits=[["Discussion",review.tests.discussion],["EPA MCQ",review.tests.epa],["Maths",review.tests.maths],["English",review.tests.english]].filter(([,v])=>v!==null).map(([l,v])=>'<span class="pill">'+l+': '+v+'%</span>').join("");
-    const units=m.unitDetails.map(u=>'<details class="review-detail"><summary><strong>'+escLocal(u.unit)+'</strong><span>'+u.entries+' entries · '+u.photos+' photos</span></summary><p>'+u.words+' written words · '+u.ksbs.length+' KSBs captured.</p>'+u.evidence.map(e=>'<div class="review-detail-row"><strong>'+escLocal(e.date)+'</strong><span>'+e.photos+' photos · '+e.ksbs.join(", ")+'</span>'+(e.notes?'<p>'+escLocal(e.notes)+'</p>':"")+'</div>').join("")+'</details>').join("");
-    const conf=m.confidenceRatings.length?m.confidenceRatings.map(x=>'<span class="pill">'+escLocal(x.area)+': '+x.score+'/4</span>').join(""):'<span class="pill">No confidence check yet</span>';
-    reply('<strong>Full progress review complete</strong><br>I’ve saved the complete review to your Portfolio.<br><br><div class="review-report"><h3>Course progress</h3><p><strong>Evidence:</strong> '+m.completion+'% ('+m.covered+'/'+m.units+' units) · '+m.entries+' entries · '+m.totalPhotos+' photos · '+m.totalWords+' written words.</p><p><strong>KSB coverage:</strong> '+m.ksbCompletion+'% ('+m.ksbCaptured+'/'+m.ksbTotal+') — S '+m.ksbGroups.capturedS+'/'+m.ksbGroups.S+' · K '+m.ksbGroups.capturedK+'/'+m.ksbGroups.K+' · B '+m.ksbGroups.capturedB+'/'+m.ksbGroups.B+'.</p><h3>Unit tracking</h3>'+units+'<h3>Off-the-job learning</h3><p>'+m.totalOTJ.toFixed(2)+' hours across '+m.otjEntries+' entries and '+m.otjBatches+' downloads.</p>'+m.otjDetails.map(x=>'<div class="review-detail-row"><strong>'+escLocal(x.date)+'</strong><span>'+x.hours.toFixed(2)+' hours</span><p>'+escLocal(x.description)+'</p></div>').join("")+'<h3>Practice & tests</h3><div class="row">'+testBits+'</div><h3>Confidence tracking</h3><p>'+m.confidenceChecks+' checks recorded'+(m.confidenceAverage!==null?' · latest average '+m.confidenceAverage+'/4':'')+'.</p><div class="row">'+conf+'</div><h3>Targets</h3>'+review.targets.map(targetHtml).join("")+'</div><br><button class="chat-pill" id="open-saved-review"><strong>Open saved review</strong></button>');
-    setTimeout(()=>{const b=$("#open-saved-review");if(b)b.onclick=()=>showReview(review.id)},950);
+  function reviewDashboardHtml(review){ensureReviewStyles();const m=review.metrics,p=read("evia7-profile",{}),name=String(review.learner||p.name||"Apprentice").split(/\\s+/)[0]||"Apprentice",timePct=Number(m.timePercent||m.elapsed*100||0),ksbPct=Number(m.ksbCompletion||0),strengthCounts={strong:0,good:0,weak:0};m.unitDetails.forEach(u=>{const s=evidenceStrength(u.photos,u.words);if(s)strengthCounts[s]++});const testCards=["maths","english","epa","discussion"].map(k=>{const t=m.tests[k],enabled=k==="maths"||k==="english"?academicEnabled(k):true;if(!enabled)return stat(testLabel(k),"Not enabled");if(!t)return stat(testLabel(k),"No test yet","0 attempts");const all=read(TEST_KEY,[]).filter(x=>x.course===course&&x.type===k),scores=all.map(x=>Number(x.pct)||0);return stat(testLabel(k),t.pct+"%",all.length+" attempts · best "+Math.max(...scores)+"%")}).join(""),recentTests=["maths","english","epa","discussion"].flatMap(k=>read(TEST_KEY,[]).filter(x=>x.course===course&&x.type===k).map(x=>({k,pct:Number(x.pct)||0,date:x.savedAt||""}))).sort((a,b)=>new Date(a.date)-new Date(b.date)).slice(-4),testChart=recentTests.length?'<div class="review-chart">'+recentTests.map(x=>'<div class="review-chart-col"><i style="height:'+Math.max(4,Math.min(100,x.pct))+'%"></i><span>'+escLocal(testLabel(x.k))+'<br>'+x.pct+'%</span></div>').join("")+'</div>':'<p class="review-sub">No test attempts recorded yet.</p>',unitHtml=m.unitDetails.map(u=>{const s=evidenceStrength(u.photos,u.words);return '<details class="review-detail"><summary><strong>'+escLocal(u.unit)+'</strong><span>'+u.entries+' occasions · '+u.photos+' photos</span></summary><div class="review-unit-strength"><span class="review-strength-bars">'+[0,1,2].map(i=>'<i class="'+(i<(s==="strong"?3:s==="good"?2:s==="weak"?1:0)?"filled":"")+'"></i>').join("")+'</span><strong>'+strengthLabel(s)+'</strong></div><p class="review-generated">'+escLocal(unitStatement(u.unit,name))+'</p><p>'+u.words+' written words · '+u.ksbs.length+' KSBs captured.</p>'+u.evidence.map(e=>'<div class="review-detail-row"><strong>'+escLocal(e.date)+'</strong><span>'+e.photos+' photos · '+escLocal(e.ksbs.join(", "))+'</span></div>').join("")+'</details>'}).join(""),subjectCards=["maths","english"].map(k=>'<div class="review-stat"><span>'+testLabel(k)+'</span><strong>'+(academicEnabled(k)?"Enabled":"Not enabled")+'</strong><small>'+(!academicEnabled(k)?"Not part of current learner setup.":m.tests[k]?m.tests[k].pct+"% latest · "+read(TEST_KEY,[]).filter(x=>x.course===course&&x.type===k).length+" attempts":"Enabled · no test completed yet")+'</small></div>').join(""),conf=m.confidenceRatings.length?m.confidenceRatings.map(x=>'<span class="review-pill">'+escLocal(x.area)+': '+x.score+'/4</span>').join(""):'<span class="review-pill">No confidence check yet</span>';return '<div class="review-dashboard"><section class="review-section"><h3>Time on programme vs KSB coverage</h3><p class="review-sub">Elapsed course time compared with KSBs captured in evidence.</p>'+bar("Time on programme",timePct)+bar("KSBs captured",ksbPct)+'</section><section class="review-section"><h3>KSB coverage</h3><div class="review-stat-grid">'+stat("Overall",m.ksbCaptured+"/"+m.ksbTotal,ksbPct+"% captured")+stat("Skills",m.ksbGroups.capturedS+"/"+m.ksbGroups.S,m.ksbGroups.S?Math.round(m.ksbGroups.capturedS/m.ksbGroups.S*100)+"%":"0%")+stat("Knowledge",m.ksbGroups.capturedK+"/"+m.ksbGroups.K,m.ksbGroups.K?Math.round(m.ksbGroups.capturedK/m.ksbGroups.K*100)+"%":"0%")+stat("Behaviours",m.ksbGroups.capturedB+"/"+m.ksbGroups.B,m.ksbGroups.B?Math.round(m.ksbGroups.capturedB/m.ksbGroups.B*100)+"%":"0%")+'</div></section><section class="review-section"><h3>Evidence portfolio</h3><div class="review-stat-grid">'+stat("Evidence occasions",m.entries)+stat("Photos",m.totalPhotos)+stat("Written words",m.totalWords)+stat("Units covered",m.covered+"/"+m.units,m.completion+"%")+'</div><div class="review-pills"><span class="review-pill">Strong: '+strengthCounts.strong+'</span><span class="review-pill">Good: '+strengthCounts.good+'</span><span class="review-pill">Weak: '+strengthCounts.weak+'</span></div></section><section class="review-section"><h3>Maths & English</h3><div class="review-stat-grid">'+subjectCards+'</div></section><section class="review-section"><h3>EPA & practice tests</h3><div class="review-stat-grid">'+testCards+'</div>'+testChart+'</section><section class="review-section"><h3>Confidence</h3><div class="review-stat-grid">'+stat("Checks",m.confidenceChecks)+stat("Latest average",m.confidenceAverage!==null?m.confidenceAverage+"/4":"No check")+'</div><div class="review-pills">'+conf+'</div></section><section class="review-section"><h3>Off-the-job learning</h3><div class="review-stat-grid">'+stat("Total OTJ",m.totalOTJ.toFixed(2)+" hours")+stat("Learning entries",m.otjEntries)+stat("OTJ PDF batches",m.otjBatches)+'</div></section><section class="review-section"><h3>Evidence by unit</h3>'+unitHtml+'</section><section class="review-section"><h3>Targets</h3>'+review.targets.map(targetHtml).join("")+'</section></div>'}
+  function renderFullReview(review){ensureReviewStyles();reply('<strong>Review prepared</strong><br>I’ve analysed your completed work, KSB progress and review data.<br><br>'+reviewDashboardHtml(review)+'<br><button class="chat-pill" id="open-saved-review"><strong>Open review</strong></button>');setTimeout(()=>{const b=document.querySelector("#open-saved-review");if(b)b.onclick=()=>showReview(review.id)},950)}
+  function showReview(id){const review=read(REVIEW_KEY,[]).find(x=>x.id===id);if(!review)return;if(review.course===course){const fresh=metrics();review.metrics={...review.metrics,totalPhotos:fresh.totalPhotos,unitDetails:fresh.unitDetails,timePercent:fresh.timePercent,elapsed:fresh.elapsed};const all=read(REVIEW_KEY,[]),idx=all.findIndex(x=>x.id===id);if(idx>=0){all[idx]=review;write(REVIEW_KEY,all)}}startReviewConversation(review)}
+  function saveReviewUpdate(review){const all=read(REVIEW_KEY,[]),idx=all.findIndex(x=>x.id===review.id);if(idx>=0){all[idx]=review;write(REVIEW_KEY,all)}}
+  function startReviewConversation(review){
+    const chatEl=$("#chat");
+    if(!chatEl){openSavedReview(review);return}
+    const followUp=review.ksbFollowUp;
+    const prompts=[
+      ["wellbeing","Is there anything affecting your wellbeing, learning or work that you would like your tutor or assessor to know about?","You can leave this blank if there is nothing you need to raise."],
+      ["learnerFeedback","How are you finding your apprenticeship? Is there anything you would like to tell us about your learning or support?","Tell us anything you think is useful for your review."]
+    ];
+    if(followUp)prompts.push(["ksbFollowUp",followUp.question,"This is a review question only; your answer will be included in the review and will not automatically mark the KSB as evidenced."]);
+    const blockId="review-short-"+Date.now();
+    chatEl.insertAdjacentHTML("beforeend",'<div id="'+blockId+'" class="review-text-block"><div class="bubble evia"><strong>Short review</strong><br>I’ll use your completed work and KSB progress for the main review. I only need a couple of short comments from you.</div>'+prompts.map((p,i)=>'<div class="review-short-question" data-review-short-index="'+i+'" data-review-short-key="'+escLocal(p[0])+'"><div class="bubble evia"><strong>'+escLocal(p[1])+'</strong><br><span class="review-sub">'+escLocal(p[2])+'</span></div><textarea class="test-response" data-review-short-answer placeholder="Type your answer..."></textarea></div>').join("")+'<button type="button" class="chat-pill test-submit" data-review-short-complete><strong>Complete review</strong></button></div>');
+    const root=document.getElementById(blockId);
+    if(!root){openSavedReview(review);return}
+    const answers=root.querySelectorAll("[data-review-short-answer]");
+    const complete=root.querySelector("[data-review-short-complete]");
+    complete.onclick=e=>{
+      e.preventDefault();e.stopPropagation();
+      if(complete.disabled)return;
+      const reflection={};
+      root.querySelectorAll(".review-short-question").forEach(q=>{
+        const key=q.dataset.reviewShortKey, input=q.querySelector("[data-review-short-answer]");
+        const value=String(input?.value||"").trim();
+        if(value)reflection[key]=value;
+      });
+      review.reflection=reflection;
+      saveReviewUpdate(review);
+      answers.forEach(x=>x.disabled=true);
+      complete.disabled=true;
+      complete.remove();
+      root.insertAdjacentHTML("beforeend",'<div class="bubble user">Review comments submitted.</div><div class="bubble evia"><strong>Your review is ready.</strong><br>I’ve used your completed work, KSB progress and comments to prepare it.</div><button type="button" class="chat-pill" data-open-review-final><strong>Open full review</strong></button>');
+      const open=root.querySelector("[data-open-review-final]");
+      if(open)open.onclick=e=>{e.preventDefault();e.stopPropagation();open.remove();openSavedReview(review)};
+      chatEl.scrollTop=chatEl.scrollHeight;
+    };
+    chatEl.scrollTop=chatEl.scrollHeight;
   }
-  function showReview(id){
-    const review=read(REVIEW_KEY,[]).find(x=>x.id===id);if(!review)return;
-    // Refresh saved review evidence counts so older reviews do not retain stale photo totals.
-    if(review.course===course){
-      const fresh=metrics();
-      review.metrics={...review.metrics,totalPhotos:fresh.totalPhotos,unitDetails:fresh.unitDetails};
-      const all=read(REVIEW_KEY,[]),idx=all.findIndex(x=>x.id===id);if(idx>=0){all[idx]=review;write(REVIEW_KEY,all)}
-    }
-    const m=review.metrics, bits=[["Discussion",review.tests.discussion],["EPA MCQ",review.tests.epa],["Maths",review.tests.maths],["English",review.tests.english]].filter(([,v])=>v!==null).map(([l,v])=>'<span class="pill">'+l+': '+v+'%</span>').join("");
-    const units=m.unitDetails.map(u=>'<div class="target-item"><div><strong>'+escLocal(u.unit)+'</strong><p>'+u.entries+' evidence entries · '+u.photos+' photos · '+u.words+' words · '+u.ksbs.length+' KSBs captured</p></div></div>').join("");
-    const conf=m.confidenceRatings.length?m.confidenceRatings.map(x=>'<span class="pill">'+escLocal(x.area)+': '+x.score+'/4</span>').join(""):'<span class="pill">No confidence check</span>';
-    $("#modal-root").innerHTML='<div class="overlay"><section class="sheet review-sheet"><div class="sheet-head"><div><div class="chat-kicker">EVIA</div><h2>Full progress review · '+new Date(review.date).toLocaleDateString("en-GB")+'</h2></div><button class="close" id="review-close" aria-label="Close">×</button></div><div class="review-content"><h3>Course progress</h3><p><strong>Evidence:</strong> '+m.completion+'% ('+m.covered+'/'+m.units+' units) · '+m.entries+' entries · '+m.totalPhotos+' photos · '+m.totalWords+' written words.</p><p><strong>KSB coverage:</strong> '+m.ksbCompletion+'% ('+m.ksbCaptured+'/'+m.ksbTotal+') — S '+m.ksbGroups.capturedS+'/'+m.ksbGroups.S+' · K '+m.ksbGroups.capturedK+'/'+m.ksbGroups.K+' · B '+m.ksbGroups.capturedB+'/'+m.ksbGroups.B+'.</p><h3>Unit tracking</h3>'+units+'<h3>Off-the-job learning</h3><p>'+m.totalOTJ.toFixed(2)+' hours across '+m.otjEntries+' entries and '+m.otjBatches+' downloads.</p><h3>Practice & tests</h3><div class="row">'+bits+'</div><h3>Confidence tracking</h3><p>'+m.confidenceChecks+' checks recorded'+(m.confidenceAverage!==null?' · latest average '+m.confidenceAverage+'/4':'')+'.</p><div class="row">'+conf+'</div><h3>Targets</h3>'+review.targets.map(targetHtml).join("")+'</div><div class="review-actions"><button class="secondary" id="review-pdf">Download PDF</button></div></section></div>';
+  function openSavedReview(review){
+    ensureReviewStyles();
+    const auto=review.autoSummary||reviewAutoSummary(review.metrics);
+    const followUp=review.ksbFollowUp;
+    const reflection=review.reflection||{};
+    const ksbHtml=followUp?'<section class="review-section"><h3>Additional KSB review question</h3><p class="review-sub">'+escLocal(followUp.area)+' was not fully evidenced at the time of this review.</p><div class="review-generated">'+(reflection.ksbFollowUp?escLocal(reflection.ksbFollowUp):"No response recorded.")+'</div></section>':"";
+    const reflectionHtml='<section class="review-section"><h3>Learner comments</h3>'+(reflection.wellbeing?'<p class="review-generated"><strong>Wellbeing:</strong> '+escLocal(reflection.wellbeing)+'</p>':'<p class="review-sub">No wellbeing comment was recorded.</p>')+(reflection.learnerFeedback?'<p class="review-generated"><strong>Learner feedback:</strong> '+escLocal(reflection.learnerFeedback)+'</p>':'<p class="review-sub">No learner feedback was recorded.</p>')+'</section>';
+    const autoHtml='<section class="review-section"><h3>Review summary</h3><div class="review-generated"><p><strong>Successes:</strong> '+escLocal(auto.successes)+'</p><p><strong>Areas for development:</strong> '+escLocal(auto.development)+'</p></div></section>';
+    $("#modal-root").innerHTML='<div class="overlay"><section class="sheet review-sheet"><div class="sheet-head"><div><div class="chat-kicker">EVIA</div><h2>Full progress review · '+formatUKDate(review.date)+'</h2></div><button class="close" id="review-close" aria-label="Close">×</button></div><div class="review-content">'+autoHtml+ksbHtml+reflectionHtml+reviewDashboardHtml(review)+'</div><div class="review-actions"><button class="secondary" id="review-pdf">Download PDF</button></div></section></div>';
     $("#review-close").onclick=()=>$("#modal-root").innerHTML="";
     $("#review-pdf").onclick=()=>downloadReviewPdf(review);
   }
-  function downloadReviewPdf(review){
+    function downloadReviewPdf(review){
     const p=read("evia7-profile",{}),m=review.metrics,win=window.open("","_blank");
     if(!win){alert("Please allow pop-ups to download the progress review PDF.");return;}
     const tests=[["Discussion",review.tests.discussion],["EPA MCQ",review.tests.epa],["Maths",review.tests.maths],["English",review.tests.english]].filter(([,v])=>v!==null);
+    const auto=review.autoSummary||reviewAutoSummary(review.metrics), followUp=review.ksbFollowUp, reflection=review.reflection||{};
     const testHtml=tests.map(([l,v])=>'<div class="stat"><strong>'+l+'</strong><span>'+v+'%</span></div>').join("");
     const unitHtml=m.unitDetails.map(u=>'<section class="unit"><h3>'+escLocal(u.unit)+'</h3><p><strong>'+u.entries+'</strong> evidence entries · <strong>'+u.photos+'</strong> photos · <strong>'+u.words+'</strong> written words · <strong>'+u.ksbs.length+'</strong> KSBs captured</p>'+u.evidence.map(e=>'<div class="record"><strong>'+escLocal(e.date)+'</strong><span>'+e.photos+' photos'+(e.ksbs.length?' · '+escLocal(e.ksbs.join(", ")):"")+'</span>'+(e.notes?'<p>'+escLocal(e.notes)+'</p>':"")+'</div>').join("")+'</section>').join("");
     const otjHtml=m.otjDetails.map(x=>'<div class="record"><strong>'+escLocal(x.date)+'</strong><span>'+x.hours.toFixed(2)+' hours</span>'+(x.description?'<p>'+escLocal(x.description)+'</p>':"")+'</div>').join("");
@@ -248,7 +387,7 @@
     const prevConf=m.previousConfidenceRatings.length?m.previousConfidenceRatings.map(x=>'<span class="pill">'+escLocal(x.area)+': '+x.score+'/4</span>').join(""):'No previous confidence check recorded';
     const targets=review.targets.map((t,i)=>'<section class="target"><strong>'+(i+1)+'. '+escLocal(t.title)+'</strong><p>'+escLocal(t.reason)+'</p><span>Due '+new Date(t.deadline+"T00:00:00").toLocaleDateString("en-GB")+' · '+(targetStatus(t)==="complete"?"Completed":targetStatus(t)==="overdue"?"Overdue":"Active")+' · '+Number(t.progress||0)+'%</span></section>').join("");
     const qHtml=Object.entries(m.tests).filter(([,t])=>t).map(([k,t])=>'<section class="test"><h3>'+escLocal(testLabel(k))+'</h3><p><strong>'+t.score+' / '+t.total+'</strong> · '+t.pct+'% · '+escLocal(t.savedAt||"")+'</p>'+t.questions.map((q,i)=>'<div class="record"><strong>Question '+(i+1)+'</strong><p>'+escLocal(q.question||q.prompt||"")+'</p>'+(q.chosen!==undefined?'<p>Answer: '+escLocal(q.chosen)+' · '+(q.ok?"Correct":"Incorrect")+'</p>':"")+(q.answer!==undefined?'<p>Response: '+escLocal(q.answer)+'</p>':"")+(q.explanation?'<p>Explanation: '+escLocal(q.explanation)+'</p>':"")+(q.covered?'<p>Areas covered: '+escLocal(q.covered.join(", "))+'</p>':"")+'</div>').join("")+'</section>').join("");
-    win.document.write('<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Evia Progress Review</title><style>@page{size:A4;margin:14mm}*{box-sizing:border-box}body{margin:0;color:#172033;font:10pt -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.45}header{border-bottom:2px solid #e6b800;padding-bottom:14px;margin-bottom:18px}h1{font-size:23pt;margin:4px 0}h2{font-size:16pt;margin:20px 0 9px}h3{font-size:12pt;margin:0 0 6px}.eyebrow{font-size:8pt;letter-spacing:.13em;color:#667085;font-weight:800}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.stat{border:1px solid #e4e7ec;border-radius:10px;padding:10px;display:flex;justify-content:space-between}.unit,.test,.target{border:1px solid #e4e7ec;border-radius:10px;padding:11px;margin:8px 0;break-inside:avoid}.record{border-top:1px solid #eef0f3;padding:8px 0}.record:first-of-type{border-top:0}.record strong{display:block}.record span,.target span{color:#667085;font-size:9pt}.record p{margin:4px 0}.pill{display:inline-block;border:1px solid #dfe3e8;border-radius:999px;padding:4px 7px;margin:2px}.small{color:#667085;font-size:9pt}.page-break{break-before:page}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}</style></head><body><header><div class="eyebrow">EVIA · FULL PROGRESS REVIEW</div><h1>'+escLocal(p.name||"Apprentice")+'</h1><p>'+escLocal(data().name)+' · '+escLocal(data().std)+' · Review date '+new Date(review.date).toLocaleDateString("en-GB")+'</p></header><h2>Course progress</h2><div class="grid"><div class="stat"><strong>Unit completion</strong><span>'+m.completion+'% ('+m.covered+'/'+m.units+')</span></div><div class="stat"><strong>Evidence entries</strong><span>'+m.entries+'</span></div><div class="stat"><strong>Evidence photos</strong><span>'+m.totalPhotos+'</span></div><div class="stat"><strong>Written evidence</strong><span>'+m.totalWords+' words</span></div><div class="stat"><strong>KSB coverage</strong><span>'+m.ksbCompletion+'% ('+m.ksbCaptured+'/'+m.ksbTotal+')</span></div><div class="stat"><strong>OTJ learning</strong><span>'+m.totalOTJ.toFixed(2)+(m.otjTarget?" / "+m.otjTarget:"")+' hours</span></div></div><p class="small">KSB breakdown: Skills '+m.ksbGroups.capturedS+'/'+m.ksbGroups.S+' · Knowledge '+m.ksbGroups.capturedK+'/'+m.ksbGroups.K+' · Behaviours '+m.ksbGroups.capturedB+'/'+m.ksbGroups.B+'.</p><h2>Unit-by-unit evidence tracking</h2>'+unitHtml+'<h2>Off-the-job learning records</h2>'+otjHtml+'<h2>Practice and tests</h2><div class="grid">'+testHtml+'</div>'+qHtml+'<h2>Confidence tracking</h2><p>'+m.confidenceChecks+' checks recorded'+(m.confidenceAverage!==null?' · latest average '+m.confidenceAverage+'/4':'')+'.</p><p><strong>Latest:</strong> '+confHtml+'</p><p><strong>Previous:</strong> '+prevConf+'</p>'+(m.lowConfidence.length?'<p><strong>Low-confidence areas:</strong> '+escLocal(m.lowConfidence.join(", "))+'</p>':"")+'<h2>Review targets</h2>'+targets+'</body></html>');
+    win.document.write('<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Evia Progress Review</title><style>@page{size:A4;margin:14mm}*{box-sizing:border-box}body{margin:0;color:#172033;font:10pt -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.45}header{border-bottom:2px solid #e6b800;padding-bottom:14px;margin-bottom:18px}h1{font-size:23pt;margin:4px 0}h2{font-size:16pt;margin:20px 0 9px}h3{font-size:12pt;margin:0 0 6px}.eyebrow{font-size:8pt;letter-spacing:.13em;color:#667085;font-weight:800}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.stat{border:1px solid #e4e7ec;border-radius:10px;padding:10px;display:flex;justify-content:space-between}.unit,.test,.target{border:1px solid #e4e7ec;border-radius:10px;padding:11px;margin:8px 0;break-inside:avoid}.record{border-top:1px solid #eef0f3;padding:8px 0}.record:first-of-type{border-top:0}.record strong{display:block}.record span,.target span{color:#667085;font-size:9pt}.record p{margin:4px 0}.pill{display:inline-block;border:1px solid #dfe3e8;border-radius:999px;padding:4px 7px;margin:2px}.small{color:#667085;font-size:9pt}.page-break{break-before:page}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}</style></head><body><header><div class="eyebrow">EVIA · FULL PROGRESS REVIEW</div><h1>'+escLocal(p.name||"Apprentice")+'</h1><p>'+escLocal(data().name)+' · '+escLocal(data().std)+' · Review date '+new Date(review.date).toLocaleDateString("en-GB")+'</p></header><h2>Course progress</h2><div class="grid"><div class="stat"><strong>Unit completion</strong><span>'+m.completion+'% ('+m.covered+'/'+m.units+')</span></div><div class="stat"><strong>Evidence entries</strong><span>'+m.entries+'</span></div><div class="stat"><strong>Evidence photos</strong><span>'+m.totalPhotos+'</span></div><div class="stat"><strong>Written evidence</strong><span>'+m.totalWords+' words</span></div><div class="stat"><strong>KSB coverage</strong><span>'+m.ksbCompletion+'% ('+m.ksbCaptured+'/'+m.ksbTotal+')</span></div><div class="stat"><strong>OTJ learning</strong><span>'+m.totalOTJ.toFixed(2)+(m.otjTarget?" / "+m.otjTarget:"")+' hours</span></div></div><p class="small">KSB breakdown: Skills '+m.ksbGroups.capturedS+'/'+m.ksbGroups.S+' · Knowledge '+m.ksbGroups.capturedK+'/'+m.ksbGroups.K+' · Behaviours '+m.ksbGroups.capturedB+'/'+m.ksbGroups.B+'.</p><h2>Unit-by-unit evidence tracking</h2>'+unitHtml+'<h2>Off-the-job learning records</h2>'+otjHtml+'<h2>Practice and tests</h2><div class="grid">'+testHtml+'</div>'+qHtml+'<h2>Confidence tracking</h2><p>'+m.confidenceChecks+' checks recorded'+(m.confidenceAverage!==null?' · latest average '+m.confidenceAverage+'/4':'')+'.</p><p><strong>Latest:</strong> '+confHtml+'</p><p><strong>Previous:</strong> '+prevConf+'</p>'+(m.lowConfidence.length?'<p><strong>Low-confidence areas:</strong> '+escLocal(m.lowConfidence.join(", "))+'</p>':"")+'<h2>Review summary</h2><p><strong>Successes:</strong> '+escLocal(auto.successes)+'</p><p><strong>Areas for development:</strong> '+escLocal(auto.development)+'</p>'+(followUp?'<h2>Additional KSB review question</h2><p><strong>'+escLocal(followUp.area)+'</strong> was not fully evidenced at the time of this review.</p><p>'+escLocal(reflection.ksbFollowUp||"No response recorded.")+'</p>':"")+'<h2>Learner comments</h2><p><strong>Wellbeing:</strong> '+escLocal(reflection.wellbeing||"No comment recorded.")+'</p><p><strong>Learner feedback:</strong> '+escLocal(reflection.learnerFeedback||"No comment recorded.")+'</p><h2>Review targets</h2>'+targets+'</body></html>');
     win.document.close();win.focus();setTimeout(()=>win.print(),250);
   }
   function targetsCardHtml(){
@@ -256,13 +395,7 @@
     if(!targets.length)return '<div class="card targets-card"><div class="section-title">TARGETS</div><h2>My targets</h2><p>No active targets yet. Complete a full progress review to create five.</p></div>';
     return '<div class="card targets-card"><div class="section-title">TARGETS</div><h2>My targets</h2>'+targets.map(t=>'<div class="target-item '+targetStatus(t)+'"><div><strong>'+escLocal(t.title)+'</strong><p>'+escLocal(t.reason)+'</p><small>Due '+new Date(t.deadline+"T00:00:00").toLocaleDateString("en-GB")+(targetStatus(t)==="overdue"?" · Overdue":"")+'</small></div>'+(targetStatus(t)==="complete"?'<b>Completed</b>':'<button class="secondary" data-target-complete="'+escLocal(t.id||"")+'">Mark complete</button>')+'</div>').join("")+'</div>';
   }
-  function bindTargets(){
-    document.querySelectorAll("[data-target-complete]").forEach(b=>b.onclick=()=>{
-      const all=read(TARGET_KEY,[]),idx=all.findIndex(t=>t.course===course&&String(t.id)===String(b.dataset.targetComplete));
-      if(idx<0)return;all[idx].completed=true;all[idx].progress=100;all[idx].completedAt=new Date().toISOString();write(TARGET_KEY,all);
-      if(typeof progress==="function")progress();
-    });
-  }
+  function bindTargets(){ syncTargets(false); }
   window.eviaTargetsCardHtml=targetsCardHtml;
   window.eviaBindTargets=bindTargets;
   window.eviaTestMe=eviaTestMe;
@@ -274,4 +407,5 @@
   window.eviaGetTargets=()=>read(TARGET_KEY,[]).filter(x=>x.course===course);
   window.eviaTargetStatus=targetStatus;
   window.eviaTargetHtml=targetHtml;
+  window.eviaCheckTargets=()=>syncTargets(true);
 })();
