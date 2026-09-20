@@ -303,6 +303,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text"
   opacity:.55;
 }
 .ksb-tile{
+  aspect-ratio:1/1;
+  min-height:0;
+  padding:10px;
   background:linear-gradient(145deg,#fbfcfd,#f5f7f9);
   transition:transform .2s cubic-bezier(.2,.8,.2,1),background .25s ease,border-color .25s ease,box-shadow .25s ease;
 }
