@@ -384,3 +384,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text"
 .micro-teach .tag{font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;color:#9a7b00;margin-bottom:7px}
 .micro-result{margin-top:9px;font-size:13px;line-height:1.4}
 .review-text-block{margin:10px 0 14px}
+
+/* KSB status positioning: the status layer must cover the full tile so the tick can be centred. */
+.ksb-statuses{inset:0!important;right:auto!important;bottom:auto!important;display:block!important;}
