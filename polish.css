@@ -408,14 +408,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text"
 .portfolio-app-grid{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:12px;
+  gap:10px;
   margin-top:4px;
+  width:100%;
+  box-sizing:border-box;
 }
 .portfolio-app-tile{
   position:relative;
   min-width:0;
-  min-height:132px;
-  padding:18px;
+  min-height:112px;
+  padding:14px;
   border:1px solid rgba(226,231,238,.96);
   border-radius:24px;
   background:linear-gradient(145deg,#ffffff 0%,#fbfcfd 68%,#fffdf3 100%);
@@ -464,11 +466,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text"
   position:relative;
   z-index:1;
   display:block;
-  font-size:31px;
+  font-size:27px;
   line-height:1;
   font-weight:750;
   letter-spacing:-.055em;
-  color:#172033;
+  color:#16834a;
 }
 .portfolio-app-count::after{
   content:" saved";
@@ -501,11 +503,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text"
 @media(max-width:520px){
   .portfolio-app-grid{gap:10px}
   .portfolio-app-tile{
-    min-height:124px;
-    padding:16px;
+    min-height:106px;
+    padding:13px;
     border-radius:22px;
   }
-  .portfolio-app-count{font-size:28px}
+  .portfolio-app-count{font-size:25px}
   .portfolio-app-name{font-size:13px}
   .portfolio-app-count::after{font-size:9px}
 }
