@@ -402,3 +402,113 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text"
   top:5px!important;
   bottom:auto!important;
 }
+
+
+/* Portfolio tiles — Apple / Samsung Health inspired metric-card surface. */
+.portfolio-app-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  margin-top:4px;
+}
+.portfolio-app-tile{
+  position:relative;
+  min-width:0;
+  min-height:132px;
+  padding:18px;
+  border:1px solid rgba(226,231,238,.96);
+  border-radius:24px;
+  background:linear-gradient(145deg,#ffffff 0%,#fbfcfd 68%,#fffdf3 100%);
+  box-shadow:0 5px 18px rgba(16,24,40,.045);
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  text-align:left;
+  overflow:hidden;
+  cursor:pointer;
+  transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s ease,border-color .2s ease;
+}
+.portfolio-app-tile::before{
+  content:"";
+  position:absolute;
+  width:58px;
+  height:58px;
+  right:-20px;
+  top:-20px;
+  border-radius:50%;
+  background:rgba(228,182,0,.09);
+}
+.portfolio-app-tile::after{
+  content:"";
+  position:absolute;
+  left:18px;
+  right:18px;
+  bottom:0;
+  height:3px;
+  border-radius:3px 3px 0 0;
+  background:linear-gradient(90deg,rgba(228,182,0,.72),rgba(228,182,0,.08));
+  opacity:.65;
+}
+.portfolio-app-tile:active{
+  transform:scale(.975);
+  box-shadow:0 3px 10px rgba(16,24,40,.035);
+}
+.portfolio-app-tile:hover{
+  transform:translateY(-2px);
+  border-color:rgba(228,182,0,.28);
+  box-shadow:0 9px 24px rgba(16,24,40,.065);
+}
+.portfolio-app-count{
+  position:relative;
+  z-index:1;
+  display:block;
+  font-size:31px;
+  line-height:1;
+  font-weight:750;
+  letter-spacing:-.055em;
+  color:#172033;
+}
+.portfolio-app-count::after{
+  content:" saved";
+  margin-left:4px;
+  font-size:10px;
+  font-weight:650;
+  letter-spacing:.01em;
+  color:#98a2b3;
+}
+.portfolio-app-name{
+  position:relative;
+  z-index:1;
+  display:block;
+  max-width:92%;
+  font-size:14px;
+  line-height:1.28;
+  font-weight:700;
+  letter-spacing:-.02em;
+  color:#344054;
+}
+.portfolio-app-special{
+  background:linear-gradient(145deg,#ffffff 0%,#fafbfc 100%);
+}
+.portfolio-app-special .portfolio-app-count{
+  font-size:27px;
+}
+.portfolio-intro + .portfolio-app-grid{
+  margin-top:14px;
+}
+@media(max-width:520px){
+  .portfolio-app-grid{gap:10px}
+  .portfolio-app-tile{
+    min-height:124px;
+    padding:16px;
+    border-radius:22px;
+  }
+  .portfolio-app-count{font-size:28px}
+  .portfolio-app-name{font-size:13px}
+  .portfolio-app-count::after{font-size:9px}
+}
+@media(min-width:800px){
+  .portfolio-app-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
