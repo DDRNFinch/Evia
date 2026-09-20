@@ -326,10 +326,18 @@ function progress(){
  const supportingCard=$("#supporting-portfolio-file");
  if(supportingCard)supportingCard.onclick=()=>openSupportingPortfolio();
  const reviewOpen=$("#open-review-files");
- if(reviewOpen)reviewOpen.onclick=()=>{
-   const latest=reviews[reviews.length-1];
-   if(latest&&window.eviaDownloadReviewPdf)window.eviaDownloadReviewPdf(latest);
- };
+ if(reviewOpen)reviewOpen.onclick=()=>openSavedReviews();
+}
+function openSavedReviews(){
+ const reviews=window.eviaGetReviews?window.eviaGetReviews():[];
+ $("#page-title").textContent="Reviews";
+ $("#screen").innerHTML='<button class="secondary" id="back-reviews-portfolio" type="button">‹ Back to portfolio</button><div class="card portfolio-intro"><div class="section-title">PORTFOLIO</div><h2>Saved Reviews</h2><p>All progress reviews saved for this course.</p></div>'+
+ (reviews.length?'<div class="saved-reviews-list">'+reviews.map((r,i)=>'<button type="button" class="card saved-review-item" data-review-id="'+esc(r.id||"")+'"><div><strong>Progress Review</strong><span>'+esc(new Date(r.date).toLocaleDateString("en-GB"))+'</span></div><b>›</b></button>').join("")+'</div>':'<div class="card"><p>No saved reviews yet.</p></div>');
+ $("#back-reviews-portfolio").onclick=()=>nav("portfolio");
+ document.querySelectorAll("[data-review-id]").forEach(b=>b.onclick=()=>{
+   const id=b.getAttribute("data-review-id");
+   if(window.eviaShowReview)window.eviaShowReview(id);
+ });
 }function confidenceHistory(){
  try{return JSON.parse(localStorage.getItem("evia7-confidence")||"[]")}catch(_){return[]}
 }
