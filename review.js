@@ -171,12 +171,13 @@
   function targetReasoning(metrics){
     const targets=[];
     const now=new Date();
-    const add=(title,reason,weeks,kind)=>{
+    const add=(title,reason,weeks,kind,targetValue,measure)=>{
       const deadline=new Date(now);deadline.setDate(deadline.getDate()+weeks*7);
-      targets.push({title,reason,deadline:deadline.toISOString().slice(0,10),kind});
+      targets.push({title,reason,deadline:deadline.toISOString().slice(0,10),kind,targetValue:targetValue||null,measure:measure||null});
     };
+    add("Gather 15 learning hours","Build your off-the-job learning record.",8,"otj_hours",15,"otj_hours");
     if(metrics.unitGap>0)add("Capture evidence for your next outstanding unit","You have "+metrics.unitGap+" course unit"+(metrics.unitGap===1?"":"s")+" without saved evidence.",2,"units");
-    else if(metrics.weakUnits>0)add("Strengthen weaker portfolio evidence","Some started units need additional photos or written detail.",2,"portfolio");
+    else if(metrics.weakUnits>0)add("Strengthen weaker evidence","Some started units need additional photos or written detail.",2,"portfolio");
     if(academicEnabled("maths"))add(metrics.mathsPct!==null&&metrics.mathsPct<70?"Practise Maths Level 2":"Maintain Maths Level 2 practice",metrics.mathsPct===null?"No Maths test has been recorded yet.":"Your latest Maths result was "+metrics.mathsPct+"%.",6,"maths");
     if(academicEnabled("english"))add(metrics.englishPct!==null&&metrics.englishPct<70?"Practise English Level 2":"Maintain English Level 2 practice",metrics.englishPct===null?"No English test has been recorded yet.":"Your latest English result was "+metrics.englishPct+"%.",6,"english");
     if(metrics.epaPct===null)add("Complete EPA MCQ practice","No EPA MCQ result has been recorded yet.",8,"epa");
@@ -184,6 +185,58 @@
     if(metrics.lowConfidence)add("Revisit a low-confidence practical area","Your latest confidence check identifies a practical area to revisit.",8,"confidence");
     while(targets.length<5)add("Strengthen your next practical task","Use your next job to gather stronger evidence and reflect on what you have learned.",8+targets.length*2,"practical");
     return targets.slice(0,5).map((t,i)=>({...t,id:"target-"+Date.now()+"-"+i,priority:i+1,createdAt:new Date().toISOString(),completed:false,progress:0}));
+  }
+  function targetProgress(t){
+    const value=String(t.measure||"");
+    if(value==="otj_hours"){
+      const total=hours.filter(x=>x.course===course||!x.course).reduce((n,x)=>n+Number(x.n||0),0);
+      return t.targetValue?Math.max(0,Math.min(100,total/Number(t.targetValue)*100)):0;
+    }
+    return Number(t.progress||0);
+  }
+  function targetStatus(t){
+    const progress=targetProgress(t);
+    if(t.completed||progress>=100)return "complete";
+    if(new Date(t.deadline+"T23:59:59").getTime()<Date.now())return "overdue";
+    return "active";
+  }
+  function showTargetComplete(t){
+    const key="evia7-target-notified-"+String(t.id);
+    if(localStorage.getItem(key)==="1")return;
+    localStorage.setItem(key,"1");
+    const pct=Math.round(Math.max(0,Math.min(100,targetProgress(t))));
+    const root=document.getElementById("modal-root");
+    if(!root)return;
+    root.innerHTML='<div class="target-complete-overlay"><section class="target-complete-modal" role="dialog" aria-modal="true" aria-label="Target complete"><button class="target-complete-close" aria-label="Close">×</button><div class="target-evia"><span class="evia-face"><i></i><i></i></span></div><div class="target-complete-kicker">TARGET COMPLETE</div><h2>'+escLocal(t.title)+'</h2><p>You reached '+pct+'% of this target.</p><div class="target-complete-bar"><i></i></div><div class="target-complete-percent">0%</div><div class="target-complete-message">Target complete</div></section></div>';
+    const close=root.querySelector(".target-complete-close");
+    const bar=root.querySelector(".target-complete-bar i"),percent=root.querySelector(".target-complete-percent"),message=root.querySelector(".target-complete-message");
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      bar.style.width="100%";
+      let start=performance.now();
+      const animate=now=>{
+        const p=Math.min(1,(now-start)/1400);
+        const shown=Math.round(p*100);
+        percent.textContent=shown+"%";
+        if(p<1)requestAnimationFrame(animate);else{message.classList.add("show");bar.classList.add("complete")}
+      };
+      requestAnimationFrame(animate);
+    }));
+    close.onclick=()=>root.innerHTML="";
+  }
+  function syncTargets(showNotification=true){
+    const all=read(TARGET_KEY,[]);
+    let changed=false;
+    all.forEach(t=>{
+      if(t.course!==course)return;
+      const progress=Math.round(Math.max(0,Math.min(100,targetProgress(t))));
+      if(Number(t.progress||0)!==progress){t.progress=progress;changed=true}
+      if(progress>=100&&!t.completed){
+        t.completed=true;t.completedAt=t.completedAt||new Date().toISOString();changed=true;
+        if(showNotification)showTargetComplete(t);
+      }
+    });
+    if(changed)write(TARGET_KEY,all);
+    return all.filter(t=>t.course===course);
   }
   function metrics(){
     const entries=evidence.filter(e=>e.c===course), units=data().u;
@@ -210,19 +263,14 @@
     const otjDetails=hours.map(x=>({date:formatUKDate(x.savedAt||x.d||""),hours:Number(x.n||0),description:x.description||""}));
     return {covered:covered.size,units:units.length,unitGap:Math.max(0,units.length-covered.size),completion:units.length?Math.round(covered.size/units.length*100):0,entries:entries.length,totalPhotos,totalWords,unitDetails,otjDetails,ksbTotal:allKsb.size,ksbCaptured:captured.size,ksbCompletion:allKsb.size?Math.round(captured.size/allKsb.size*100):0,ksbGroups:groups,totalOTJ,otjEntries:hours.length,otjBatches:otjBatches.length,otjTarget:meta.otjTarget,otjBehind:meta.otjTarget?totalOTJ<Math.max(1,meta.otjTarget*elapsed):false,elapsed,timePercent:Math.round(elapsed*100),tests:testDetails,confidenceAverage,confidenceRatings:current?.scores||[],previousConfidenceRatings:previous?.scores||[],confidenceChecks:history.length,lowConfidence:(current?.scores||[]).filter(x=>x.score<=2).map(x=>x.area)};
   }
-  function targetStatus(t){
-    if(t.completed||t.progress>=100)return "complete";
-    if(new Date(t.deadline+"T23:59:59").getTime()<Date.now())return "overdue";
-    return "active";
-  }
   function targetHtml(t){
-    const status=targetStatus(t), label=status==="complete"?"Completed":status==="overdue"?"Overdue":"Active";
-    return '<div class="target-item '+status+'"><div><strong>'+escLocal(t.title)+'</strong><p>'+escLocal(t.reason)+'</p><small>Due '+escLocal(new Date(t.deadline+"T00:00:00").toLocaleDateString("en-GB"))+' · '+label+'</small></div><b>'+Math.min(100,Math.max(0,Number(t.progress||0)))+'%</b></div>';
+    const status=targetStatus(t), progress=Math.round(targetProgress(t)), label=status==="complete"?"Completed":status==="overdue"?"Overdue":"Active";
+    return '<div class="target-item '+status+'"><div><strong>'+escLocal(t.title)+'</strong><p>'+escLocal(t.reason)+'</p><small>Due '+escLocal(new Date(t.deadline+"T00:00:00").toLocaleDateString("en-GB"))+' · '+label+'</small></div><b>'+progress+'%</b></div>';
   }
   function quickTarget(m){
-    const targets=read(TARGET_KEY,[]).filter(t=>t.course===course&&!t.completed);
-    if(targets.length)return targets[0];
-    const t=targetReasoning(m)[0];t.course=course;write(TARGET_KEY,[t]);return t;
+    const existing=syncTargets(false).filter(t=>!t.completed);
+    if(existing.length)return existing[0];
+    const t=targetReasoning(m)[0];t.course=course;write(TARGET_KEY,read(TARGET_KEY,[]).concat(t));return t;
   }
   function reviewKsbFollowUp(metrics){
     const captured=new Set(evidence.filter(e=>e.c===course).flatMap(e=>Array.isArray(e.k)?e.k:[]));
@@ -347,13 +395,7 @@
     if(!targets.length)return '<div class="card targets-card"><div class="section-title">TARGETS</div><h2>My targets</h2><p>No active targets yet. Complete a full progress review to create five.</p></div>';
     return '<div class="card targets-card"><div class="section-title">TARGETS</div><h2>My targets</h2>'+targets.map(t=>'<div class="target-item '+targetStatus(t)+'"><div><strong>'+escLocal(t.title)+'</strong><p>'+escLocal(t.reason)+'</p><small>Due '+new Date(t.deadline+"T00:00:00").toLocaleDateString("en-GB")+(targetStatus(t)==="overdue"?" · Overdue":"")+'</small></div>'+(targetStatus(t)==="complete"?'<b>Completed</b>':'<button class="secondary" data-target-complete="'+escLocal(t.id||"")+'">Mark complete</button>')+'</div>').join("")+'</div>';
   }
-  function bindTargets(){
-    document.querySelectorAll("[data-target-complete]").forEach(b=>b.onclick=()=>{
-      const all=read(TARGET_KEY,[]),idx=all.findIndex(t=>t.course===course&&String(t.id)===String(b.dataset.targetComplete));
-      if(idx<0)return;all[idx].completed=true;all[idx].progress=100;all[idx].completedAt=new Date().toISOString();write(TARGET_KEY,all);
-      if(typeof progress==="function")progress();
-    });
-  }
+  function bindTargets(){ syncTargets(false); }
   window.eviaTargetsCardHtml=targetsCardHtml;
   window.eviaBindTargets=bindTargets;
   window.eviaTestMe=eviaTestMe;
@@ -365,4 +407,5 @@
   window.eviaGetTargets=()=>read(TARGET_KEY,[]).filter(x=>x.course===course);
   window.eviaTargetStatus=targetStatus;
   window.eviaTargetHtml=targetHtml;
+  window.eviaCheckTargets=()=>syncTargets(true);
 })();
