@@ -298,31 +298,29 @@ function progress(){
  $("#page-title").textContent="Portfolio";let es=evidence.filter(e=>e.c===course).slice().reverse();
  const units=[...new Set(es.map(e=>e.u))];
  const downloaded=JSON.parse(localStorage.getItem("evia7-downloaded-unit-pdfs")||"{}");
- const byUnit=name=>es.filter(e=>e.u===name);
- if(window.eviaGetEvidencePhotoData)es=await Promise.all(es.map(async e=>Object.assign({},e,{p:await window.eviaGetEvidencePhotoData(e)})));
  const reviews=window.eviaGetReviews?window.eviaGetReviews():[];
  const supporting=supportingMeta().filter(x=>x.course===course);
- $("#screen").innerHTML='<div class="card portfolio-intro"><div><div class="section-title">Completed evidence</div><h2>Portfolio</h2><p>Each started unit has its own evidence pack. Downloaded packs can be downloaded again.</p></div></div><div class="card supporting-portfolio-card"><div class="progress-row"><div><div class="section-title">SUPPORTING EVIDENCE</div><h3>'+supporting.length+' item'+(supporting.length===1?"":"s")+'</h3><p>Additional portfolio material organised by behaviour.</p></div><button class="secondary" id="download-supporting-evidence" type="button">Download ZIP</button></div></div>'+(reviews.length?'<div class="card portfolio-reviews"><div class="section-title">PROGRESS REVIEWS</div>'+reviews.map(r=>'<div class="review-card"><div><div class="portfolio-review-title">Progress review - '+new Date(r.date).toLocaleDateString("en-GB")+'</div><div class="portfolio-review-meta">Saved from Evia progress review</div></div><button class="secondary" data-review-id="'+esc(r.id)+'">Download PDF</button></div>').join("")+'</div>':"")+
-
- units.map(name=>{
-   const entries=byUnit(name);
-   const wasDownloaded=!!downloaded[course+"|"+name];
-   return '<div class="card"><div class="progress-row"><div><div class="unit-number">EVIDENCE PACK</div><h3>'+esc(name)+'</h3></div><button class="secondary unit-pdf-button" data-unit-pdf="'+esc(name)+'">'+(wasDownloaded?"✓ Downloaded":"Download PDF")+'</button></div>'+
-     entries.map(e=>'<div class="evidence-entry">'+(e.p&&e.p.length?'<div class="photo-grid">'+e.p.map(p=>'<img class="thumb" src="'+p+'" alt="Evidence photo">').join("")+'</div>':"")+(e.w?'<p style="white-space:pre-wrap">'+esc(e.w)+'</p>':"")+'<div class="row">'+e.k.map(k=>'<span class="pill">'+esc(k)+'</span>').join("")+'</div></div>').join("")+'</div>';
- }).join("");
- bindCourses();
+ $("#screen").innerHTML='<div class="card portfolio-intro"><div class="section-title">PORTFOLIO</div><h2>Evidence files</h2><p>Open a file to download its evidence pack.</p></div><div class="portfolio-grid">'+
+   units.map(name=>{
+     const entries=es.filter(e=>e.u===name);
+     const wasDownloaded=!!downloaded[course+"|"+name];
+     return '<div class="card portfolio-file"><div><div class="portfolio-file-icon">▤</div><div class="portfolio-file-title">'+esc(name)+'</div><div class="portfolio-file-meta">'+entries.length+' entr'+(entries.length===1?"y":"ies")+'</div></div><button class="secondary unit-pdf-button" data-unit-pdf="'+esc(name)+'">'+(wasDownloaded?"✓ PDF":"PDF")+'</button></div>';
+   }).join("")+
+   '<div class="card portfolio-file portfolio-special" id="supporting-portfolio-file"><div><div class="portfolio-file-icon">○</div><div class="portfolio-file-title">Supporting Evidence</div><div class="portfolio-file-meta">'+supporting.length+' item'+(supporting.length===1?"":"s")+'</div></div><button class="secondary" id="download-supporting-evidence" type="button">ZIP</button></div>'+
+   (reviews.length?'<div class="card portfolio-file portfolio-special"><div><div class="portfolio-file-icon">✓</div><div class="portfolio-file-title">Reviews</div><div class="portfolio-file-meta">'+reviews.length+' saved review'+(reviews.length===1?"":"s")+'</div></div><button class="secondary" id="open-review-files" type="button">Open</button></div>':"")+
+ '</div>';
+ document.querySelector("#supporting-portfolio-file").onclick=e=>{if(e.target.closest("button"))return;openSupportingEvidence()};
  const supportingDownload=$("#download-supporting-evidence");if(supportingDownload)supportingDownload.onclick=downloadSupportingEvidenceZip;
- document.querySelectorAll("[data-review-id]").forEach(b=>b.onclick=()=>{const r=(window.eviaGetReviews?window.eviaGetReviews():[]).find(x=>x.id===b.dataset.reviewId);if(r)window.eviaDownloadReviewPdf(r);});
+ const reviewOpen=$("#open-review-files");if(reviewOpen)reviewOpen.onclick=()=>document.querySelectorAll("[data-review-id]")[0]?.click();
  document.querySelectorAll("[data-unit-pdf]").forEach(b=>b.onclick=()=>{
    const name=b.getAttribute("data-unit-pdf");
    if(window.downloadUnitEvidencePack)window.downloadUnitEvidencePack(name);
    const state=JSON.parse(localStorage.getItem("evia7-downloaded-unit-pdfs")||"{}");
    state[course+"|"+name]=Date.now();
    localStorage.setItem("evia7-downloaded-unit-pdfs",JSON.stringify(state));
-   b.textContent="✓ Downloaded";
+   b.textContent="✓ PDF";
  });
-}
-function confidenceHistory(){
+}function confidenceHistory(){
  try{return JSON.parse(localStorage.getItem("evia7-confidence")||"[]")}catch(_){return[]}
 }
 function saveConfidenceHistory(history){localStorage.setItem("evia7-confidence",JSON.stringify(history))}
