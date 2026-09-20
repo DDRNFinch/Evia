@@ -311,8 +311,7 @@ function progress(){
  '</div>';
  document.querySelector("#supporting-portfolio-file").onclick=e=>{if(e.target.closest("button"))return;openSupportingEvidence()};
  const supportingDownload=$("#download-supporting-evidence");if(supportingDownload)supportingDownload.onclick=downloadSupportingEvidenceZip;
- const reviewOpen=$("#open-review-files");if(reviewOpen)reviewOpen.onclick=()=>document.querySelectorAll("[data-review-id]")[0]?.click();
- document.querySelectorAll("[data-unit-pdf]").forEach(b=>b.onclick=()=>{
+ const reviewOpen=$("#open-review-files");if(reviewOpen)reviewOpen.onclick=()=>{const latest=reviews[reviews.length-1];if(latest&&window.eviaDownloadReviewPdf)window.eviaDownloadReviewPdf(latest)};document.querySelectorAll("[data-unit-pdf]").forEach(b=>b.onclick=()=>{
    const name=b.getAttribute("data-unit-pdf");
    if(window.downloadUnitEvidencePack)window.downloadUnitEvidencePack(name);
    const state=JSON.parse(localStorage.getItem("evia7-downloaded-unit-pdfs")||"{}");
