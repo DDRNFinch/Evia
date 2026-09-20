@@ -254,7 +254,7 @@ function ksbDetail(codeValue,wording,mapped){
    '<div class="ksb-modal-section"><div class="section-title">KSB wording</div><p>'+esc(wording)+'</p></div>'+
    '<div class="ksb-modal-section"><div class="section-title">Evidence mapped</div>'+evidenceHtml+'</div>'+
    supportingHtml+
-   '<div class="ksb-modal-foot">'+(mapped?'<span class="ksb-met">✓ Evidence captured</span>':'<span class="ksb-not-met">Not yet captured</span>')+(units.length?'<span>'+units.length+' unit'+(units.length===1?"":"s")+' mapped</span>':"")+'</div>'+
+   '<div class="ksb-modal-foot">'+(mapped?'<span class="ksb-met">✓ Evidence captured</span>':'<span class="ksb-not-met">Not yet captured</span>')+(supporting.length?'<span class="ksb-supporting-status">○ Supporting evidence attached</span>':"")+(units.length?'<span>'+units.length+' unit'+(units.length===1?"":"s")+" mapped</span>":"")+'</div>'+
    '</section></div>';
  document.getElementById("ksb-close").onclick=()=>document.getElementById("modal-root").innerHTML="";
 }
@@ -287,7 +287,7 @@ function progress(){
    otjBar+
    '<div class="progress-note">EPA is a separate assessment phase after the planned course end. It does not count as on-programme course time.</div></div>'+
    '<div class="card ksb-overview"><div class="section-title">KSB progress</div><div class="ksb-grid">'+
-   all.map(x=>'<button type="button" class="ksb-tile '+(ev.has(x[0])?"met":"")+'" data-ksb-code="'+esc(x[0])+'"><span>'+esc(x[0])+'</span>'+(ev.has(x[0])?'<i aria-label="Evidence captured">✓</i>':"")+'</button>').join("")+
+   all.map(x=>{const hasSupport=supportingMeta().some(s=>s.course===course&&Array.isArray(s.ksbs)&&s.ksbs.includes(x[0]));return '<button type="button" class="ksb-tile '+(ev.has(x[0])?"met":"")+(hasSupport?" has-supporting":"")+'" data-ksb-code="'+esc(x[0])+'"><span>'+esc(x[0])+'</span><span class="ksb-statuses">'+(ev.has(x[0])?'<i aria-label="Evidence captured">✓</i>':"")+(hasSupport?'<i class="ksb-supporting-dot" aria-label="Supporting evidence attached">○</i>':"")+'</span></button>'}).join("")+
    '</div><p class="ksb-grid-help">Tap a KSB to see the full wording and the evidence mapped to it.</p></div>'+(window.eviaTargetsCardHtml?window.eviaTargetsCardHtml():"");
  document.querySelectorAll("[data-ksb-code]").forEach(b=>b.onclick=()=>{
    const item=all.find(x=>x[0]===b.dataset.ksbCode);
