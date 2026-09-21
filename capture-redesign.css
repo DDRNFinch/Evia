@@ -12,7 +12,7 @@
 .capture-gallery-tile .capture-tile-icon{background:rgba(255,255,255,.35)}
 .capture-media strong{display:block;font-size:16px;line-height:1.15}.capture-media small{display:block;font-size:10px;margin-top:4px;opacity:.8}
 .capture-evidence-card,.capture-write-card{background:#fff;border:1px solid #e5ece9;border-radius:20px;padding:15px;margin-bottom:12px;box-shadow:0 4px 16px rgba(20,40,35,.04)}
-.capture-evidence-card .capture-pills{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.capture-pills{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
 .capture-pills span{background:#eff8f5;border:1px solid #dcefe9;color:#276e61;border-radius:999px;padding:8px 10px;font-size:11px;line-height:1.1}
 .capture-pills.mention span{background:#f5f7f6;color:#475467;border-color:#e4e9e7}
 .capture-write-card h3{margin:5px 0 10px;font-size:15px;line-height:1.3}
