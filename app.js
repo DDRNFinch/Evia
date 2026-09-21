@@ -189,7 +189,7 @@ function learning(){
 
 /* Supporting Evidence: optional course portfolio attachments. */
 function supportingMeta(){try{const all=JSON.parse(localStorage.getItem("evia7-supporting-evidence")||"[]");return Array.isArray(all)?all:[]}catch(_){return[]}}
-function supportingSlugfunction supportingSlug(value){return String(value||"").trim().replace(/[^a-z0-9]+/gi,"-").replace(/^-+|-+$/g,"").slice(0,80)||"supporting-evidence"}
+function supportingSlug(value){return String(value||"").trim().replace(/[^a-z0-9]+/gi,"-").replace(/^-+|-+$/g,"").slice(0,80)||"supporting-evidence"}
 function supportingTypeLabel(type){return ({photo:"Photo",video:"Video",audio:"Audio",document:"Document"}[type]||"File")}
 function supportingFilename(title,type,mime){const base=supportingSlug(title),ext=type==="photo"?"jpg":type==="video"?(mime&&mime.includes("mp4")?"mp4":"webm"):type==="audio"?(mime&&mime.includes("mp4")?"m4a":"webm"):"bin";return base+"."+ext}
 async function supportingSaveRecord(record,blob){if(!window.eviaSupportingFilePut)throw new Error("Supporting evidence storage is unavailable");await window.eviaSupportingFilePut({id:record.id,blob});const all=supportingMeta();all.push(record);localStorage.setItem("evia7-supporting-evidence",JSON.stringify(all.slice(-500)))}
