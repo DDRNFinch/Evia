@@ -9,8 +9,8 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg">
 <title>Evia</title>
-<link rel="stylesheet" href="styles.css">
-<link rel="stylesheet" href="polish.css">
+<link rel="stylesheet" href="styles.css?v=evia7-preview-20260921">
+<link rel="stylesheet" href="polish.css?v=evia7-preview-20260921">
 <style>
 .overlay:has(.chat-sheet){background:rgba(20,28,42,.16);align-items:flex-end;pointer-events:none}.overlay:has(.chat-sheet)~*{}
 .overlay:has(.chat-sheet) .chat-sheet{pointer-events:auto}
@@ -68,28 +68,26 @@
 </nav>
 </div>
 <div id="modal-root"></div>
-<script src="app.js"></script>
-<script src="polish.js"></script>
-<script src="profile.js?v=supporting-v1"></script>
-<script src="test-banks.js"></script>
-<script src="review.js?v=target-complete-v1"></script>
-<script src="repair.js?v=evia7-idb-test"></script>
+<script src="app.js?v=evia7-preview-20260921"></script>
+<script src="polish.js?v=evia7-preview-20260921"></script>
+<script src="profile.js?v=supporting-v1-20260921"></script>
+<script src="test-banks.js?v=evia7-preview-20260921"></script>
+<script src="review.js?v=target-complete-v1-20260921"></script>
+<script src="repair.js?v=evia7-idb-test-20260921"></script>
 <script>
 (function(){
   if (!("serviceWorker" in navigator)) return;
-  let reloading=false;
-  navigator.serviceWorker.addEventListener("controllerchange",function(){if(reloading)return;reloading=true;window.location.reload();});
   window.addEventListener("load", async function(){
     try {
-      const registration=await navigator.serviceWorker.register("./sw-v16.js?v=evia7-v23",{updateViaCache:"none"});
-      await registration.update();
-      const activateWaiting=worker=>{if(!worker)return;worker.postMessage({type:"SKIP_WAITING"});};
-      if(registration.waiting) activateWaiting(registration.waiting);
-      registration.addEventListener("updatefound",()=>{
-        const worker=registration.installing;if(!worker)return;
-        worker.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller)activateWaiting(worker);});
-      });
-    } catch(e) {console.warn("Evia update service unavailable",e);}
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map(r => r.unregister()));
+      if ("caches" in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+      }
+    } catch(e) {
+      console.warn("Evia preview cache cleanup unavailable", e);
+    }
   });
 })();
 </script>
