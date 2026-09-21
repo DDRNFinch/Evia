@@ -44,3 +44,12 @@
   document.addEventListener("focusin",()=>document.body.classList.remove("evia-keyboard-editing"));
   document.addEventListener("focusout",()=>document.body.classList.remove("evia-keyboard-editing"));
 })();
+
+// Supporting evidence blob storage.
+(function(){
+  const DB_NAME="evia7-supporting-files";
+  const STORE="files";
+  function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains(STORE))req.result.createObjectStore(STORE,{keyPath:"id"})};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||new Error("IndexedDB unavailable"))})}
+  window.eviaSupportingFilePut=async({id,blob})=>{const db=await openDB();return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,"readwrite");tx.objectStore(STORE).put({id,blob});tx.oncomplete=()=>{db.close();resolve()};tx.onerror=()=>{db.close();reject(tx.error||new Error("Could not save file"))}})};
+  window.eviaSupportingFileGet=async id=>{const db=await openDB();return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,"readonly");const req=tx.objectStore(STORE).get(id);req.onsuccess=()=>{db.close();resolve(req.result||null)};req.onerror=()=>{db.close();reject(req.error||new Error("Could not load file"))}})};
+})();
