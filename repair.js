@@ -49,7 +49,34 @@
 (function(){
   const DB_NAME="evia7-supporting-files";
   const STORE="files";
-  function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains(STORE))req.result.createObjectStore(STORE,{keyPath:"id"})};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||new Error("IndexedDB unavailable"))})}
-  window.eviaSupportingFilePut=async({id,blob})=>{const db=await openDB();return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,"readwrite");tx.objectStore(STORE).put({id,blob});tx.oncomplete=()=>{db.close();resolve()};tx.onerror=()=>{db.close();reject(tx.error||new Error("Could not save file"))}})};
-  window.eviaSupportingFileGet=async id=>{const db=await openDB();return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,"readonly");const req=tx.objectStore(STORE).get(id);req.onsuccess=()=>{db.close();resolve(req.result||null)};req.onerror=()=>{db.close();reject(req.error||new Error("Could not load file"))}})};
+  function openDB(){
+    return new Promise((resolve,reject)=>{
+      const req=indexedDB.open(DB_NAME,1);
+      req.onupgradeneeded=()=>{
+        const db=req.result;
+        if(!db.objectStoreNames.contains(STORE))db.createObjectStore(STORE,{keyPath:"id"});
+      };
+      req.onsuccess=()=>resolve(req.result);
+      req.onerror=()=>reject(req.error||new Error("IndexedDB unavailable"));
+    });
+  }
+  window.eviaSupportingFilePut=async function({id,blob}){
+    const db=await openDB();
+    return new Promise((resolve,reject)=>{
+      const tx=db.transaction(STORE,"readwrite");
+      tx.objectStore(STORE).put({id,blob});
+      tx.oncomplete=()=>{db.close();resolve()};
+      tx.onerror=()=>{db.close();reject(tx.error||new Error("Could not save file"))};
+      tx.onabort=()=>{db.close();reject(tx.error||new Error("Could not save file"))};
+    });
+  };
+  window.eviaSupportingFileGet=async function(id){
+    const db=await openDB();
+    return new Promise((resolve,reject)=>{
+      const tx=db.transaction(STORE,"readonly");
+      const req=tx.objectStore(STORE).get(id);
+      req.onsuccess=()=>{const value=req.result||null;db.close();resolve(value)};
+      req.onerror=()=>{db.close();reject(req.error||new Error("Could not load file"))};
+    });
+  };
 })();
