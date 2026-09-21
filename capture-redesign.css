@@ -5,7 +5,7 @@
 .capture-head-copy{min-width:0;flex:1}.capture-eyebrow,.capture-label{font-size:10px;letter-spacing:.13em;font-weight:800;color:#7b8794}
 .capture-head h2{margin:3px 0 0;font-size:22px;line-height:1.15}
 .capture-media{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0}
-.capture-media button{min-height:124px;border:1px solid #dcebe6;border-radius:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:11px;text-align:left;box-shadow:0 5px 18px rgba(20,40,35,.06)}
+.capture-media button{min-height:124px;border:1px solid #e3b900;border-radius:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:11px;text-align:left;box-shadow:0 5px 18px rgba(20,40,35,.06)}
 .capture-camera-tile{background:#22a88a;color:#fff}
 .capture-gallery-tile{background:#effaf7;color:#147d68}
 .capture-tile-icon{width:40px;height:40px;border-radius:14px;background:rgba(255,255,255,.18);display:grid;place-items:center;font-size:23px}
