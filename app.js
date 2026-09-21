@@ -243,7 +243,7 @@ function supportingPrepare(base,type){
    const pickMime=()=>{const candidates=video?["video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm"]:["audio/webm;codecs=opus","audio/webm"];return candidates.find(x=>window.MediaRecorder&&MediaRecorder.isTypeSupported(x))||""};
    recordBtn.onclick=async()=>{
      try{
-       stream=await navigator.mediaDevices.getUserMedia(video?{video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720}},audio:true}:{audio:true});
+       stream=await navigator.mediaDevices.getUserMedia(video?{video:{facingMode:"environment",aspectRatio:{ideal:1},width:{ideal:1080},height:{ideal:1080},resizeMode:"crop-and-scale"},audio:true}:{audio:true});
        if(video)live.srcObject=stream;
        const chosen=pickMime(),opts={};
        if(chosen)opts.mimeType=chosen;
