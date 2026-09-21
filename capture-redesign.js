@@ -74,7 +74,8 @@
       choose.onclick=()=>gallery.click();
       camera.onchange=()=>{const fs=camera.files;add(fs).finally(()=>camera.value="")};
       gallery.onchange=()=>{const fs=gallery.files;add(fs).finally(()=>gallery.value="")};
-      continueBtn.onclick=()=>{ const w=note.value.trim(); if(!captured.length&&!w)return; const entry={c:course,u:u[0],d:new Date().toLocaleDateString("en-GB"),savedAt:new Date().toLocaleString("en-GB"),p:captured.slice(),w,k:u[1].filter(k=>/^[SKB]\d+\|/.test(k)).map(k=>code(k))}; evidence.push(entry); persist(); if(window.eviaCheckTargets)window.eviaCheckTargets(); nav("portfolio"); };\n      submit.onclick=()=>{
+      continueBtn.onclick=()=>{ const w=note.value.trim(); if(!captured.length&&!w)return; const entry={c:course,u:u[0],d:new Date().toLocaleDateString("en-GB"),savedAt:new Date().toLocaleString("en-GB"),p:captured.slice(),w,k:u[1].filter(k=>/^[SKB]\d+\|/.test(k)).map(k=>code(k))}; evidence.push(entry); persist(); if(window.eviaCheckTargets)window.eviaCheckTargets(); nav("portfolio"); };
+      submit.onclick=()=>{
         const w=note.value.trim();
         if(!captured.length||!w)return;
         const entry={c:course,u:u[0],d:new Date().toLocaleDateString("en-GB"),savedAt:new Date().toLocaleString("en-GB"),p:captured.slice(),w,k:u[1].filter(k=>/^[SKB]\d+\|/.test(k)).map(k=>code(k))};
