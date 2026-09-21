@@ -27,9 +27,3 @@
 @media(max-width:520px){.capture-page{padding-left:8px;padding-right:8px}.capture-media button{min-height:112px}.capture-media{gap:8px}.capture-media strong{font-size:15px}.capture-tile-icon{width:36px;height:36px}}
 
 .capture-intro{margin:5px 0 0;color:#667085;font-size:11px;line-height:1.4}.capture-actions{display:grid;grid-template-columns:1fr 1.4fr;gap:8px;margin-top:10px}.capture-actions button{min-height:50px;border-radius:16px;font-weight:800;font-size:13px;cursor:pointer}.capture-continue{border:1px solid #dcebe6;background:#effaf7;color:#147d68}.capture-submit{border:0;background:#172033;color:#fff}.capture-submit:disabled{opacity:.4;cursor:not-allowed}
-
-.capture-job-card,.capture-explain-card{background:#fff;border:1px solid #e5ece9;border-radius:20px;padding:15px;margin-bottom:12px;box-shadow:0 4px 16px rgba(20,40,35,.04)}
-.capture-job-card .capture-intro{margin:0 0 12px}
-.capture-job-card .capture-media{margin-bottom:14px}
-.capture-explain-card .capture-mention-label{margin-top:16px}
-.capture-explain-card .capture-note{margin-top:14px}
