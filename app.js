@@ -190,16 +190,81 @@ function learning(){
 /* Supporting Evidence: optional course portfolio attachments. */
 function supportingMeta(){try{const all=JSON.parse(localStorage.getItem("evia7-supporting-evidence")||"[]");return Array.isArray(all)?all:[]}catch(_){return[]}}
 function supportingSlug(value){return String(value||"").trim().replace(/[^a-z0-9]+/gi,"-").replace(/^-+|-+$/g,"").slice(0,80)||"supporting-evidence"}
-function supportingTypeLabel(type){return ({photo:"Photo",video:"Video",audio:"Audio",document:"Document"}[type]||"File")}
+function supportingTypeLabel(type){return ({photo:"Photo",video:"Video",audio:"Audio",document:"Files"}[type]||"File")}
 function supportingFilename(title,type,mime){const base=supportingSlug(title),ext=type==="photo"?"jpg":type==="video"?(mime&&mime.includes("mp4")?"mp4":"webm"):type==="audio"?(mime&&mime.includes("mp4")?"m4a":"webm"):"bin";return base+"."+ext}
 async function supportingSaveRecord(record,blob){if(!window.eviaSupportingFilePut)throw new Error("Supporting evidence storage is unavailable");await window.eviaSupportingFilePut({id:record.id,blob});const all=supportingMeta();all.push(record);localStorage.setItem("evia7-supporting-evidence",JSON.stringify(all.slice(-500)))}
 function supportingCardIcon(type){return ({photo:"▧",video:"▶",audio:"◉",document:"▤"}[type]||"•")}
-async function openSupportingEvidence(){const base={course};$("#page-title").textContent="Supporting Evidence";$("#screen").innerHTML='<button class="secondary" id="back-supporting-course" type="button">‹ Back to course</button><div class="card"><div class="section-title">PORTFOLIO</div><h2>Supporting Evidence</h2><p>Anything else you want to keep as evidence for this course.</p></div><div class="supporting-grid supporting-simple-grid"><button type="button" class="card supporting-type" data-supporting-type="photo"><span>📷</span><strong>Photo</strong></button><button type="button" class="card supporting-type" data-supporting-type="video"><span>📹</span><strong>Video</strong></button><button type="button" class="card supporting-type" data-supporting-type="audio"><span>🎙</span><strong>Audio</strong></button><button type="button" class="card supporting-type" data-supporting-type="document"><span>📁</span><strong>Files</strong></button></div>';$("#back-supporting-course").onclick=()=>nav("course");document.querySelectorAll("[data-supporting-type]").forEach(btn=>btn.onclick=()=>supportingPrepare(base,btn.dataset.supportingType))}
+async function openSupportingEvidence(){
+ const base={course};
+ $("#page-title").textContent="Supporting Evidence";
+ $("#screen").innerHTML='<button class="secondary" id="back-supporting-course" type="button">‹ Back to course</button><div class="card"><div class="section-title">PORTFOLIO</div><h2>Supporting Evidence</h2><p>Anything else you want to keep as evidence for this course.</p></div><div class="supporting-grid supporting-simple-grid"><button type="button" class="card supporting-type" data-supporting-type="photo"><span>📷</span><strong>Photo</strong></button><button type="button" class="card supporting-type" data-supporting-type="video"><span>📹</span><strong>Video</strong></button><button type="button" class="card supporting-type" data-supporting-type="audio"><span>🎙</span><strong>Audio</strong></button><button type="button" class="card supporting-type" data-supporting-type="document"><span>📁</span><strong>Files</strong></button></div>';
+ $("#back-supporting-course").onclick=()=>nav("course");
+ document.querySelectorAll("[data-supporting-type]").forEach(btn=>btn.onclick=()=>supportingPrepare(base,btn.dataset.supportingType));
+}
 function supportingCapture(){openSupportingEvidence()}
-function supportingPrepare(base,type){const area=$("#supporting-capture-area");area.innerHTML='<div class="supporting-form"><label><strong>Title</strong><input id="supporting-title" type="text" maxlength="80" placeholder="e.g. Mentor feedback"></label><div id="supporting-media-area"></div><button class="primary" id="supporting-save" type="button" disabled>Save supporting evidence</button><p class="supporting-hint" id="supporting-hint"></p></div>';const media=$("#supporting-media-area"),save=$("#supporting-save"),hint=$("#supporting-hint");let blob=null,mime="";const setReady=()=>{save.disabled=!blob||!$("#supporting-title").value.trim()};$("#supporting-title").oninput=setReady;
-if(type==="photo"){media.innerHTML='<div class="supporting-actions"><button class="secondary" type="button" id="supporting-take">Take photo</button><button class="secondary" type="button" id="supporting-choose">Choose photo</button><input id="supporting-camera" type="file" accept="image/*" capture="environment" hidden><input id="supporting-gallery" type="file" accept="image/*" hidden></div><img id="supporting-preview" class="supporting-preview" alt="Photo preview">';const compress=file=>new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const max=1600,scale=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight)),c=document.createElement("canvas");c.width=Math.max(1,Math.round(img.naturalWidth*scale));c.height=Math.max(1,Math.round(img.naturalHeight*scale));c.getContext("2d",{alpha:false}).drawImage(img,0,0,c.width,c.height);c.toBlob(b=>b?resolve(b):reject(new Error("Photo compression failed")),"image/jpeg",.78)};img.onerror=reject;img.src=r.result};r.onerror=reject;r.readAsDataURL(file)});const add=f=>{if(!f)return;compress(f).catch(()=>f).then(b=>{blob=b;mime=b.type||f.type||"image/jpeg";$("#supporting-preview").src=URL.createObjectURL(b);hint.textContent=b===f?"Photo ready to save.":"Photo optimised for portfolio storage.";setReady()}).catch(e=>{console.error("Supporting photo preparation failed",e);hint.textContent="That photo could not be added."})};$("#supporting-take").onclick=()=>$("#supporting-camera").click();$("#supporting-choose").onclick=()=>$("#supporting-gallery").click();$("#supporting-camera").onchange=e=>{add(e.target.files[0]);e.target.value=""};$("#supporting-gallery").onchange=e=>{add(e.target.files[0]);e.target.value=""};
-}else if(type==="document"){media.innerHTML='<input id="supporting-document" type="file" accept=".pdf,.doc,.docx,.txt,.rtf,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/rtf"><p class="supporting-hint">Select the document you want to keep with your supporting evidence.</p>';$("#supporting-document").onchange=e=>{const f=e.target.files[0];if(f){blob=f;mime=f.type||"application/octet-stream";hint.textContent=f.name+" selected.";setReady()}}}else{const mediaKind=type==="video"?"video":"audio";media.innerHTML='<div class="supporting-recorder"><video id="supporting-live" autoplay muted playsinline '+(mediaKind==="audio"?'style="display:none"':"")+'></video><div class="supporting-recorder-actions"><button class="primary" id="supporting-record" type="button">Start recording</button><button class="secondary" id="supporting-stop" type="button" disabled>Stop</button></div><p class="supporting-hint">'+(mediaKind==="video"?"Video is recorded in Evia and captured at a storage-conscious quality.":"Audio is recorded directly in Evia.")+'</p></div>';const live=$("#supporting-live"),recordBtn=$("#supporting-record"),stopBtn=$("#supporting-stop");let stream=null,recorder=null,chunks=[];const pickMime=()=>{const candidates=mediaKind==="video"?["video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm"]:["audio/webm;codecs=opus","audio/webm"];return candidates.find(x=>window.MediaRecorder&&MediaRecorder.isTypeSupported(x))||""};recordBtn.onclick=async()=>{try{stream=await navigator.mediaDevices.getUserMedia(mediaKind==="video"?{video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720}},audio:true}:{audio:true});if(mediaKind==="video")live.srcObject=stream;const chosen=pickMime();const opts={};if(chosen)opts.mimeType=chosen;if(mediaKind==="video"){opts.videoBitsPerSecond=1500000;opts.audioBitsPerSecond=64000}else opts.audioBitsPerSecond=64000;recorder=new MediaRecorder(stream,opts);mime=recorder.mimeType||chosen||supportingMimeFor(type);chunks=[];recorder.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};recorder.onstop=()=>{blob=new Blob(chunks,{type:mime});chunks=[];if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;if(mediaKind==="video")live.srcObject=null;recordBtn.disabled=false;stopBtn.disabled=true;hint.textContent=mediaKind==="video"?"Recording ready · video is targeted around 11 MB/minute.":"Recording ready.";setReady()};recorder.start();recordBtn.disabled=true;stopBtn.disabled=false;hint.textContent="Recording…"}catch(e){console.error("Supporting media capture failed",e);hint.textContent="Evia could not access the "+mediaKind+" recorder."}};stopBtn.onclick=()=>{if(recorder&&recorder.state!=="inactive")recorder.stop()};$("#supporting-close").addEventListener("click",()=>{if(stream)stream.getTracks().forEach(t=>t.stop())},{once:true})}
-save.onclick=async()=>{save.disabled=true;save.textContent="Saving…";try{const title=$("#supporting-title").value.trim();if(!title||!blob)throw new Error("Add a title and file first");const id="support-"+Date.now()+"-"+Math.random().toString(36).slice(2,9);const ext=type==="photo"?"jpg":type==="video"?(mime.includes("mp4")?"mp4":"webm"):type==="audio"?(mime.includes("mp4")?"m4a":"webm"):(blob.name&&blob.name.split(".").pop()||"bin");const record={id,course,title,type,mime:mime||blob.type||"application/octet-stream",filename:supportingSlug(title)+"."+ext,addedAt:new Date().toISOString(),size:blob.size};await supportingSaveRecord(record,blob);$("#modal-root").innerHTML="";openSupportingEvidence()}catch(e){console.error("Supporting evidence save failed",e);alert("Evia could not save this supporting evidence.");save.disabled=false;save.textContent="Save supporting evidence"}};
+function supportingPrepare(base,type){
+ const label={photo:"Photo",video:"Video",audio:"Audio",document:"File"}[type]||"File";
+ const now=()=>new Date().toLocaleString("en-GB",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",second:"2-digit"}).replace(/[/:]/g,"-").replace(", ","_");
+ $("#modal-root").innerHTML='<div class="overlay"><section class="sheet supporting-sheet"><div class="sheet-head"><div><div class="chat-kicker">PORTFOLIO</div><h2>'+label+'</h2></div><button class="close" id="supporting-close" aria-label="Close">×</button></div><div id="supporting-capture-area"></div></section></div>';
+ const area=$("#supporting-capture-area");
+ let blob=null,mime="",stream=null,recorder=null,chunks=[];
+ const close=()=>{if(recorder&&recorder.state!=="inactive")recorder.stop();if(stream)stream.getTracks().forEach(t=>t.stop());$("#modal-root").innerHTML=""};
+ $("#supporting-close").onclick=close;
+ const save=async(fileBlob,fileMime,fileName)=>{
+   if(!fileBlob)return;
+   try{
+     const id="support-"+Date.now()+"-"+Math.random().toString(36).slice(2,9);
+     const record={id,course,title:fileName,type,mime:fileMime||fileBlob.type||"application/octet-stream",filename:fileName,addedAt:new Date().toISOString(),size:fileBlob.size};
+     await supportingSaveRecord(record,fileBlob);
+     close();
+     openSupportingEvidence();
+   }catch(e){console.error("Supporting evidence save failed",e);alert("Evia could not save this supporting evidence.");}
+ };
+ if(type==="photo"){
+   area.innerHTML='<div class="evidence-capture-tile"><div class="section-title">CAPTURE PHOTO</div><div class="evidence-photo-actions"><button type="button" class="primary" id="supporting-take-photo">Camera</button><button type="button" class="secondary" id="supporting-choose-photo">Gallery</button><input id="supporting-camera" type="file" accept="image/*" capture="environment" hidden><input id="supporting-gallery" type="file" accept="image/*" hidden></div><div id="supporting-photo-preview" class="photo-grid"></div><button type="button" class="primary" id="supporting-save-photo" disabled>Save photo</button></div>';
+   const camera=$("#supporting-camera"),gallery=$("#supporting-gallery"),preview=$("#supporting-photo-preview"),saveBtn=$("#supporting-save-photo");
+   const add=async f=>{
+     if(!f)return;
+     if(!/^image\//i.test(f.type)){alert("Please choose an image.");return}
+     blob=f;mime=f.type;preview.innerHTML='<img class="thumb" src="'+URL.createObjectURL(f)+'" alt="Photo preview">';saveBtn.disabled=false;
+   };
+   $("#supporting-take-photo").onclick=()=>camera.click();
+   $("#supporting-choose-photo").onclick=()=>gallery.click();
+   camera.onchange=()=>{add(camera.files[0]);camera.value=""};
+   gallery.onchange=()=>{add(gallery.files[0]);gallery.value=""};
+   saveBtn.onclick=()=>save(blob,mime,"Photo_"+now()+".jpg");
+ }else if(type==="document"){
+   area.innerHTML='<div class="evidence-capture-tile"><div class="section-title">FILES</div><input id="supporting-file" type="file"><p class="supporting-hint">Choose a file from your device.</p></div>';
+   $("#supporting-file").onchange=e=>{const f=e.target.files[0];if(f)save(f,f.type||"application/octet-stream",f.name)};
+ }else{
+   const video=type==="video";
+   area.innerHTML='<div class="evidence-capture-tile"><div class="section-title">'+(video?"VIDEO CAMERA":"VOICE RECORDER")+'</div><video id="supporting-live" autoplay muted playsinline '+(video?"":"style=\"display:none\"")+'></video><div class="supporting-recorder-actions"><button class="primary" id="supporting-record">Start recording</button><button class="secondary" id="supporting-stop" type="button" disabled>Stop</button></div><p class="supporting-hint">'+(video?"Video recording is targeted at approximately 11 MB per minute.":"Audio is recorded at a high-quality bitrate to retain as much recording data as practical.")+'</p></div>';
+   const live=$("#supporting-live"),recordBtn=$("#supporting-record"),stopBtn=$("#supporting-stop");
+   const pickMime=()=>{const candidates=video?["video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm"]:["audio/webm;codecs=opus","audio/webm"];return candidates.find(x=>window.MediaRecorder&&MediaRecorder.isTypeSupported(x))||""};
+   recordBtn.onclick=async()=>{
+     try{
+       stream=await navigator.mediaDevices.getUserMedia(video?{video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720}},audio:true}:{audio:true});
+       if(video)live.srcObject=stream;
+       const chosen=pickMime(),opts={};
+       if(chosen)opts.mimeType=chosen;
+       if(video){opts.videoBitsPerSecond=1500000;opts.audioBitsPerSecond=64000}else opts.audioBitsPerSecond=256000;
+       recorder=new MediaRecorder(stream,opts);
+       mime=recorder.mimeType||chosen||(video?"video/webm":"audio/webm");
+       chunks=[];
+       recorder.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
+       recorder.onstop=async()=>{
+         blob=new Blob(chunks,{type:mime});chunks=[];
+         if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;
+         if(video)live.srcObject=null;
+         recordBtn.disabled=false;stopBtn.disabled=true;
+         await save(blob,mime,(video?"Video_":"Audio_")+now()+"."+ (mime.includes("mp4")?(video?"mp4":"m4a"):"webm"));
+       };
+       recorder.start();
+       recordBtn.disabled=true;stopBtn.disabled=false;
+     }catch(e){console.error("Supporting media capture failed",e);alert("Evia could not access the "+(video?"video camera":"voice recorder")+".");}
+   };
+   stopBtn.onclick=()=>{if(recorder&&recorder.state!=="inactive")recorder.stop()};
+ }
 }
 async function openSupportingPortfolio(){
  const items=supportingMeta().filter(x=>x.course===course).slice().reverse();
@@ -230,7 +295,7 @@ function courses(){
  $("#screen").innerHTML='<div class="card"><div class="section-title">'+esc(data().std)+'</div><h2>'+esc(data().name)+'</h2><p>'+data().u.length+' units. Open a unit to capture evidence.</p></div>'+data().u.map((u,i)=>{
    const level=unitStrengthForCourse(u[0]);
    return '<div class="card unit-card" data-u="'+i+'"><div class="unit-title">'+esc(u[0])+'</div>'+strengthBars(level)+'</div>';
- }).join("")+'<div class="card unit-card supporting-course-card" data-supporting-evidence><div class="unit-title">Supporting Evidence</div><small>Additional portfolio material organised by behaviour.</small><span class="supporting-course-arrow">›</span></div>';
+ }).join("")+'<div class="card unit-card supporting-course-card" data-supporting-evidence><div class="unit-title">Supporting Evidence</div><small>Additional portfolio material.</small><span class="supporting-course-arrow">›</span></div>';
  bindCourses();document.querySelectorAll("[data-u]").forEach(b=>b.onclick=()=>openUnit(+b.dataset.u));const supportingCard=document.querySelector("[data-supporting-evidence]");if(supportingCard)supportingCard.onclick=()=>openSupportingEvidence();
 }
 function bindCourses(){document.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{course=b.dataset.c;persist();render()})}
