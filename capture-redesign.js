@@ -42,13 +42,14 @@
       $("#screen").innerHTML=
         '<div class="capture-page">'+
           '<div class="capture-head"><button class="capture-back" id="capture-back" aria-label="Back">‹</button><div class="capture-head-copy"><div class="capture-eyebrow">EVIDENCE PACK</div><h2>'+esc2(u[0])+'</h2><p class="capture-intro">Capture the whole job in one pack. Take photos from the beginning, middle and end of the job.</p></div></div>'+
-          '<section class="capture-media">'+
+          '<section class="capture-evidence-card">'+
+            '<section class="capture-media">'+
             '<input id="capture-camera" type="file" accept="image/*" capture="environment" hidden>'+
             '<input id="capture-gallery" type="file" accept="image/*" multiple hidden>'+
             '<button class="capture-camera-tile" id="capture-take" type="button"><span class="capture-tile-icon">⌾</span><span><strong>Camera</strong><small>Take a photo</small></span></button>'+
             '<button class="capture-gallery-tile" id="capture-choose" type="button"><span class="capture-tile-icon">▧</span><span><strong>Gallery</strong><small>Choose photos</small></span></button>'+
           '</section>'+
-          '<section class="capture-list-card"><div class="capture-label">THINGS TO CAPTURE</div><div class="capture-pills">'+g.capture.map(x=>'<span>'+esc2(x)+'</span>').join("")+'</div></section>'+
+          '<div class="capture-list"><div class="capture-label">THINGS TO CAPTURE</div><div class="capture-pills">'+g.capture.map(x=>'<span>'+esc2(x)+'</span>').join("")+'</div></section>'+
           '<section class="capture-list-card"><div class="capture-label">THINGS TO MENTION</div><div class="capture-pills mention">'+g.mention.map(x=>'<span>'+esc2(x)+'</span>').join("")+'</div></section>'+
           '<section class="capture-write-card"><div class="capture-label">WRITE-UP</div><textarea class="capture-note" id="capture-note" placeholder="Write about the process and what you did…"></textarea>'+
             '<div class="capture-actions"><button class="capture-continue" id="capture-continue" type="button">Continue later</button><button class="capture-submit" id="capture-submit" type="button">Submit to Portfolio</button></div></section>'+
