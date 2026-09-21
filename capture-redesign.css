@@ -28,6 +28,6 @@
 
 .capture-intro{margin:5px 0 0;color:#667085;font-size:11px;line-height:1.4}.capture-actions{display:grid;grid-template-columns:1fr 1.4fr;gap:8px;margin-top:10px}.capture-actions button{min-height:50px;border-radius:16px;font-weight:800;font-size:13px;cursor:pointer}.capture-continue{border:1px solid #dcebe6;background:#effaf7;color:#147d68}.capture-submit{border:0;background:#172033;color:#fff}.capture-submit:disabled{opacity:.4;cursor:not-allowed}
 
-.capture-evidence-tile{background:#f0f3f2;border:1px solid #d7e0dd;border-radius:20px;padding:14px;margin-bottom:12px}
+.capture-evidence-tile{background:#e7ecea;border:2px solid #c4cfca;border-radius:20px;padding:14px;margin-bottom:12px;box-shadow:0 6px 20px rgba(20,40,35,.10)}
 .capture-evidence-tile .capture-head{padding:2px 2px 14px}
 .capture-evidence-tile .capture-list-card,.capture-evidence-tile .capture-write-card{margin-bottom:0}
