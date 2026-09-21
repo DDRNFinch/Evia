@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - preview/evia7-test
   workflow_dispatch:
 
 permissions:
@@ -22,14 +23,32 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout main
+      - name: Checkout main site
         uses: actions/checkout@v6
+        with:
+          ref: main
+          path: main-site
+
+      - name: Checkout preview site
+        uses: actions/checkout@v6
+        with:
+          ref: preview/evia7-test
+          path: preview-site
+
+      - name: Build combined Pages site
+        run: |
+          mkdir -p public/preview/evia7-test
+          rsync -a --exclude='.git' --exclude='.github' main-site/ public/
+          rsync -a --exclude='.git' --exclude='.github' preview-site/ public/preview/evia7-test/
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
+
       - name: Upload site
         uses: actions/upload-pages-artifact@v4
         with:
-          path: .
+          path: public
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
