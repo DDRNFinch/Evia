@@ -26,6 +26,8 @@
       r.readAsDataURL(file);
     });
   }
+  function cameraIcon(){return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5h3l1.2-2.1h7.6L17 8.5h3a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V10.5a2 2 0 0 1 2-2Z"/><circle cx="12" cy="14" r="3.6"/></svg>'}
+  function galleryIcon(){return '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M8.2 14.5 11 12l2.6 2.8 2.2-2.7 4.2 4.4"/><circle cx="9" cy="9" r="1.7"/></svg>'}
   window.openUnit=async function(i){
     const profileBtn=document.getElementById("profile-btn");if(profileBtn)profileBtn.style.display="none";
     unit=i;
@@ -41,25 +43,20 @@
     const render=()=>{
       $("#screen").innerHTML=
         '<div class="capture-page">'+
-          '<div class="capture-head"><button class="capture-back" id="capture-back" aria-label="Back">‹</button><div class="capture-head-copy"><div class="capture-eyebrow">EVIDENCE PACK</div><h2>'+esc2(u[0])+'</h2><p class="capture-intro">Capture evidence for the work you have completed. Evia helps you gather evidence; your assessor decides whether it meets the standard.</p></div></div>'+
-          '<section class="capture-evidence-tile capture-media-tile">'+
-            '<section class="capture-media">'+
-              '<input id="capture-camera" type="file" accept="image/*" capture="environment" hidden>'+
-              '<input id="capture-gallery" type="file" accept="image/*" multiple hidden>'+
-              '<button class="capture-camera-tile" id="capture-take" type="button"><span class="capture-tile-icon">⌾</span><span><strong>Camera</strong><small>Take a photo</small></span></button>'+
-              '<button class="capture-gallery-tile" id="capture-choose" type="button"><span class="capture-tile-icon">▧</span><span><strong>Gallery</strong><small>Choose photos</small></span></button>'+
-            '</section>'+
-          '</section>'+
           '<section class="capture-evidence-tile">'+
-            '<div class="capture-list-card"><div class="capture-label">THINGS TO CAPTURE</div><div class="capture-pills">'+g.capture.map(x=>'<span>'+esc2(x)+'</span>').join("")+'</div></div>'+
-          '</section>'+
+            '<div class="capture-head"><button class="capture-back" id="capture-back" aria-label="Back">‹</button><div class="capture-head-copy"><div class="capture-eyebrow">EVIDENCE PACK</div><h2>'+esc2(u[0])+'</h2><p class="capture-intro">Capture evidence for the work you have completed. Evia helps you gather evidence; your assessor decides whether it meets the standard.</p></div></div>'+
+            '<div class="capture-action-row">'+
+              '<input id="capture-camera" type="file" accept="image/*" capture="environment" hidden>'+ 
+              '<input id="capture-gallery" type="file" accept="image/*" multiple hidden>'+ 
+              '<button class="capture-action primary" id="capture-take" type="button">'+cameraIcon()+'<span>Camera</span></button>'+ 
+              '<button class="capture-action secondary" id="capture-choose" type="button">'+galleryIcon()+'<span>Gallery</span></button>'+ 
+            '</div>'+
+            '<div class="capture-list-block"><div class="capture-label">THINGS TO CAPTURE</div><ul class="capture-item-list">'+g.capture.map(x=>'<li>'+esc2(x)+'</li>').join("")+'</ul></div>'+ 
+          '</section>'+ 
           '<section class="capture-evidence-tile">'+
-            '<div class="capture-list-card"><div class="capture-label">THINGS TO MENTION</div><div class="capture-pills mention">'+g.mention.map(x=>'<span>'+esc2(x)+'</span>').join("")+'</div></div>'+
-            '<div class="capture-write-card"><div class="capture-label">WRITE-UP</div><textarea class="capture-note" id="capture-note" placeholder="Write about the process and what you did…"></textarea>'+
-              '<div class="capture-actions"><button class="capture-continue" id="capture-continue" type="button">Continue later</button><button class="capture-submit capture-save" id="capture-submit" type="button" disabled>Save evidence</button></div></div>'+
-          '</section>'+
-          (captured.length?'<section class="capture-photo-panel"><div class="capture-photo-top"><div><div class="capture-label">PHOTOS</div><h3>Your photos</h3></div><span class="capture-count">'+captured.length+'/6</span></div><div class="capture-preview">'+captured.map(p=>'<img class="capture-thumb" src="'+p+'" alt="Evidence photo">').join("")+'</div></section>':"")+
-          (existing.length?'<section class="capture-photo-panel capture-saved"><h3>Saved evidence</h3>'+existing.slice().reverse().map(e=>'<div class="capture-saved-card"><div class="progress-row"><strong>'+esc2(e.d)+'</strong></div>'+(e.p&&e.p.length?'<div class="capture-preview">'+e.p.map(p=>'<img class="capture-thumb" src="'+p+'" alt="Evidence photo">').join("")+'</div>':"")+(e.w?'<p>'+esc2(e.w)+'</p>':"")+'</div>').join("")+'</section>':"")+
+            '<div class="capture-list-block"><div class="capture-label">THINGS TO MENTION</div><ul class="capture-item-list subtle">'+g.mention.map(x=>'<li>'+esc2(x)+'</li>').join("")+'</ul></div>'+ 
+            '<div class="capture-write-card"><label class="capture-note-label" for="capture-note">Write about the process and what you did…</label><textarea class="capture-note" id="capture-note" placeholder="Write about the process and what you did…"></textarea><div class="capture-actions"><button class="capture-continue" id="capture-continue" type="button">Continue later</button><button class="capture-submit" id="capture-submit" type="button" disabled>Save evidence</button></div></div>'+ 
+          '</section>'+ 
         '</div>';
       $("#capture-back").onclick=()=>nav("course");
       const camera=$("#capture-camera"),gallery=$("#capture-gallery"),take=$("#capture-take"),choose=$("#capture-choose"),continueBtn=$("#capture-continue"),submit=$("#capture-submit"),note=$("#capture-note");
