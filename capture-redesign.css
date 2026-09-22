@@ -158,3 +158,101 @@
     padding:12px;
   }
 }
+
+/* Visible capture refresh v2 */
+.capture-page{
+  max-width:760px;
+  padding-top:14px;
+}
+
+.capture-evidence-tile{
+  background:linear-gradient(180deg,#f4fbf8,#edf5f2) !important;
+  border:1px solid #d7e4de !important;
+  border-radius:26px !important;
+  box-shadow:0 12px 28px rgba(15,23,42,.09) !important;
+}
+
+.capture-head{
+  display:flex !important;
+  align-items:flex-start !important;
+  gap:12px !important;
+}
+
+.capture-head h2{
+  font-size:24px !important;
+  letter-spacing:-.03em !important;
+}
+
+.capture-intro{
+  font-size:12px !important;
+  color:#55657d !important;
+}
+
+.capture-back{
+  background:#fff !important;
+  border:1px solid #d9e4ee !important;
+  color:#1f3a5f !important;
+  border-radius:14px !important;
+}
+
+.capture-media button{
+  min-height:116px !important;
+  border-radius:20px !important;
+  box-shadow:0 10px 22px rgba(15,23,42,.11) !important;
+}
+
+.capture-camera-tile{
+  background:linear-gradient(135deg,#11907a,#0f6f5f) !important;
+}
+
+.capture-gallery-tile{
+  background:linear-gradient(135deg,#ffffff,#eef6ff) !important;
+  color:#1f3558 !important;
+}
+
+.capture-list-card,.capture-write-card,.capture-photo-panel{
+  border-radius:18px !important;
+  border:1px solid #dce6ef !important;
+  box-shadow:0 6px 18px rgba(15,23,42,.08) !important;
+}
+
+.capture-pills span{
+  font-size:11px !important;
+  padding:8px 11px !important;
+}
+
+.capture-note{
+  min-height:138px !important;
+  border-radius:14px !important;
+  border:1px solid #d4dfeb !important;
+  background:#fcfdff !important;
+}
+
+.capture-actions{
+  grid-template-columns:1fr 1fr !important;
+}
+
+.capture-continue{
+  background:#eef3f8 !important;
+  border:1px solid #dbe4ee !important;
+  color:#32465f !important;
+}
+
+.capture-submit{
+  background:linear-gradient(135deg,#172339,#0f172a) !important;
+  box-shadow:0 12px 24px rgba(15,23,42,.2) !important;
+}
+
+.capture-thumb{
+  border-radius:12px !important;
+  border:1px solid #d8e2ee !important;
+}
+
+@media(max-width:520px){
+  .capture-head h2{
+    font-size:21px !important;
+  }
+  .capture-media button{
+    min-height:104px !important;
+  }
+}

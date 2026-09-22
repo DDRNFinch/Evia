@@ -889,3 +889,114 @@ textarea,
     padding:12px;
   }
 }
+
+/* Visible UI refresh v2 */
+:root{
+  --evia-accent:#f2b300;
+  --evia-deep:#0f172a;
+  --evia-surface:#ffffff;
+  --evia-surface-soft:#f8fafc;
+}
+
+body{
+  background:
+    radial-gradient(circle at 0% 0%,rgba(242,179,0,.18),transparent 34rem),
+    linear-gradient(180deg,#ffffff 0%,#f3f6fb 72%) !important;
+}
+
+.topbar{
+  background:rgba(255,255,255,.88) !important;
+  backdrop-filter:blur(14px) saturate(140%);
+  -webkit-backdrop-filter:blur(14px) saturate(140%);
+  border-bottom:1px solid #e8edf4 !important;
+  box-shadow:0 4px 14px rgba(15,23,42,.05);
+}
+
+#page-title{
+  font-size:26px !important;
+  font-weight:800 !important;
+  letter-spacing:-.04em !important;
+}
+
+.card{
+  border-radius:24px !important;
+  border:1px solid #e5ebf3 !important;
+  background:linear-gradient(180deg,#ffffff,#fbfdff) !important;
+  box-shadow:0 10px 26px rgba(15,23,42,.08) !important;
+}
+
+.section-title{
+  color:#7d8ba1 !important;
+  font-size:10px !important;
+  letter-spacing:.15em !important;
+}
+
+.primary{
+  background:linear-gradient(135deg,#172339,#0f172a 74%) !important;
+  border-radius:16px !important;
+  box-shadow:0 12px 26px rgba(15,23,42,.22) !important;
+}
+
+.secondary{
+  background:#eef3f8 !important;
+  border:1px solid #dde6f0 !important;
+  color:#24324a !important;
+  border-radius:16px !important;
+}
+
+.pill{
+  border:1px solid #e1e8f0 !important;
+  background:#fff !important;
+  color:#4a5b74 !important;
+}
+
+.pill.active{
+  border-color:#efcc67 !important;
+  background:linear-gradient(180deg,#fff9e5,#fff3cc) !important;
+  color:#5e4900 !important;
+}
+
+.bottom-nav{
+  border-radius:38px !important;
+  background:rgba(255,255,255,.95) !important;
+  border:1px solid #e6ebf3 !important;
+  box-shadow:0 16px 36px rgba(15,23,42,.18),0 4px 12px rgba(15,23,42,.08) !important;
+}
+
+.bottom-nav button{
+  border-radius:26px !important;
+  transition:all .2s ease !important;
+}
+
+.bottom-nav button.active{
+  background:linear-gradient(180deg,#fff9e6,#fff3cc) !important;
+  color:#7b5d00 !important;
+}
+
+.bottom-nav button.active .nav-icon{
+  transform:translateY(-1px) scale(1.05);
+}
+
+.evia-fab{
+  border:3px solid var(--evia-accent) !important;
+  background:#fffefb !important;
+  box-shadow:0 12px 24px rgba(15,23,42,.18) !important;
+}
+
+.unit-card{
+  border-radius:18px !important;
+  border:1px solid #e1e8f1 !important;
+  box-shadow:0 6px 16px rgba(15,23,42,.07) !important;
+}
+
+.portfolio-app-tile{
+  border-radius:22px !important;
+  min-height:122px !important;
+  border:1px solid #e4ebf4 !important;
+  box-shadow:0 10px 24px rgba(15,23,42,.09) !important;
+}
+
+.portfolio-app-count{
+  color:#106c3a !important;
+  font-size:30px !important;
+}
