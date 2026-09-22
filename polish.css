@@ -724,3 +724,168 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text"
   .supporting-grid{gap:8px}
   .supporting-type{min-height:64px;padding:7px 9px}
 }
+
+/* Global UI consistency refresh */
+:root{
+  --ui-radius-card:22px;
+  --ui-radius-control:14px;
+  --ui-radius-pill:999px;
+  --ui-shadow-soft:0 6px 20px rgba(16,24,40,.06);
+  --ui-shadow-strong:0 14px 36px rgba(16,24,40,.12);
+}
+
+body{
+  background:
+    radial-gradient(circle at 5% 0,rgba(255,243,198,.45),transparent 33rem),
+    linear-gradient(180deg,#fefefe 0,#f5f7fa 72%);
+}
+
+.topbar{
+  height:106px;
+  padding:20px 22px 12px;
+}
+
+#app{
+  padding-bottom:122px;
+}
+
+#page-title{
+  font-size:24px;
+  line-height:1.1;
+  letter-spacing:-.035em;
+}
+
+.screen{
+  padding:16px 18px 34px;
+}
+
+.card{
+  border-radius:var(--ui-radius-card);
+  box-shadow:var(--ui-shadow-soft);
+  border:1px solid #e6ebf1;
+  padding:16px;
+}
+
+.card h2,.card h3{
+  margin-bottom:6px;
+}
+
+.section-title{
+  margin:18px 0 8px;
+  letter-spacing:.12em;
+}
+
+.pill{
+  border-radius:var(--ui-radius-pill);
+  min-height:37px;
+  display:inline-flex;
+  align-items:center;
+}
+
+.primary,.secondary{
+  min-height:46px;
+  border-radius:var(--ui-radius-control);
+  font-weight:700;
+  font-size:13px;
+}
+
+.primary{
+  box-shadow:0 10px 20px rgba(16,24,40,.14);
+}
+
+.primary:disabled,.secondary:disabled{
+  opacity:.45;
+  cursor:not-allowed;
+}
+
+.learning-input input,
+textarea,
+.chat-row input,
+.supporting-form label input{
+  border-radius:var(--ui-radius-control);
+}
+
+.photo-grid{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+}
+
+.thumb{
+  border-radius:12px;
+}
+
+.sheet,.profile-sheet,.ksb-modal{
+  border-radius:26px 26px 0 0;
+  box-shadow:var(--ui-shadow-strong);
+}
+
+.bottom-nav{
+  left:12px;
+  right:12px;
+  padding-bottom:6px;
+  bottom:10px;
+}
+
+.bottom-nav button{
+  border-radius:26px;
+}
+
+.portfolio-app-grid{
+  gap:10px;
+}
+
+.portfolio-app-tile{
+  border-radius:22px;
+  min-height:108px;
+}
+
+.saved-learning-item,
+.saved-review-item,
+.supporting-portfolio-item{
+  border-radius:18px;
+  border:1px solid #e7ebf1;
+  box-shadow:0 3px 12px rgba(16,24,40,.04);
+}
+
+.supporting-type{
+  border-radius:18px;
+  min-height:72px;
+  border:1px solid #e4e9f0;
+}
+
+@media(min-width:640px){
+  .screen{
+    width:min(760px,100%);
+    margin:0 auto;
+    padding:20px 22px 36px;
+  }
+}
+
+@media(max-width:520px){
+  .topbar{
+    height:98px;
+    padding:16px 18px 10px;
+  }
+  #page-title{
+    font-size:22px;
+  }
+  .screen{
+    padding:12px 14px 30px;
+  }
+  .card{
+    padding:14px;
+  }
+  .bottom-nav{
+    left:8px;
+    right:8px;
+    height:68px;
+  }
+  .bottom-nav button{
+    height:60px;
+    font-size:10px;
+  }
+  .portfolio-app-tile{
+    min-height:100px;
+    padding:12px;
+  }
+}
