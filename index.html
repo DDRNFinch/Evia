@@ -53,6 +53,7 @@
 
 .ksb-statuses{position:absolute!important;left:0!important;top:0!important;right:auto!important;bottom:auto!important;width:100%!important;height:100%!important;display:block!important;pointer-events:none}.ksb-statuses i{font-style:normal;font-size:11px}.ksb-tile .ksb-statuses i:not(.ksb-supporting-dot){position:absolute!important;left:50%!important;right:auto!important;top:auto!important;bottom:7px!important;transform:translateX(-50%)!important;width:18px!important;height:18px!important;display:grid!important;place-items:center!important}.ksb-tile .ksb-statuses .ksb-supporting-dot{position:absolute!important;left:auto!important;right:6px!important;top:5px!important;bottom:auto!important;width:auto!important;height:auto!important;display:block!important;transform:none!important;color:#e6b800;font-size:13px!important}.ksb-supporting-status{color:#b88e00}
 </style>
+<link rel="stylesheet" href="ui-override.css?v=20260922-ui3">
 </head>
 <body>
 <div id="app">
@@ -83,7 +84,7 @@
   navigator.serviceWorker.addEventListener("controllerchange",function(){if(reloading)return;reloading=true;window.location.reload();});
   window.addEventListener("load", async function(){
     try {
-      const registration=await navigator.serviceWorker.register("./sw-v16.js?v=evia7-v23",{updateViaCache:"none"});
+      const registration=await navigator.serviceWorker.register("./sw-v16.js?v=evia7-v24",{updateViaCache:"none"});
       await registration.update();
       const activateWaiting=worker=>{if(!worker)return;worker.postMessage({type:"SKIP_WAITING"});};
       if(registration.waiting) activateWaiting(registration.waiting);
