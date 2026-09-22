@@ -1,0 +1,13 @@
+/* Capture layout review: retain Evia's existing visual language. */
+.capture-layout-review-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0 0 18px}
+.capture-layout-review-action{min-height:72px!important;width:100%;display:flex!important;align-items:center;justify-content:center;gap:10px;border-radius:16px!important;font:inherit;font-weight:700;cursor:pointer}
+.capture-layout-review-action svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+.capture-layout-review-block{padding-top:2px}
+.capture-layout-review-block+.capture-layout-review-block{margin-top:18px}
+.capture-layout-review-list{margin:9px 0 0;padding-left:20px;color:#344054;font-size:13px;line-height:1.65}
+.capture-layout-review-list li{padding-left:3px}
+.capture-layout-review-list li::marker{color:#98a5b8}
+.capture-layout-review-list.subtle{color:#667085}
+.capture-layout-review-write{margin-top:18px}
+.capture-layout-review-write label{display:block;margin:0 0 9px;color:#344054;font-size:13px;font-weight:650}
+@media(max-width:520px){.capture-layout-review-actions{gap:10px}.capture-layout-review-action{min-height:68px!important}.capture-layout-review-list{font-size:12px}}
