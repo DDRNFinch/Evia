@@ -283,7 +283,7 @@
     writeState("done");
     hideGuide();
     document.body.classList.remove("evia-onboarding");
-    nav("course");
+    nav(window.eviaHome?"home":"course");
     if(typeof showEvidenceToast==="function")showEvidenceToast("You're all set");
   }
 
