@@ -9,6 +9,16 @@
   };
   const KEY="evia7-theme";
   const PICKED_KEY="evia7-theme-picked";
+  const SHAPE_KEY="evia7-shape";
+  const SHAPE_PICKED_KEY="evia7-shape-picked";
+  const SHAPES={
+    circle:{label:"Circle",className:"circle"},
+    rounded:{label:"Rounded square",className:"rounded"},
+    squircle:{label:"Squircle",className:"squircle"},
+    hexagon:{label:"Hexagon",className:"hexagon"},
+    diamond:{label:"Diamond",className:"diamond"},
+    teardrop:{label:"Teardrop",className:"teardrop"}
+  };
 
   function applyTheme(name){
     const t=THEMES[name]||THEMES.yellow;
@@ -21,6 +31,14 @@
     document.documentElement.setAttribute("data-evia-theme",THEMES[name]?name:"yellow");
   }
   function currentTheme(){return localStorage.getItem(KEY)||"yellow"}
+  function currentShape(){return localStorage.getItem(SHAPE_KEY)||"circle"}
+  function setShape(name){
+    if(!SHAPES[name])return;
+    localStorage.setItem(SHAPE_KEY,name);
+    document.documentElement.setAttribute("data-evia-shape",SHAPES[name].className);
+  }
+  function hasPickedShape(){return localStorage.getItem(SHAPE_PICKED_KEY)==="1"}
+  function markShapePicked(){localStorage.setItem(SHAPE_PICKED_KEY,"1")}
   function setTheme(name){
     if(!THEMES[name])return;
     localStorage.setItem(KEY,name);
@@ -29,12 +47,20 @@
   function hasPickedTheme(){return localStorage.getItem(PICKED_KEY)==="1"}
   function markPicked(){localStorage.setItem(PICKED_KEY,"1")}
 
+  setShape(currentShape());
   applyTheme(currentTheme());
 
   function faceMarkup(name,t,selected){
     return '<button type="button" class="evia-theme-option'+(selected?" selected":"")+'" data-theme="'+name+'" aria-label="'+t.label+' Evia" style="--opt-accent:'+t.accent+'">'+
       '<span class="evia-theme-avatar"><span class="evia-face"><i></i><i></i></span></span>'+
       '<strong>'+t.label+'</strong>'+
+    '</button>';
+  }
+
+  function shapeMarkup(name,s,selected){
+    return '<button type="button" class="evia-shape-option '+(selected?"selected":"")+'" data-shape="'+name+'" aria-label="'+s.label+' Evia">'+
+      '<span class="evia-shape-avatar shape-'+s.className+'"><span class="evia-face"><i></i><i></i></span></span>'+
+      '<strong>'+s.label+'</strong>'+
     '</button>';
   }
 
@@ -58,10 +84,49 @@
       '.evia-theme-avatar{width:64px;height:64px;border-radius:50%;background:#fffdfa;border:4px solid var(--opt-accent);display:grid;place-items:center;position:relative}'+
       '.evia-theme-avatar .evia-face i{border-color:var(--opt-accent)!important;background:transparent!important}'+
       '.evia-theme-avatar .evia-face i:after{background:var(--opt-accent)!important}'+
-      '.evia-theme-option strong{font-size:12px;font-weight:700;color:#273244}'+
+      '.evia-theme-option strong,.evia-shape-option strong{font-size:12px;font-weight:700;color:#273244}'+
+      '.evia-shape-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}'+
+      '.evia-shape-option{display:flex;flex-direction:column;align-items:center;gap:10px;padding:14px 6px;border-radius:20px;border:2px solid #edf0f4;background:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(25,36,55,.05)}'+
+      '.evia-shape-option.selected{border-color:var(--yellow)}'+
+      '.evia-shape-option:active{transform:scale(.97)}'+
+      '.evia-shape-avatar{width:64px;height:64px;background:#fffdfa;border:4px solid var(--yellow);display:grid;place-items:center;position:relative;overflow:hidden}'+
+      '.shape-circle{border-radius:50%}'+
+      '.shape-rounded{border-radius:18%}'+
+      '.shape-squircle{border-radius:30%}'+
+      '.shape-hexagon{clip-path:polygon(25% 3%,75% 3%,100% 50%,75% 97%,25% 97%,0 50%);border-radius:0}'+
+      '.shape-diamond{clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);border-radius:0}'+
+      '.shape-teardrop{border-radius:52% 52% 52% 12%;transform:rotate(-45deg)}'+
+      '.shape-teardrop .evia-face{transform:rotate(45deg)}'+
+      '.evia-shape-avatar .evia-face i{border-color:var(--yellow)!important;background:transparent!important}'+
+      '.evia-shape-avatar .evia-face i:after{background:var(--yellow)!important}'+
+      '@media(max-width:380px){.evia-theme-grid,.evia-shape-grid{gap:10px}.evia-theme-avatar,.evia-shape-avatar{width:56px;height:56px}}'+
       '.evia-theme-dot{display:block;width:18px;height:18px;border-radius:50%;background:var(--yellow);border:2px solid #fff;box-shadow:0 0 0 1px var(--yellow-line)}'+
       '@media(max-width:380px){.evia-theme-grid{gap:10px}.evia-theme-avatar{width:56px;height:56px}}';
     document.head.appendChild(style);
+  }
+
+  function showShapePicker(onDone){
+    injectStyles();
+    const root=document.createElement("div");
+    root.id="evia-theme-screen";
+    const current=currentShape();
+    root.innerHTML='<div class="evia-theme-inner">'+
+      '<button type="button" class="evia-theme-close" id="evia-shape-close" aria-label="Close">\u00d7</button>'+
+      '<div class="evia-theme-kicker">WELCOME TO EVIA</div>'+
+      '<h2>Choose your Evia shape</h2>'+
+      '<p>Pick the Evia shape you like. You can change it anytime from your profile.</p>'+
+      '<div class="evia-shape-grid">'+Object.keys(SHAPES).map(k=>shapeMarkup(k,SHAPES[k],k===current)).join("")+'</div>'+
+      '</div>';
+    document.body.appendChild(root);
+    requestAnimationFrame(()=>root.classList.add("visible"));
+    const finish=name=>{
+      if(name)setShape(name);
+      markShapePicked();
+      root.classList.add("leaving");
+      setTimeout(()=>{root.remove();if(onDone)onDone();},320);
+    };
+    root.querySelectorAll("[data-shape]").forEach(b=>b.onclick=()=>finish(b.dataset.shape));
+    document.getElementById("evia-shape-close").onclick=()=>finish(null);
   }
 
   function showPicker(onDone){
@@ -72,7 +137,7 @@
     root.innerHTML='<div class="evia-theme-inner">'+
       '<button type="button" class="evia-theme-close" id="evia-theme-close" aria-label="Close">\u00d7</button>'+
       '<div class="evia-theme-kicker">WELCOME TO EVIA</div>'+
-      '<h2>Pick your Evia</h2>'+
+      '<h2>Pick your Evia colour</h2>'+
       '<p>Choose a colour and Evia will use it throughout the app. You can change this anytime from your profile.</p>'+
       '<div class="evia-theme-grid">'+Object.keys(THEMES).map(k=>faceMarkup(k,THEMES[k],k===current)).join("")+'</div>'+
       '</div>';
@@ -93,4 +158,9 @@
   window.eviaCurrentTheme=currentTheme;
   window.eviaShowThemePicker=showPicker;
   window.eviaThemeHasBeenPicked=hasPickedTheme;
+  window.eviaShapes=SHAPES;
+  window.eviaSetShape=setShape;
+  window.eviaCurrentShape=currentShape;
+  window.eviaShowShapePicker=showShapePicker;
+  window.eviaShapeHasBeenPicked=hasPickedShape;
 })();
