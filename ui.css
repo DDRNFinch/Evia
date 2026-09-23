@@ -139,9 +139,34 @@ html.evia-sleepy body .evia-fab{animation-duration:7s!important}
 @keyframes eviaSquish{0%{scale:1 1}12%{scale:1.08 .92}26%{scale:.94 1.07}40%{scale:1.04 .96}55%{scale:.98 1.025}72%{scale:1.01 .99}100%{scale:1 1}}
 @media(prefers-reduced-motion:reduce){html body .evia-fab,html body .evia-fab.evia-hop,html body .evia-fab.evia-squish{animation:none!important;rotate:none}.evia-face i{transition:none}.ui-evia-bubble{transition:opacity .2s ease}}
 
-/* ---- Coach A/B switch (test builds only) ---- */
-.ui-trial{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin:0 0 10px;padding:8px 10px;border-radius:14px;background:var(--soft);border:1px dashed var(--yellow-line)}
-.ui-trial>span{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--yellow-ink)}
-.ui-trial div{display:flex;gap:6px}
-.ui-trial button{min-height:36px;padding:6px 10px;border-radius:10px;border:1px solid var(--ui-line);background:#fff;font:inherit;font-size:12px;font-weight:700;color:var(--ui-ink);cursor:pointer}
-.ui-trial button[aria-pressed="true"]{background:var(--yellow);border-color:var(--yellow);color:var(--ui-on-accent)}
+/* ---- My stats (Progress page) ---- */
+.st-card{padding:16px;display:flex;flex-direction:column;gap:14px;scroll-margin-top:72px}
+.st-title{margin:0;font-size:18px;letter-spacing:-.01em;color:var(--ui-ink)}
+.st-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.st-tile{background:var(--soft,#fff7d6);border:1px solid var(--yellow-line,#f1d878);border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.st-tile small{font-size:11px;font-weight:650;color:var(--ui-muted)}
+.st-tile strong{font-size:15px;line-height:1.2;color:var(--ui-ink);overflow-wrap:anywhere}
+.st-tile span{font-size:10.5px;line-height:1.3;color:var(--yellow-ink)}
+.st-row{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--ui-line);padding-top:12px}
+.st-row>small{font-size:11.5px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--ui-muted)}
+.st-row p{margin:0;font-size:13.5px;line-height:1.5;color:var(--ui-text)}
+.st-row p strong{color:var(--ui-ink)}
+.st-tests{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.st-tests li{display:grid;grid-template-columns:1fr auto;gap:0 10px;font-size:13.5px;color:var(--ui-ink)}
+.st-tests li small{grid-column:1/-1;font-size:11.5px;color:var(--ui-muted)}
+.st-tests li.st-empty{display:block;color:var(--ui-muted)}
+.st-conf{display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:start}
+.st-conf-label{font-size:12px;font-weight:700;color:var(--ui-text);padding-top:5px}
+.st-conf>div{display:flex;flex-wrap:wrap;gap:6px}
+.st-chip{font-size:12px;font-weight:650;padding:5px 10px;border-radius:999px;border:1px solid var(--ui-line);color:var(--ui-ink);background:#fff}
+.st-chip.low{background:#fff4ed;border-color:#f9dbc5;color:#93370d}
+.st-chip.high{background:#ecfdf3;border-color:#c6ecd4;color:#05603a}
+.st-none{font-size:12px;color:var(--ui-muted);padding-top:5px}
+.st-badges{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.st-badges li{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:10px 6px;border-radius:16px;border:1px dashed var(--ui-line);opacity:.55}
+.st-badges li.on{opacity:1;border-style:solid;border-color:var(--yellow-line,#f1d878);background:var(--soft,#fff7d6)}
+.st-badge-icon{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#f2f4f7;color:var(--ui-faint)}
+.st-badges li.on .st-badge-icon{background:var(--yellow);color:var(--ui-on-accent)}
+.st-badge-icon svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linejoin:round;stroke-linecap:round}
+.st-badges li strong{font-size:11.5px;line-height:1.25;color:var(--ui-ink)}
+.st-badges li small{font-size:10.5px;line-height:1.3;color:var(--ui-muted)}
