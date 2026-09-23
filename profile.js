@@ -25,6 +25,7 @@
       '<div class="profile-block"><div class="profile-kicker">YOUR COURSE</div><div class="course-options">'+Object.keys(C).map(k=>'<button type="button" class="course-option '+(k===course?"selected":"")+'" data-profile-course="'+k+'">'+esc(C[k].name)+'<span>›</span></button>').join("")+'</div></div>'+
       '<div class="profile-block"><div class="profile-kicker">MATHS & ENGLISH</div><p>Choose which subjects Evia should include in your tests and progress reviews.</p><label class="study-check"><input id="profile-maths" type="checkbox"><span>I am studying Maths</span></label><label class="study-check"><input id="profile-english" type="checkbox"><span>I am studying English</span></label></div>'+
       '<div class="profile-block"><div class="settings-list"><button type="button" class="settings-entry" id="open-settings"><span class="settings-entry-icon" aria-hidden="true">Aa</span><span class="settings-entry-copy"><strong>Accessibility & settings</strong><small>Personalise how Evia looks, reads and behaves</small></span><span class="settings-entry-arrow" aria-hidden="true">›</span></button><button type="button" class="settings-entry" id="open-shape-picker"><span class="settings-entry-icon" aria-hidden="true"><i class="evia-theme-dot"></i></span><span class="settings-entry-copy"><strong>Evia shape</strong><small>Choose the shape of Evia</small></span><span class="settings-entry-arrow" aria-hidden="true">›</span></button><button type="button" class="settings-entry" id="open-theme-picker"><span class="settings-entry-icon" aria-hidden="true"><i class="evia-theme-dot"></i></span><span class="settings-entry-copy"><strong>Evia colour</strong><small>Choose the colour Evia uses throughout the app</small></span><span class="settings-entry-arrow" aria-hidden="true">›</span></button></div></div><div class="profile-block"><div class="profile-kicker">YOUR SIGNATURE</div><p>Write your signature with your finger. It will be attached to saved evidence with the time and date.</p><div class="signature-wrap"><canvas id="signature-pad" width="900" height="260"></canvas><button type="button" id="clear-signature">Clear</button></div></div>'+
+      '<div class="profile-block evia-storage-block"><div class="profile-kicker">YOUR DATA</div><p id="evia-storage-usage">Checking storage…</p><p id="evia-storage-status"></p><p class="evia-storage-last" id="evia-storage-last"></p><div class="evia-storage-actions"><button type="button" class="secondary" id="evia-backup">Back up portfolio</button><label class="secondary evia-restore-label">Restore backup<input id="evia-restore" type="file" accept=".zip,application/zip" hidden></label></div></div>'+
       '<div class="profile-actions"><button type="button" class="secondary" id="download-portfolio">Download PDF</button><button type="button" class="primary" id="save-profile">Save profile</button></div>'+
       '</section></div>';
 
@@ -40,7 +41,7 @@
 
     document.getElementById("avatar-file").onchange=e=>{
       const f=e.target.files[0];if(!f)return;
-      const r=new FileReader();r.onload=()=>{p.avatar=r.result;set(p);refreshProfileButton();openProfile()};r.readAsDataURL(f);
+      const r=new FileReader();r.onload=async()=>{p.avatar=window.eviaShrinkAvatar?await window.eviaShrinkAvatar(r.result):r.result;set(p);refreshProfileButton();openProfile()};r.readAsDataURL(f);
     };
     document.querySelectorAll("[data-profile-course]").forEach(b=>b.onclick=()=>{course=b.dataset.profileCourse;persist();openProfile();});
     document.getElementById("open-settings").onclick=()=>openSettings();document.getElementById("open-settings").onkeydown=e=>{if(e.key==="Enter"||e.key===" ")openSettings()};
@@ -61,6 +62,7 @@
       refreshProfileButton();document.getElementById("modal-root").innerHTML="";
     };
     document.getElementById("download-portfolio").onclick=downloadEvidencePack;
+    if(window.eviaStorage)window.eviaStorage.bindProfileCard(document.getElementById("modal-root"));
     document.getElementById("profile-maths").checked=!!p.mathsEnabled;
     document.getElementById("profile-english").checked=!!p.englishEnabled;
   }

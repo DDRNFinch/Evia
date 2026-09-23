@@ -205,7 +205,7 @@
           else inline.push(await blobToDataUrl(p.blob));
         }
         const profile=JSON.parse(localStorage.getItem("evia7-profile")||"{}");
-        const entry={id:Date.now()+"-"+Math.random().toString(36).slice(2,8),c:course,u:PPE_UNIT,d:new Date().toLocaleString("en-GB"),p:inline,w:write.value.trim(),k:PPE_KSBS.slice(),learnerProfile:profile,signature:profile.signature||"",savedAt:new Date().toISOString(),photoCount:photos.length,induction:true};
+        const entry={id:Date.now()+"-"+Math.random().toString(36).slice(2,8),c:course,u:PPE_UNIT,d:new Date().toLocaleString("en-GB"),p:inline,w:write.value.trim(),k:PPE_KSBS.slice(),learnerProfile:{name:profile.name||"",start:profile.start||"",end:profile.end||""},signature:profile.signature||"",savedAt:new Date().toISOString(),photoCount:photos.length,induction:true};
         if(photoIds.length)entry.photoIds=photoIds;
         evidence.push(entry);persist();
         photos.forEach(p=>URL.revokeObjectURL(p.url));

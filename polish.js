@@ -231,7 +231,7 @@
       await idbPut({id:permanentId,blob:rec.blob,addedAt:rec.addedAt||new Date().toISOString()});
       photoIds.push(permanentId);
     }
-    evidence.push({id,c:course,u:u[0],d:new Date().toLocaleString("en-GB"),p:[],photoIds,w:pack.write.trim(),k:u[1].map(code),learnerProfile:profile,signature:profile.signature||"",savedAt:new Date().toISOString(),photoCount:photoIds.length});
+    evidence.push({id,c:course,u:u[0],d:new Date().toLocaleString("en-GB"),p:[],photoIds,w:pack.write.trim(),k:u[1].map(code),learnerProfile:{name:profile.name||"",start:profile.start||"",end:profile.end||""},signature:profile.signature||"",savedAt:new Date().toISOString(),photoCount:photoIds.length});
     persist();
     await removePack();
     screen="portfolio";
