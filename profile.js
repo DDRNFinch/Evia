@@ -6,6 +6,27 @@
   const get=()=>Object.assign({},defaults,readObject(KEY,{}));
   const set=p=>localStorage.setItem(KEY,JSON.stringify(p));
   const esc=s=>String(s??"").replace(/[&<>"]/g,x=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[x]));
+  const eviaName=()=>String(get().eviaName||"Evia").trim()||"Evia";
+  window.eviaDisplayName=eviaName;
+  function applyEviaName(){
+    const name=eviaName();
+    const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+    const nodes=[];
+    while(walker.nextNode())nodes.push(walker.currentNode);
+    nodes.forEach(node=>{
+      const parent=node.parentElement;
+      if(!parent||["SCRIPT","STYLE","NOSCRIPT"].includes(parent.tagName))return;
+      if(!node.nodeValue||!/\\bEvia\\b/i.test(node.nodeValue))return;
+      node.nodeValue=node.nodeValue.replace(/\\bEvia\\b/gi,name);
+    });
+    document.title=document.title.replace(/\\bEvia\\b/gi,name);
+  }
+  window.eviaApplyName=applyEviaName;
+  if(!window.__eviaNameObserver){
+    window.__eviaNameObserver=new MutationObserver(()=>applyEviaName());
+    window.__eviaNameObserver.observe(document.body,{childList:true,subtree:true});
+  }
+  setTimeout(applyEviaName,0);
 
   function avatarMarkup(p,large){
     return p.avatar
@@ -64,6 +85,7 @@
           const value=document.getElementById("evia-name-input").value.trim()||"Evia";
           p.eviaName=value;
           set(p);
+          applyEviaName();
           close();
           openProfile();
         };
