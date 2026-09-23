@@ -515,59 +515,57 @@ function chat(){
  const confidence=()=>{
    const bank=confidenceQuestions();
    if(!bank.length){eviaReply("I do not have any practical skill areas loaded for this course yet.");return}
-   let index=0;
+   const cycleKey="evia7-confidence-cycle-"+course;
+   let cycle;
+   try{cycle=JSON.parse(localStorage.getItem(cycleKey)||"null")}catch(_){cycle=null}
+   if(!cycle||!Array.isArray(cycle.asked)||cycle.asked.length>=bank.length)cycle={asked:[]};
    const session={id:"confidence-"+Date.now(),course,startedAt:new Date().toISOString(),scores:[]};
-   const ask=()=>{
-     const q=bank[Math.floor(Math.random()*bank.length)];
+   let answeredThisSession=0;
+   const nextQuestion=()=>{
+     const nextIndex=bank.findIndex(q=>!cycle.asked.includes(q[0]));
+     if(nextIndex===-1){
+       cycle={asked:[]};
+       localStorage.setItem(cycleKey,JSON.stringify(cycle));
+       return;
+     }
+     const q=bank[nextIndex];
      const t=thinking();
      setTimeout(()=>{
        t.outerHTML='<div class="bubble evia">'+esc(q[1])+'</div><div class="rating-options">'+
-         ["Need more training","Know the basics","Quite confident","I\'ve mastered this"].map((label,n)=>'<button class="rating-pill" data-rating="'+(n+1)+'"><strong>'+label+'</strong></button>').join("")+
+         ["Need more training","Know the basics","Quite confident","I've mastered this"].map((label,n)=>'<button class="rating-pill" data-confidence-rating="'+(n+1)+'"><strong>'+label+'</strong></button>').join("")+
          '</div>';
        scroll();
-       document.querySelectorAll("[data-rating]").forEach(b=>b.onclick=()=>{
-         const score=Number(b.dataset.rating);
+       document.querySelectorAll("[data-confidence-rating]").forEach(b=>b.onclick=()=>{
+         const score=Number(b.dataset.confidenceRating);
          addBubble("I’d rate myself "+b.querySelector("strong").textContent.toLowerCase()+".");
          session.scores.push({area:q[0],score,question:q[1],answeredAt:new Date().toISOString()});
+         if(!cycle.asked.includes(q[0]))cycle.asked.push(q[0]);
+         localStorage.setItem(cycleKey,JSON.stringify(cycle));
          document.querySelectorAll(".rating-options").forEach(x=>x.remove());
-         index++;
-         if(index<3){ask();return}
-         const yesNo='<div class="bubble evia">Would you like to do 3 more?</div><div class="rating-options"><button class="rating-pill" data-more="yes"><strong>Yes</strong></button><button class="rating-pill" data-more="no"><strong>No</strong></button></div>';
-         $("#chat").insertAdjacentHTML("beforeend",yesNo);scroll();
-         document.querySelectorAll("[data-more]").forEach(b=>b.onclick=()=>{
-           addBubble(b.dataset.more==="yes"?"Yes":"No");
-           document.querySelectorAll("[data-more]").forEach(x=>x.parentElement&&x.parentElement.remove());
-           if(b.dataset.more==="yes"){
-             index=3;
-             const askMore=()=>{
-               const q2=bank[index];
-               const t2=thinking();
-               setTimeout(()=>{
-                 t2.outerHTML='<div class="bubble evia">'+esc(q2[1])+'</div><div class="rating-options">'+
-                   ["Need more training","Know the basics","Quite confident","I\'ve mastered this"].map((label,n)=>'<button class="rating-pill" data-rating-more="'+(n+1)+'"><strong>'+label+'</strong></button>').join("")+
-                   '</div>';scroll();
-                 document.querySelectorAll("[data-rating-more]").forEach(btn=>btn.onclick=()=>{
-                   const score2=Number(btn.dataset.ratingMore);
-                   addBubble("I’d rate myself "+btn.querySelector("strong").textContent.toLowerCase()+".");
-                   session.scores.push({area:q2[0],score:score2,question:q2[1],answeredAt:new Date().toISOString()});
-                   document.querySelectorAll(".rating-options").forEach(x=>x.remove());
-                   index++;
-                   if(index<6){askMore();return}
-                   saveConfidenceHistory([...confidenceHistory(),session]);
-                   eviaReply("That confidence check is complete. I’ve saved all 6 ratings for your progress review. They are for reflection, not assessment.");
-                 });
-               },900);
-             };
-             askMore();
-           }else{
+         answeredThisSession++;
+         if(cycle.asked.length>=bank.length){
+           saveConfidenceHistory([...confidenceHistory(),session]);
+           localStorage.setItem(cycleKey,JSON.stringify({asked:[]}));
+           eviaReply("That confidence cycle is complete. I’ve saved all of your ratings. The next confidence check will start a new cycle.");
+           return;
+         }
+         if(answeredThisSession<3){nextQuestion();return}
+         const remaining=bank.length-cycle.asked.length;
+         $( "#chat" ).insertAdjacentHTML("beforeend",'<div class="bubble evia">Would you like to continue with '+remaining+' confidence questions still to go in this cycle?</div><div class="rating-options"><button class="rating-pill" data-confidence-more="yes"><strong>Yes</strong></button><button class="rating-pill" data-confidence-more="no"><strong>No</strong></button></div>');
+         scroll();
+         document.querySelectorAll("[data-confidence-more]").forEach(b=>b.onclick=()=>{
+           addBubble(b.dataset.confidenceMore==="yes"?"Yes":"No");
+           document.querySelectorAll("[data-confidence-more]").forEach(x=>x.parentElement&&x.parentElement.remove());
+           if(b.dataset.confidenceMore==="yes"){answeredThisSession=0;nextQuestion()}
+           else{
              saveConfidenceHistory([...confidenceHistory(),session]);
-             eviaReply("That confidence check is complete. I’ve saved your 3 ratings for your progress review. They are for reflection, not assessment.");
+             eviaReply("That confidence check is complete. I’ve saved your ratings for your progress review.");
            }
          });
        });
      },900);
    };
-   ask();
+   nextQuestion();
  };
  const portfolioReview=()=>{
    const entries=evidence.filter(e=>e.c===course);
