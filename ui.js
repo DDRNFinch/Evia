@@ -217,20 +217,59 @@
   function closeChat(){const x=document.getElementById("x");if(x)x.click()}
   const openUnitFromChat=u=>{closeChat();setTimeout(()=>openUnit(u.index),60)};
   const remember=u=>localStorage.setItem(COACH_KEY,JSON.stringify({unit:u.name,at:Date.now()}));
-  const more=()=>[{label:"Check my write-ups",run:writeups},{label:"How am I doing?",run:howAmIDoing},{label:"Something else",run:somethingElse}];
+  const plural=(n,word)=>n+" "+word+(n===1?"":"s");
+  const listText=items=>items.length<2?items.join(""):items.slice(0,-1).join(", ")+" and "+items[items.length-1];
+  const more=exclude=>[
+    {label:"Check my write-ups",run:writeups},
+    {label:"Which KSBs am I missing?",run:ksbGaps},
+    {label:"Plan my week",run:planWeek},
+    {label:"How am I doing?",run:howAmIDoing},
+    {label:"Something else",run:somethingElse}
+  ].filter(r=>r.label!==exclude);
+
+  /* Greedy pick of units that cover the most KSBs still missing evidence. */
+  function coverPlan(a){
+    const left=new Set(a.units.flatMap(u=>u.missing)),plan=[];
+    while(left.size){
+      const best=a.units.map(u=>({u,gain:u.codes.filter(c=>left.has(c))})).sort((x,y)=>y.gain.length-x.gain.length||x.u.index-y.u.index)[0];
+      if(!best||!best.gain.length)break;
+      plan.push({unit:best.u,covers:best.gain});best.gain.forEach(c=>left.delete(c));
+    }
+    return plan;
+  }
+  const dayWord=t=>{const d=Math.floor((new Date().setHours(0,0,0,0)-new Date(t).setHours(0,0,0,0))/864e5);return d<=0?"today":d===1?"yesterday":"on "+new Date(t).toLocaleDateString("en-GB",{weekday:"long"})};
+  const weekStart=()=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return d.getTime()};
+  const otjThisWeek=()=>hours.filter(x=>Number(x.createdAt)>=weekStart()).reduce((n,x)=>n+Number(x.n||0),0);
+
+  /* Things Evia notices before she answers: recent evidence, milestones and this week's learning. */
+  const MILESTONE_KEY="evia7-coach-milestone";
+  let noticedThisChat=false; /* she mentions these once each time the chat opens */
+  function noticing(a){
+    const lines=[];
+    const bucket=[100,75,50,25].find(b=>a.ksbPct>=b)||0,seen=Number(localStorage.getItem(MILESTONE_KEY)||0);
+    if(bucket>seen){
+      localStorage.setItem(MILESTONE_KEY,String(bucket));
+      lines.push(bucket===100?"You’ve got evidence for <strong>every KSB</strong> on your course. That’s a huge milestone.":"You’ve passed <strong>"+bucket+"%</strong> of your KSBs. That’s a big milestone, well done.");
+      if(window.eviaMood)window.eviaMood("happy");
+    }
+    if(a.lastEntry&&Date.now()-entryTime(a.lastEntry)<3*864e5)lines.push(pick(["Nice work submitting <strong>"+escHtml(a.lastEntry.u)+"</strong> "+dayWord(entryTime(a.lastEntry))+".","I saw your <strong>"+escHtml(a.lastEntry.u)+"</strong> evidence come in "+dayWord(entryTime(a.lastEntry))+". Good stuff."]));
+    const wk=otjThisWeek();
+    if(wk>0&&lines.length<2)lines.push("You’ve logged "+wk.toFixed(1).replace(/\.0$/,"")+" hours of off-the-job learning this week.");
+    return lines;
+  }
 
   function nextStep(){
     const a=analyse(),s=suggestion(a);
-    if(!s.unit){say(escHtml(s.text));replies(more().filter(r=>r.label!=="Something else").concat([{label:"Something else",run:somethingElse}]));return}
+    if(!s.unit){say(escHtml(s.text));replies(more());return}
     const u=s.unit;
-    if(a.drafts.length&&a.drafts[0]===u){
+    if(s.draft){
       say(pick(["You’ve got a draft waiting: <strong>"+escHtml(u.name)+"</strong>. Finish it off and submit it so it counts.","<strong>"+escHtml(u.name)+"</strong> is started but not submitted yet. Let’s get it over the line."]));
     }else{
       const codes=u.missing.slice(0,3).join(", ")+(u.missing.length>3?" and more":"");
       say(pick([
-        "Your quickest win is <strong>"+escHtml(u.name)+"</strong>. It covers <strong>"+u.missing.length+" KSB"+(u.missing.length===1?"":"s")+"</strong> you don’t have evidence for yet ("+escHtml(codes)+").",
-        "I’d go for <strong>"+escHtml(u.name)+"</strong> next. One good job there would tick off <strong>"+u.missing.length+" KSB"+(u.missing.length===1?"":"s")+"</strong>, including "+escHtml(codes)+".",
-        "If you want the most progress for one job, <strong>"+escHtml(u.name)+"</strong> is it: "+u.missing.length+" KSB"+(u.missing.length===1?"":"s")+" with no evidence yet."
+        "Your quickest win is <strong>"+escHtml(u.name)+"</strong>. It covers <strong>"+plural(u.missing.length,"KSB")+"</strong> you don’t have evidence for yet ("+escHtml(codes)+").",
+        "I’d go for <strong>"+escHtml(u.name)+"</strong> next. One good job there would tick off <strong>"+plural(u.missing.length,"KSB")+"</strong>, including "+escHtml(codes)+".",
+        "If you want the most progress for one job, <strong>"+escHtml(u.name)+"</strong> is it: "+plural(u.missing.length,"KSB")+" with no evidence yet."
       ]));
     }
     remember(u);
@@ -238,10 +277,12 @@
   }
   function coach(){
     const memory=readJson(COACH_KEY,null),a=analyse();
+    if(!noticedThisChat){noticedThisChat=true;noticing(a).forEach(line=>say(line))}
     if(memory&&memory.unit&&Date.now()-memory.at>36e5){
       const u=a.units.find(x=>x.name===memory.unit);
       if(u&&u.entries.some(e=>entryTime(e)>memory.at)){
-        say(pick(["Nice work on <strong>"+escHtml(u.name)+"</strong> since we last spoke. That’s more KSBs ticked off.","You got <strong>"+escHtml(u.name)+"</strong> done. Great stuff."]));
+        say(pick(["And you got <strong>"+escHtml(u.name)+"</strong> done since we last spoke. That’s more KSBs ticked off.","You did <strong>"+escHtml(u.name)+"</strong> like we planned. Great stuff."]));
+        if(window.eviaMood)window.eviaMood("happy");
         localStorage.removeItem(COACH_KEY);nextStep();return;
       }
       if(u&&u.missing.length){
@@ -255,38 +296,184 @@
     }
     nextStep();
   }
+
+  /* ---------- Write-up checker ---------- */
+  /* Trade wording that counts as covering a "Things to mention" point, beyond the words themselves. */
+  const SYNONYMS={
+    "ratio":/\bratios?\b|\b\d+\s*(?::|to)\s*\d+\b|\bparts?\b/,
+    "ppe":/\bppe\b|hard ?hat|helmet|hi-?vis|high[- ]vis|gloves?|goggles|safety glasses|glasses|boots|ear (?:defenders|plugs|protection)|dust mask|respirator/,
+    "rpe":/\brpe\b|dust mask|respirator|ffp\d|mask/,
+    "lev":/\blev\b|extract(?:ion|or)|dust extraction|vacuum/,
+    "health & safety":/safe|safety|hazard|risk/,
+    "safety":/safe|safety|hazard|risk/,
+    "health":/health|wellbeing|well-being|break|hydrat|drink|tired|fatigue/,
+    "wellbeing":/wellbeing|well-being|health|break|stress|hydrat|drink|tired|fatigue/,
+    "mental":/mental|stress|wellbeing|well-being|talk(?:ed)? to/,
+    "physical health":/health|stretch|back|lifting|posture|break/,
+    "teamwork":/team|colleague|together|helped|help(?:ing)? (?:the|a|my)|labourer|gang|supervisor|foreman|mate/,
+    "communication":/talk|spoke|told|asked|explain|communicat|briefing|radio|discuss/,
+    "gauging":/gaug|measur\w* (?:the )?(?:sand|cement)|bucket|gauge box/,
+    "silos":/\bsilos?\b/,
+    "pre-mix":/pre-?mix|ready-?mix|bagged|premix/,
+    "hand":/by hand|hand mix|shovel|spade/,
+    "mechanical":/mixer|mechanical|drill|paddle/,
+    "mortar quantity":/quantit|how much mortar|batch|bags? of|enough mortar|tonnes?/,
+    "safety signage":/\bsigns?\b|signage/,
+    "manual handling":/lift|carr(?:y|ied)|manual handling|two-man|team lift|trolley|barrow/,
+    "working at height":/height|scaffold|ladder|platform|podium|harness|stepladder/,
+    "dpcs":/\bdpcs?\b|damp[- ]?proof/,
+    "wall ties":/\bties?\b/,
+    "brick ties":/\bties?\b/,
+    "cavity trays":/cavity trays?|\btrays?\b/,
+    "insulation":/insulat|\bbatts?\b|kingspan|celotex|rockwool|\bboards?\b/,
+    "coshh":/coshh|hazardous substance|cement burn|chemical|irritant/,
+    "puwer":/puwer|checked the (?:mixer|saw|tool)|guard|inspect/,
+    "risk assessments":/risk assess|\brams\b/,
+    "method statements":/method statement|\brams\b/,
+    "toolbox talks":/toolbox/,
+    "site inductions":/induction/,
+    "slips":/slip|housekeeping|tidy|clean(?:ed)? up/,
+    "trips":/trip|housekeeping|tidy/,
+    "falls":/fall|edge protection|guard ?rail/,
+    "drawings":/drawing|\bplans?\b|elevation|section|blueprint/,
+    "specifications":/spec(?:ification)?s?\b|specified|drawing/,
+    "measuring":/measur|tape|dimension|\bmm\b|metres?|\bcm\b/,
+    "cutting":/\bcut|\bsaw/,
+    "fixings":/screw|nail|fixing|bolt|plug|\bfixed\b/,
+    "timber":/timber|wood|softwood|hardwood|\bmdf\b|\bply/,
+    "materials":/material|brick|block|timber|sand|cement|mortar/,
+    "waste":/waste|skip|offcut|left ?over/,
+    "recycling":/recycl|skip|segregat/,
+    "reuse":/re-?use|offcut|left ?over/,
+    "resource efficiency":/efficien|waste|offcut|re-?use/,
+    "environment":/environment|waste|recycl|dust|noise|spill|run-?off/,
+    "sustainability":/sustainab|recycl|waste|re-?use/,
+    "hand tools":/tool|trowel|chisel|plane|hammer|level|square|jointer/,
+    "tool maintenance":/clean(?:ed)? (?:my |the )?tools?|oil|sharpen|maintain|maintenance/,
+    "tool storage":/stor|put away|tool ?box/,
+    "sharpening":/sharpen|hone|whetstone/,
+    "laser levels":/laser|\blevel/,
+    "expansion joints":/expansion|movement joint/,
+    "english":/\bbonds?\b|english/,"flemish":/\bbonds?\b|flemish/,"garden":/\bbonds?\b|garden/,"broken bonds":/\bbonds?\b|broken/,
+    "joint finishes":/joint|pointing|jointer|flush|recess|weather ?struck|bucket handle|half[- ]round/,
+    "frost":/frost|cold|hessian|cover/,"water protection":/rain|water|cover|polythene|sheet/,
+    "construction damage":/damage|protect/,
+    "defects":/defect|crack|spall|fault|damaged/,
+    "repair methods":/repair|replace|cut out|rake out|patch/,
+    "electrical safety":/electric|cable|110 ?v|pat test|\brcd\b|lead/,
+    "fire safety":/\bfire\b|extinguisher|hot works/,
+    "fire extinguishers":/extinguisher/,
+    "learning":/learn|improve|next time|feedback|develop|practis|practic/,
+    "learning & development":/learn|improve|next time|feedback|develop|practis|practic/,
+    "ownership":/responsib|\bown\b|took charge|checked (?:my|it|the)|made sure/,
+    "standards":/standard|tolerance|plumb|level|square|\bnhbc\b|straight/,
+    "ventilation":/vent|air ?brick|airflow/,
+    "hazard identification":/hazard|risk|danger|spotted/,
+    "safe systems":/safe system|permit|exclusion zone|barrier|cordon/,
+    "mastics":/mastic|sealant|silicone/,
+    "ironmongery":/hinge|handle|lock|latch|ironmongery|keep|closer/,
+    "scribing":/scrib/,
+    "mitring":/mitre|miter/
+  };
   function termMatched(term,text){
-    return term.split("/").some(alt=>{
-      const words=alt.toLowerCase().replace(/&/g," ").split(/[^a-z0-9]+/).filter(w=>w.length>=3&&!["and","the","for","with"].includes(w));
-      return words.length&&words.every(w=>{const stem=w.replace(/s$/,"").slice(0,5);return text.includes(stem)});
+    return term.toLowerCase().split("/").some(alt=>{
+      alt=alt.trim();
+      const syn=SYNONYMS[alt];
+      if(syn&&syn.test(text))return true;
+      const words=alt.replace(/&/g," ").split(/[^a-z0-9]+/).filter(w=>w.length>=3&&!["and","the","for","with"].includes(w));
+      return words.length>0&&words.every(w=>{const stem=w.replace(/s$/,"").slice(0,5);return text.includes(stem)});
     });
+  }
+  const photoCount=e=>Array.isArray(e.photoIds)?e.photoIds.length:Number.isFinite(Number(e.photoCount))?Number(e.photoCount):Array.isArray(e.p)?e.p.length:0;
+  const wordCount=t=>String(t||"").trim().split(/\s+/).filter(Boolean).length;
+  function checkUnit(u,prompts){
+    const latest=u.entries.slice().sort((x,y)=>entryTime(y)-entryTime(x))[0];
+    const text=String(latest.w||"").toLowerCase();
+    const terms=String((prompts[u.name]||{}).writeup||"").split("·").map(t=>t.trim()).filter(Boolean);
+    const covered=terms.filter(t=>termMatched(t,text));
+    return {u,terms,covered,missing:terms.filter(t=>!covered.includes(t)),words:wordCount(latest.w),photos:photoCount(latest)};
   }
   function writeups(){
     const a=analyse(),prompts=(window.eviaLearnerPrompts||{})[course]||{};
-    const checks=a.units.filter(u=>u.started&&prompts[u.name]).map(u=>{
-      const latest=u.entries.slice().sort((x,y)=>entryTime(y)-entryTime(x))[0];
-      const text=String(latest.w||"").toLowerCase();
-      const terms=String(prompts[u.name].writeup||"").split("·").map(t=>t.trim()).filter(Boolean);
-      return {u,missing:terms.filter(t=>!termMatched(t,text)),total:terms.length};
-    }).filter(c=>c.total).sort((x,y)=>y.missing.length/y.total-x.missing.length/x.total);
-    if(!checks.length){say("You haven’t submitted a unit with a write-up yet. Once you do, I can check it covers the key points.");replies([{label:"What should I do next?",primary:true,run:nextStep},{label:"Something else",run:somethingElse}]);return}
-    const weak=checks.filter(c=>c.missing.length);
-    if(!weak.length){say(pick(["Your write-ups cover all the key points. Nice.","I’ve checked your write-ups and they mention everything they should. Good job."]));replies(more().filter(r=>r.label!=="Check my write-ups"));return}
-    weak.slice(0,2).forEach((c,i)=>{
-      const list=c.missing.slice(0,3),rest=c.missing.length-list.length;
-      say((i?"And in ":"In your ")+"<strong>"+escHtml(c.u.name)+"</strong> write-up you haven’t mentioned "+escHtml(list.join(", ").replace(/, ([^,]*)$/," or $1"))+(rest>0?" (plus "+rest+" more)":"")+". Adding "+(list.length===1?"it":"those")+" would make it stronger.");
+    const checks=a.units.filter(u=>u.started&&prompts[u.name]).map(u=>checkUnit(u,prompts)).filter(c=>c.terms.length)
+      .sort((x,y)=>(y.missing.length/y.terms.length)-(x.missing.length/x.terms.length));
+    if(!checks.length){say("You haven’t submitted a unit with a write-up yet. Once you do, I’ll check it covers the key points.");replies([{label:"What should I do next?",primary:true,run:nextStep},{label:"Something else",run:somethingElse}]);return}
+    const needsWork=checks.filter(c=>c.missing.length||c.words<50||c.photos<3);
+    if(!needsWork.length){
+      say(pick(["Your write-ups cover all the key points, with plenty of photos. Nice.","I’ve checked your write-ups: they mention everything they should and have good photos. Good job."]));
+      if(window.eviaMood)window.eviaMood("happy");
+      replies(more("Check my write-ups"));return;
+    }
+    say("I’ve checked "+plural(checks.length,"write-up")+" against each unit’s things to mention.");
+    needsWork.slice(0,2).forEach(c=>{
+      let msg="<strong>"+escHtml(c.u.name)+"</strong>: covers <strong>"+c.covered.length+" of "+c.terms.length+"</strong> key points.";
+      if(c.missing.length){const list=c.missing.slice(0,3),rest=c.missing.length-list.length;msg+=" Not mentioned yet: "+escHtml(listText(list))+(rest>0?" (plus "+rest+" more)":"")+"."}
+      const tips=[];
+      if(c.photos<3)tips.push("only "+plural(c.photos,"photo")+", so add ones from the beginning, middle and end of the job");
+      if(c.words<50)tips.push("the write-up is short ("+plural(c.words,"word")+"), so explain the steps in more detail");
+      if(tips.length)msg+=" Also, "+tips.join("; ")+".";
+      say(msg);
     });
-    replies([{label:"Open "+weak[0].u.name,primary:true,run:()=>openUnitFromChat(weak[0].u)},{label:"What should I do next?",run:nextStep},{label:"Something else",run:somethingElse}]);
+    say("You can add these next time you submit evidence for that unit.");
+    replies([{label:"Open "+needsWork[0].u.name,primary:true,run:()=>openUnitFromChat(needsWork[0].u)}].concat(more("Check my write-ups").slice(0,2),[{label:"Something else",run:somethingElse}]));
   }
+
+  /* ---------- KSB gaps ---------- */
+  function ksbGaps(){
+    const a=analyse(),missing=allK().filter(x=>!a.evidenced.has(x[0]));
+    if(!missing.length){say("Every KSB on your course has evidence. Brilliant.");if(window.eviaMood)window.eviaMood("happy");replies(more("Which KSBs am I missing?"));return}
+    const groups=[["K","Knowledge"],["S","Skills"],["B","Behaviours"]].map(([l,n])=>[n,missing.filter(x=>x[0].startsWith(l)).length]).filter(g=>g[1]);
+    say("You still need evidence for <strong>"+plural(missing.length,"KSB")+"</strong>: "+groups.map(g=>g[1]+" "+g[0]).join(", ")+".");
+    const plan=coverPlan(a),top=plan.slice(0,3),covered=top.reduce((n,p)=>n+p.covers.length,0);
+    say("The fastest way to close the gap: "+top.map(p=>"<strong>"+escHtml(p.unit.name)+"</strong> ("+p.covers.length+")").join(", ").replace(/, ([^,]*)$/," then $1")+". "+(top.length===1?"That one unit":"Those "+top.length+" units")+" would cover "+covered+" of them.");
+    replies([
+      {label:"Open "+top[0].unit.name,primary:true,run:()=>openUnitFromChat(top[0].unit)},
+      {label:"Show the full list",run:()=>{
+        [["K","Knowledge"],["S","Skills"],["B","Behaviours"]].forEach(([l,n])=>{const codes=missing.filter(x=>x[0].startsWith(l)).map(x=>x[0]);if(codes.length)say("<strong>"+n+":</strong> "+escHtml(codes.join(", ")))});
+        say("Tap any KSB on the Progress page to see its full wording.");
+        replies([{label:"Go to Progress",primary:true,run:()=>{closeChat();setTimeout(()=>nav("progress"),60)}}].concat(more("Which KSBs am I missing?").slice(0,2),[{label:"Something else",run:somethingElse}]));
+      }},
+      {label:"Plan my week",run:planWeek},
+      {label:"Something else",run:somethingElse}
+    ]);
+  }
+
+  /* ---------- Plan my week ---------- */
+  function planWeek(){
+    const a=analyse(),s=suggestion(a),plan=coverPlan(a),wk=otjThisWeek();
+    const steps=[];
+    if(s.unit)steps.push((s.draft?"Finish and submit ":"Capture a job for ")+"<strong>"+escHtml(s.unit.name)+"</strong>"+(s.unit.missing.length?" ("+plural(s.unit.missing.length,"KSB")+")":""));
+    const weak=a.units.filter(u=>u.started&&u.entries.every(e=>photoCount(e)<3));
+    if(weak.length)steps.push("Add a stronger evidence pack to <strong>"+escHtml(weak[0].name)+"</strong> (more photos)");
+    steps.push(wk>0?"Keep logging your off-the-job learning (<strong>"+wk.toFixed(1).replace(/\.0$/,"")+" hours</strong> so far this week)":"Log your off-the-job learning (none logged yet this week)");
+    say("Here’s a plan for this week:<br>"+steps.map((t,i)=>(i+1)+". "+t).join("<br>"));
+    if(a.endDate&&plan.length){
+      const weeks=Math.max(1,Math.round((a.endDate.getTime()-Date.now())/(7*864e5)));
+      const every=weeks/plan.length;
+      say("You’ve got about <strong>"+plural(weeks,"week")+"</strong> left and roughly <strong>"+plural(plan.length,"unit")+"</strong> to cover the KSBs still missing. "+(every>=2?"That’s about one unit every "+Math.floor(every)+" weeks, which is very doable.":every>=1?"That’s about one unit a week, so keep a steady pace.":"That’s more than one unit a week, so try to capture evidence from every suitable job."));
+    }else if(!a.endDate){
+      say("Add your apprenticeship dates in your profile and I can tell you how many weeks you’ve got to do it.");
+    }
+    const opts=[];
+    if(s.unit)opts.push({label:"Open "+s.unit.name,primary:true,run:()=>openUnitFromChat(s.unit)});
+    opts.push({label:"Log OTJ hours",run:()=>{closeChat();setTimeout(()=>nav("learning"),60)}});
+    if(!a.endDate)opts.push({label:"Add my dates",run:()=>{closeChat();setTimeout(()=>window.eviaOpenProfile&&window.eviaOpenProfile(),60)}});
+    opts.push({label:"Something else",run:somethingElse});
+    replies(opts);
+    if(s.unit)remember(s.unit);
+  }
+
+  /* ---------- How am I doing? ---------- */
   function howAmIDoing(){
     const a=analyse(),remaining=a.units.filter(u=>!u.started).length;
     let msg="You’ve got evidence for <strong>"+a.met+" of "+a.total+"</strong> KSBs ("+a.ksbPct+"%). ";
     if(a.timePct!=null){const gap=a.timePct-a.ksbPct;msg+="About "+a.timePct+"% of your course time has gone, so "+(gap>10?"you’re a little behind. Two units this month would help you catch up.":gap<-5?"you’re ahead. Keep it up.":"you’re right on track.")}
     say(msg);
+    if(a.timePct!=null&&a.timePct-a.ksbPct<-5&&window.eviaMood)window.eviaMood("happy");
     if(a.daysSince!=null&&a.daysSince>=14)say("It’s been "+a.daysSince+" days since your last evidence. A quick job this week keeps things moving.");
     else if(a.daysSince==null)say("You haven’t submitted any unit evidence yet. Your first one is the hardest, and I’ll help.");
-    say(remaining?remaining+" unit"+(remaining===1?"":"s")+" still have no evidence at all.":"Every unit has at least some evidence now.");
-    const opts=[{label:"What should I do next?",primary:true,run:nextStep},{label:"Something else",run:somethingElse}];
+    say(remaining?plural(remaining,"unit")+" still "+(remaining===1?"has":"have")+" no evidence at all.":"Every unit has at least some evidence now.");
+    const opts=[{label:"Plan my week",primary:true,run:planWeek},{label:"Which KSBs am I missing?",run:ksbGaps},{label:"Something else",run:somethingElse}];
     if(a.timePct==null)opts.splice(1,0,{label:"Add my dates",run:()=>{closeChat();setTimeout(()=>window.eviaOpenProfile&&window.eviaOpenProfile(),60)}});
     replies(opts);
   }
@@ -302,7 +489,7 @@
   function runCoachFromMenu(){userSays("What should I do next?");coach()}
   function enhanceChat(){
     const c=chatBox();if(!c)return;
-    queue=Promise.resolve();
+    queue=Promise.resolve();noticedThisChat=false;
     const greet=c.querySelector(".bubble.evia"),name=firstName();
     if(greet)greet.innerHTML=pick([partOfDay()+(name?" "+escHtml(name):"")+". What would you like to do?","Hi"+(name?" "+escHtml(name):"")+". How can I help today?"]);
     menuItems=[];
