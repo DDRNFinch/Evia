@@ -829,7 +829,7 @@ html[data-evia-shape="splat"] .evia-fab:after{transform:none}
   display:grid;
   place-items:center;
   border-radius:50%;
-  background:var(--accent,#e7b900);
+  background:var(--yellow,#e7b900);
   color:#fff;
 }
 .evidence-toast-check svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
