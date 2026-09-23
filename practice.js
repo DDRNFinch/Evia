@@ -12,6 +12,8 @@
     discussion:'<path d="M4.5 6.5A2.5 2.5 0 0 1 7 4h10a2.5 2.5 0 0 1 2.5 2.5v7A2.5 2.5 0 0 1 17 16H10l-4.5 3.5V16a2.5 2.5 0 0 1-1-2Z"/>',
     maths:'<rect x="5" y="3.5" width="14" height="17" rx="2.5"/><path d="M8.5 7.5h7M8.5 12h1M12 12h1M15 12h.5M8.5 16h1M12 16h1M15 16h.5"/>',
     english:'<path d="M5 19.5V6a2.5 2.5 0 0 1 2.5-2.5H19v13H7.5A2.5 2.5 0 0 0 5 19Zm0 0A2.5 2.5 0 0 0 7.5 22H19"/>',
+    task:'<path d="M14.5 5.5 18.5 9.5M4 20l4.2-1 10.3-10.3a2.1 2.1 0 0 0-3-3L5.2 16 4 20Z"/>',
+    scenarios:'<path d="M12 3.5 5 6v5.5c0 4.4 3 7.9 7 9 4-1.1 7-4.6 7-9V6l-7-2.5Z"/>',
     confidence:'<path d="M4 20h16"/><rect x="5.5" y="12" width="3" height="6" rx="1"/><rect x="10.5" y="8" width="3" height="10" rx="1"/><rect x="15.5" y="4" width="3" height="14" rx="1"/>'
   };
   const pctOf=t=>typeof t.pct==="number"?t.pct:(t.total?Math.round((t.score||0)/t.total*100):0);
@@ -39,7 +41,7 @@
 
   /* ---------- Tests hub ---------- */
   function openHub(){
-    const p=profile(),tp=timePct(),conf=confidenceState();
+    const p=profile(),tp=timePct(),conf=confidenceState(),tasks=suggestTasks(2);
     const rows=[];
     const row=(id,iconKey,title,desc,sum,due)=>rows.push('<button type="button" class="pr-row" data-pr="'+id+'"><span class="pr-icon">'+icon(ICONS[iconKey])+'</span><span class="pr-copy"><strong>'+title+(due?' <em class="pr-due">Due</em>':"")+'</strong><small>'+desc+'</small><small class="pr-sum">'+escHtml(sum)+'</small></span></button>');
     row("epa-full","epa","EPA full mock","20 questions from across your KSBs",summary("epa",t=>t.full||t.total>=20).text,epaDue());
@@ -53,11 +55,16 @@
     const body=banner+
       '<h3 class="pr-h">Tests</h3><div class="pr-list">'+rows.join("")+'</div>'+
       (!p.mathsEnabled&&!p.englishEnabled?'<p class="pr-note">Maths and English practice can be switched on in your Profile.</p>':"")+
-      '<h3 class="pr-h">Your skills</h3><div class="pr-list"><button type="button" class="pr-row" data-pr="confidence"><span class="pr-icon">'+icon(ICONS.confidence)+'</span><span class="pr-copy"><strong>Confidence check'+(daysAgo(conf.last)>30?' <em class="pr-due">Due</em>':"")+'</strong><small>Rate yourself on each practical skill</small><small class="pr-sum">'+escHtml(conf.last?conf.practise.length+" need more training · rated "+ago(conf.last):"Not done yet")+'</small></span></button></div>';
-    const el=sheet("PRACTICE","Tests and checks",body);
+      '<h3 class="pr-h">Your skills</h3><div class="pr-list"><button type="button" class="pr-row" data-pr="confidence"><span class="pr-icon">'+icon(ICONS.confidence)+'</span><span class="pr-copy"><strong>Confidence check'+(daysAgo(conf.last)>30?' <em class="pr-due">Due</em>':"")+'</strong><small>Rate yourself on each practical skill</small><small class="pr-sum">'+escHtml(conf.last?conf.practise.length+" need more training · rated "+ago(conf.last):"Not done yet")+'</small></span></button>'+
+      (tasks.length?'<button type="button" class="pr-row" data-pr="task"><span class="pr-icon">'+icon(ICONS.task)+'</span><span class="pr-copy"><strong>Practice task for you</strong><small>'+escHtml(tasks[0].task.title)+'</small><small class="pr-sum">Practises '+escHtml(listText(tasks[0].covers))+'</small></span></button>':"")+'</div>';
+    const sp=window.eviaScenarios?window.eviaScenarios.progress():null;
+    const scen=sp?'<h3 class="pr-h">Real-life scenarios</h3><div class="pr-list"><button type="button" class="pr-row" data-pr="scenarios"><span class="pr-icon">'+icon(ICONS.scenarios)+'</span><span class="pr-copy"><strong>What would you do?</strong><small>Safeguarding, Prevent, British values and equality</small><small class="pr-sum">'+sp.done+' of '+sp.total+' done</small></span></button></div>':"";
+    const el=sheet("PRACTICE","Tests and checks",body+scen);
     el.querySelectorAll("[data-pr]").forEach(b=>b.onclick=()=>{
       const id=b.dataset.pr;closeSheet();
       if(id==="confidence"){openConfidence();return}
+      if(id==="task"){openTask(0);return}
+      if(id==="scenarios"){window.eviaScenarios.openTopics();return}
       const label=b.querySelector("strong").childNodes[0].textContent.trim();
       startTest(id==="epa-full"?"epa":id,id==="epa-full"?20:5,label);
     });
@@ -119,21 +126,60 @@
     const item=x=>'<li><strong>'+escHtml(x.area)+'</strong><small>'+escHtml(RATINGS[x.score-1])+change(x)+'</small></li>';
     const improved=scores.filter(x=>{const p=prev.get(x.area);return p&&!x.carried&&x.score>p.score});
     const body=(improved.length?'<div class="pr-banner good">You’ve moved up on <strong>'+escHtml(improved.map(x=>x.area).join(", "))+'</strong>. That’s real progress.</div>':"")+
-      '<h3 class="pr-h">Needs more training</h3>'+(low.length?'<ul class="pr-plan low">'+low.map(item).join("")+'</ul><p class="pr-note">Tell your tutor or supervisor you’d like more practice on these. When one of these jobs comes up on site, ask to get involved.</p>':'<p class="pr-note">Nothing rated low. Nice.</p>')+
+      '<h3 class="pr-h">Needs more training</h3>'+(low.length?'<ul class="pr-plan low">'+low.map(item).join("")+'</ul><p class="pr-note">Tell your tutor or supervisor you’d like more practice on these. When one of these jobs comes up on site, ask to get involved.</p>'+suggestTasks(2).map(taskCardHtml).join(""):'<p class="pr-note">Nothing rated low. Nice.</p>')+
       '<h3 class="pr-h">Confident</h3>'+(high.length?'<ul class="pr-plan high">'+high.map(item).join("")+'</ul><p class="pr-note">Keep doing these on the job and they’ll keep getting better.</p>':'<p class="pr-note">Nothing rated high yet. That’s fine: it takes time.</p>')+
       '<div class="pr-actions"><button type="button" class="secondary" id="pr-send">Send to my tutor</button><button type="button" class="primary" id="pr-done">Done</button></div><p class="pr-note" id="pr-sent" role="status"></p>';
     const el=sheet("SKILLS","Your training plan",body,"pr-conf");
+    el.querySelectorAll("[data-task]").forEach(b=>b.onclick=()=>openTask(+b.dataset.task));
     if(window.eviaMood)window.eviaMood("happy");
     el.querySelector("#pr-done").onclick=()=>{closeSheet();if(typeof screen!=="undefined"&&(screen==="progress"||screen==="home"))render()};
     el.querySelector("#pr-send").onclick=async()=>{
       const name=String(profile().name||"").trim();
       const text="Confidence check"+(name?" – "+name:"")+" ("+new Date().toLocaleDateString("en-GB")+")\n\nNeeds more training:\n"+(low.length?low.map(x=>"• "+x.area+" – "+RATINGS[x.score-1]).join("\n"):"• None")+"\n\nConfident:\n"+(high.length?high.map(x=>"• "+x.area+" – "+RATINGS[x.score-1]).join("\n"):"• None");
-      const note=el.querySelector("#pr-sent");
-      try{if(navigator.share){await navigator.share({title:"Confidence check",text});return}}catch(e){if(e&&e.name==="AbortError")return}
-      try{await navigator.clipboard.writeText(text);note.textContent="Copied. Paste it into a message or email to your tutor."}
-      catch(_){note.textContent="Sharing isn’t available here. Show your tutor this screen instead."}
+      share("Confidence check",text,el);
     };
   }
 
-  window.eviaPractice={openHub,openConfidence,epaDue,startTest};
+  /* ---------- College practice tasks ---------- */
+  /* Scores each task by the low-rated skills it covers (1 = need more training counts double), then picks greedily
+     so a second suggestion covers skills the first one doesn't. */
+  function suggestTasks(max){
+    const tasks=(window.EVIA_PRACTICE_TASKS||{})[course]||[],m=latestMap();
+    const need=new Map([...m.values()].filter(x=>x.score<=2).map(x=>[x.area,x.score===1?2:1]));
+    if(!need.size||!tasks.length)return [];
+    const left=new Map(need),out=[];
+    while(out.length<(max||2)){
+      const best=tasks.filter(t=>!out.includes(t)).map(t=>({t,covers:t.skills.filter(k=>left.has(k)),score:t.skills.reduce((n,k)=>n+(left.get(k)||0),0)})).sort((a,b)=>b.score-a.score||b.covers.length-a.covers.length)[0];
+      if(!best||!best.score)break;
+      out.push(best.t);best.covers.forEach(k=>left.delete(k));
+    }
+    return out.map(t=>({task:t,covers:t.skills.filter(k=>need.has(k))}));
+  }
+  function taskCardHtml(x,i){
+    return '<button type="button" class="pr-task" data-task="'+i+'"><span class="pr-task-kicker">Try this at college</span><strong>'+escHtml(x.task.title)+'</strong><small>Practises '+escHtml(listText(x.covers))+'</small></button>';
+  }
+  const listText=a=>a.length<2?a.join(""):a.slice(0,-1).join(", ")+" and "+a[a.length-1];
+  function openTask(index){
+    const list=suggestTasks(3);
+    if(!list.length){openConfidence();return}
+    const i=Math.min(index||0,list.length-1),x=list[i],t=x.task;
+    const body='<p class="pr-intro">'+escHtml(t.brief)+'</p>'+
+      '<div class="pr-chips">'+t.skills.map(k=>'<span class="st-chip '+(x.covers.includes(k)?"low":"")+'">'+escHtml(k)+'</span>').join("")+'</div>'+
+      '<p class="pr-note">Highlighted skills are ones you rated low. Time: about '+escHtml(t.time)+'.</p>'+
+      '<h3 class="pr-h">Steps</h3><ol class="pr-steps">'+t.steps.map(st=>'<li>'+escHtml(st)+'</li>').join("")+'</ol>'+
+      '<div class="pr-banner">'+escHtml(t.check)+' Take photos as you go: you can add them to your portfolio as supporting evidence.</div>'+
+      '<div class="pr-actions">'+(list.length>1?'<button type="button" class="secondary" id="pr-other">Another idea</button>':"")+'<button type="button" class="secondary" id="pr-share">Show my tutor</button><button type="button" class="primary" id="pr-ok">Got it</button></div><p class="pr-note" id="pr-sent" role="status"></p>';
+    const el=sheet("PRACTICE TASK",escHtml(t.title),body);
+    el.querySelector("#pr-ok").onclick=closeSheet;
+    const other=el.querySelector("#pr-other");if(other)other.onclick=()=>openTask((i+1)%list.length);
+    el.querySelector("#pr-share").onclick=()=>share("Practice task: "+t.title,"Practice task: "+t.title+"\n"+t.brief+"\n\nPractises: "+x.covers.join(", ")+"\n\n"+t.steps.map((st,n)=>(n+1)+". "+st).join("\n")+"\n\n"+t.check,el);
+  }
+  async function share(title,text,el){
+    const note=el.querySelector("#pr-sent");
+    try{if(navigator.share){await navigator.share({title,text});return}}catch(e){if(e&&e.name==="AbortError")return}
+    try{await navigator.clipboard.writeText(text);note.textContent="Copied. Paste it into a message or email to your tutor."}
+    catch(_){note.textContent="Sharing isn’t available here. Show your tutor this screen instead."}
+  }
+
+  window.eviaPractice={openHub,openConfidence,epaDue,startTest,suggestTasks,openTask};
 })();

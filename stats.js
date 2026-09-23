@@ -56,7 +56,8 @@
       lastTestAt:type=>{const s=byType[type];return s&&s.latest?Date.parse(s.latest.savedAt):null},
       confidence:{last:lastConf?Date.parse(lastConf.startedAt||lastConf.savedAt||0)||null:null,practise,confident,sessions:sessions.length},
       maths:!!p.mathsEnabled,english:!!p.englishEnabled,
-      ppeDone:entries.some(e=>e.u===PPE_UNIT)
+      ppeDone:entries.some(e=>e.u===PPE_UNIT),
+      scenarios:window.eviaScenarios?window.eviaScenarios.progress():{done:0,total:0,last:null,topicsDone:0}
     };
   }
 
@@ -78,7 +79,9 @@
     {id:"first-test",label:"Test taker",desc:"Completed your first test",test:s=>s.testCount>=1},
     {id:"test-80",label:"Top marks",desc:"Scored 80% or more in a test",test:s=>s.bestTest>=80},
     {id:"confidence",label:"Know yourself",desc:"Completed a confidence check",test:s=>s.confidence.sessions>=1},
-    {id:"writeup",label:"Full marks write-up",desc:"A write-up covering every key point",test:s=>s.checks.some(c=>c.covered.length===c.terms.length)}
+    {id:"writeup",label:"Full marks write-up",desc:"A write-up covering every key point",test:s=>s.checks.some(c=>c.covered.length===c.terms.length)},
+    {id:"scenario",label:"Looking out",desc:"Completed your first real-life scenario",test:s=>s.scenarios.done>=1},
+    {id:"scenarios-all",label:"Safe and respected",desc:"Completed every real-life scenario",test:s=>s.scenarios.total>0&&s.scenarios.done>=s.scenarios.total}
   ];
   /* Records when each achievement was first earned; newly earned ones are returned so Evia can celebrate them. */
   function achievements(s){
@@ -118,6 +121,7 @@
     if(s.maths&&daysAgo(s.lastTestAt("maths"))>14)list.push({id:"maths",text:"It’s been a while since your last maths practice. A quick test keeps it fresh.",action:{label:"Take a maths test",kind:"test"}});
     if(s.english&&daysAgo(s.lastTestAt("english"))>14)list.push({id:"english",text:"Fancy a quick English practice test? It only takes a few minutes.",action:{label:"Take an English test",kind:"test"}});
     if(daysAgo(s.confidence.last)>30)list.push({id:"confidence",text:s.confidence.sessions?"It’s been a month since your last confidence check. Rate yourself again so your tutor knows what to focus on.":"Rate how confident you feel on each practical skill. It shows you and your tutor what to practise.",action:{label:"Do a confidence check",kind:"confidence"}});
+    if(s.scenarios.total&&s.scenarios.done<s.scenarios.total&&daysAgo(s.scenarios.last)>7)list.push({id:"scenario",text:"Got two minutes? Here’s a real-life situation from site. What would you do?",action:{label:"Try a scenario",kind:"scenario"}});
     return list;
   }
 
@@ -145,6 +149,7 @@
         (s.confidence.sessions?'<div class="st-conf"><span class="st-conf-label">Needs practice</span><div>'+chips(s.confidence.practise,"low")+'</div><span class="st-conf-label">Confident</span><div>'+chips(s.confidence.confident,"high")+'</div></div>':'<p>Do a confidence check to see which skills need practice.</p>')+
         '<button type="button" class="st-action" data-st-action="confidence">'+(s.confidence.sessions?"Rate my skills again":"Rate my skills")+'</button>'+
       '</div>'+
+      (s.scenarios.total?'<div class="st-row"><small>Real-life scenarios</small><p><strong>'+s.scenarios.done+' of '+s.scenarios.total+'</strong> done · '+s.scenarios.topicsDone+' of 4 topics complete</p><button type="button" class="st-action" data-st-action="scenarios">'+(s.scenarios.done?"Carry on":"Start")+'</button></div>':"")+
       '<div class="st-row"><small>Achievements · '+ach.count+' of '+ach.list.length+'</small><ul class="st-badges">'+ach.list.map(x=>'<li class="'+(x.earned?"on":"")+'" title="'+escHtml(x.desc)+'"><span class="st-badge-icon">'+BADGE+'</span><strong>'+escHtml(x.label)+'</strong><small>'+escHtml(x.desc)+'</small></li>').join("")+'</ul></div>'+
     '</section>';
   }

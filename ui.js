@@ -139,6 +139,7 @@
     if(kind==="stats")go(showStats);
     else if(kind==="course")go(()=>nav("course"));
     else if(kind==="learning")go(()=>nav("learning"));
+    else if(kind==="scenario")go(()=>window.eviaScenarios&&window.eviaScenarios.openNext());
     else if(kind==="confidence")go(()=>window.eviaPractice&&window.eviaPractice.openConfidence());
     else if(kind==="test"){
       const t={epa:["epa",20],maths:["maths",5],english:["english",5]}[n.id]||["epa",5];
@@ -187,7 +188,7 @@
         statsHtml()+
       '</div>';
     document.querySelectorAll("[data-group]").forEach(b=>b.onclick=()=>{collapsed[b.dataset.group]=!collapsed[b.dataset.group];progressScreen()});
-    document.querySelectorAll("[data-st-action]").forEach(b=>b.onclick=()=>{if(!window.eviaPractice)return;if(b.dataset.stAction==="tests")window.eviaPractice.openHub();else window.eviaPractice.openConfidence()});
+    document.querySelectorAll("[data-st-action]").forEach(b=>b.onclick=()=>{if(!window.eviaPractice)return;if(b.dataset.stAction==="tests")window.eviaPractice.openHub();else if(b.dataset.stAction==="scenarios"){if(window.eviaScenarios)window.eviaScenarios.openTopics()}else window.eviaPractice.openConfidence()});
     document.querySelectorAll("[data-ksb-code]").forEach(b=>b.onclick=()=>{const item=all.find(x=>x[0]===b.dataset.ksbCode);if(item)ksbDetail(item[0],item[1],a.evidenced.has(item[0]))});
   }
 
@@ -427,8 +428,9 @@
     else if(!st.a.endDate)say("Add your apprenticeship dates in Profile and I’ll work out how many weeks you’ve got per unit.");
     say("Achievements: <strong>"+ach.count+" of "+ach.list.length+"</strong>."+(ach.fresh.length?" New: "+escHtml(listText(ach.fresh.map(x=>x.label)))+".":""));
     if(ach.fresh.length){S.markSeen(ach.fresh.map(x=>x.id));if(window.eviaMood)window.eviaMood("happy")}
-    if(st.confidence.practise.length)say("From your confidence check, you want more practice on "+escHtml(listText(st.confidence.practise.slice(0,4)))+". Tell your tutor or supervisor so they can help.");
-    replies([{label:"See all my stats",primary:true,run:()=>{closeChat();setTimeout(showStats,60)}},{label:"Check my write-ups",run:writeups},{label:"Which KSBs am I missing?",run:ksbGaps},{label:"Something else",run:somethingElse}]);
+    const task=st.confidence.practise.length&&window.eviaPractice?window.eviaPractice.suggestTasks(1)[0]:null;
+    if(st.confidence.practise.length)say("From your confidence check, you want more practice on "+escHtml(listText(st.confidence.practise.slice(0,4)))+"."+(task?" A good college task for that: <strong>"+escHtml(task.task.title)+"</strong>.":" Tell your tutor or supervisor so they can help."));
+    replies([...(task?[{label:"Show me the task",primary:true,run:()=>{closeChat();setTimeout(()=>window.eviaPractice.openTask(0),60)}}]:[]),{label:"See all my stats",primary:!task,run:()=>{closeChat();setTimeout(showStats,60)}},{label:"Check my write-ups",run:writeups},{label:"Which KSBs am I missing?",run:ksbGaps},{label:"Something else",run:somethingElse}]);
   }
   const hrsText=n=>{const v=Math.round(n*10)/10;return v+" hour"+(v===1?"":"s")};
   /* Evia opens the chat with what she'd do today, from the same nudges as Home. */
