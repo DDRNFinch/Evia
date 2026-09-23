@@ -204,19 +204,20 @@ async function openSupportingEvidence(){
 }
 function supportingCapture(){openSupportingEvidence()}
 let eviaToastTimer=null;
-function showEvidenceToast(message){
+function showEvidenceToast(message,isError){
  const existing=document.querySelector(".evidence-toast");
  if(existing)existing.remove();
  if(eviaToastTimer)clearTimeout(eviaToastTimer);
  const toast=document.createElement("div");
- toast.className="evidence-toast";
- toast.innerHTML='<span class="evidence-toast-check"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l5 5L19 7"></path></svg></span><span>'+message+'</span>';
+ toast.className="evidence-toast"+(isError?" evidence-toast-error":"");
+ const icon=isError?'<path d="M12 8v5M12 16.5v.01"></path>':'<path d="M5 13l5 5L19 7"></path>';
+ toast.innerHTML='<span class="evidence-toast-check"><svg viewBox="0 0 24 24" aria-hidden="true">'+icon+'</svg></span><span>'+message+'</span>';
  document.body.appendChild(toast);
  requestAnimationFrame(()=>requestAnimationFrame(()=>toast.classList.add("show")));
  eviaToastTimer=setTimeout(()=>{
    toast.classList.remove("show");
    setTimeout(()=>toast.remove(),320);
- },2200);
+ },isError?3600:2200);
 }
 function supportingPrepare(base,type){
  const label={photo:"Photo",video:"Video",audio:"Audio",document:"File"}[type]||"File";
@@ -235,7 +236,7 @@ function supportingPrepare(base,type){
      close();
      showEvidenceToast("Added to Portfolio");
      openSupportingEvidence();
-   }catch(e){console.error("Supporting evidence save failed",e);alert("Evia could not save this supporting evidence.");}
+   }catch(e){console.error("Supporting evidence save failed",e);showEvidenceToast("Couldn't save — please try again",true);}
  };
  if(type==="photo"){
    area.innerHTML='<div class="evidence-capture-tile"><div class="section-title">CAPTURE PHOTO</div><div class="evidence-photo-actions"><button type="button" class="primary" id="supporting-take-photo">Camera</button><button type="button" class="secondary" id="supporting-choose-photo">Gallery</button><input id="supporting-camera" type="file" accept="image/*" capture="environment" hidden><input id="supporting-gallery" type="file" accept="image/*" hidden></div><div id="supporting-photo-preview" class="photo-grid"></div><button type="button" class="primary" id="supporting-save-photo" disabled>Save photo</button></div>';
