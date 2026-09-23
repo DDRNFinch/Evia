@@ -1,7 +1,7 @@
 /* Evia7 learner profile, course selection and welcome experience. */
 (function(){
   const KEY="evia7-profile";
-  const defaults={name:"",start:"",end:"",avatar:"",signature:"",mathsEnabled:false,englishEnabled:false};
+  const defaults={name:"",start:"",end:"",avatar:"",signature:"",mathsEnabled:false,englishEnabled:false,eviaName:"Evia"};
   const readObject=(key,fallback={})=>{try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):fallback}catch(e){return fallback}};
   const get=()=>Object.assign({},defaults,readObject(KEY,{}));
   const set=p=>localStorage.setItem(KEY,JSON.stringify(p));
@@ -25,7 +25,7 @@
       '</div>'+
       '<div class="profile-block"><div class="profile-kicker">YOUR COURSE</div><div class="course-options">'+Object.keys(C).map(k=>'<button type="button" class="course-option '+(k===course?"selected":"")+'" data-profile-course="'+k+'">'+esc(C[k].name)+'<span>›</span></button>').join("")+'</div></div>'+
       '<div class="profile-block"><div class="profile-kicker">MATHS & ENGLISH</div><p>Choose which subjects Evia should include in your tests and progress reviews.</p><label class="study-check"><input id="profile-maths" type="checkbox"><span>I am studying Maths</span></label><label class="study-check"><input id="profile-english" type="checkbox"><span>I am studying English</span></label></div>'+
-      '<div class="profile-block"><div class="settings-list"><button type="button" class="settings-entry" id="open-settings"><span class="settings-entry-icon" aria-hidden="true">Aa</span><span class="settings-entry-copy"><strong>Accessibility & settings</strong><small>Personalise how Evia looks, reads and behaves</small></span><span class="settings-entry-arrow" aria-hidden="true">›</span></button><button type="button" class="settings-entry" id="open-shape-picker"><span class="settings-entry-icon" aria-hidden="true"><i class="evia-theme-dot"></i></span><span class="settings-entry-copy"><strong>Evia shape</strong><small>Choose the shape of Evia</small></span><span class="settings-entry-arrow" aria-hidden="true">›</span></button><button type="button" class="settings-entry" id="open-theme-picker"><span class="settings-entry-icon" aria-hidden="true"><i class="evia-theme-dot"></i></span><span class="settings-entry-copy"><strong>Evia colour</strong><small>Choose the colour Evia uses throughout the app</small></span><span class="settings-entry-arrow" aria-hidden="true">›</span></button></div></div><div class="profile-block"><div class="profile-kicker">YOUR SIGNATURE</div><p>Write your signature with your finger. It will be attached to saved evidence with the time and date.</p><div class="signature-wrap"><canvas id="signature-pad" width="900" height="260"></canvas><button type="button" id="clear-signature">Clear</button></div></div>'+
+      '<div class="profile-block"><div class="settings-list"><button type="button" class="settings-entry" id="open-settings"><span class="settings-entry-icon" aria-hidden="true">Aa</span><span class="settings-entry-copy"><strong>Accessibility & settings</strong><small>Personalise how Evia looks, reads and behaves</small></span><span class="settings-entry-arrow" aria-hidden="true">›</span></button><button type="button" class="settings-entry" id="open-shape-picker"><span class="settings-entry-icon" aria-hidden="true"><i class="evia-theme-dot"></i></span><span class="settings-entry-copy"><strong>Evia shape</strong><small>Choose the shape of Evia</small></span><span class="settings-entry-arrow" aria-hidden="true">›</span></button><button type="button" class="settings-entry" id="open-theme-picker"><span class="settings-entry-icon" aria-hidden="true"><i class="evia-theme-dot"></i></span><span class="settings-entry-copy"><strong>Evia colour</strong><small>Choose the colour Evia uses throughout the app</small></span><span class="settings-entry-arrow" aria-hidden="true">›</span></button><button type="button" class="settings-entry" id="open-evia-name"><span class="settings-entry-icon" aria-hidden="true">Aa</span><span class="settings-entry-copy"><strong>Evia name</strong><small>Name your Evia</small></span><span class="settings-entry-arrow" aria-hidden="true">›</span></button></div></div><div class="profile-block"><div class="profile-kicker">YOUR SIGNATURE</div><p>Write your signature with your finger. It will be attached to saved evidence with the time and date.</p><div class="signature-wrap"><canvas id="signature-pad" width="900" height="260"></canvas><button type="button" id="clear-signature">Clear</button></div></div>'+
       '<div class="profile-actions"><button type="button" class="secondary" id="download-portfolio">Download PDF</button><button type="button" class="primary" id="save-profile">Save profile</button></div>'+
       '</section></div>';
 
@@ -50,6 +50,27 @@
       shapePickerBtn.onclick=()=>{if(window.eviaShowShapePicker)window.eviaShowShapePicker()};
       shapePickerBtn.onkeydown=e=>{if((e.key==="Enter"||e.key===" ")&&window.eviaShowShapePicker)window.eviaShowShapePicker()};
     }
+    const eviaNameBtn=document.getElementById("open-evia-name");
+    if(eviaNameBtn){
+      eviaNameBtn.onclick=()=>{
+        const current=get().eviaName||"Evia";
+        document.getElementById("modal-root").insertAdjacentHTML("beforeend",
+          '<div class="profile-overlay evia-name-overlay"><section class="profile-sheet" style="max-width:420px"><div class="profile-head"><div><div class="profile-kicker">EVIA</div><h2>Name your Evia</h2></div><button class="profile-close" id="evia-name-close">×</button></div><div class="profile-fields"><label>Evia name<input id="evia-name-input" value="'+esc(current)+'" maxlength="24" placeholder="Evia"></label></div><div class="profile-actions"><button type="button" class="secondary" id="evia-name-cancel">Cancel</button><button type="button" class="primary" id="evia-name-save">Save name</button></div></section></div>');
+        const close=()=>document.querySelector(".evia-name-overlay")?.remove();
+        document.getElementById("evia-name-close").onclick=close;
+        document.getElementById("evia-name-cancel").onclick=close;
+        document.getElementById("evia-name-save").onclick=()=>{
+          const p=get();
+          const value=document.getElementById("evia-name-input").value.trim()||"Evia";
+          p.eviaName=value;
+          set(p);
+          close();
+          openProfile();
+        };
+        document.getElementById("evia-name-input").focus();
+        document.getElementById("evia-name-input").select();
+      };
+    }
     const themePickerBtn=document.getElementById("open-theme-picker");
     if(themePickerBtn){
       themePickerBtn.onclick=()=>{if(window.eviaShowThemePicker)window.eviaShowThemePicker()};
@@ -58,7 +79,7 @@
     document.getElementById("profile-close").onclick=()=>document.getElementById("modal-root").innerHTML="";
     document.getElementById("save-profile").onclick=()=>{
       const signature=canvasHasInk(canvas)?canvas.toDataURL("image/png"):(p.signature||"");
-      set({name:document.getElementById("profile-name").value.trim(),start:document.getElementById("profile-start").value,end:document.getElementById("profile-end").value,avatar:p.avatar,signature,mathsEnabled:document.getElementById("profile-maths").checked,englishEnabled:document.getElementById("profile-english").checked});
+      set({name:document.getElementById("profile-name").value.trim(),start:document.getElementById("profile-start").value,end:document.getElementById("profile-end").value,avatar:p.avatar,signature,mathsEnabled:document.getElementById("profile-maths").checked,englishEnabled:document.getElementById("profile-english").checked,eviaName:p.eviaName||"Evia"});
       refreshProfileButton();document.getElementById("modal-root").innerHTML="";
     };
     document.getElementById("download-portfolio").onclick=downloadEvidencePack;
