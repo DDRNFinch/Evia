@@ -512,6 +512,23 @@
     if(!document.getElementById("ui-back-home"))$("#screen").insertAdjacentHTML("afterbegin",'<button class="secondary ui-back" id="ui-back-home" type="button">‹ Home</button>');
     $("#ui-back-home").onclick=()=>nav("home");
   };
+  /* Page changes fade: the current page fades out, the new one fades in. */
+  const reduced=()=>window.eviaAccessibility?window.eviaAccessibility.reducedMotion():matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let fadeTimer=null;
+  function withFade(change){
+    const scr=document.getElementById("screen");
+    if(!scr||reduced()||document.body.classList.contains("evia-onboarding")){change();return}
+    clearTimeout(fadeTimer);
+    scr.classList.remove("ui-entering");scr.classList.add("ui-leaving");
+    fadeTimer=setTimeout(()=>{
+      const show=()=>{scr.classList.remove("ui-leaving");void scr.offsetWidth;scr.classList.add("ui-entering");fadeTimer=setTimeout(()=>scr.classList.remove("ui-entering"),260)};
+      let r;try{r=change()}catch(e){show();throw e}
+      Promise.resolve(r).then(show,show); /* some pages (a unit) load photos first */
+    },140);
+  }
+  const originalNav=window.nav,originalOpenUnit=window.openUnit;
+  window.nav=function(s){withFade(()=>originalNav(s))};
+  window.openUnit=function(i){withFade(()=>originalOpenUnit(i))};
   window.chat=function(opts){hideBubble();originalChat();enhanceChat(opts);if(window.eviaMood)window.eviaMood("happy")};
   $("#evia-fab").onclick=window.chat;
   window.eviaHome=home;

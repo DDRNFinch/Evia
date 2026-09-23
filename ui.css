@@ -282,3 +282,15 @@ html body .evia-fab.evia-svg-shape .evia-outline{filter:drop-shadow(0 6px 8px rg
 .evia-theme-avatar.evia-svg-shape{--evia-shape-stroke:var(--opt-accent)}
 .evia-shape-avatar.evia-svg-shape,.evia-theme-avatar.evia-svg-shape,.evia-welcome-face.evia-svg-shape{--evia-shape-width:3.5px}
 .evia-outline-oval .evia-outline{inset:-8%;width:116%;height:116%}
+
+/* ---- Chat: nothing after a "thinking" message shows until Evia's text does, then it fades in ---- */
+#chat .evia-thinking ~ *{display:none!important}
+#chat > *{animation:uiChatIn .28s ease-out both}
+@keyframes uiChatIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ---- Page transitions: the old page fades out, the new one fades in ---- */
+#screen{transition:opacity .14s ease}
+#screen.ui-leaving{opacity:0}
+#screen.ui-entering{animation:uiPageIn .24s ease-out both}
+@keyframes uiPageIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+html[data-a11y-motion="reduce"] #screen,html[data-a11y-motion="reduce"] #chat > *{transition:none!important;animation:none!important}
