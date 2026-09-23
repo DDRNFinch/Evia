@@ -157,10 +157,9 @@
         '</section>'+
         '<div class="evidence-section-divider"></div>'+
         '<section class="evidence-section writeup-section">'+
-          '<div class="evidence-section-title">EXPLAIN YOUR PPE AND WHAT IT IS USED FOR</div>'+
-          '<div class="evidence-section-title evidence-subtitle">THINGS TO MENTION</div>'+
+          '<div class="evidence-section-title">THINGS TO MENTION</div>'+
           '<div class="compact-prompts">each item of PPE · what it protects you from · when you need to wear it · checking it for damage · storing and replacing it · RPE and dust · site rules</div>'+
-          '<textarea id="write" placeholder="e.g. My hard hat protects my head from falling objects…"></textarea>'+
+          '<textarea id="write" placeholder="Explain your PPE and what it’s for, e.g. My hard hat protects my head from falling objects…"></textarea>'+
         '</section>'+
         '<div class="pack-actions"><button class="primary" id="ppe-submit" type="button" disabled>Submit to Portfolio</button></div>'+
         '<p class="submit-hint" id="ppe-hint">Add at least one photo and complete the write-up before submitting.</p>'+

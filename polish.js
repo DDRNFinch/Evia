@@ -135,8 +135,7 @@
         '</section>'+
         '<div class="evidence-section-divider"></div>'+
         '<section class="evidence-section writeup-section">'+
-          '<div class="evidence-section-title">EXPLAIN THE PROCESS AND WHAT YOU DID</div>'+
-          '<div class="evidence-section-title evidence-subtitle">THINGS TO MENTION</div>'+
+          '<div class="evidence-section-title">THINGS TO MENTION</div>'+
           '<div class="compact-prompts">'+esc(prompts.writeup)+'</div>'+
           '<textarea id="write" placeholder="Write about the process and what you did…">'+esc(pack.write||"")+'</textarea>'+
         '</section>'+

@@ -17,7 +17,7 @@
     document.getElementById("modal-root").innerHTML=
       '<div class="profile-overlay"><section class="profile-sheet">'+
       '<div class="profile-head"><div><div class="profile-kicker">YOUR PROFILE</div><h2>Apprentice profile</h2></div><button class="profile-close" id="profile-close">×</button></div>'+
-      '<div class="profile-avatar-row profile-photo-row">'+avatarMarkup(p,false)+'<div class="profile-photo-copy"><strong>Profile picture</strong><p>Your photo appears as a small thumbnail in the profile button.</p><label class="profile-upload">Choose photo<input id="avatar-file" type="file" accept="image/*"></label></div></div>'+
+      '<div class="profile-avatar-row profile-photo-row">'+avatarMarkup(p,false)+'<div class="profile-photo-copy"><strong>Profile picture</strong><label class="profile-upload">Choose photo<input id="avatar-file" type="file" accept="image/*"></label></div></div>'+
       '<div class="profile-fields">'+
       '<label>Name<input id="profile-name" value="'+esc(p.name)+'" placeholder="Your name"></label>'+
       '<div class="profile-dates"><label>Start date<input id="profile-start" type="date" value="'+esc(p.start)+'"></label><label>End date<input id="profile-end" type="date" value="'+esc(p.end)+'"></label></div>'+

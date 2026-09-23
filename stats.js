@@ -128,21 +128,15 @@
   /* ---------- Stats section (Progress page) ---------- */
   const escHtml=v=>String(v??"").replace(/[&<>"']/g,x=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[x]));
   const ago=t=>{if(t==null)return"Not yet";const d=Math.floor((new Date().setHours(0,0,0,0)-new Date(t).setHours(0,0,0,0))/DAY);return d<=0?"Today":d===1?"Yesterday":d+" days ago"};
-  const hrs=n=>(Math.round(n*10)/10).toString()+" hr"+(n===1?"":"s");
   const BADGE='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="6"/><path d="m8.5 14-1.5 7 5-3 5 3-1.5-7"/></svg>';
   function sectionHtml(s){
     const ach=achievements(s);
     const tile=(label,value,sub)=>'<div class="st-tile"><small>'+label+'</small><strong>'+value+'</strong>'+(sub?'<span>'+sub+'</span>':"")+'</div>';
-    const pace=s.weeksPerUnit!=null?"About <strong>"+Math.max(1,Math.floor(s.weeksPerUnit))+" week"+(Math.floor(s.weeksPerUnit)>1?"s":"")+" per unit</strong> ("+s.weeksLeft+" weeks left, "+s.unitsLeft+" unit"+(s.unitsLeft===1?"":"s")+" still to start)"
-      :s.unitsLeft===0&&s.a.units.length?"Every unit has evidence. Use the time left to strengthen the weaker ones."
-      :"Add your start and end dates in Profile to see your pace.";
     const tests=s.tests.length?s.tests.map(t=>'<li><span>'+escHtml(t.name)+'</span><strong>'+testPct(t.latest)+'%</strong><small>best '+t.best+'% · '+ago(Date.parse(t.latest.savedAt)).toLowerCase()+'</small></li>').join(""):'<li class="st-empty">No tests taken yet</li>';
     const chips=(list,cls)=>list.length?list.map(x=>'<span class="st-chip '+cls+'">'+escHtml(x)+'</span>').join(""):'<span class="st-none">None</span>';
     return '<section class="ui-card st-card" id="ui-stats" aria-labelledby="st-title">'+
       '<h2 id="st-title" class="st-title">My stats</h2>'+
-      '<div class="st-tiles">'+tile("Last upload",ago(s.lastUpload))+tile("Streak",s.streak+" week"+(s.streak===1?"":"s"),s.activeThisWeek||!s.streak?"":"add something this week to keep it")+tile("This month",s.packsThisMonth+" pack"+(s.packsThisMonth===1?"":"s"))+'</div>'+
-      '<div class="st-row"><small>Off-the-job learning</small><p><strong>'+hrs(s.otjWeek)+'</strong> this week · '+hrs(s.otjMonth)+' this month · '+hrs(s.otjTotal)+' total</p></div>'+
-      '<div class="st-row"><small>Pace</small><p>'+pace+'</p></div>'+
+      '<div class="st-tiles">'+tile("Last upload",ago(s.lastUpload))+tile("Streak",s.streak+" week"+(s.streak===1?"":"s"),s.activeThisWeek||!s.streak?"":"add something this week to keep it")+'</div>'+
       '<div class="st-row"><small>Evidence quality</small><p>'+(s.coverage==null?"Submit a unit write-up to see this.":"Write-ups cover <strong>"+s.coverage+"%</strong> of key points"+(s.avgPhotos!=null?" · "+(Math.round(s.avgPhotos*10)/10)+" photos per pack":""))+'</p></div>'+
       '<div class="st-row"><small>Tests</small><ul class="st-tests">'+tests+'</ul><button type="button" class="st-action" data-st-action="tests">Practice tests</button></div>'+
       '<div class="st-row"><small>Confidence '+(s.confidence.last?"· rated "+ago(s.confidence.last).toLowerCase():"")+'</small>'+
@@ -150,7 +144,10 @@
         '<button type="button" class="st-action" data-st-action="confidence">'+(s.confidence.sessions?"Rate my skills again":"Rate my skills")+'</button>'+
       '</div>'+
       (s.scenarios.total?'<div class="st-row"><small>Real-life scenarios</small><p><strong>'+s.scenarios.done+' of '+s.scenarios.total+'</strong> done · '+s.scenarios.topicsDone+' of 4 topics complete</p><button type="button" class="st-action" data-st-action="scenarios">'+(s.scenarios.done?"Carry on":"Start")+'</button></div>':"")+
-      '<div class="st-row"><small>Achievements · '+ach.count+' of '+ach.list.length+'</small><ul class="st-badges">'+ach.list.map(x=>'<li class="'+(x.earned?"on":"")+'" title="'+escHtml(x.desc)+'"><span class="st-badge-icon">'+BADGE+'</span><strong>'+escHtml(x.label)+'</strong><small>'+escHtml(x.desc)+'</small></li>').join("")+'</ul></div>'+
+      '<div class="st-row"><small>Achievements · '+ach.count+' of '+ach.list.length+'</small>'+
+        (ach.count?'<ul class="st-earned">'+ach.list.filter(x=>x.earned).map(x=>'<li title="'+escHtml(x.desc)+'"><span class="st-badge-icon">'+BADGE+'</span>'+escHtml(x.label)+'</li>').join("")+'</ul>':'<p>None yet. Your first one isn’t far away.</p>')+
+        '<details class="st-all"><summary>See all '+ach.list.length+'</summary><ul class="st-badges">'+ach.list.map(x=>'<li class="'+(x.earned?"on":"")+'"><span class="st-badge-icon">'+BADGE+'</span><strong>'+escHtml(x.label)+'</strong><small>'+escHtml(x.desc)+'</small></li>').join("")+'</ul></details>'+
+      '</div>'+
     '</section>';
   }
 
