@@ -762,3 +762,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text"
 .settings-entry-icon{background:var(--evia-soft)!important;border-color:var(--evia-line)!important;color:var(--evia-ink)!important}
 .settings-segment button.selected,.overlay-options button.selected,.guide-colour-options button.selected{border-color:var(--evia-accent)!important;background:var(--evia-soft)!important;color:var(--evia-ink)!important}
 .evia-theme-option.selected{border-color:var(--evia-accent)!important}
+
+
+/* EVIA SHAPE SYSTEM */
+.evia-fab,
+.welcome-avatar,
+.evia-face-wrap{
+  overflow:hidden;
+}
+html[data-evia-shape="circle"] .evia-fab,
+html[data-evia-shape="circle"] .welcome-avatar{border-radius:50%!important;clip-path:none!important}
+html[data-evia-shape="rounded"] .evia-fab,
+html[data-evia-shape="rounded"] .welcome-avatar{border-radius:18%!important;clip-path:none!important}
+html[data-evia-shape="squircle"] .evia-fab,
+html[data-evia-shape="squircle"] .welcome-avatar{border-radius:30%!important;clip-path:none!important}
+html[data-evia-shape="hexagon"] .evia-fab,
+html[data-evia-shape="hexagon"] .welcome-avatar{border-radius:0!important;clip-path:polygon(25% 3%,75% 3%,100% 50%,75% 97%,25% 97%,0 50%)!important}
+html[data-evia-shape="diamond"] .evia-fab,
+html[data-evia-shape="diamond"] .welcome-avatar{border-radius:0!important;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)!important}
+html[data-evia-shape="teardrop"] .evia-fab,
+html[data-evia-shape="teardrop"] .welcome-avatar{border-radius:52% 52% 52% 12%!important;clip-path:none!important;transform:translateX(-50%) rotate(-45deg)}
+html[data-evia-shape="teardrop"] .evia-fab .evia-face,
+html[data-evia-shape="teardrop"] .welcome-avatar .evia-face{transform:rotate(45deg)}
+html[data-evia-shape="teardrop"] .evia-fab:after{transform:rotate(45deg)}
+html[data-evia-shape="teardrop"] .welcome-avatar{transform:rotate(-45deg)}
