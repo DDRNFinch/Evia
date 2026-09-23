@@ -51,8 +51,9 @@
   applyTheme(currentTheme());
 
   function faceMarkup(name,t,selected){
+    const shape=currentShape();
     return '<button type="button" class="evia-theme-option'+(selected?" selected":"")+'" data-theme="'+name+'" aria-label="'+t.label+' Evia" style="--opt-accent:'+t.accent+'">'+
-      '<span class="evia-theme-avatar"><span class="evia-face"><i></i><i></i></span></span>'+
+      '<span class="evia-theme-avatar shape-'+SHAPES[shape].className+'"><span class="evia-face"><i></i><i></i></span></span>'+
       '<strong>'+t.label+'</strong>'+
     '</button>';
   }
