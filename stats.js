@@ -113,7 +113,7 @@
     const timePct=s.a.timePct;
     if(timePct!=null&&timePct>=75){
       const gap=timePct>=90?7:14;
-      if(daysAgo(s.lastTestAt("epa"))>gap)list.push({id:"epa",text:"You’re "+timePct+"% of the way through your course, so it’s time to practise for your end-point assessment. Try an EPA mock test.",action:{label:"Take an EPA mock",kind:"test"}});
+      if(daysAgo(s.lastTestAt("epa"))>gap)list.push({id:"epa",text:"You’re "+timePct+"% of the way through your course, so it’s time to practise for your end-point assessment. Try an EPA mock test.",action:{label:"Take an EPA full mock",kind:"test"}});
     }
     if(s.maths&&daysAgo(s.lastTestAt("maths"))>14)list.push({id:"maths",text:"It’s been a while since your last maths practice. A quick test keeps it fresh.",action:{label:"Take a maths test",kind:"test"}});
     if(s.english&&daysAgo(s.lastTestAt("english"))>14)list.push({id:"english",text:"Fancy a quick English practice test? It only takes a few minutes.",action:{label:"Take an English test",kind:"test"}});
@@ -140,9 +140,10 @@
       '<div class="st-row"><small>Off-the-job learning</small><p><strong>'+hrs(s.otjWeek)+'</strong> this week · '+hrs(s.otjMonth)+' this month · '+hrs(s.otjTotal)+' total</p></div>'+
       '<div class="st-row"><small>Pace</small><p>'+pace+'</p></div>'+
       '<div class="st-row"><small>Evidence quality</small><p>'+(s.coverage==null?"Submit a unit write-up to see this.":"Write-ups cover <strong>"+s.coverage+"%</strong> of key points"+(s.avgPhotos!=null?" · "+(Math.round(s.avgPhotos*10)/10)+" photos per pack":""))+'</p></div>'+
-      '<div class="st-row"><small>Tests</small><ul class="st-tests">'+tests+'</ul></div>'+
+      '<div class="st-row"><small>Tests</small><ul class="st-tests">'+tests+'</ul><button type="button" class="st-action" data-st-action="tests">Practice tests</button></div>'+
       '<div class="st-row"><small>Confidence '+(s.confidence.last?"· rated "+ago(s.confidence.last).toLowerCase():"")+'</small>'+
         (s.confidence.sessions?'<div class="st-conf"><span class="st-conf-label">Needs practice</span><div>'+chips(s.confidence.practise,"low")+'</div><span class="st-conf-label">Confident</span><div>'+chips(s.confidence.confident,"high")+'</div></div>':'<p>Do a confidence check to see which skills need practice.</p>')+
+        '<button type="button" class="st-action" data-st-action="confidence">'+(s.confidence.sessions?"Rate my skills again":"Rate my skills")+'</button>'+
       '</div>'+
       '<div class="st-row"><small>Achievements · '+ach.count+' of '+ach.list.length+'</small><ul class="st-badges">'+ach.list.map(x=>'<li class="'+(x.earned?"on":"")+'" title="'+escHtml(x.desc)+'"><span class="st-badge-icon">'+BADGE+'</span><strong>'+escHtml(x.label)+'</strong><small>'+escHtml(x.desc)+'</small></li>').join("")+'</ul></div>'+
     '</section>';

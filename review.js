@@ -25,6 +25,7 @@
     const all=read(TEST_KEY,[]);
     all.push({...result,type,course,savedAt:new Date().toISOString()});
     write(TEST_KEY,all.slice(-50));
+    try{window.dispatchEvent(new CustomEvent("evia:test-saved",{detail:{type,pct:result.pct,score:result.score,total:result.total,full:!!result.full,missed:result.missed||[]}}))}catch(_){}
   };
   const latestTest=type=>{
     const all=read(TEST_KEY,[]).filter(x=>x.course===course&&x.type===type);
@@ -44,22 +45,28 @@
 
   const reply=(html,delay=700)=>{const chat=$("#chat");if(!chat)return;const el=document.createElement("div");el.className="bubble evia evia-thinking";el.innerHTML='<span class="thinking-label">Evia is thinking</span><span class="thinking-dots"><i></i><i></i><i></i></span>';chat.appendChild(el);chat.scrollTop=chat.scrollHeight;setTimeout(()=>{el.outerHTML='<div class="bubble evia" data-thought-complete="1">'+html+'</div>';chat.scrollTop=chat.scrollHeight},delay)};
 
-  function eviaTestMe(){
-    const options=[["discussion","Discussion"],["epa","EPA MCQ"]];
+  /* opts.type starts a test straight away; opts.count sets how many questions (the full EPA mock uses 20). */
+  function eviaTestMe(opts){
+    opts=opts||{};
+    const options=[["epa","EPA quick quiz"],["epa-full","EPA full mock"],["discussion","Discussion"]];
     if(academicEnabled("maths"))options.push(["maths","Maths"]);
     if(academicEnabled("english"))options.push(["english","English"]);
     const chatEl=$("#chat");
     const addBubble=v=>chatEl.insertAdjacentHTML("beforeend",'<div class="bubble user">'+escLocal(v)+'</div>');
     const scroll=()=>chatEl.scrollTop=chatEl.scrollHeight;
+    if(opts.type){start(opts.type==="epa"&&opts.count>=20?"epa-full":opts.type);return}
     chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>Test me</strong><br>Choose a test.</div><div class="chat-options">'+options.map(o=>'<button class="chat-pill" data-test-kind="'+o[0]+'"><strong>'+o[1]+'</strong></button>').join("")+'</div>');
     scroll();
     document.querySelectorAll("[data-test-kind]").forEach(b=>b.onclick=()=>{
-      const type=b.dataset.testKind;
-      addBubble(testLabel(type));
       document.querySelectorAll("[data-test-kind]").forEach(x=>x.remove());
-      if(type==="discussion")runDiscussion();
-      else runChoiceTest(type);
+      addBubble(b.textContent.trim());
+      start(b.dataset.testKind);
     });
+    function start(kind){
+      if(kind==="discussion")runDiscussion();
+      else if(kind==="epa-full")runChoiceTest("epa",20);
+      else runChoiceTest(kind,opts.count||5);
+    }
 
     function runDiscussion(){
       const qs=bankFor("discussion").slice(0,5);
@@ -68,9 +75,10 @@
       const ask=()=>{
         if(i>=qs.length){
           result.pct=result.total?Math.round(result.score/result.total*100):0;
-          saveTest("discussion",result);
           chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>Discussion complete</strong><br>'+result.score+' / '+result.total+' areas covered ('+result.pct+'%). I’ve saved this for your progress review.</div>');
-          scroll();return;
+          scroll();
+          saveTest("discussion",result);
+          return;
         }
         const q=qs[i];
         chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>Question '+(i+1)+' of '+qs.length+'</strong><br>'+escLocal(q.prompt)+'</div><textarea class="test-response" data-discussion-answer placeholder="Type or use your phone microphone to answer..."></textarea><button class="chat-pill test-submit" data-discussion-submit><strong>Submit answer</strong></button>');
@@ -95,17 +103,22 @@
       ask();
     }
 
-    function runChoiceTest(type){
-      const source=bankFor(type);
-      const qs=shuffle(source).slice(0,5);
+    function runChoiceTest(type,count){
+      const source=bankFor(type),full=type==="epa"&&count>=20;
+      const qs=shuffle(source).slice(0,count||5);
+      if(full)chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>EPA full mock</strong><br>'+qs.length+' questions from across your KSBs. Take your time and answer each one as you would in the real test.</div>');
       let i=0,score=0;
       const result={questions:[],score:0,total:qs.length};
       const ask=()=>{
         if(i>=qs.length){
           result.score=score;result.pct=qs.length?Math.round(score/qs.length*100):0;
+          result.full=full;
+          const missed=type==="epa"?[...new Set(result.questions.filter(x=>!x.ok).map(x=>x.ksb).filter(Boolean))]:[];
+          result.missed=missed;
+          chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>'+(full?"EPA full mock":testLabel(type))+' complete</strong><br>'+score+' / '+qs.length+' correct ('+result.pct+'%). I’ve saved this for your progress review.'+(missed.length?'<br><br><strong>Worth revising:</strong> '+escLocal(missed.slice(0,6).join(", "))+(missed.length>6?' and '+(missed.length-6)+' more':'')+'. Tap any KSB on the Progress page to read what it covers.':'')+'</div>');
+          scroll();
           saveTest(type,result);
-          chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>'+testLabel(type)+' complete</strong><br>'+score+' / '+qs.length+' correct ('+result.pct+'%). I’ve saved this for your progress review.</div>');
-          scroll();return;
+          return;
         }
         const q=qs[i];
         const isAcademic=type==="maths"||type==="english";
@@ -118,7 +131,7 @@
           const chosen=decodeURIComponent(btn.dataset.testAnswer);
           const ok=chosen===correct;
           if(ok)score++;
-          result.questions.push({question:q[1],chosen,correct,ok,explanation});
+          result.questions.push({question:q[1],chosen,correct,ok,explanation,ksb:isAcademic?"":q[0]});
           document.querySelectorAll("[data-test-answer]").forEach(x=>x.disabled=true);
           document.querySelectorAll("[data-test-answer]").forEach(x=>{if(decodeURIComponent(x.dataset.testAnswer)===correct)x.classList.add("correct")});
           if(!ok)btn.classList.add("wrong");

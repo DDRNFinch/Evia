@@ -14,7 +14,9 @@
     camera:'<rect x="3" y="6.5" width="18" height="14" rx="3"/><path d="M8 6.5l1.4-2h5.2l1.4 2"/><circle cx="12" cy="13.5" r="3.5"/>',
     plus:'<path d="M12 5v14M5 12h14"/>',
     chev:'<path d="m9 5 7 7-7 7"/>',
-    back:'<path d="m15 5-7 7 7 7"/>'
+    back:'<path d="m15 5-7 7 7 7"/>',
+    test:'<path d="M7 3.5h10a1.5 1.5 0 0 1 1.5 1.5v15l-3-1.8-3 1.8-3-1.8-3 1.8V5A1.5 1.5 0 0 1 7 3.5Z"/><path d="M9 8.5h6M9 12h6"/>',
+    skills:'<path d="M4 20h16"/><rect x="5.5" y="12" width="3" height="6" rx="1"/><rect x="10.5" y="8" width="3" height="10" rx="1"/><rect x="15.5" y="4" width="3" height="14" rx="1"/>'
   };
   function ring(pct,size,stroke,label,sub){
     const r=(size-stroke)/2,c=2*Math.PI*r,dash=Math.max(0,Math.min(1,pct/100))*c;
@@ -74,6 +76,8 @@
         '<div class="ui-quick">'+
           '<button type="button" class="ui-card ui-quick-btn" id="ui-log-otj"><span class="ui-icon-chip">'+icon(ICONS.clock)+'</span><span>Log OTJ hours</span></button>'+
           '<button type="button" class="ui-card ui-quick-btn" id="ui-capture"><span class="ui-icon-chip">'+icon(ICONS.camera)+'</span><span>Capture evidence</span></button>'+
+          '<button type="button" class="ui-card ui-quick-btn" id="ui-practice"><span class="ui-icon-chip">'+icon(ICONS.test)+'</span><span>Practice tests</span>'+(window.eviaPractice&&window.eviaPractice.epaDue()?'<em class="ui-due">EPA</em>':"")+'</button>'+
+          '<button type="button" class="ui-card ui-quick-btn" id="ui-skills"><span class="ui-icon-chip">'+icon(ICONS.skills)+'</span><span>Rate my skills</span></button>'+
         '</div>'+
         '<section class="ui-section"><div class="ui-section-head"><h2>Recent evidence</h2>'+(recent.length?'<button type="button" class="ui-link" id="ui-see-all">See all</button>':"")+'</div>'+
           (recent.length?'<div class="ui-recent">'+recent.map((e,i)=>'<button type="button" class="ui-recent-item" data-recent="'+i+'"><span class="ui-photo" data-recent-photo="'+i+'">'+icon(ICONS.camera,22)+'</span><strong>'+escHtml(e.u)+'</strong><small>'+escHtml(new Date(entryTime(e)).toLocaleDateString("en-GB",{day:"numeric",month:"short"}))+'</small></button>').join("")+'</div>'
@@ -83,6 +87,8 @@
     const prog=$("#ui-home-progress");prog.onclick=()=>nav("progress");prog.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();nav("progress")}};
     $("#ui-log-otj").onclick=()=>nav("learning");
     $("#ui-capture").onclick=()=>nav("course");
+    $("#ui-practice").onclick=()=>window.eviaPractice&&window.eviaPractice.openHub();
+    $("#ui-skills").onclick=()=>window.eviaPractice&&window.eviaPractice.openConfidence();
     const all=$("#ui-see-all");if(all)all.onclick=()=>nav("portfolio");
     document.querySelectorAll("[data-recent]").forEach(b=>b.onclick=()=>{const e=recent[+b.dataset.recent];if(window.eviaOpenSendToPortfolio)window.eviaOpenSendToPortfolio(e.u)});
     recent.forEach(async(e,i)=>{
@@ -133,16 +139,17 @@
     if(kind==="stats")go(showStats);
     else if(kind==="course")go(()=>nav("course"));
     else if(kind==="learning")go(()=>nav("learning"));
-    else if(kind==="test"||kind==="confidence"){
-      const label=kind==="test"?"Test me":"Confidence check";
-      const run=()=>{
-        const item=menuItems.find(x=>x.label===label);if(!item)return;
-        item.run();
-        const type={epa:"epa",maths:"maths",english:"english"}[n.id];
-        if(type){const b=document.querySelector('[data-test-kind="'+type+'"]');if(b)b.click()}
-      };
-      if(inChat)queue=queue.then(run);else{window.chat();setTimeout(run,50)}
+    else if(kind==="confidence")go(()=>window.eviaPractice&&window.eviaPractice.openConfidence());
+    else if(kind==="test"){
+      const t={epa:["epa",20],maths:["maths",5],english:["english",5]}[n.id]||["epa",5];
+      startTest(t[0],t[1],n.action.label);
     }
+  }
+  /* Runs a test in the chat. Opening the chat for a test skips Evia's "what I'd do today". */
+  function startTest(type,count,label){
+    const run=()=>{userSays(label);window.eviaTestMe&&window.eviaTestMe({type,count})};
+    if(chatBox())queue=queue.then(run);
+    else{window.chat({quiet:true});setTimeout(run,50)}
   }
   function showStats(){
     if(screen!=="progress")nav("progress");
@@ -180,6 +187,7 @@
         statsHtml()+
       '</div>';
     document.querySelectorAll("[data-group]").forEach(b=>b.onclick=()=>{collapsed[b.dataset.group]=!collapsed[b.dataset.group];progressScreen()});
+    document.querySelectorAll("[data-st-action]").forEach(b=>b.onclick=()=>{if(!window.eviaPractice)return;if(b.dataset.stAction==="tests")window.eviaPractice.openHub();else window.eviaPractice.openConfidence()});
     document.querySelectorAll("[data-ksb-code]").forEach(b=>b.onclick=()=>{const item=all.find(x=>x[0]===b.dataset.ksbCode);if(item)ksbDetail(item[0],item[1],a.evidenced.has(item[0]))});
   }
 
@@ -456,7 +464,7 @@
     });
   }
   function statsFromMenu(){userSays("My stats");myStats()}
-  function enhanceChat(){
+  function enhanceChat(opts){
     const c=chatBox();if(!c)return;
     queue=Promise.resolve();chatGen++;
     const greet=c.querySelector(".bubble.evia"),name=firstName();
@@ -464,13 +472,24 @@
     menuItems=[];
     c.querySelectorAll("[data-chat-option]").forEach(b=>{
       const label=b.textContent.trim(),original=b.onclick;
-      const item=label==="Portfolio check"?{label:"My stats",run:statsFromMenu}:{label,run:()=>original&&original.call(b)};
+      const item=label==="Portfolio check"?{label:"My stats",run:statsFromMenu}:label==="Confidence check"&&window.eviaPractice?{label,run:()=>{closeChat();setTimeout(window.eviaPractice.openConfidence,60)}}:{label,run:()=>original&&original.call(b)};
       menuItems.push(item);
       b.innerHTML="<strong>"+escHtml(item.label)+"</strong>";
       b.onclick=()=>{const box=b.closest(".chat-options");if(box)box.remove();item.run()};
     });
-    today();
+    if(!(opts&&opts.quiet===true))today();
   }
+  /* After a test: celebrate a good score and offer what to do next. */
+  window.addEventListener("evia:test-saved",e=>{
+    if(!chatBox())return;
+    const d=e.detail||{};
+    if(d.pct>=80&&window.eviaMood)window.eviaMood("happy");
+    const opts=[{label:"Try another test",primary:true,run:()=>{closeChat();setTimeout(()=>window.eviaPractice&&window.eviaPractice.openHub(),60)}}];
+    if(d.missed&&d.missed.length)opts.push({label:"Go to Progress",run:()=>{closeChat();setTimeout(()=>nav("progress"),60)}});
+    opts.push({label:"See my stats",run:()=>{closeChat();setTimeout(showStats,60)}},{label:"Something else",run:somethingElse});
+    queue=queue.then(()=>new Promise(r=>setTimeout(r,1400))); /* let the result bubble finish "thinking" first */
+    replies(opts);
+  });
 
   /* ---------- Wire into the app ---------- */
   const originalRender=window.render,originalChat=window.chat,originalLearning=window.learning;
@@ -498,9 +517,10 @@
     if(!document.getElementById("ui-back-home"))$("#screen").insertAdjacentHTML("afterbegin",'<button class="secondary ui-back" id="ui-back-home" type="button">‹ Home</button>');
     $("#ui-back-home").onclick=()=>nav("home");
   };
-  window.chat=function(){hideBubble();originalChat();enhanceChat();if(window.eviaMood)window.eviaMood("happy")};
+  window.chat=function(opts){hideBubble();originalChat();enhanceChat(opts);if(window.eviaMood)window.eviaMood("happy")};
   $("#evia-fab").onclick=window.chat;
   window.eviaHome=home;
   window.eviaCoach={analyse,suggestion,checkUnit,showStats};
+  window.eviaStartTest=startTest;
   if(screen==="course"&&!document.body.classList.contains("evia-onboarding")){screen="home";render()}
 })();
