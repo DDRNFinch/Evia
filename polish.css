@@ -777,9 +777,40 @@ html[data-evia-shape="rounded"] .welcome-avatar{border-radius:18%!important;clip
 html[data-evia-shape="squircle"] .evia-fab,
 html[data-evia-shape="squircle"] .welcome-avatar{border-radius:30%!important;clip-path:none!important}
 html[data-evia-shape="hexagon"] .evia-fab,
-html[data-evia-shape="hexagon"] .welcome-avatar{border-radius:0!important;clip-path:polygon(25% 3%,75% 3%,100% 50%,75% 97%,25% 97%,0 50%)!important}
+html[data-evia-shape="hexagon"] .welcome-avatar,
 html[data-evia-shape="diamond"] .evia-fab,
-html[data-evia-shape="diamond"] .welcome-avatar{border-radius:0!important;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)!important}
+html[data-evia-shape="diamond"] .welcome-avatar{
+  border:0!important;
+  border-radius:0!important;
+  background:var(--evia-accent)!important;
+  clip-path:none!important;
+  position:relative!important;
+}
+html[data-evia-shape="hexagon"] .evia-fab:before,
+html[data-evia-shape="hexagon"] .welcome-avatar:before,
+html[data-evia-shape="diamond"] .evia-fab:before,
+html[data-evia-shape="diamond"] .welcome-avatar:before{
+  content:"";
+  position:absolute;
+  inset:3px;
+  background:var(--bg,#fffdfa);
+  z-index:0;
+}
+html[data-evia-shape="hexagon"] .evia-fab:before,
+html[data-evia-shape="hexagon"] .welcome-avatar:before{
+  clip-path:polygon(25% 2%,75% 2%,100% 50%,75% 98%,25% 98%,0 50%);
+}
+html[data-evia-shape="diamond"] .evia-fab:before,
+html[data-evia-shape="diamond"] .welcome-avatar:before{
+  clip-path:polygon(50% 2%,98% 50%,50% 98%,2% 50%);
+}
+html[data-evia-shape="hexagon"] .evia-fab .evia-face,
+html[data-evia-shape="hexagon"] .welcome-avatar .evia-face,
+html[data-evia-shape="diamond"] .evia-fab .evia-face,
+html[data-evia-shape="diamond"] .welcome-avatar .evia-face{
+  position:relative;
+  z-index:1;
+}
 html[data-evia-shape="teardrop"] .evia-fab,
 html[data-evia-shape="teardrop"] .welcome-avatar{border-radius:52% 52% 52% 12%!important;clip-path:none!important;transform:translateX(-50%) rotate(-45deg)}
 html[data-evia-shape="teardrop"] .evia-fab .evia-face,
