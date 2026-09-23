@@ -781,57 +781,7 @@ html[data-evia-shape="cloud"] .welcome-avatar{
   border:0!important;
   border-radius:0!important;
   background:var(--evia-accent)!important;
-  clip-path:polygon(18% 75%,12% 65%,14% 52%,22% 43%,32% 40%,37% 29%,49% 23%,61% 25%,69% 33%,79% 34%,88% 41%,91% 52%,88% 63%,94% 72%,89% 82%,76% 85%,24% 85%)!important;
-  position:relative!important;
-}
-html[data-evia-shape="cloud"] .evia-fab:before,
-html[data-evia-shape="cloud"] .welcome-avatar:before{
-  content:"";position:absolute;inset:0;background:var(--bg,#fffdfa);z-index:0;
-  clip-path:inherit;transform:scale(.86);transform-origin:center;
-}
-html[data-evia-shape="cloud"] .evia-fab .evia-face,
-html[data-evia-shape="cloud"] .welcome-avatar .evia-face{position:relative;z-index:1}
-html[data-evia-shape="hexagon"] .evia-fab,
-html[data-evia-shape="hexagon"] .welcome-avatar,
-html[data-evia-shape="diamond"] .evia-fab,
-html[data-evia-shape="diamond"] .welcome-avatar{
-  border:0!important;
-  border-radius:0!important;
-  background:var(--evia-accent)!important;
-  clip-path:none!important;
-  position:relative!important;
-}
-html[data-evia-shape="hexagon"] .evia-fab:before,
-html[data-evia-shape="hexagon"] .welcome-avatar:before,
-html[data-evia-shape="diamond"] .evia-fab:before,
-html[data-evia-shape="diamond"] .welcome-avatar:before{
-  content:"";
-  position:absolute;
-  inset:3px;
-  background:var(--bg,#fffdfa);
-  z-index:0;
-}
-html[data-evia-shape="hexagon"] .evia-fab:before,
-html[data-evia-shape="hexagon"] .welcome-avatar:before{
-  clip-path:polygon(25% 2%,75% 2%,100% 50%,75% 98%,25% 98%,0 50%);
-}
-html[data-evia-shape="diamond"] .evia-fab:before,
-html[data-evia-shape="diamond"] .welcome-avatar:before{
-  clip-path:polygon(50% 2%,98% 50%,50% 98%,2% 50%);
-}
-html[data-evia-shape="hexagon"] .evia-fab .evia-face,
-html[data-evia-shape="hexagon"] .welcome-avatar .evia-face,
-html[data-evia-shape="diamond"] .evia-fab .evia-face,
-html[data-evia-shape="diamond"] .welcome-avatar .evia-face{
-  position:relative;
-  z-index:1;
-}
-html[data-evia-shape="splat"] .evia-fab,
-html[data-evia-shape="splat"] .welcome-avatar{
-  border:0!important;
-  border-radius:0!important;
-  background:var(--evia-accent)!important;
-  clip-path:polygon(50% 0,57% 12%,68% 4%,70% 18%,83% 12%,81% 27%,96% 25%,89% 39%,100% 50%,88% 58%,95% 72%,80% 73%,82% 89%,67% 82%,58% 98%,50% 87%,40% 100%,34% 85%,19% 91%,21% 76%,5% 78%,12% 63%,0 55%,13% 45%,5% 32%,20% 29%,15% 14%,32% 19%,37% 4%)!important;
+  clip-path:polygon(50% 2%,61% 16%,77% 8%,79% 25%,96% 25%,84% 40%,98% 50%,84% 60%,96% 75%,79% 75%,77% 92%,61% 84%,50% 98%,39% 84%,23% 92%,21% 75%,4% 75%,16% 60%,2% 50%,16% 40%,4% 25%,21% 25%,23% 8%,39% 16%)!important;
 }
 html[data-evia-shape="splat"] .evia-fab{transform:translateX(-50%)}
 html[data-evia-shape="splat"] .evia-fab:after{transform:none}
