@@ -1,11 +1,11 @@
 (function(){
   const THEMES={
-    yellow:{label:"Yellow",accent:"#e7b900",soft:"#fff7d6",line:"#f1d878",ink:"#6e5c00"},
-    green:{label:"Green",accent:"#1fae5c",soft:"#e6f8ee",line:"#a9e2c2",ink:"#146238"},
-    blue:{label:"Blue",accent:"#2f6fed",soft:"#e8f0ff",line:"#aecbfa",ink:"#1a3f91"},
-    purple:{label:"Purple",accent:"#8b5cf6",soft:"#f2ecff",line:"#d2bdfb",ink:"#5b32b0"},
-    pink:{label:"Pink",accent:"#ef5da8",soft:"#fdecf4",line:"#f7bcd9",ink:"#a52a6f"},
-    red:{label:"Red",accent:"#e2483d",soft:"#fdeceb",line:"#f5b6af",ink:"#a32921"}
+    yellow:{label:"Yellow",accent:"#e7b900",soft:"#fff7d6",line:"#f1d878",ink:"#6e5c00",bg:"#fffdfa"},
+    green:{label:"Green",accent:"#1fae5c",soft:"#e6f8ee",line:"#a9e2c2",ink:"#146238",bg:"#f8fcfa"},
+    blue:{label:"Blue",accent:"#2f6fed",soft:"#e8f0ff",line:"#aecbfa",ink:"#1a3f91",bg:"#f8faff"},
+    purple:{label:"Purple",accent:"#8b5cf6",soft:"#f2ecff",line:"#d2bdfb",ink:"#5b32b0",bg:"#fbf9ff"},
+    pink:{label:"Pink",accent:"#ef5da8",soft:"#fdecf4",line:"#f7bcd9",ink:"#a52a6f",bg:"#fff9fc"},
+    red:{label:"Red",accent:"#e2483d",soft:"#fdeceb",line:"#f5b6af",ink:"#a32921",bg:"#fff9f8"}
   };
   const KEY="evia7-theme";
   const PICKED_KEY="evia7-theme-picked";
@@ -16,7 +16,7 @@
     root.setProperty("--yellow",t.accent);
     root.setProperty("--soft",t.soft);
     root.setProperty("--yellow-line",t.line);
-    root.setProperty("--yellow-ink",t.ink);
+    root.setProperty("--yellow-ink",t.ink);\n    root.setProperty("--bg",t.bg);
     document.documentElement.setAttribute("data-evia-theme",THEMES[name]?name:"yellow");
   }
   function currentTheme(){return localStorage.getItem(KEY)||"yellow"}
