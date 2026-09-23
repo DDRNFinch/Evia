@@ -5,8 +5,9 @@
   const reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const set=(k,v)=>root.style.setProperty(k,v);
   let lookTimer=null,idleTimer=null,moodTimer=null,sleeping=false,busy=false;
+  const fab=()=>document.getElementById("evia-fab");
 
-  function blink(){set("--evia-sy","0.08");setTimeout(()=>set("--evia-sy","1"),130)}
+  function blink(){set("--evia-sy","0.1");setTimeout(()=>set("--evia-sy","1"),110)}
   function scheduleBlink(){
     setTimeout(()=>{
       if(!document.hidden){blink();if(Math.random()<.25)setTimeout(blink,280)}
@@ -17,6 +18,7 @@
   function look(x,y,hold){
     if(reduce)return;
     set("--evia-lx",x.toFixed(1)+"%");set("--evia-ly",y.toFixed(1)+"%");
+    set("--evia-tilt",(x/30*5).toFixed(2)+"deg"); /* her body leans a little towards where she looks */
     clearTimeout(lookTimer);
     if(hold)lookTimer=setTimeout(()=>{if(!busy)look(0,0)},hold);
   }
@@ -26,11 +28,22 @@
       wander();
     },2800+Math.random()*4200);
   }
-  function hop(){
-    const fab=document.getElementById("evia-fab");
-    if(!fab||reduce)return;
-    fab.classList.remove("evia-hop");void fab.offsetWidth;fab.classList.add("evia-hop");
-    setTimeout(()=>fab.classList.remove("evia-hop"),750);
+  /* Restart a one-shot body animation class (hop or squish). */
+  function play(cls,ms){
+    const el=fab();if(!el||reduce)return;
+    el.classList.remove("evia-hop","evia-squish");void el.offsetWidth;el.classList.add(cls);
+    setTimeout(()=>el.classList.remove(cls),ms);
+  }
+  const hop=()=>play("evia-hop",900);
+  /* Every so often she gives a little jelly wobble, sometimes followed by a glance. */
+  function scheduleSquish(){
+    setTimeout(()=>{
+      if(!document.hidden&&!busy&&!sleeping){
+        play("evia-squish",1200);
+        if(Math.random()<.35)setTimeout(()=>look((Math.random()<.5?-1:1)*26,-6,1200),700);
+      }
+      scheduleSquish();
+    },7000+Math.random()*8000);
   }
   function wake(){
     if(sleeping){sleeping=false;root.classList.remove("evia-sleepy")}
@@ -48,8 +61,8 @@
   /* She glances towards wherever the learner taps. */
   document.addEventListener("pointerdown",e=>{
     wake();
-    const fab=document.getElementById("evia-fab");if(!fab||busy)return;
-    const r=fab.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),d=Math.hypot(dx,dy)||1;
+    const el=fab();if(!el||busy)return;
+    const r=el.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),d=Math.hypot(dx,dy)||1;
     look(dx/d*30,dy/d*18,1500);
   },{passive:true});
   document.addEventListener("scroll",wake,{passive:true});
@@ -71,5 +84,6 @@
   }
 
   set("--evia-lx","0%");set("--evia-ly","0%");set("--evia-sy","1");
-  scheduleBlink();wander();wake();
+  set("--evia-tilt","0deg");
+  scheduleBlink();wander();scheduleSquish();wake();
 })();

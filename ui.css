@@ -18,7 +18,8 @@ html body .bubble.user{background:#fff!important;color:var(--ui-ink)!important;b
 
 /* ---- Page scaffolding ---- */
 .ui-page{display:flex;flex-direction:column;gap:16px;padding-bottom:12px}
-/* No page titles: leave room for the floating profile button instead. */
+/* No page titles or header bar: leave room for the floating profile button instead. */
+html body .topbar{display:none!important}
 #screen.ui-top{padding-top:68px}
 .ui-card{background:var(--ui-card);border:1px solid var(--ui-line);border-radius:var(--ui-radius);box-shadow:var(--ui-shadow)}
 .ui-accent-text{font-size:12.5px;font-weight:700;color:var(--yellow-ink);line-height:1.4}
@@ -123,13 +124,17 @@ html body .bubble.user{background:#fff!important;color:var(--ui-ink)!important;b
 .ui-evia-bubble-actions button{min-height:42px;padding:8px 16px;border-radius:13px;font-size:13px}
 
 /* ---- Evia, alive (evia-alive.js drives the variables) ---- */
-.evia-face i{transform:translate(var(--evia-lx,0),var(--evia-ly,0)) scaleY(var(--evia-sy,1))!important;transition:transform .16s ease,border-color .2s ease}
-html.evia-happy .evia-face i{border-bottom-color:transparent!important;transform:translate(0,-8%) scaleY(1)!important}
+/* Glances (translate) glide slowly while blinks (scale) snap shut; separate properties keep separate timings. */
+.evia-face i{transform:none!important;translate:var(--evia-lx,0) var(--evia-ly,0);scale:1 var(--evia-sy,1);transition:translate .6s cubic-bezier(.33,.9,.35,1),scale .09s ease-in-out,border-color .25s ease}
+html.evia-happy .evia-face i{border-bottom-color:transparent!important;translate:0 -8%;scale:1}
 /* Sleepy after a while with no taps: relaxed, closed eyes. */
-html.evia-sleepy .evia-face i{border-top-color:transparent!important;border-left-color:transparent!important;border-right-color:transparent!important;border-bottom-color:var(--yellow)!important;transform:translate(0,-10%) scaleY(1)!important}
-html body .evia-fab{animation:eviaBreathe 4.6s ease-in-out infinite!important}
-html body .evia-fab.evia-hop{animation:eviaHop .7s cubic-bezier(.3,1.6,.5,1)!important}
+html.evia-sleepy .evia-face i{border-top-color:transparent!important;border-left-color:transparent!important;border-right-color:transparent!important;border-bottom-color:var(--yellow)!important;translate:0 -10%;scale:1}
+/* Her body: the button is centred with translateX(-50%), so scale and lean around the visual centre (its left edge before that shift). */
+html body .evia-fab{transform-origin:0 50%!important;rotate:var(--evia-tilt,0deg);transition:rotate .7s cubic-bezier(.33,.9,.35,1);animation:eviaBreathe 4.8s ease-in-out infinite!important}
+html body .evia-fab.evia-hop{animation:eviaHop .85s ease-out!important}
+html body .evia-fab.evia-squish{animation:eviaSquish 1.15s ease-out!important}
 html.evia-sleepy body .evia-fab{animation-duration:7s!important}
-@keyframes eviaBreathe{0%,100%{scale:1}50%{scale:1.035}}
-@keyframes eviaHop{0%{translate:0 0;scale:1}30%{translate:0 -9px;scale:1.06 .96}55%{translate:0 0;scale:.96 1.05}75%{translate:0 -2px;scale:1.02}100%{translate:0 0;scale:1}}
-@media(prefers-reduced-motion:reduce){html body .evia-fab,html body .evia-fab.evia-hop{animation:none!important}.evia-face i{transition:none}.ui-evia-bubble{transition:opacity .2s ease}}
+@keyframes eviaBreathe{0%,100%{scale:1 1}50%{scale:1.02 1.035}}
+@keyframes eviaHop{0%{translate:0 0;scale:1 1}18%{translate:0 0;scale:1.09 .9}42%{translate:0 -11px;scale:.93 1.08}66%{translate:0 0;scale:1.08 .92}82%{scale:.98 1.03}100%{translate:0 0;scale:1 1}}
+@keyframes eviaSquish{0%{scale:1 1}12%{scale:1.08 .92}26%{scale:.94 1.07}40%{scale:1.04 .96}55%{scale:.98 1.025}72%{scale:1.01 .99}100%{scale:1 1}}
+@media(prefers-reduced-motion:reduce){html body .evia-fab,html body .evia-fab.evia-hop,html body .evia-fab.evia-squish{animation:none!important;rotate:none}.evia-face i{transition:none}.ui-evia-bubble{transition:opacity .2s ease}}

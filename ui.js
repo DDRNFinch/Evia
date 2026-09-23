@@ -20,7 +20,7 @@
   function ring(pct,size,stroke,label,sub){
     const r=(size-stroke)/2,c=2*Math.PI*r,dash=Math.max(0,Math.min(1,pct/100))*c;
     return '<span class="ui-ring" style="width:'+size+'px;height:'+size+'px">'+
-      '<svg width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'" aria-hidden="true"><circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" class="ui-ring-track" stroke-width="'+stroke+'"/><circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" class="ui-ring-fill" stroke-width="'+stroke+'" stroke-dasharray="'+dash.toFixed(1)+' '+c.toFixed(1)+'" transform="rotate(-90 '+size/2+' '+size/2+')"/></svg>'+
+      '<svg width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'" aria-hidden="true"><circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" class="ui-ring-track" stroke-width="'+stroke+'"/>'+(dash>0?'<circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" class="ui-ring-fill" stroke-width="'+stroke+'" stroke-dasharray="'+dash.toFixed(1)+' '+c.toFixed(1)+'" transform="rotate(-90 '+size/2+' '+size/2+')"/>':"")+'</svg>'+
       (label!=null?'<span class="ui-ring-label"><strong>'+label+'</strong>'+(sub?'<small>'+sub+'</small>':"")+'</span>':"")+
     '</span>';
   }
@@ -61,7 +61,7 @@
     $("#page-title").textContent="Home";
     const a=analyse(),s=suggestion(a);
     const recent=a.entries.slice().sort((x,y)=>entryTime(y)-entryTime(x)).slice(0,4);
-    const timeDetail=a.timePct==null?"Add your dates in Profile":a.timePct+"%";
+    const timeDetail=a.timePct==null?"Dates not set":a.timePct+"%";
     $("#screen").innerHTML=
       '<div class="ui-page">'+
         '<section class="ui-card ui-progress-card" id="ui-home-progress" role="button" tabindex="0" aria-label="Open progress">'+
