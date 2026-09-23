@@ -14,25 +14,23 @@
   const SHAPES={
     circle:{label:"Circle",className:"circle"},
     squircle:{label:"Squircle",className:"squircle"},
-    cloud:{label:"Thought",className:"cloud",svg:true},
+    cloud:{label:"Cloud",className:"cloud",svg:true},
     splat:{label:"Splat",className:"splat",svg:true},
-    sun:{label:"Sun",className:"sun",svg:true},
+    gear:{label:"Gear",className:"gear",svg:true},
     alien:{label:"Alien",className:"alien",svg:true}
   };
-  /* Outline shapes are drawn as SVG (0–100 box) behind Evia's eyes. "body" is filled and outlined; "rays" are lines. */
-  const SUN_RAYS=[0,45,90,135,180,225,270,315].map(a=>{const r=a*Math.PI/180,c=Math.cos(r),n=Math.sin(r);return "M"+(50+41*c).toFixed(1)+" "+(50+41*n).toFixed(1)+"L"+(50+49*c).toFixed(1)+" "+(50+49*n).toFixed(1)}).join("");
+  /* Outline shapes are drawn as SVG (0–100 box) behind Evia's eyes. "body" is filled and outlined. */
   const OUTLINES={
-    cloud:{body:["M28 72C15 73 8 63 12 54C4 48 8 34 20 34C20 20 36 13 47 20C54 9 74 10 78 24C91 24 97 38 90 48C97 58 88 71 76 70C70 78 54 79 48 73C42 78 32 77 28 72Z"],dots:[[20,84,5.5],[9,94,3.2]]},
+    cloud:{body:["M26 78C13 79 6 69 10 60C2 54 6 40 18 40C18 26 34 19 45 26C52 15 72 16 76 30C89 30 95 44 88 54C95 64 86 77 74 76C68 84 52 85 46 79C40 84 30 83 26 78Z"]},
     splat:{body:["M50 10C54.4 9.8 57.8 19.9 63.5 22.1C69.1 24.3 80.5 19.8 83.6 23.2C86.7 26.6 81.6 36.8 82.2 42.7C82.7 48.5 88.6 54.2 87 58.5C85.5 62.7 75.6 62.7 72.7 68.1C69.8 73.4 73.3 88.2 69.5 90.5C65.7 92.9 56.1 82.9 50 82C43.9 81.1 37 87.4 33.1 85.1C29.2 82.9 30.5 73 26.5 68.7C22.5 64.4 10.2 63.6 9.1 59.3C7.9 55.1 17.8 48.5 19.8 43.1C21.8 37.7 18.2 30.3 21.1 26.9C23.9 23.6 32.2 25.8 37 23C41.8 20.1 45.6 10.2 50 10Z"],dots:[[91,84,4],[12,84,3],[86,11,2.6]]},
-    sun:{body:["M50 16A34 34 0 1 1 49.99 16Z"],rays:SUN_RAYS},
-    alien:{body:["M50 7C77 7 96 21 96 40C96 53 88 62 77 72C67 82 59 93 50 93C41 93 33 82 23 72C12 62 4 53 4 40C4 21 23 7 50 7Z"]}
+    gear:{body:["M43.8 12.5L45.0 3.3A47 47 0 0 1 55.0 3.3L56.2 12.5A38 38 0 0 1 67.0 16.0L73.4 9.2A47 47 0 0 1 81.5 15.1L77.0 23.3A38 38 0 0 1 83.7 32.5L92.9 30.8A47 47 0 0 1 96.0 40.3L87.6 44.3A38 38 0 0 1 87.6 55.7L96.0 59.7A47 47 0 0 1 92.9 69.2L83.7 67.5A38 38 0 0 1 77.0 76.7L81.5 84.9A47 47 0 0 1 73.4 90.8L67.0 84.0A38 38 0 0 1 56.2 87.5L55.0 96.7A47 47 0 0 1 45.0 96.7L43.8 87.5A38 38 0 0 1 33.0 84.0L26.6 90.8A47 47 0 0 1 18.5 84.9L23.0 76.7A38 38 0 0 1 16.3 67.5L7.1 69.2A47 47 0 0 1 4.0 59.7L12.4 55.7A38 38 0 0 1 12.4 44.3L4.0 40.3A47 47 0 0 1 7.1 30.8L16.3 32.5A38 38 0 0 1 23.0 23.3L18.5 15.1A47 47 0 0 1 26.6 9.2L33.0 16.0A38 38 0 0 1 43.8 12.5Z"]},
+    alien:{body:["M50 8C76 8 96 21 96 40C96 56 84 70 72 80C64 87 57 90 50 90C43 90 36 87 28 80C16 70 4 56 4 40C4 21 24 8 50 8Z"]}
   };
   function outlineSvg(name){
     const o=OUTLINES[name];if(!o)return"";
     return '<svg class="evia-outline" viewBox="0 0 100 100" aria-hidden="true" focusable="false">'+
       o.body.map(d=>'<path class="evia-outline-body" d="'+d+'"/>').join("")+
       (o.dots||[]).map(c=>'<circle class="evia-outline-body" cx="'+c[0]+'" cy="'+c[1]+'" r="'+c[2]+'"/>').join("")+
-      (o.rays?'<path class="evia-outline-ray" d="'+o.rays+'"/>':"")+
     '</svg>';
   }
   /* Every place Evia's face appears gets the outline for its shape: pickers use their own shape, everything else the learner's. */
@@ -61,7 +59,7 @@
     document.documentElement.setAttribute("data-evia-theme",THEMES[name]?name:"yellow");
   }
   function currentTheme(){return localStorage.getItem(KEY)||"yellow"}
-  function currentShape(){const saved=localStorage.getItem(SHAPE_KEY);return SHAPES[saved]?saved:"circle"}
+  function currentShape(){const saved=({sun:"gear"})[localStorage.getItem(SHAPE_KEY)]||localStorage.getItem(SHAPE_KEY);return SHAPES[saved]?saved:"circle"}
   function setShape(name){
     if(!SHAPES[name])return;
     localStorage.setItem(SHAPE_KEY,name);

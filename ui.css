@@ -272,18 +272,16 @@ html body .otj-compact button{min-height:42px;padding:8px 14px;border-radius:12p
 .ui-more-units svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .chat-sheet .chat-options .chat-pill:last-child:nth-child(odd){grid-column:1/-1}
 
-/* ---- Evia outline shapes (thought, splat, sun, alien): theme.js draws an SVG behind the eyes ---- */
+/* ---- Evia outline shapes (cloud, splat, gear, alien): theme.js draws an SVG behind the eyes ---- */
 html[data-evia-shape] body .evia-svg-shape[data-evia-outline]{background:transparent!important;border-color:transparent!important;border-radius:0!important;clip-path:none!important;box-shadow:none!important;overflow:visible!important}
 html[data-evia-shape] body .evia-svg-shape[data-evia-outline]:before{display:none!important}
 html body .evia-svg-shape>.evia-face{position:relative;z-index:1}
 .evia-outline{position:absolute;inset:-14%;width:128%;height:128%;overflow:visible;pointer-events:none;z-index:0}
 .evia-outline-body{fill:#fff;stroke:var(--evia-shape-stroke,var(--yellow));stroke-width:var(--evia-shape-width,3px);vector-effect:non-scaling-stroke;stroke-linejoin:round}
-.evia-outline-ray{fill:none;stroke:var(--evia-shape-stroke,var(--yellow));stroke-width:var(--evia-shape-width,3px);vector-effect:non-scaling-stroke;stroke-linecap:round}
 html body .evia-fab.evia-svg-shape .evia-outline{filter:drop-shadow(0 6px 8px rgba(16,24,40,.12))}
 .evia-theme-avatar.evia-svg-shape{--evia-shape-stroke:var(--opt-accent)}
 .evia-shape-avatar.evia-svg-shape,.evia-theme-avatar.evia-svg-shape,.evia-welcome-face.evia-svg-shape{--evia-shape-width:3.5px}
 .evia-outline-alien .evia-outline{inset:-6%;width:112%;height:112%}
-.evia-outline-cloud>.evia-face{translate:0 -7%}
-.evia-outline-alien>.evia-face{translate:0 -9%}
+.evia-outline-alien>.evia-face{translate:0 -7%}
 .evia-outline-alien>.evia-face i:first-child{rotate:-18deg}
 .evia-outline-alien>.evia-face i:nth-child(2){rotate:18deg}
