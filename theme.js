@@ -102,7 +102,7 @@
       '.evia-shape-avatar:before{content:"";position:absolute;inset:4px;background:#fffdfa;z-index:0}'+
       '.evia-shape-avatar .evia-face{position:relative;z-index:1}'+
       '.shape-circle,.shape-circle:before{border-radius:50%}'+
-      '.shape-cloud,.shape-cloud:before{border-radius:42% 42% 46% 46% / 48% 48% 42% 42%;}'+
+      '.shape-cloud,.shape-cloud:before{clip-path:polygon(18% 75%,12% 65%,14% 52%,22% 43%,32% 40%,37% 29%,49% 23%,61% 25%,69% 33%,79% 34%,88% 41%,91% 52%,88% 63%,94% 72%,89% 82%,76% 85%,24% 85%)}'+
       '.shape-squircle,.shape-squircle:before{border-radius:30%}'+
       '.shape-hexagon,.shape-hexagon:before{clip-path:polygon(25% 2%,75% 2%,100% 50%,75% 98%,25% 98%,0 50%);border-radius:0}'+
       '.shape-diamond,.shape-diamond:before{clip-path:polygon(50% 1%,99% 50%,50% 99%,1% 50%);border-radius:0}'+
