@@ -812,8 +812,12 @@ html[data-evia-shape="diamond"] .welcome-avatar .evia-face{
   z-index:1;
 }
 html[data-evia-shape="teardrop"] .evia-fab,
-html[data-evia-shape="teardrop"] .welcome-avatar{border-radius:52% 52% 52% 12%!important;clip-path:none!important;transform:translateX(-50%) rotate(-45deg)}
-html[data-evia-shape="teardrop"] .evia-fab .evia-face,
-html[data-evia-shape="teardrop"] .welcome-avatar .evia-face{transform:rotate(45deg)}
-html[data-evia-shape="teardrop"] .evia-fab:after{transform:rotate(45deg)}
-html[data-evia-shape="teardrop"] .welcome-avatar{transform:rotate(-45deg)}
+html[data-evia-shape="teardrop"] .welcome-avatar{
+  border:0!important;
+  border-radius:0!important;
+  background:var(--evia-accent)!important;
+  clip-path:polygon(50% 0,72% 8%,88% 25%,95% 48%,88% 68%,73% 84%,58% 94%,50% 100%,42% 94%,27% 84%,12% 68%,5% 48%,12% 25%,28% 8%)!important;
+  transform:translateX(-50%);
+}
+html[data-evia-shape="teardrop"] .welcome-avatar{transform:none}
+html[data-evia-shape="teardrop"] .evia-fab:after{transform:none}
