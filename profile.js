@@ -25,7 +25,7 @@
       '</div>'+
       '<div class="profile-block"><div class="profile-kicker">YOUR COURSE</div><div class="course-options">'+Object.keys(C).map(k=>'<button type="button" class="course-option '+(k===course?"selected":"")+'" data-profile-course="'+k+'">'+esc(C[k].name)+'<span>›</span></button>').join("")+'</div></div>'+
       '<div class="profile-block"><div class="profile-kicker">MATHS & ENGLISH</div><p>Choose which subjects Evia should include in your tests and progress reviews.</p><label class="study-check"><input id="profile-maths" type="checkbox"><span>I am studying Maths</span></label><label class="study-check"><input id="profile-english" type="checkbox"><span>I am studying English</span></label></div>'+
-      '<div class="profile-block"><div class="settings-list"><button type="button" class="settings-entry" id="open-settings"><span class="settings-entry-icon" aria-hidden="true">Aa</span><span class="settings-entry-copy"><strong>Accessibility & settings</strong><small>Personalise how Evia looks, reads and behaves</small></span><span class="settings-entry-arrow" aria-hidden="true">›</span></button><button type="button" class="settings-entry" id="open-theme-picker"><span class="settings-entry-icon" aria-hidden="true"><i class="evia-theme-dot"></i></span><span class="settings-entry-copy"><strong>Evia colour</strong><small>Choose the colour Evia uses throughout the app</small></span><span class="settings-entry-arrow" aria-hidden="true">›</span></button></div></div><div class="profile-block"><div class="profile-kicker">YOUR SIGNATURE</div><p>Write your signature with your finger. It will be attached to saved evidence with the time and date.</p><div class="signature-wrap"><canvas id="signature-pad" width="900" height="260"></canvas><button type="button" id="clear-signature">Clear</button></div></div>'+
+      '<div class="profile-block"><div class="settings-list"><button type="button" class="settings-entry" id="open-settings"><span class="settings-entry-icon" aria-hidden="true">Aa</span><span class="settings-entry-copy"><strong>Accessibility & settings</strong><small>Personalise how Evia looks, reads and behaves</small></span><span class="settings-entry-arrow" aria-hidden="true">›</span></button><button type="button" class="settings-entry" id="open-shape-picker"><span class="settings-entry-icon" aria-hidden="true"><i class="evia-theme-dot"></i></span><span class="settings-entry-copy"><strong>Evia shape</strong><small>Choose the shape of Evia</small></span><span class="settings-entry-arrow" aria-hidden="true">›</span></button><button type="button" class="settings-entry" id="open-theme-picker"><span class="settings-entry-icon" aria-hidden="true"><i class="evia-theme-dot"></i></span><span class="settings-entry-copy"><strong>Evia colour</strong><small>Choose the colour Evia uses throughout the app</small></span><span class="settings-entry-arrow" aria-hidden="true">›</span></button></div></div><div class="profile-block"><div class="profile-kicker">YOUR SIGNATURE</div><p>Write your signature with your finger. It will be attached to saved evidence with the time and date.</p><div class="signature-wrap"><canvas id="signature-pad" width="900" height="260"></canvas><button type="button" id="clear-signature">Clear</button></div></div>'+
       '<div class="profile-actions"><button type="button" class="secondary" id="download-portfolio">Download PDF</button><button type="button" class="primary" id="save-profile">Save profile</button></div>'+
       '</section></div>';
 
@@ -45,6 +45,11 @@
     };
     document.querySelectorAll("[data-profile-course]").forEach(b=>b.onclick=()=>{course=b.dataset.profileCourse;persist();openProfile();});
     document.getElementById("open-settings").onclick=()=>openSettings();document.getElementById("open-settings").onkeydown=e=>{if(e.key==="Enter"||e.key===" ")openSettings()};
+    const shapePickerBtn=document.getElementById("open-shape-picker");
+    if(shapePickerBtn){
+      shapePickerBtn.onclick=()=>{if(window.eviaShowShapePicker)window.eviaShowShapePicker()};
+      shapePickerBtn.onkeydown=e=>{if((e.key==="Enter"||e.key===" ")&&window.eviaShowShapePicker)window.eviaShowShapePicker()};
+    }
     const themePickerBtn=document.getElementById("open-theme-picker");
     if(themePickerBtn){
       themePickerBtn.onclick=()=>{if(window.eviaShowThemePicker)window.eviaShowThemePicker()};
@@ -425,7 +430,14 @@
       .welcome-avatar{width:138px;height:138px;border-radius:50%;border:6px solid var(--yellow);background:#fffdfa;box-shadow:0 18px 45px rgba(16,24,40,.12);display:grid;place-items:center;position:relative;z-index:2;overflow:hidden;cursor:pointer}.welcome-pulse{position:absolute;width:150px;height:150px;border:1px solid var(--yellow);border-radius:50%;animation:welcomePulse 2.1s ease-out infinite}.welcome-copy h2{font-size:28px;letter-spacing:-.045em;margin:0 0 5px}.welcome-copy p{font-size:15px;color:#7b8797;margin:0}.welcome-app-hidden{opacity:0!important;transition:opacity .56s ease!important}.welcome-app-hidden.welcome-app-visible{opacity:1!important}.welcome-main-hidden,.welcome-main-visible,.welcome-revealed{animation:none!important}@keyframes welcomePulse{0%{transform:scale(.75);opacity:.75}70%,100%{transform:scale(1.25);opacity:0}}@keyframes revealScreen{from{opacity:0}to{opacity:1}}@media(prefers-reduced-motion:reduce){#app.welcome-app-hidden,#welcome-screen,.welcome-flying,.welcome-revealed{animation:none!important;transition:none!important}.welcome-pulse{animation:none!important}
     `;
     document.head.appendChild(style);
-    if(window.eviaShowThemePicker&&!(window.eviaThemeHasBeenPicked&&window.eviaThemeHasBeenPicked())){
+    const shapePicked=window.eviaShapeHasBeenPicked&&window.eviaShapeHasBeenPicked();
+    const colourPicked=window.eviaThemeHasBeenPicked&&window.eviaThemeHasBeenPicked();
+    if(!shapePicked&&window.eviaShowShapePicker){
+      window.eviaShowShapePicker(()=>{
+        if(window.eviaShowThemePicker&&!colourPicked)window.eviaShowThemePicker(welcome);
+        else welcome();
+      });
+    }else if(!colourPicked&&window.eviaShowThemePicker){
       window.eviaShowThemePicker(welcome);
     }else{
       welcome();
