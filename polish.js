@@ -124,14 +124,15 @@
           '<p>Capture the whole job in one pack. Take photos from the <strong>beginning, middle and end</strong> of the job.</p>'+
         '</div>'+
         '<div class="evidence-photo-actions">'+
-          '<label class="evidence-photo-button"><span>Camera</span><input id="evidence-camera" type="file" accept="image/*" capture="environment"></label>'+
-          '<label class="evidence-photo-button"><span>Gallery</span><input id="evidence-gallery" type="file" accept="image/*" multiple></label>'+
+          '<label class="evidence-photo-button" for="evidence-camera"><span class="evidence-photo-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="18" height="14" rx="3"></rect><path d="M8 6.5l1.4-2h5.2l1.4 2"></path><circle cx="12" cy="13.5" r="3.5"></circle></svg></span><span>Camera</span><input id="evidence-camera" type="file" accept="image/*" capture="environment"></label>'+
+          '<label class="evidence-photo-button" for="evidence-gallery"><span class="evidence-photo-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"></rect><circle cx="8.5" cy="9.5" r="1.6"></circle><path d="M4 16.5l5-5 4 4 3-3 4 4"></path></svg></span><span>Gallery</span><input id="evidence-gallery" type="file" accept="image/*" multiple></label>'+
         '</div>'+
         '<div class="evidence-thumbs" id="evidence-photos"></div>'+
         '<section class="evidence-section">'+
           '<div class="evidence-section-title">THINGS TO CAPTURE</div>'+
           '<div class="compact-prompts">'+esc(prompts.photos)+'</div>'+
         '</section>'+
+        '<div class="evidence-section-divider"></div>'+
         '<section class="evidence-section writeup-section">'+
           '<div class="evidence-section-title">EXPLAIN THE PROCESS AND WHAT YOU DID</div>'+
           '<div class="evidence-section-title evidence-subtitle">THINGS TO MENTION</div>'+
@@ -255,10 +256,13 @@
       .evidence-label{font-size:11px;font-weight:700;letter-spacing:.1em;color:#98a2b3}
       .evidence-heading h2{margin:6px 0 7px;font-size:26px;line-height:1.16;letter-spacing:-.025em}
       .evidence-heading p{max-width:560px;margin:0;font-size:13px;line-height:1.55;color:#667085}
-      .evidence-photo-actions{display:flex;gap:8px;margin-top:16px}
-      .evidence-photo-button{min-height:40px;display:flex;align-items:center;justify-content:center;padding:0 14px;border:1px solid #e3e7ed;border-radius:11px;background:#fff;font-size:12px;font-weight:650;color:#273244;cursor:pointer;transition:transform .15s ease,background .15s ease,border-color .15s ease}
-      .evidence-photo-button:active{transform:scale(.985);background:#f8fafb}
+      .evidence-photo-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+      .evidence-photo-button{aspect-ratio:1/1;min-height:0;height:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:10px;border:1px solid #e3e7ed;border-radius:20px;background:#fff;font-size:13px;font-weight:700;color:#273244;cursor:pointer;transition:transform .15s ease,background .15s ease,border-color .15s ease}
+      .evidence-photo-button:active{transform:scale(.96);background:#f8fafb}
       .evidence-photo-button input{display:none}
+      .evidence-photo-icon{width:44px;height:44px;border-radius:50%;background:var(--soft,#fff7d6);display:flex;align-items:center;justify-content:center;color:var(--yellow-ink,#6e5c00);flex:0 0 auto}
+      .evidence-photo-icon svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;display:block}
+      .evidence-section-divider{height:1px;background:linear-gradient(90deg,transparent,var(--line,#edf0f4) 12%,var(--line,#edf0f4) 88%,transparent);margin:22px 2px}
       .evidence-thumbs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}
       .evidence-thumbs:empty{display:none}
       .photo-item{position:relative;min-width:0}
