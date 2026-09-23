@@ -16,7 +16,8 @@
     root.setProperty("--yellow",t.accent);
     root.setProperty("--soft",t.soft);
     root.setProperty("--yellow-line",t.line);
-    root.setProperty("--yellow-ink",t.ink);\n    root.setProperty("--bg",t.bg);
+    root.setProperty("--yellow-ink",t.ink);
+    root.setProperty("--bg",t.bg);
     document.documentElement.setAttribute("data-evia-theme",THEMES[name]?name:"yellow");
   }
   function currentTheme(){return localStorage.getItem(KEY)||"yellow"}
