@@ -786,8 +786,8 @@ html[data-evia-shape="cloud"] .welcome-avatar{
 }
 html[data-evia-shape="cloud"] .evia-fab:before,
 html[data-evia-shape="cloud"] .welcome-avatar:before{
-  content:"";position:absolute;inset:3px;background:var(--bg,#fffdfa);z-index:0;
-  clip-path:inherit;
+  content:"";position:absolute;inset:0;background:var(--bg,#fffdfa);z-index:0;
+  clip-path:inherit;transform:scale(.86);transform-origin:center;
 }
 html[data-evia-shape="cloud"] .evia-fab .evia-face,
 html[data-evia-shape="cloud"] .welcome-avatar .evia-face{position:relative;z-index:1}
