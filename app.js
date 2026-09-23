@@ -203,6 +203,21 @@ async function openSupportingEvidence(){
  document.querySelectorAll("[data-supporting-type]").forEach(btn=>btn.onclick=()=>supportingPrepare(base,btn.dataset.supportingType));
 }
 function supportingCapture(){openSupportingEvidence()}
+let eviaToastTimer=null;
+function showEvidenceToast(message){
+ const existing=document.querySelector(".evidence-toast");
+ if(existing)existing.remove();
+ if(eviaToastTimer)clearTimeout(eviaToastTimer);
+ const toast=document.createElement("div");
+ toast.className="evidence-toast";
+ toast.innerHTML='<span class="evidence-toast-check"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l5 5L19 7"></path></svg></span><span>'+message+'</span>';
+ document.body.appendChild(toast);
+ requestAnimationFrame(()=>requestAnimationFrame(()=>toast.classList.add("show")));
+ eviaToastTimer=setTimeout(()=>{
+   toast.classList.remove("show");
+   setTimeout(()=>toast.remove(),320);
+ },2200);
+}
 function supportingPrepare(base,type){
  const label={photo:"Photo",video:"Video",audio:"Audio",document:"File"}[type]||"File";
  const now=()=>new Date().toLocaleString("en-GB",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",second:"2-digit"}).replace(/[/:]/g,"-").replace(", ","_");
@@ -218,6 +233,7 @@ function supportingPrepare(base,type){
      const record={id,course,title:fileName,type,mime:fileMime||fileBlob.type||"application/octet-stream",filename:fileName,addedAt:new Date().toISOString(),size:fileBlob.size};
      await supportingSaveRecord(record,fileBlob);
      close();
+     showEvidenceToast("Added to Portfolio");
      openSupportingEvidence();
    }catch(e){console.error("Supporting evidence save failed",e);alert("Evia could not save this supporting evidence.");}
  };
