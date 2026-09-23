@@ -13,11 +13,8 @@
   const SHAPE_PICKED_KEY="evia7-shape-picked";
   const SHAPES={
     circle:{label:"Circle",className:"circle"},
-    cloud:{label:"Cloud",className:"cloud"},
     squircle:{label:"Squircle",className:"squircle"},
-    hexagon:{label:"Hexagon",className:"hexagon"},
-    diamond:{label:"Diamond",className:"diamond"},
-    splat:{label:"Splat",className:"splat"}
+    rounded:{label:"Rounded square",className:"rounded"}
   };
 
   function applyTheme(name){
@@ -90,9 +87,7 @@
       '.evia-theme-avatar.shape-circle,.evia-theme-avatar.shape-circle:before,.evia-shape-avatar.shape-circle,.evia-shape-avatar.shape-circle:before{border-radius:50%}'+
       '.evia-theme-avatar.shape-cloud,.evia-theme-avatar.shape-cloud:before,.evia-shape-avatar.shape-cloud,.evia-shape-avatar.shape-cloud:before{clip-path:polygon(50% 4%,62% 4%,72% 10%,80% 20%,90% 25%,96% 36%,96% 52%,91% 64%,82% 70%,76% 82%,64% 90%,50% 90%,36% 90%,24% 82%,18% 70%,9% 64%,4% 52%,4% 36%,10% 25%,20% 20%,28% 10%,38% 4%)}'+
       '.evia-theme-avatar.shape-squircle,.evia-theme-avatar.shape-squircle:before,.evia-shape-avatar.shape-squircle,.evia-shape-avatar.shape-squircle:before{border-radius:30%}'+
-      '.evia-theme-avatar.shape-hexagon,.evia-theme-avatar.shape-hexagon:before,.evia-shape-avatar.shape-hexagon,.evia-shape-avatar.shape-hexagon:before{clip-path:polygon(25% 2%,75% 2%,100% 50%,75% 98%,25% 98%,0 50%);border-radius:0}'+
-      '.evia-theme-avatar.shape-diamond,.evia-theme-avatar.shape-diamond:before,.evia-shape-avatar.shape-diamond,.evia-shape-avatar.shape-diamond:before{clip-path:polygon(50% 1%,99% 50%,50% 99%,1% 50%);border-radius:0}'+
-      '.evia-theme-avatar.shape-splat,.evia-theme-avatar.shape-splat:before,.evia-shape-avatar.shape-splat,.evia-shape-avatar.shape-splat:before{clip-path:polygon(50% 2%,61% 16%,77% 8%,79% 25%,96% 25%,84% 40%,98% 50%,84% 60%,96% 75%,79% 75%,77% 92%,61% 84%,50% 98%,39% 84%,23% 92%,21% 75%,4% 75%,16% 60%,2% 50%,16% 40%,4% 25%,21% 25%,23% 8%,39% 16%)}'+
+      '.evia-theme-avatar.shape-rounded,.evia-theme-avatar.shape-rounded:before,.evia-shape-avatar.shape-rounded,.evia-shape-avatar.shape-rounded:before{border-radius:18%}'+
       '.evia-theme-option strong,.evia-shape-option strong{font-size:12px;font-weight:700;color:#273244}'+
       '.evia-shape-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}'+
       '.evia-shape-option{display:flex;flex-direction:column;align-items:center;gap:10px;padding:14px 6px;border-radius:20px;border:2px solid #edf0f4;background:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(25,36,55,.05)}'+
