@@ -17,7 +17,7 @@
     squircle:{label:"Squircle",className:"squircle"},
     hexagon:{label:"Hexagon",className:"hexagon"},
     diamond:{label:"Diamond",className:"diamond"},
-    teardrop:{label:"Teardrop",className:"teardrop"}
+    splat:{label:"Splat",className:"splat"}
   };
 
   function applyTheme(name){
