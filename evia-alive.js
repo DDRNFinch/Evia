@@ -2,7 +2,8 @@
    variables on <html> (--evia-lx/--evia-ly: where she looks, --evia-sy: how open her eyes are) plus a few mood classes. */
 (function(){
   const root=document.documentElement;
-  const reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  /* The Reduce motion setting (or the phone's own setting) keeps her still apart from blinking. */
+  const reduce=()=>window.eviaAccessibility?window.eviaAccessibility.reducedMotion():!!(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   const set=(k,v)=>root.style.setProperty(k,v);
   let lookTimer=null,idleTimer=null,moodTimer=null,sleeping=false,busy=false;
   const fab=()=>document.getElementById("evia-fab");
@@ -16,7 +17,7 @@
   }
   /* x and y are percentages of the eye's own size, so the same glance works on the small button and the big welcome face. */
   function look(x,y,hold){
-    if(reduce)return;
+    if(reduce())return;
     set("--evia-lx",x.toFixed(1)+"%");set("--evia-ly",y.toFixed(1)+"%");
     set("--evia-tilt",(x/30*5).toFixed(2)+"deg"); /* her body leans a little towards where she looks */
     clearTimeout(lookTimer);
@@ -30,7 +31,7 @@
   }
   /* Restart a one-shot body animation class (hop or squish). */
   function play(cls,ms){
-    const el=fab();if(!el||reduce)return;
+    const el=fab();if(!el||reduce())return;
     el.classList.remove("evia-hop","evia-squish");void el.offsetWidth;el.classList.add(cls);
     setTimeout(()=>el.classList.remove(cls),ms);
   }
