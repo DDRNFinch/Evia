@@ -7,7 +7,7 @@
   const COURSES=[
     {key:"bricklayer",label:"Bricklayer",sub:"Brickwork and blockwork"},
     {key:"site",label:"Site Carpenter",sub:"Carpentry on site"},
-    {key:"joiner",label:"Bench Joiner",sub:"Architectural Joiner · workshop joinery"}
+    {key:"joiner",label:"Bench Joiner",sub:"Joinery in the workshop"}
   ];
   const escHtml=s=>String(s??"").replace(/[&<>"']/g,x=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[x]));
   const readState=()=>{try{return JSON.parse(localStorage.getItem(KEY)||"null")}catch(_){return null}};
