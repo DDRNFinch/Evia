@@ -82,9 +82,17 @@
       '.evia-theme-option{display:flex;flex-direction:column;align-items:center;gap:10px;padding:14px 6px;border-radius:20px;border:2px solid #edf0f4;background:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(25,36,55,.05)}'+
       '.evia-theme-option.selected{border-color:var(--opt-accent)}'+
       '.evia-theme-option:active{transform:scale(.97)}'+
-      '.evia-theme-avatar{width:64px;height:64px;border-radius:50%;background:#fffdfa;border:4px solid var(--opt-accent);display:grid;place-items:center;position:relative}'+
+      '.evia-theme-avatar{width:64px;height:64px;background:var(--opt-accent);border:0;display:grid;place-items:center;position:relative;overflow:hidden}'+
+      '.evia-theme-avatar:before{content:"";position:absolute;inset:4px;background:#fffdfa;z-index:0}'+
+      '.evia-theme-avatar .evia-face{position:relative;z-index:1}'+
       '.evia-theme-avatar .evia-face i{border-color:var(--opt-accent)!important;background:transparent!important}'+
       '.evia-theme-avatar .evia-face i:after{background:var(--opt-accent)!important}'+
+      '.evia-theme-avatar.shape-circle,.evia-theme-avatar.shape-circle:before,.evia-shape-avatar.shape-circle,.evia-shape-avatar.shape-circle:before{border-radius:50%}'+
+      '.evia-theme-avatar.shape-cloud,.evia-theme-avatar.shape-cloud:before,.evia-shape-avatar.shape-cloud,.evia-shape-avatar.shape-cloud:before{clip-path:polygon(18% 75%,12% 65%,14% 52%,22% 43%,32% 40%,37% 29%,49% 23%,61% 25%,69% 33%,79% 34%,88% 41%,91% 52%,88% 63%,94% 72%,89% 82%,76% 85%,24% 85%)}'+
+      '.evia-theme-avatar.shape-squircle,.evia-theme-avatar.shape-squircle:before,.evia-shape-avatar.shape-squircle,.evia-shape-avatar.shape-squircle:before{border-radius:30%}'+
+      '.evia-theme-avatar.shape-hexagon,.evia-theme-avatar.shape-hexagon:before,.evia-shape-avatar.shape-hexagon,.evia-shape-avatar.shape-hexagon:before{clip-path:polygon(25% 2%,75% 2%,100% 50%,75% 98%,25% 98%,0 50%);border-radius:0}'+
+      '.evia-theme-avatar.shape-diamond,.evia-theme-avatar.shape-diamond:before,.evia-shape-avatar.shape-diamond,.evia-shape-avatar.shape-diamond:before{clip-path:polygon(50% 1%,99% 50%,50% 99%,1% 50%);border-radius:0}'+
+      '.evia-theme-avatar.shape-splat,.evia-theme-avatar.shape-splat:before,.evia-shape-avatar.shape-splat,.evia-shape-avatar.shape-splat:before{clip-path:polygon(50% 0%,58% 13%,68% 3%,71% 18%,84% 11%,81% 28%,98% 26%,88% 41%,100% 50%,87% 59%,95% 74%,79% 72%,82% 89%,66% 82%,57% 100%,48% 87%,38% 96%,34% 82%,18% 90%,21% 74%,3% 77%,12% 61%,0 52%,13 43%,6 28%,21 30%,16 13%,33 19%,40 3%)}'+
       '.evia-theme-option strong,.evia-shape-option strong{font-size:12px;font-weight:700;color:#273244}'+
       '.evia-shape-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}'+
       '.evia-shape-option{display:flex;flex-direction:column;align-items:center;gap:10px;padding:14px 6px;border-radius:20px;border:2px solid #edf0f4;background:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(25,36,55,.05)}'+
