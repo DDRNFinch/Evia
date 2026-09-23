@@ -13,7 +13,7 @@
   const SHAPE_PICKED_KEY="evia7-shape-picked";
   const SHAPES={
     circle:{label:"Circle",className:"circle"},
-    rounded:{label:"Rounded square",className:"rounded"},
+    cloud:{label:"Cloud",className:"cloud"},
     squircle:{label:"Squircle",className:"squircle"},
     hexagon:{label:"Hexagon",className:"hexagon"},
     diamond:{label:"Diamond",className:"diamond"},
@@ -93,7 +93,7 @@
       '.evia-shape-avatar:before{content:"";position:absolute;inset:4px;background:#fffdfa;z-index:0}'+
       '.evia-shape-avatar .evia-face{position:relative;z-index:1}'+
       '.shape-circle,.shape-circle:before{border-radius:50%}'+
-      '.shape-rounded,.shape-rounded:before{border-radius:18%}'+
+      '.shape-cloud,.shape-cloud:before{border-radius:42% 42% 46% 46% / 48% 48% 42% 42%;}'+
       '.shape-squircle,.shape-squircle:before{border-radius:30%}'+
       '.shape-hexagon,.shape-hexagon:before{clip-path:polygon(25% 2%,75% 2%,100% 50%,75% 98%,25% 98%,0 50%);border-radius:0}'+
       '.shape-diamond,.shape-diamond:before{clip-path:polygon(50% 1%,99% 50%,50% 99%,1% 50%);border-radius:0}'+
