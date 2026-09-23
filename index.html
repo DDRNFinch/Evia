@@ -71,7 +71,7 @@ html.evia-booting body{visibility:hidden}
 </nav>
 </div>
 <div id="modal-root"></div>
-<script src="storage.js?v=storage-v1" data-app-scripts="app.js polish.js ./capture-redesign.js?v=20260921-2 theme.js?v=evia-theme-v1 onboarding.js?v=onboarding-v2 profile.js?v=storage-v1 test-banks.js review.js?v=target-complete-v1 repair.js?v=evia7-idb-test"></script>
+<script src="storage.js?v=storage-v1" data-app-scripts="app.js polish.js ./capture-redesign.js?v=20260921-2 theme.js?v=evia-theme-v1 onboarding.js?v=onboarding-v2 profile.js?v=storage-v1 eportfolio.js?v=eport-v1 test-banks.js review.js?v=target-complete-v1 repair.js?v=evia7-idb-test"></script>
 <script>
 (function(){
   if (!("serviceWorker" in navigator)) return;
@@ -79,7 +79,7 @@ html.evia-booting body{visibility:hidden}
   navigator.serviceWorker.addEventListener("controllerchange",function(){if(reloading)return;reloading=true;window.location.reload();});
   window.addEventListener("load", async function(){
     try {
-      const registration=await navigator.serviceWorker.register("./sw-v16.js?v=evia7-v28",{updateViaCache:"none"});
+      const registration=await navigator.serviceWorker.register("./sw-v16.js?v=evia7-v29",{updateViaCache:"none"});
       await registration.update();
       const activateWaiting=worker=>{if(!worker)return;worker.postMessage({type:"SKIP_WAITING"});};
       if(registration.waiting) activateWaiting(registration.waiting);

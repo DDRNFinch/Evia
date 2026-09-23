@@ -402,10 +402,8 @@ function progress(){
  '</div>';
  document.querySelectorAll("[data-unit-open]").forEach(b=>b.onclick=()=>{
    const name=b.getAttribute("data-unit-open");
-   if(window.downloadUnitEvidencePack)window.downloadUnitEvidencePack(name);
-   const state=JSON.parse(localStorage.getItem("evia7-downloaded-unit-pdfs")||"{}");
-   state[course+"|"+name]=Date.now();
-   localStorage.setItem("evia7-downloaded-unit-pdfs",JSON.stringify(state));
+   if(window.eviaOpenSendToPortfolio)window.eviaOpenSendToPortfolio(name);
+   else if(window.downloadUnitEvidencePack)window.downloadUnitEvidencePack(name);
  });
  const supportingCard=$("#supporting-portfolio-file");
  if(supportingCard)supportingCard.onclick=()=>openSupportingPortfolio();
