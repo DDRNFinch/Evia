@@ -772,8 +772,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text"
 }
 html[data-evia-shape="circle"] .evia-fab,
 html[data-evia-shape="circle"] .welcome-avatar{border-radius:50%!important;clip-path:none!important}
-html[data-evia-shape="rounded"] .evia-fab,
-html[data-evia-shape="rounded"] .welcome-avatar{border-radius:18%!important;clip-path:none!important}
+html[data-evia-shape="blob"] .evia-fab,
+html[data-evia-shape="blob"] .welcome-avatar,
+html[data-evia-shape="blob"] .evia-face-wrap,
+html[data-evia-shape="blob"] .target-evia{border-radius:58% 42% 46% 54% / 43% 52% 48% 57%!important;clip-path:none!important}
 html[data-evia-shape="squircle"] .evia-fab,
 html[data-evia-shape="squircle"] .welcome-avatar{border-radius:30%!important;clip-path:none!important}
 html[data-evia-shape="cloud"] .evia-fab,
