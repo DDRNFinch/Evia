@@ -88,7 +88,7 @@
       '.evia-theme-avatar .evia-face i{border-color:var(--opt-accent)!important;background:transparent!important}'+
       '.evia-theme-avatar .evia-face i:after{background:var(--opt-accent)!important}'+
       '.evia-theme-avatar.shape-circle,.evia-theme-avatar.shape-circle:before,.evia-shape-avatar.shape-circle,.evia-shape-avatar.shape-circle:before{border-radius:50%}'+
-      '.evia-theme-avatar.shape-cloud,.evia-theme-avatar.shape-cloud:before,.evia-shape-avatar.shape-cloud,.evia-shape-avatar.shape-cloud:before{clip-path:polygon(18% 75%,12% 65%,14% 52%,22% 43%,32% 40%,37% 29%,49% 23%,61% 25%,69% 33%,79% 34%,88% 41%,91% 52%,88% 63%,94% 72%,89% 82%,76% 85%,24% 85%)}'+
+      '.evia-theme-avatar.shape-cloud,.evia-theme-avatar.shape-cloud:before,.evia-shape-avatar.shape-cloud,.evia-shape-avatar.shape-cloud:before{clip-path:polygon(50% 4%,62% 4%,72% 10%,80% 20%,90% 25%,96% 36%,96% 52%,91% 64%,82% 70%,76% 82%,64% 90%,50% 90%,36% 90%,24% 82%,18% 70%,9% 64%,4% 52%,4% 36%,10% 25%,20% 20%,28% 10%,38% 4%)}'+
       '.evia-theme-avatar.shape-squircle,.evia-theme-avatar.shape-squircle:before,.evia-shape-avatar.shape-squircle,.evia-shape-avatar.shape-squircle:before{border-radius:30%}'+
       '.evia-theme-avatar.shape-hexagon,.evia-theme-avatar.shape-hexagon:before,.evia-shape-avatar.shape-hexagon,.evia-shape-avatar.shape-hexagon:before{clip-path:polygon(25% 2%,75% 2%,100% 50%,75% 98%,25% 98%,0 50%);border-radius:0}'+
       '.evia-theme-avatar.shape-diamond,.evia-theme-avatar.shape-diamond:before,.evia-shape-avatar.shape-diamond,.evia-shape-avatar.shape-diamond:before{clip-path:polygon(50% 1%,99% 50%,50% 99%,1% 50%);border-radius:0}'+
@@ -102,7 +102,7 @@
       '.evia-shape-avatar:before{content:"";position:absolute;inset:4px;background:#fffdfa;z-index:0}'+
       '.evia-shape-avatar .evia-face{position:relative;z-index:1}'+
       '.shape-circle,.shape-circle:before{border-radius:50%}'+
-      '.shape-cloud,.shape-cloud:before{clip-path:polygon(18% 75%,12% 65%,14% 52%,22% 43%,32% 40%,37% 29%,49% 23%,61% 25%,69% 33%,79% 34%,88% 41%,91% 52%,88% 63%,94% 72%,89% 82%,76% 85%,24% 85%)}'+
+      '.shape-cloud,.shape-cloud:before{clip-path:polygon(50% 4%,62% 4%,72% 10%,80% 20%,90% 25%,96% 36%,96% 52%,91% 64%,82% 70%,76% 82%,64% 90%,50% 90%,36% 90%,24% 82%,18% 70%,9% 64%,4% 52%,4% 36%,10% 25%,20% 20%,28% 10%,38% 4%)}'+
       '.shape-squircle,.shape-squircle:before{border-radius:30%}'+
       '.shape-hexagon,.shape-hexagon:before{clip-path:polygon(25% 2%,75% 2%,100% 50%,75% 98%,25% 98%,0 50%);border-radius:0}'+
       '.shape-diamond,.shape-diamond:before{clip-path:polygon(50% 1%,99% 50%,50% 99%,1% 50%);border-radius:0}'+
