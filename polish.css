@@ -776,6 +776,21 @@ html[data-evia-shape="rounded"] .evia-fab,
 html[data-evia-shape="rounded"] .welcome-avatar{border-radius:18%!important;clip-path:none!important}
 html[data-evia-shape="squircle"] .evia-fab,
 html[data-evia-shape="squircle"] .welcome-avatar{border-radius:30%!important;clip-path:none!important}
+html[data-evia-shape="cloud"] .evia-fab,
+html[data-evia-shape="cloud"] .welcome-avatar{
+  border:0!important;
+  border-radius:0!important;
+  background:var(--evia-accent)!important;
+  clip-path:polygon(18% 75%,12% 65%,14% 52%,22% 43%,32% 40%,37% 29%,49% 23%,61% 25%,69% 33%,79% 34%,88% 41%,91% 52%,88% 63%,94% 72%,89% 82%,76% 85%,24% 85%)!important;
+  position:relative!important;
+}
+html[data-evia-shape="cloud"] .evia-fab:before,
+html[data-evia-shape="cloud"] .welcome-avatar:before{
+  content:"";position:absolute;inset:3px;background:var(--bg,#fffdfa);z-index:0;
+  clip-path:inherit;
+}
+html[data-evia-shape="cloud"] .evia-fab .evia-face,
+html[data-evia-shape="cloud"] .welcome-avatar .evia-face{position:relative;z-index:1}
 html[data-evia-shape="hexagon"] .evia-fab,
 html[data-evia-shape="hexagon"] .welcome-avatar,
 html[data-evia-shape="diamond"] .evia-fab,
