@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="polish.css">
 <link rel="stylesheet" href="./capture-redesign.css?v=20260921-2">
-<link rel="stylesheet" href="ui.css?v=ui-v8">
+<link rel="stylesheet" href="ui.css?v=ui-v9">
 <link rel="stylesheet" href="accessibility.css?v=a11y-v1">
 <style>
 html.evia-booting body{visibility:hidden}
@@ -73,7 +73,7 @@ html.evia-booting body{visibility:hidden}
 </nav>
 </div>
 <div id="modal-root"></div>
-<script src="storage.js?v=storage-v1" data-app-scripts="app.js polish.js ./capture-redesign.js?v=20260921-2 theme.js?v=evia-theme-v1 accessibility.js?v=a11y-v1 onboarding.js?v=onboarding-v5 profile.js?v=profile-v2 eportfolio.js?v=eport-v2 test-banks.js review.js?v=tests-v2 repair.js?v=a11y-v1 provider.js?v=provider-v1 practice-tasks.js?v=tasks-v1 scenarios.js?v=scenarios-v1 stats.js?v=stats-v4 practice.js?v=practice-v2 ui.js?v=ui-v9 evia-alive.js?v=alive-v3"></script>
+<script src="storage.js?v=storage-v1" data-app-scripts="app.js polish.js ./capture-redesign.js?v=20260921-2 theme.js?v=evia-theme-v2 accessibility.js?v=a11y-v1 onboarding.js?v=onboarding-v5 profile.js?v=profile-v2 eportfolio.js?v=eport-v2 test-banks.js review.js?v=tests-v2 repair.js?v=a11y-v1 provider.js?v=provider-v1 practice-tasks.js?v=tasks-v1 scenarios.js?v=scenarios-v1 stats.js?v=stats-v4 practice.js?v=practice-v2 ui.js?v=ui-v9 evia-alive.js?v=alive-v3"></script>
 <script>
 (function(){
   if (!("serviceWorker" in navigator)) return;
@@ -81,7 +81,7 @@ html.evia-booting body{visibility:hidden}
   navigator.serviceWorker.addEventListener("controllerchange",function(){if(reloading)return;reloading=true;window.location.reload();});
   window.addEventListener("load", async function(){
     try {
-      const registration=await navigator.serviceWorker.register("./sw-v16.js?v=evia7-v41",{updateViaCache:"none"});
+      const registration=await navigator.serviceWorker.register("./sw-v16.js?v=evia7-v42",{updateViaCache:"none"});
       await registration.update();
       const activateWaiting=worker=>{if(!worker)return;worker.postMessage({type:"SKIP_WAITING"});};
       if(registration.waiting) activateWaiting(registration.waiting);

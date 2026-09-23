@@ -14,8 +14,41 @@
   const SHAPES={
     circle:{label:"Circle",className:"circle"},
     squircle:{label:"Squircle",className:"squircle"},
-    blob:{label:"Blob",className:"blob"}
+    cloud:{label:"Thought",className:"cloud",svg:true},
+    splat:{label:"Splat",className:"splat",svg:true},
+    sun:{label:"Sun",className:"sun",svg:true},
+    alien:{label:"Alien",className:"alien",svg:true}
   };
+  /* Outline shapes are drawn as SVG (0–100 box) behind Evia's eyes. "body" is filled and outlined; "rays" are lines. */
+  const SUN_RAYS=[0,45,90,135,180,225,270,315].map(a=>{const r=a*Math.PI/180,c=Math.cos(r),n=Math.sin(r);return "M"+(50+41*c).toFixed(1)+" "+(50+41*n).toFixed(1)+"L"+(50+49*c).toFixed(1)+" "+(50+49*n).toFixed(1)}).join("");
+  const OUTLINES={
+    cloud:{body:["M28 72C15 73 8 63 12 54C4 48 8 34 20 34C20 20 36 13 47 20C54 9 74 10 78 24C91 24 97 38 90 48C97 58 88 71 76 70C70 78 54 79 48 73C42 78 32 77 28 72Z"],dots:[[20,84,5.5],[9,94,3.2]]},
+    splat:{body:["M50 10C54.4 9.8 57.8 19.9 63.5 22.1C69.1 24.3 80.5 19.8 83.6 23.2C86.7 26.6 81.6 36.8 82.2 42.7C82.7 48.5 88.6 54.2 87 58.5C85.5 62.7 75.6 62.7 72.7 68.1C69.8 73.4 73.3 88.2 69.5 90.5C65.7 92.9 56.1 82.9 50 82C43.9 81.1 37 87.4 33.1 85.1C29.2 82.9 30.5 73 26.5 68.7C22.5 64.4 10.2 63.6 9.1 59.3C7.9 55.1 17.8 48.5 19.8 43.1C21.8 37.7 18.2 30.3 21.1 26.9C23.9 23.6 32.2 25.8 37 23C41.8 20.1 45.6 10.2 50 10Z"],dots:[[91,84,4],[12,84,3],[86,11,2.6]]},
+    sun:{body:["M50 16A34 34 0 1 1 49.99 16Z"],rays:SUN_RAYS},
+    alien:{body:["M50 7C77 7 96 21 96 40C96 53 88 62 77 72C67 82 59 93 50 93C41 93 33 82 23 72C12 62 4 53 4 40C4 21 23 7 50 7Z"]}
+  };
+  function outlineSvg(name){
+    const o=OUTLINES[name];if(!o)return"";
+    return '<svg class="evia-outline" viewBox="0 0 100 100" aria-hidden="true" focusable="false">'+
+      o.body.map(d=>'<path class="evia-outline-body" d="'+d+'"/>').join("")+
+      (o.dots||[]).map(c=>'<circle class="evia-outline-body" cx="'+c[0]+'" cy="'+c[1]+'" r="'+c[2]+'"/>').join("")+
+      (o.rays?'<path class="evia-outline-ray" d="'+o.rays+'"/>':"")+
+    '</svg>';
+  }
+  /* Every place Evia's face appears gets the outline for its shape: pickers use their own shape, everything else the learner's. */
+  const HOSTS=".evia-fab,.evia-welcome-face,.target-evia,.evia-shape-avatar,.evia-theme-avatar";
+  function hostShape(el){const m=[...el.classList].find(c=>c.startsWith("shape-")&&c!=="shape-svg");return m&&SHAPES[m.slice(6)]?m.slice(6):(el.classList.contains("evia-shape-avatar")?null:currentShape())}
+  function decorate(el){
+    const name=el.classList.contains("evia-theme-avatar")?currentShape():hostShape(el);if(!name)return;
+    const svg=SHAPES[name]&&SHAPES[name].svg;
+    if(el.dataset.eviaOutline===(svg?name:"")&&(!svg||el.querySelector(":scope > .evia-outline")))return;
+    const old=el.querySelector(":scope > .evia-outline");if(old)old.remove();
+    [...el.classList].filter(c=>c.startsWith("evia-outline-")).forEach(c=>el.classList.remove(c));
+    el.classList.toggle("evia-svg-shape",!!svg);
+    el.dataset.eviaOutline=svg?name:"";
+    if(svg){el.classList.add("evia-outline-"+name);el.insertAdjacentHTML("afterbegin",outlineSvg(name))}
+  }
+  function decorateAll(root){(root||document).querySelectorAll(HOSTS).forEach(decorate)}
 
   function applyTheme(name){
     const t=THEMES[name]||THEMES.yellow;
@@ -33,6 +66,7 @@
     if(!SHAPES[name])return;
     localStorage.setItem(SHAPE_KEY,name);
     document.documentElement.setAttribute("data-evia-shape",SHAPES[name].className);
+    decorateAll();
   }
   function hasPickedShape(){return localStorage.getItem(SHAPE_PICKED_KEY)==="1"}
   function markShapePicked(){localStorage.setItem(SHAPE_PICKED_KEY,"1")}
@@ -46,6 +80,7 @@
 
   setShape(currentShape());
   applyTheme(currentTheme());
+  new MutationObserver(ms=>{for(const m of ms)for(const n of m.addedNodes){if(!(n instanceof Element))continue;if(n.matches(HOSTS))decorate(n);if(n.querySelector&&n.querySelector(HOSTS))decorateAll(n)}}).observe(document.body||document.documentElement,{childList:true,subtree:true});
 
   function faceMarkup(name,t,selected){
     const shape=currentShape();
