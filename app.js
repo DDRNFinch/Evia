@@ -466,7 +466,6 @@ function confidenceQuestions(){
 }
 
 function chat(){
- const eviaName=()=>{try{return String(JSON.parse(localStorage.getItem("evia7-profile")||"{}").eviaName||"Evia").trim()||"Evia"}catch(_){return"Evia"}};
 
  const profileBtn=$("#profile-btn");
  if(profileBtn)profileBtn.style.display="none";
@@ -478,8 +477,8 @@ function chat(){
   ["Progress review",""],
   ["Confidence check",""]
  ];
- $("#modal-root").innerHTML='<div class="overlay"><section class="sheet chat-sheet"><div class="sheet-head"><div><div class="chat-kicker"><span id="evia-chat-name">Evia</span></div><h2>What would you like to do?</h2></div><button class="close" id="x" aria-label="Close">×</button></div><div class="chat" id="chat"><div class="bubble evia">I can help you review your learning, evidence and confidence.</div><div class="chat-options">'+options.map((o,i)=>'<button class="chat-pill" data-chat-option="'+i+'"><strong>'+o[0]+'</strong></button>').join("")+'</div></div></section></div>';
- const chatName=document.getElementById("evia-chat-name");if(chatName)chatName.textContent=eviaName();$("#x").onclick=()=>{ $("#modal-root").innerHTML=""; fab.classList.remove("chat-active"); const profileBtn=$("#profile-btn"); if(profileBtn && ["learning","course","progress","portfolio"].includes(screen))profileBtn.style.display="flex"; };
+ $("#modal-root").innerHTML='<div class="overlay"><section class="sheet chat-sheet"><div class="sheet-head"><div><div class="chat-kicker">EVIA</div><h2>What would you like to do?</h2></div><button class="close" id="x" aria-label="Close">×</button></div><div class="chat" id="chat"><div class="bubble evia">I can help you review your learning, evidence and confidence.</div><div class="chat-options">'+options.map((o,i)=>'<button class="chat-pill" data-chat-option="'+i+'"><strong>'+o[0]+'</strong></button>').join("")+'</div></div></section></div>';
+$("#x").onclick=()=>{ $("#modal-root").innerHTML=""; fab.classList.remove("chat-active"); const profileBtn=$("#profile-btn"); if(profileBtn && ["learning","course","progress","portfolio"].includes(screen))profileBtn.style.display="flex"; };
  const scroll=()=>$("#chat").scrollTop=$("#chat").scrollHeight;
  const addBubble=v=>$("#chat").insertAdjacentHTML("beforeend",'<div class="bubble user">'+esc(v)+'</div>');
  const thinking=()=>{
