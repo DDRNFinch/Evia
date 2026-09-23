@@ -114,9 +114,19 @@
     const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=file.name;
     document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),60000);
   }
-  async function shareFiles(files,title){
-    try{await navigator.share({files,title});return true}
-    catch(err){if(err&&err.name==="AbortError")return false;console.warn("Evia share failed",err);files.forEach(saveFile);return true}
+  /* Chrome on Android refuses shares of more than 10 files (or very large ones), so Share all only appears within that. */
+  const SHARE_MAX_FILES=10,SHARE_MAX_BYTES=45*1024*1024;
+  const withinShareLimits=files=>files.length<=SHARE_MAX_FILES&&files.reduce((n,f)=>n+f.size,0)<=SHARE_MAX_BYTES;
+  function notify(message){if(typeof showEvidenceToast==="function")showEvidenceToast(message,true);else alert(message)}
+  /* Resolves true once shared. Never falls back to downloading: a failed share says so and leaves Save for the learner. */
+  async function shareFiles(files){
+    try{await navigator.share({files});return true}
+    catch(err){
+      if(err&&err.name==="AbortError")return false;
+      console.warn("Evia share failed",err);
+      notify(err&&err.name==="NotAllowedError"?"Sharing isn't allowed here. Use Save instead.":"Your phone couldn't open sharing. Use Save instead.");
+      return false;
+    }
   }
   function markSent(unitName){
     const state=readJson(SENT_KEY,{});state[course+"|"+unitName]=Date.now();
@@ -222,14 +232,14 @@
         '<span class="eport-meta"><strong>'+escHtml(f.title)+'</strong><span>'+escHtml(f.file.name)+' · '+formatBytes(f.file.size)+'</span></span>'+
         '<span class="eport-actions">'+(shareOk?'<button type="button" class="eport-btn" data-eport-share="'+i+'" aria-label="Share '+escHtml(f.title)+'">'+icon.share+'</button>':"")+'<button type="button" class="eport-btn" data-eport-save="'+i+'" aria-label="Save '+escHtml(f.title)+'">'+icon.save+'</button></span>'+
       '</div>').join("");
-    document.querySelectorAll("[data-eport-share]").forEach(b=>b.onclick=async()=>{const f=files[+b.dataset.eportShare];if(await shareFiles([f.file],f.title))markSent(unitName)});
+    document.querySelectorAll("[data-eport-share]").forEach(b=>b.onclick=async()=>{const f=files[+b.dataset.eportShare];if(await shareFiles([f.file]))markSent(unitName)});
     document.querySelectorAll("[data-eport-save]").forEach(b=>b.onclick=()=>{saveFile(files[+b.dataset.eportSave].file);markSent(unitName)});
-    const all=files.map(f=>f.file),shareAll=files.length>1&&canShareFiles(all);
+    const all=files.map(f=>f.file),shareAll=files.length>1&&withinShareLimits(all)&&canShareFiles(all);
     const allEl=$("#eport-all");
     allEl.classList.toggle("single",!shareAll);
     allEl.innerHTML=(shareAll?'<button type="button" class="primary" id="eport-share-all">Share all files</button>':"")+'<button type="button" class="secondary" id="eport-zip">Download all (.zip)</button>';
     const shareAllBtn=$("#eport-share-all");
-    if(shareAllBtn)shareAllBtn.onclick=async()=>{if(await shareFiles(all,unitName))markSent(unitName)};
+    if(shareAllBtn)shareAllBtn.onclick=async()=>{if(await shareFiles(all))markSent(unitName)};
     $("#eport-zip").onclick=async()=>{
       const btn=$("#eport-zip");btn.disabled=true;btn.textContent="Preparing zip…";
       try{
