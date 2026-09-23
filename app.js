@@ -394,6 +394,7 @@ function progress(){
  const evidenceCount=name=>es.filter(e=>e.u===name).length;
  const card=(name,index)=>'<button type="button" class="portfolio-app-tile" data-unit-open="'+esc(name)+'"><span class="portfolio-app-count">'+evidenceCount(name)+'</span><span class="portfolio-app-name">'+esc(name)+'</span></button>';
  $("#screen").innerHTML='<div class="card portfolio-intro"><div class="section-title">PORTFOLIO</div><h2>Evidence</h2></div><div class="portfolio-grid portfolio-app-grid">'+
+   (evidenceCount("Personal protective equipment")?card("Personal protective equipment",-1):"")+
    units.map((u,i)=>card(u[0],i)).join("")+
    '<button type="button" class="portfolio-app-tile portfolio-app-special" id="supporting-portfolio-file"><span class="portfolio-app-count">'+supporting.length+'</span><span class="portfolio-app-name">Supporting Evidence</span></button>'+
    '<button type="button" class="portfolio-app-tile portfolio-app-special" id="open-review-files"><span class="portfolio-app-count">'+reviews.length+'</span><span class="portfolio-app-name">Reviews</span></button>'+
@@ -571,7 +572,7 @@ function chat(){
  };
  const portfolioReview=()=>{
    const entries=evidence.filter(e=>e.c===course);
-   const startedNames=new Set(entries.map(e=>e.u));
+   const startedNames=new Set(entries.map(e=>e.u).filter(n=>data().u.some(u=>u[0]===n)));
    const rows=data().u.map((u,i)=>{
      const es=entries.filter(e=>e.u===u[0]);
      if(!es.length)return null;
@@ -598,7 +599,7 @@ function chat(){
  const progressReview=()=>{
    const entries=evidence.filter(e=>e.c===course);
    const units=data().u.length;
-   const covered=new Set(entries.map(e=>e.u)).size;
+   const covered=new Set(entries.map(e=>e.u).filter(n=>data().u.some(u=>u[0]===n))).size;
    const completion=units?Math.round(covered/units*100):0;
    const p=JSON.parse(localStorage.getItem("evia7-profile")||"{}");
    const startDate=p.start?new Date(p.start+"T00:00:00"):null;

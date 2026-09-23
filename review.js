@@ -240,7 +240,7 @@
   }
   function metrics(){
     const entries=evidence.filter(e=>e.c===course), units=data().u;
-    const covered=new Set(entries.map(e=>e.u));
+    const covered=new Set(entries.map(e=>e.u).filter(n=>units.some(u=>u[0]===n)));
     const totalPhotos=entries.reduce((n,e)=>n+(Array.isArray(e.photoIds)?e.photoIds.length:(Number.isFinite(Number(e.photoCount))?Number(e.photoCount):(Array.isArray(e.p)?e.p.length:0))),0);
     const totalWords=entries.reduce((n,e)=>n+String(e.w||"").trim().split(/\s+/).filter(Boolean).length,0);
     const allKsb=new Map(); units.forEach(u=>u[1].forEach(k=>allKsb.set(code(k),text(k))));

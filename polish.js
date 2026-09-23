@@ -212,6 +212,7 @@
     return out;
   }
   window.eviaGetEvidencePhotoData=getEvidencePhotoData;
+  window.eviaStoreEvidencePhoto=blob=>{const id="submitted-"+Date.now()+"-"+Math.random().toString(36).slice(2);return idbPut({id,blob,addedAt:new Date().toISOString()}).then(()=>id)};
   const supportingPut=value=>openDB().then(db=>new Promise((resolve,reject)=>{const tx=db.transaction(SUPPORT_STORE,"readwrite");tx.objectStore(SUPPORT_STORE).put(value);tx.oncomplete=()=>resolve(value);tx.onerror=()=>reject(tx.error||new Error("Supporting evidence save failed"))}));
   const supportingGet=id=>openDB().then(db=>new Promise((resolve,reject)=>{const tx=db.transaction(SUPPORT_STORE,"readonly"),req=tx.objectStore(SUPPORT_STORE).get(id);req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error||new Error("Supporting evidence load failed"))}));
   window.eviaSupportingFilePut=supportingPut;

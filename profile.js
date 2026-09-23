@@ -431,15 +431,16 @@
     document.head.appendChild(style);
     const shapePicked=window.eviaShapeHasBeenPicked&&window.eviaShapeHasBeenPicked();
     const colourPicked=window.eviaThemeHasBeenPicked&&window.eviaThemeHasBeenPicked();
+    const afterPickers=()=>{if(!(window.eviaMaybeStartOnboarding&&window.eviaMaybeStartOnboarding(!colourPicked)))welcome()};
     if(!shapePicked&&window.eviaShowShapePicker){
       window.eviaShowShapePicker(()=>{
-        if(window.eviaShowThemePicker&&!colourPicked)window.eviaShowThemePicker(welcome);
-        else welcome();
+        if(window.eviaShowThemePicker&&!colourPicked)window.eviaShowThemePicker(afterPickers);
+        else afterPickers();
       });
     }else if(!colourPicked&&window.eviaShowThemePicker){
-      window.eviaShowThemePicker(welcome);
+      window.eviaShowThemePicker(afterPickers);
     }else{
-      welcome();
+      afterPickers();
     }
   }
   let readAloudPanel=null;
