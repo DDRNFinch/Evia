@@ -45,6 +45,9 @@
       .evia-guide:after{content:"";position:absolute;left:50%;bottom:-9px;width:18px;height:18px;background:#fff;border-right:1px solid #e9edf2;border-bottom:1px solid #e9edf2;transform:translateX(-50%) rotate(45deg);border-radius:3px}
       .evia-guide-kicker,.evia-guide-inline .evia-guide-kicker{font-size:10px;letter-spacing:.14em;color:var(--yellow-ink);font-weight:800;margin-bottom:5px}
       .evia-guide-text{font-size:14px;line-height:1.5;color:#273244}
+      .evia-guide-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px}
+      .evia-guide-top .evia-guide-kicker{margin-bottom:0}
+      .evia-guide-skip{border:0;background:none;min-height:36px;padding:6px 2px 6px 10px;font:inherit;font-size:12.5px;font-weight:700;color:#667085;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
       .evia-guide-actions{display:flex;justify-content:flex-end;margin-top:10px}
       .evia-guide-actions button{min-height:40px;padding:8px 18px;border-radius:13px;background:#1b2435;color:#fff;font-weight:700;font-size:13px;cursor:pointer}
       body.evia-keyboard-editing .evia-guide{opacity:0;pointer-events:none}
@@ -65,6 +68,7 @@
   }
 
   /* ---------- Evia speech bubble ---------- */
+  const SKIP_BUTTON='<button type="button" class="evia-guide-skip">Skip demo</button>';
   let guideEl=null;
   function clearTargets(){document.querySelectorAll(".evia-guide-target").forEach(el=>el.classList.remove("evia-guide-target"))}
   function hideGuide(){
@@ -82,7 +86,7 @@
       document.body.appendChild(guideEl);
       requestAnimationFrame(()=>requestAnimationFrame(()=>guideEl&&guideEl.classList.add("show")));
     }
-    guideEl.innerHTML='<div class="evia-guide-kicker">EVIA · GETTING STARTED</div><div class="evia-guide-text">'+html+'</div>'+
+    guideEl.innerHTML='<div class="evia-guide-top"><div class="evia-guide-kicker">EVIA · GETTING STARTED</div>'+SKIP_BUTTON+'</div><div class="evia-guide-text">'+html+'</div>'+
       (opts.button?'<div class="evia-guide-actions"><button type="button" id="evia-guide-next">'+escHtml(opts.button)+'</button></div>':"");
     if(opts.button)document.getElementById("evia-guide-next").onclick=opts.onNext;
     (opts.targets||[]).forEach(el=>el&&el.classList.add("evia-guide-target"));
@@ -256,6 +260,7 @@
     if(!window.eviaOpenProfile){finish();return}
     const modal=document.getElementById("modal-root");
     let seen=false;
+    if(profileObserver)profileObserver.disconnect();
     const decorate=()=>{
       const sheet=modal.querySelector(".profile-sheet");
       if(sheet){
@@ -265,7 +270,7 @@
           const box=document.createElement("div");
           box.className="evia-guide-inline";
           box.setAttribute("role","status");
-          box.innerHTML='<div class="evia-guide-kicker">EVIA · LAST STEP</div><div class="evia-guide-text">Finally, complete your details. Add your <strong>name</strong>, your apprenticeship <strong>start and end dates</strong> and your <strong>signature</strong>, then tap <strong>Save profile</strong>.</div>';
+          box.innerHTML='<div class="evia-guide-top"><div class="evia-guide-kicker">EVIA · LAST STEP</div>'+SKIP_BUTTON+'</div><div class="evia-guide-text">Finally, complete your details. Add your <strong>name</strong>, your apprenticeship <strong>start and end dates</strong> and your <strong>signature</strong>, then tap <strong>Save profile</strong>.</div>';
           if(head)head.insertAdjacentElement("afterend",box);else sheet.prepend(box);
           const save=document.getElementById("save-profile");if(save)save.classList.add("evia-guide-target");
         }
@@ -273,11 +278,21 @@
         observer.disconnect();finish();
       }
     };
-    const observer=new MutationObserver(decorate);
+    const observer=profileObserver=new MutationObserver(decorate);
     observer.observe(modal,{childList:true,subtree:true});
     window.eviaOpenProfile();
     decorate();
   }
+
+  let profileObserver=null;
+  /* Skip demo: available from every step after choosing a course. */
+  function skipDemo(){
+    if(profileObserver){profileObserver.disconnect();profileObserver=null}
+    const modal=document.getElementById("modal-root");
+    if(modal&&modal.querySelector(".evia-guide-inline"))modal.innerHTML="";
+    finish();
+  }
+  document.addEventListener("click",e=>{if(e.target.closest(".evia-guide-skip"))skipDemo()});
 
   function finish(){
     writeState("done");
