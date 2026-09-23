@@ -1,4 +1,4 @@
-const VERSION = "2026-09-23-evia7-v45";
+const VERSION = "2026-09-23-evia7-v46";
 const CACHE_NAME = "evia7-offline-" + VERSION;
 
 const APP_SHELL = [
@@ -7,6 +7,7 @@ const APP_SHELL = [
   "./styles.css",
   "./polish.css",
   "./ui.css",
+  "./capture-redesign.css",
   "./accessibility.css",
   "./accessibility.js",
   "./vendor/fonts/lexend-latin-400-normal.woff2",
@@ -14,6 +15,7 @@ const APP_SHELL = [
   "./storage.js",
   "./app.js",
   "./polish.js",
+  "./capture-redesign.js",
   "./profile.js",
   "./eportfolio.js",
   "./vendor/jspdf.umd.min.js",
@@ -33,10 +35,13 @@ const APP_SHELL = [
   "./icon.svg"
 ];
 
+/* Offline-first: the app always opens from the copy saved on the phone, so it loads instantly with or without
+   signal. Each release bumps VERSION; the browser then downloads the whole new version in the background, and
+   it is used from the next time Evia opens. */
 self.addEventListener("install", event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
-    await cache.addAll(APP_SHELL);
+    await cache.addAll(APP_SHELL.map(url => new Request(url, { cache: "reload" })));
     await self.skipWaiting();
   })());
 });
@@ -63,21 +68,20 @@ self.addEventListener("fetch", event => {
   if (url.origin !== self.location.origin) return;
 
   event.respondWith((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    /* Version query strings (?v=...) are ignored so saved files always match. */
+    const cached = await cache.match(event.request, { ignoreSearch: true });
+    if (cached) return cached;
     try {
-      const networkUrl = new URL(event.request.url);
-      networkUrl.searchParams.set("_evia_refresh", Date.now().toString());
-      const response = await fetch(networkUrl.toString(), {
-        cache: "no-store",
-        credentials: event.request.credentials
-      });
-      if (response && response.ok) {
-        const cache = await caches.open(CACHE_NAME);
-        await cache.put(event.request, response.clone());
-      }
+      const response = await fetch(event.request);
+      if (response && response.ok) await cache.put(url.origin + url.pathname, response.clone());
       return response;
     } catch (_) {
-      const cached = await caches.match(event.request);
-      return cached || caches.match("./index.html");
+      if (event.request.mode === "navigate") {
+        const page = await cache.match("./index.html");
+        if (page) return page;
+      }
+      return new Response("", { status: 504, statusText: "Offline" });
     }
   })());
 });

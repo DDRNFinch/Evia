@@ -77,18 +77,31 @@ html.evia-booting body{visibility:hidden}
 <script>
 (function(){
   if (!("serviceWorker" in navigator)) return;
-  let reloading=false;
-  navigator.serviceWorker.addEventListener("controllerchange",function(){if(reloading)return;reloading=true;window.location.reload();});
+  /* A new version is used straight away only if it arrives while Evia is still opening; otherwise it waits for the
+     next launch, so nobody loses what they're typing. The very first install never reloads. */
+  let reloading=false;const openedAt=Date.now(),hadController=!!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange",function(){if(reloading||!hadController||Date.now()-openedAt>8000)return;reloading=true;window.location.reload();});
   window.addEventListener("load", async function(){
     try {
-      const registration=await navigator.serviceWorker.register("./sw-v16.js?v=evia7-v45",{updateViaCache:"none"});
-      await registration.update();
+      const registration=await navigator.serviceWorker.register("./sw-v16.js?v=evia7-v46",{updateViaCache:"none"});
+      await registration.update().catch(()=>{}); /* fails harmlessly with no signal */
       const activateWaiting=worker=>{if(!worker)return;worker.postMessage({type:"SKIP_WAITING"});};
       if(registration.waiting) activateWaiting(registration.waiting);
       registration.addEventListener("updatefound",()=>{
         const worker=registration.installing;if(!worker)return;
         worker.addEventListener("statechange",()=>{if(worker.state==="installed"&&navigator.serviceWorker.controller)activateWaiting(worker);});
       });
+      /* Tell the learner once, when everything is saved on the phone, that Evia now works without signal. */
+      await navigator.serviceWorker.ready;
+      const tellOnce=async()=>{
+        try{
+          if(localStorage.getItem("evia7-offline-ready")==="1"||!(await caches.match("./index.html")))return;
+          if(document.body.classList.contains("evia-onboarding")||document.getElementById("welcome-screen")||document.getElementById("evia-theme-screen")||typeof window.showEvidenceToast!=="function"){setTimeout(tellOnce,3000);return}
+          localStorage.setItem("evia7-offline-ready","1");
+          window.showEvidenceToast("Evia is ready to use offline");
+        }catch(_){}
+      };
+      setTimeout(tellOnce,1500);
     } catch(e) {console.warn("Evia update service unavailable",e);}
   });
 })();
