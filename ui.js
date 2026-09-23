@@ -3,6 +3,11 @@
 (function(){
   const PPE_UNIT="Personal protective equipment";
   const COACH_KEY="evia7-coach";
+  /* Coach version: "A" suggests which unit to do next and plans the week; "B" asks what job the learner is on
+     and shows what it counts towards. Test builds show an A/B switch in the chat. */
+  const STYLE_KEY="evia7-coach-style";
+  const coachStyle=()=>{try{return localStorage.getItem(STYLE_KEY)==="B"?"B":"A"}catch(_){return"A"}};
+  const isTrial=()=>{try{return localStorage.getItem("evia7-trial")==="1"}catch(_){return false}};
   const escHtml=s=>String(s??"").replace(/[&<>"']/g,x=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[x]));
   const readJson=(k,f)=>{try{const v=JSON.parse(localStorage.getItem(k)||"null");return v??f}catch(_){return f}};
   const pick=list=>list[Math.floor(Math.random()*list.length)];
@@ -113,7 +118,20 @@
   }
   function homeSuggestion(s){
     hideBubble();
-    if(!s.unit||document.body.classList.contains("evia-onboarding"))return;
+    if(document.body.classList.contains("evia-onboarding"))return;
+    if(coachStyle()==="B"){
+      const today=new Date().toDateString(),seen=readJson(TIP_KEY,{});
+      if(seen.day===today&&seen.unit==="job")return;
+      const name=firstName();
+      bubbleTimer=setTimeout(()=>{
+        if(screen!=="home"||document.querySelector(".chat-sheet"))return;
+        const dismiss=()=>localStorage.setItem(TIP_KEY,JSON.stringify({day:today,unit:"job"}));
+        eviaSay(partOfDay()+(name?" "+escHtml(name):"")+". On a job today? Tell me what it is and I’ll show you what it counts towards.",
+          [{label:"What counts?",primary:true,run:()=>{dismiss();window.chat();setTimeout(()=>{userSays("I’m on a job");askJob()},50)}},{label:"Not now",run:dismiss}]);
+      },900);
+      return;
+    }
+    if(!s.unit)return;
     const today=new Date().toDateString(),seen=readJson(TIP_KEY,{});
     if(seen.day===today&&seen.unit===s.unit.name)return;
     const name=firstName();
@@ -216,13 +234,13 @@
   }
   function closeChat(){const x=document.getElementById("x");if(x)x.click()}
   const openUnitFromChat=u=>{closeChat();setTimeout(()=>openUnit(u.index),60)};
-  const remember=u=>localStorage.setItem(COACH_KEY,JSON.stringify({unit:u.name,at:Date.now()}));
+  const remember=(u,mode)=>localStorage.setItem(COACH_KEY,JSON.stringify({unit:u.name,at:Date.now(),mode:mode||"suggested"}));
   const plural=(n,word)=>n+" "+word+(n===1?"":"s");
   const listText=items=>items.length<2?items.join(""):items.slice(0,-1).join(", ")+" and "+items[items.length-1];
   const more=exclude=>[
     {label:"Check my write-ups",run:writeups},
     {label:"Which KSBs am I missing?",run:ksbGaps},
-    {label:"Plan my week",run:planWeek},
+    coachStyle()==="B"?{label:"Jobs to look out for",run:lookOut}:{label:"Plan my week",run:planWeek},
     {label:"How am I doing?",run:howAmIDoing},
     {label:"Something else",run:somethingElse}
   ].filter(r=>r.label!==exclude);
@@ -283,18 +301,45 @@
       if(u&&u.entries.some(e=>entryTime(e)>memory.at)){
         say(pick(["And you got <strong>"+escHtml(u.name)+"</strong> done since we last spoke. That’s more KSBs ticked off.","You did <strong>"+escHtml(u.name)+"</strong> like we planned. Great stuff."]));
         if(window.eviaMood)window.eviaMood("happy");
-        localStorage.removeItem(COACH_KEY);nextStep();return;
+        localStorage.removeItem(COACH_KEY);if(coachStyle()==="B")askJob();else nextStep();return;
       }
       if(u&&u.missing.length){
-        say(pick(["Last time we said you’d look at <strong>"+escHtml(u.name)+"</strong>. Did you get to it?","How did <strong>"+escHtml(u.name)+"</strong> go? Last time that was the plan."]));
+        if(memory.mode==="job")say(pick(["Last time you were on a <strong>"+escHtml(u.name)+"</strong> job. Did you get your photos and write-up in?","How did that <strong>"+escHtml(u.name)+"</strong> job go? Did you capture it?"]));
+        else say(pick(["Last time we said you’d look at <strong>"+escHtml(u.name)+"</strong>. Did you get to it?","How did <strong>"+escHtml(u.name)+"</strong> go? Last time that was the plan."]));
         replies([
-          {label:"Not yet",run:()=>{say(pick(["No problem. It’s still a good one to do.","That’s fine. Here’s where I’d start."]));localStorage.removeItem(COACH_KEY);nextStep()}},
+          {label:"Not yet",run:()=>{localStorage.removeItem(COACH_KEY);if(memory.mode==="job"){say(pick(["No problem. If you took photos, you can still add them to the unit.","That’s fine. Photos from that job still count if you add them."]));replies([{label:"Open "+u.name,primary:true,run:()=>openUnitFromChat(u)},{label:"I’m on a different job",run:askJob},{label:"Something else",run:somethingElse}])}else{say(pick(["No problem. It’s still a good one to do.","That’s fine. Here’s where I’d start."]));nextStep()}}},
           {label:"Yes, I did the job",run:()=>{say("Great. Take your photos and write it up in the unit so it counts towards your KSBs.");replies([{label:"Open "+u.name,primary:true,run:()=>openUnitFromChat(u)},{label:"Something else",run:somethingElse}])}}
         ]);
         return;
       }
     }
-    nextStep();
+    if(coachStyle()==="B")askJob();else nextStep();
+  }
+
+  /* ---------- Version B: start from the job the learner is actually on ---------- */
+  function askJob(){
+    const a=analyse();
+    say(pick(["What job are you on today?","What are you working on at the moment?","Which of these is closest to the job you’re doing?"]));
+    replies(a.units.map(u=>({label:u.name,run:()=>jobPicked(u.index)})).concat([{label:"No job / not sure",run:lookOut}]));
+  }
+  function jobPicked(index){
+    const a=analyse(),u=a.units[index],prompts=((window.eviaLearnerPrompts||{})[course]||{})[u.name]||{};
+    if(u.missing.length){
+      say("A <strong>"+escHtml(u.name)+"</strong> job counts towards <strong>"+plural(u.missing.length,"KSB")+"</strong> you still need"+(u.missing.length<=6?" ("+escHtml(u.missing.join(", "))+")":"")+". Make sure you capture it.");
+    }else{
+      say("You’ve already got evidence for every KSB in <strong>"+escHtml(u.name)+"</strong>, but another good evidence pack will make that unit stronger.");
+    }
+    if(prompts.photos)say("<strong>Photograph:</strong> "+escHtml(prompts.photos)+". Get the beginning, middle and end of the job.");
+    if(prompts.writeup)say("<strong>Mention in your write-up:</strong> "+escHtml(prompts.writeup)+".");
+    remember(u,"job");
+    replies([{label:"Open "+u.name,primary:true,run:()=>openUnitFromChat(u)},{label:"Jobs to look out for",run:lookOut},{label:"Something else",run:somethingElse}]);
+  }
+  function lookOut(){
+    const a=analyse(),plan=coverPlan(a).slice(0,3);
+    if(!plan.length){say("Every KSB has evidence already. Any job you capture now makes your portfolio stronger.");replies([{label:"Check my write-ups",run:writeups},{label:"Something else",run:somethingElse}]);return}
+    say("If you get any of these jobs, make sure you capture it. They’d tick off the most KSBs:<br>"+plan.map(p=>"• <strong>"+escHtml(p.unit.name)+"</strong> ("+plural(p.covers.length,"KSB")+")").join("<br>"));
+    if(otjThisWeek()===0)say("No suitable job today? Off-the-job learning counts too, so log anything you’ve learned this week.");
+    replies(plan.map((p,i)=>({label:"Open "+p.unit.name,primary:i===0,run:()=>openUnitFromChat(p.unit)})).concat([{label:"Log OTJ hours",run:()=>{closeChat();setTimeout(()=>nav("learning"),60)}},{label:"Something else",run:somethingElse}]));
   }
 
   /* ---------- Write-up checker ---------- */
@@ -425,7 +470,8 @@
     const groups=[["K","Knowledge"],["S","Skills"],["B","Behaviours"]].map(([l,n])=>[n,missing.filter(x=>x[0].startsWith(l)).length]).filter(g=>g[1]);
     say("You still need evidence for <strong>"+plural(missing.length,"KSB")+"</strong>: "+groups.map(g=>g[1]+" "+g[0]).join(", ")+".");
     const plan=coverPlan(a),top=plan.slice(0,3),covered=top.reduce((n,p)=>n+p.covers.length,0);
-    say("The fastest way to close the gap: "+top.map(p=>"<strong>"+escHtml(p.unit.name)+"</strong> ("+p.covers.length+")").join(", ").replace(/, ([^,]*)$/," then $1")+". "+(top.length===1?"That one unit":"Those "+top.length+" units")+" would cover "+covered+" of them.");
+    if(coachStyle()==="B")say("The jobs that would close the most gaps: "+top.map(p=>"<strong>"+escHtml(p.unit.name)+"</strong> ("+p.covers.length+")").join(", ").replace(/, ([^,]*)$/," and $1")+". If you get one of those, capture it.");
+    else say("The fastest way to close the gap: "+top.map(p=>"<strong>"+escHtml(p.unit.name)+"</strong> ("+p.covers.length+")").join(", ").replace(/, ([^,]*)$/," then $1")+". "+(top.length===1?"That one unit":"Those "+top.length+" units")+" would cover "+covered+" of them.");
     replies([
       {label:"Open "+top[0].unit.name,primary:true,run:()=>openUnitFromChat(top[0].unit)},
       {label:"Show the full list",run:()=>{
@@ -433,7 +479,7 @@
         say("Tap any KSB on the Progress page to see its full wording.");
         replies([{label:"Go to Progress",primary:true,run:()=>{closeChat();setTimeout(()=>nav("progress"),60)}}].concat(more("Which KSBs am I missing?").slice(0,2),[{label:"Something else",run:somethingElse}]));
       }},
-      {label:"Plan my week",run:planWeek},
+      coachStyle()==="B"?{label:"I’m on a job",run:askJob}:{label:"Plan my week",run:planWeek},
       {label:"Something else",run:somethingElse}
     ]);
   }
@@ -473,7 +519,13 @@
     if(a.daysSince!=null&&a.daysSince>=14)say("It’s been "+a.daysSince+" days since your last evidence. A quick job this week keeps things moving.");
     else if(a.daysSince==null)say("You haven’t submitted any unit evidence yet. Your first one is the hardest, and I’ll help.");
     say(remaining?plural(remaining,"unit")+" still "+(remaining===1?"has":"have")+" no evidence at all.":"Every unit has at least some evidence now.");
-    const opts=[{label:"Plan my week",primary:true,run:planWeek},{label:"Which KSBs am I missing?",run:ksbGaps},{label:"Something else",run:somethingElse}];
+    if(coachStyle()==="B"&&a.endDate){
+      const weeks=Math.max(1,Math.round((a.endDate.getTime()-Date.now())/(7*864e5))),left=a.total-a.met;
+      if(left)say("You’ve got about <strong>"+plural(weeks,"week")+"</strong> left and <strong>"+plural(left,"KSB")+"</strong> still to evidence. "+(left/weeks>1?"Capture evidence from every suitable job you get.":"Capturing a good job every few weeks will get you there."));
+    }
+    const opts=coachStyle()==="B"
+      ?[{label:"I’m on a job",primary:true,run:askJob},{label:"Jobs to look out for",run:lookOut},{label:"Something else",run:somethingElse}]
+      :[{label:"Plan my week",primary:true,run:planWeek},{label:"Which KSBs am I missing?",run:ksbGaps},{label:"Something else",run:somethingElse}];
     if(a.timePct==null)opts.splice(1,0,{label:"Add my dates",run:()=>{closeChat();setTimeout(()=>window.eviaOpenProfile&&window.eviaOpenProfile(),60)}});
     replies(opts);
   }
@@ -486,16 +538,24 @@
       c.appendChild(box);scrollChat();
     });
   }
-  function runCoachFromMenu(){userSays("What should I do next?");coach()}
+  function runCoachFromMenu(){userSays(coachStyle()==="B"?"I’m on a job":"What should I do next?");coach()}
   function enhanceChat(){
     const c=chatBox();if(!c)return;
     queue=Promise.resolve();noticedThisChat=false;
     const greet=c.querySelector(".bubble.evia"),name=firstName();
     if(greet)greet.innerHTML=pick([partOfDay()+(name?" "+escHtml(name):"")+". What would you like to do?","Hi"+(name?" "+escHtml(name):"")+". How can I help today?"]);
+    if(isTrial()&&!document.getElementById("ui-trial")){
+      const bar=document.createElement("div");bar.id="ui-trial";bar.className="ui-trial";
+      const st=coachStyle();
+      bar.innerHTML='<span>Coach version</span><div role="group" aria-label="Coach version"><button type="button" data-style="A" aria-pressed="'+(st==="A")+'">A · Plan my week</button><button type="button" data-style="B" aria-pressed="'+(st==="B")+'">B · I’m on a job</button></div>';
+      c.parentNode.insertBefore(bar,c);
+      bar.querySelectorAll("[data-style]").forEach(b=>b.onclick=()=>{localStorage.setItem(STYLE_KEY,b.dataset.style);localStorage.removeItem(COACH_KEY);localStorage.removeItem(TIP_KEY);closeChat();setTimeout(()=>{window.chat()},80)});
+    }
+    const mainLabel=coachStyle()==="B"?"I’m on a job":"What should I do next?";
     menuItems=[];
     c.querySelectorAll("[data-chat-option]").forEach(b=>{
       const label=b.textContent.trim(),original=b.onclick;
-      const item=label==="Portfolio check"?{label:"What should I do next?",run:runCoachFromMenu}:{label,run:()=>original&&original.call(b)};
+      const item=label==="Portfolio check"?{label:mainLabel,run:runCoachFromMenu}:{label,run:()=>original&&original.call(b)};
       menuItems.push(item);
       b.innerHTML="<strong>"+escHtml(item.label)+"</strong>";
       b.onclick=()=>{const box=b.closest(".chat-options");if(box)box.remove();item.run()};

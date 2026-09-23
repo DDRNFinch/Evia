@@ -138,3 +138,10 @@ html.evia-sleepy body .evia-fab{animation-duration:7s!important}
 @keyframes eviaHop{0%{translate:0 0;scale:1 1}18%{translate:0 0;scale:1.09 .9}42%{translate:0 -11px;scale:.93 1.08}66%{translate:0 0;scale:1.08 .92}82%{scale:.98 1.03}100%{translate:0 0;scale:1 1}}
 @keyframes eviaSquish{0%{scale:1 1}12%{scale:1.08 .92}26%{scale:.94 1.07}40%{scale:1.04 .96}55%{scale:.98 1.025}72%{scale:1.01 .99}100%{scale:1 1}}
 @media(prefers-reduced-motion:reduce){html body .evia-fab,html body .evia-fab.evia-hop,html body .evia-fab.evia-squish{animation:none!important;rotate:none}.evia-face i{transition:none}.ui-evia-bubble{transition:opacity .2s ease}}
+
+/* ---- Coach A/B switch (test builds only) ---- */
+.ui-trial{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin:0 0 10px;padding:8px 10px;border-radius:14px;background:var(--soft);border:1px dashed var(--yellow-line)}
+.ui-trial>span{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--yellow-ink)}
+.ui-trial div{display:flex;gap:6px}
+.ui-trial button{min-height:36px;padding:6px 10px;border-radius:10px;border:1px solid var(--ui-line);background:#fff;font:inherit;font-size:12px;font-weight:700;color:var(--ui-ink);cursor:pointer}
+.ui-trial button[aria-pressed="true"]{background:var(--yellow);border-color:var(--yellow);color:var(--ui-on-accent)}

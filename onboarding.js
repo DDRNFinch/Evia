@@ -319,6 +319,8 @@
         forced=true;params.delete("demo");
         history.replaceState(null,"",location.pathname+(params.toString()?"?"+params:"")+location.hash);
       }
+      /* Shared test pages only pass a plain #anchor, so #demo replays it too. */
+      if(location.hash==="#demo"){forced=true;history.replaceState(null,"",location.pathname+location.search)}
     }catch(_){}
     const state=readState();
     if(forced||(!state&&firstRun)){writeState("course");resume("course");return true}

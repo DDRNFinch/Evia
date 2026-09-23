@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="polish.css">
 <link rel="stylesheet" href="./capture-redesign.css?v=20260921-2">
-<link rel="stylesheet" href="ui.css?v=ui-v3">
+<link rel="stylesheet" href="ui.css?v=ui-v4">
 <link rel="stylesheet" href="accessibility.css?v=a11y-v1">
 <style>
 html.evia-booting body{visibility:hidden}
@@ -73,7 +73,7 @@ html.evia-booting body{visibility:hidden}
 </nav>
 </div>
 <div id="modal-root"></div>
-<script src="storage.js?v=storage-v1" data-app-scripts="app.js polish.js ./capture-redesign.js?v=20260921-2 theme.js?v=evia-theme-v1 accessibility.js?v=a11y-v1 onboarding.js?v=onboarding-v3 profile.js?v=a11y-v1 eportfolio.js?v=eport-v2 test-banks.js review.js?v=target-complete-v1 repair.js?v=a11y-v1 ui.js?v=ui-v4 evia-alive.js?v=alive-v3"></script>
+<script src="storage.js?v=storage-v1" data-app-scripts="app.js polish.js ./capture-redesign.js?v=20260921-2 theme.js?v=evia-theme-v1 accessibility.js?v=a11y-v1 onboarding.js?v=onboarding-v4 profile.js?v=a11y-v1 eportfolio.js?v=eport-v2 test-banks.js review.js?v=target-complete-v1 repair.js?v=a11y-v1 ui.js?v=ui-v5 evia-alive.js?v=alive-v3"></script>
 <script>
 (function(){
   if (!("serviceWorker" in navigator)) return;
@@ -81,7 +81,7 @@ html.evia-booting body{visibility:hidden}
   navigator.serviceWorker.addEventListener("controllerchange",function(){if(reloading)return;reloading=true;window.location.reload();});
   window.addEventListener("load", async function(){
     try {
-      const registration=await navigator.serviceWorker.register("./sw-v16.js?v=evia7-v36",{updateViaCache:"none"});
+      const registration=await navigator.serviceWorker.register("./sw-v16.js?v=evia7-v37",{updateViaCache:"none"});
       await registration.update();
       const activateWaiting=worker=>{if(!worker)return;worker.postMessage({type:"SKIP_WAITING"});};
       if(registration.waiting) activateWaiting(registration.waiting);
