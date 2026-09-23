@@ -18,11 +18,9 @@ html body .bubble.user{background:#fff!important;color:var(--ui-ink)!important;b
 
 /* ---- Page scaffolding ---- */
 .ui-page{display:flex;flex-direction:column;gap:16px;padding-bottom:12px}
-.ui-hello{display:flex;flex-direction:column;gap:3px;padding:6px 56px 2px 2px}
-.ui-date{font-size:13px;font-weight:600;color:var(--ui-muted)}
-.ui-hello h1{margin:0;font-size:30px;line-height:1.1;letter-spacing:-.025em;color:var(--ui-ink)}
+/* No page titles: leave room for the floating profile button instead. */
+#screen.ui-top{padding-top:68px}
 .ui-card{background:var(--ui-card);border:1px solid var(--ui-line);border-radius:var(--ui-radius);box-shadow:var(--ui-shadow)}
-.ui-kicker{font-size:11px;font-weight:800;letter-spacing:.14em;color:var(--yellow-ink)}
 .ui-accent-text{font-size:12.5px;font-weight:700;color:var(--yellow-ink);line-height:1.4}
 .ui-section{display:flex;flex-direction:column;gap:10px}
 .ui-section-head{display:flex;align-items:baseline;justify-content:space-between;padding:0 2px}
@@ -34,11 +32,6 @@ html body .bubble.user{background:#fff!important;color:var(--ui-ink)!important;b
 .ui-icon-chip{width:38px;height:38px;flex:0 0 38px;border-radius:13px;background:var(--soft);color:var(--yellow-ink);display:grid;place-items:center}
 .ui-icon-chip svg,.ui-photo svg,.ui-tile-photo svg,.ui-chev svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
-/* ---- Evia avatar: the same face as the floating button (two accent ovals, no pupils) ---- */
-.ui-evia{position:relative;display:inline-block;flex:0 0 auto;border-radius:50%;background:#fff;border:3px solid var(--yellow);box-sizing:border-box}
-.ui-evia .evia-face{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:5px}
-.ui-evia .evia-face i{display:block;width:10px;height:13px;border:2.5px solid var(--yellow)!important;border-radius:50%;box-sizing:border-box;background:transparent!important}
-.ui-evia .evia-face i:after{display:none!important}
 
 /* ---- Rings and bars ---- */
 .ui-ring{position:relative;display:inline-block;flex:0 0 auto}
@@ -52,12 +45,6 @@ html body .bubble.user{background:#fff!important;color:var(--ui-ink)!important;b
 .ui-track span{display:block;height:100%;border-radius:3px;background:var(--yellow)}
 
 /* ---- Home ---- */
-.ui-suggest{background:var(--soft);border:1px solid var(--yellow-line);border-radius:26px;padding:18px;display:flex;flex-direction:column;gap:12px}
-.ui-suggest-head{display:flex;align-items:center;gap:10px}
-.ui-suggest p{margin:0;font-size:19px;line-height:1.35;letter-spacing:-.01em;font-weight:650;color:var(--ui-ink)}
-.ui-suggest-actions{display:flex;gap:8px;flex-wrap:wrap}
-.ui-suggest-actions .primary{flex:1 1 auto;min-height:46px;border-radius:14px;padding:10px 14px}
-.ui-suggest-actions .secondary{min-height:46px;border-radius:14px;padding:10px 16px}
 .ui-progress-card{display:flex;align-items:center;gap:18px;padding:18px;cursor:pointer}
 .ui-progress-lines{flex:1;min-width:0;display:flex;flex-direction:column;gap:11px}
 .ui-line{display:flex;flex-direction:column;gap:5px}
@@ -124,5 +111,25 @@ html body .bubble.user{background:#fff!important;color:var(--ui-ink)!important;b
 .ui-replies{margin:10px 0 4px}
 .ui-replies .chat-pill{min-height:46px}
 
-@media(max-width:360px){.ui-ksb-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.ui-suggest p{font-size:17px}}
+@media(max-width:360px){.ui-ksb-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){.ui-chev{transition:none}}
+
+/* ---- Evia speaks from her own button (one Evia on screen) ---- */
+.ui-evia-bubble{position:fixed;z-index:30;left:50%;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 86px);width:min(420px,calc(100% - 32px));box-sizing:border-box;background:#fff;border:1px solid var(--ui-line);border-radius:22px;padding:14px 16px;box-shadow:0 16px 40px rgba(16,24,40,.16);opacity:0;transform:translate(-50%,12px) scale(.96);transform-origin:50% 100%;transition:opacity .25s ease,transform .35s cubic-bezier(.2,.9,.3,1.25)}
+.ui-evia-bubble.show{opacity:1;transform:translate(-50%,0) scale(1)}
+.ui-evia-bubble:after{content:"";position:absolute;left:50%;bottom:-9px;width:16px;height:16px;background:#fff;border-right:1px solid var(--ui-line);border-bottom:1px solid var(--ui-line);border-radius:3px;transform:translateX(-50%) rotate(45deg)}
+.ui-evia-bubble p{margin:0;font-size:14.5px;line-height:1.45;color:var(--ui-ink)}
+.ui-evia-bubble-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+.ui-evia-bubble-actions button{min-height:42px;padding:8px 16px;border-radius:13px;font-size:13px}
+
+/* ---- Evia, alive (evia-alive.js drives the variables) ---- */
+.evia-face i{transform:translate(var(--evia-lx,0),var(--evia-ly,0)) scaleY(var(--evia-sy,1))!important;transition:transform .16s ease,border-color .2s ease}
+html.evia-happy .evia-face i{border-bottom-color:transparent!important;transform:translate(0,-8%) scaleY(1)!important}
+/* Sleepy after a while with no taps: relaxed, closed eyes. */
+html.evia-sleepy .evia-face i{border-top-color:transparent!important;border-left-color:transparent!important;border-right-color:transparent!important;border-bottom-color:var(--yellow)!important;transform:translate(0,-10%) scaleY(1)!important}
+html body .evia-fab{animation:eviaBreathe 4.6s ease-in-out infinite!important}
+html body .evia-fab.evia-hop{animation:eviaHop .7s cubic-bezier(.3,1.6,.5,1)!important}
+html.evia-sleepy body .evia-fab{animation-duration:7s!important}
+@keyframes eviaBreathe{0%,100%{scale:1}50%{scale:1.035}}
+@keyframes eviaHop{0%{translate:0 0;scale:1}30%{translate:0 -9px;scale:1.06 .96}55%{translate:0 0;scale:.96 1.05}75%{translate:0 -2px;scale:1.02}100%{translate:0 0;scale:1}}
+@media(prefers-reduced-motion:reduce){html body .evia-fab,html body .evia-fab.evia-hop{animation:none!important}.evia-face i{transition:none}.ui-evia-bubble{transition:opacity .2s ease}}
