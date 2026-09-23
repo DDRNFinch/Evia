@@ -3,7 +3,7 @@
  --soft:#fff8d7;--panel:#ffffff;--shadow:0 12px 32px rgba(16,24,40,.07);
 }
 html{background:#f5f7fa}
-body{background:radial-gradient(circle at 100% -10%,#fff4c9 0,transparent 28rem),linear-gradient(180deg,#fff 0,#f5f7fa 72%);-webkit-font-smoothing:antialiased}
+body{background:radial-gradient(circle at 100% -10%,var(--soft) 0,transparent 28rem),linear-gradient(180deg,#fff 0,var(--bg) 72%);-webkit-font-smoothing:antialiased}
 #app{padding-bottom:112px}
 .topbar{height:112px;padding:25px 26px 14px;background:rgba(255,255,255,.78);backdrop-filter:blur(24px) saturate(150%);-webkit-backdrop-filter:blur(24px) saturate(150%);border-bottom:1px solid rgba(226,231,238,.82)}
 .version{font-size:11px;letter-spacing:.12em;color:#a1a9b5;margin-bottom:9px}
