@@ -97,8 +97,8 @@
       '.shape-squircle,.shape-squircle:before{border-radius:30%}'+
       '.shape-hexagon,.shape-hexagon:before{clip-path:polygon(25% 2%,75% 2%,100% 50%,75% 98%,25% 98%,0 50%);border-radius:0}'+
       '.shape-diamond,.shape-diamond:before{clip-path:polygon(50% 1%,99% 50%,50% 99%,1% 50%);border-radius:0}'+
-      '.shape-teardrop{border-radius:52% 52% 52% 12%;transform:rotate(-45deg)}'+
-      '.shape-teardrop .evia-face{transform:rotate(45deg)}'+
+      '.shape-splat{clip-path:polygon(50% 0%,58% 13%,68% 3%,71% 18%,84% 11%,81% 28%,98% 26%,88% 41%,100% 50%,87% 59%,95% 74%,79% 72%,82% 89%,66% 82%,57% 100%,48% 87%,38% 96%,34% 82%,18% 90%,21% 74%,3% 77%,12% 61%,0 52%,13% 43%,6% 28%,21% 30%,16% 13%,33% 19%,40% 3%)}'+
+      '.shape-splat:before{clip-path:inherit}'+
       '.evia-shape-avatar .evia-face i{border-color:var(--yellow)!important;background:transparent!important}'+
       '.evia-shape-avatar .evia-face i:after{background:var(--yellow)!important}'+
       '@media(max-width:380px){.evia-theme-grid,.evia-shape-grid{gap:10px}.evia-theme-avatar,.evia-shape-avatar{width:56px;height:56px}}'+
