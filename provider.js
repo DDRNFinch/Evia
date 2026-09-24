@@ -1,4 +1,5 @@
-/* Evia7 provider settings. Fill these in for your college or training provider; the "Who to talk to" card in
+/* Evia7 provider settings. Optional: only for a copy of Evia run by a single college. Otherwise leave these
+   empty and learners add their own safeguarding lead in Profile. The "Who to talk to" card in
    Real-life scenarios shows them. Leave a field empty ("") to hide it. */
 window.EVIA_PROVIDER={
   name:"",                 /* e.g. "Anytown College" */

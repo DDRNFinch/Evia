@@ -147,12 +147,15 @@
     return s;
   }
   function contactsHtml(topicId){
-    const P=window.EVIA_PROVIDER||{},dsl=P.safeguarding||{},dep=P.deputy||{};
+    const P=window.EVIA_PROVIDER||{},dep=P.deputy||{};
+    /* A college-wide setting (provider.js) wins; otherwise the lead the learner added in Profile. */
+    let mine={};try{mine=JSON.parse(localStorage.getItem("evia7-profile")||"{}").safeguarding||{}}catch(_){}
+    const dsl=P.safeguarding&&P.safeguarding.name?P.safeguarding:mine;
     const tel=n=>'<a href="tel:'+escHtml(String(n).replace(/[^\d+]/g,""))+'">'+escHtml(n)+'</a>';
     const person=(role,x)=>x&&x.name?'<li><strong>'+escHtml(role)+': '+escHtml(x.name)+'</strong>'+(x.phone?'<span>'+tel(x.phone)+'</span>':"")+(x.email?'<span><a href="mailto:'+escHtml(x.email)+'">'+escHtml(x.email)+'</a></span>':"")+(x.hours?'<span>'+escHtml(x.hours)+'</span>':"")+'</li>':"";
     const lead=person((P.name?P.name+" s":"S")+"afeguarding lead",dsl)+person("Deputy safeguarding lead",dep);
     return '<div class="sc-contacts"><h3 class="pr-h">Who to talk to</h3><ul>'+
-      (lead||'<li><strong>Your safeguarding lead</strong><span>Every college and training provider has one. Ask your tutor who yours is.</span></li>')+
+      (lead||'<li><strong>Your safeguarding lead</strong><span>Every college and training provider has one. Ask your tutor who yours is, then add them in Profile so they show here.</span></li>')+
       '<li><strong>Your tutor or supervisor</strong><span>They’ll know what to do next.</span></li>'+
       '<li><strong>In an emergency</strong><span>Call '+tel("999")+'</span></li>'+
       (topicId==="prevent"?'<li><strong>Anti-Terrorist Hotline</strong><span>'+tel("0800 789 321")+' (confidential)</span></li>':"")+

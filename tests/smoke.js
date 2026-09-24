@@ -72,7 +72,10 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("Confidence check saves and shows a training plan",await page.evaluate(()=>/training plan/i.test(document.getElementById("pr-title").textContent)));
     check("A college practice task is suggested",await page.$("[data-task]"));
 
+    await page.evaluate(()=>document.getElementById("profile-btn").click());await page.waitForTimeout(300);
+    await page.fill("#profile-dsl-name","Jo Smith");await page.fill("#profile-dsl-phone","01234 567890");await page.click("#save-profile");await page.waitForTimeout(200);
     await page.evaluate(()=>window.eviaScenarios.openTopics());await page.waitForTimeout(300);
+    check("A safeguarding lead saved in Profile shows on the Who to talk to card",await page.evaluate(()=>/Jo Smith/.test(document.querySelector(".sc-contacts").innerText)&&!!document.querySelector('.sc-contacts a[href="tel:01234567890"]')));
     await page.click('[data-topic="values"]');await page.waitForTimeout(300);await page.click('[data-opt="0"]');await page.waitForTimeout(200);
     check("A real-life scenario explains every choice",await page.evaluate(()=>document.querySelectorAll(".sc-why").length===3));
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML=""});
