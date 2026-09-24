@@ -45,15 +45,9 @@
     const profile=readJson("evia7-profile",{}),learner=profile.name||"Apprentice";
     const W=210,H=297,M=16,CW=W-2*M,BOTTOM=H-M-8;
     const ink=[23,32,51],muted=[102,112,133],accent=accentRgb();
-    const wording=new Map(allK());
     let y=M;
     const need=h=>{if(y+h>BOTTOM){doc.addPage();y=M;return true}return false};
     const label=(t,x,yy)=>{doc.setFont("helvetica","bold");doc.setFontSize(7.5);doc.setTextColor(...muted);doc.setCharSpace(.35);doc.text(pdfText(t).toUpperCase(),x,yy);doc.setCharSpace(0)};
-    const para=(t,size,color,style="normal",indent=0,gap=1.45)=>{
-      doc.setFont("helvetica",style);doc.setFontSize(size);doc.setTextColor(...color);
-      const lh=size*.3528*gap;
-      doc.splitTextToSize(pdfText(t),CW-indent).forEach(l=>{need(lh);doc.text(l,M+indent,y+lh*.75);y+=lh});
-    };
 
     // Header
     label("Evia · Evidence pack",M,y+3);y+=6;
@@ -86,20 +80,37 @@
         y+=tile+gap;
       }
       y+=1;
-      if(e.w){need(10);label("Write-up",M,y+3);y+=5;para(e.w,10.5,[52,64,84]);y+=3}
+      if(e.w){
+        /* The write-up sits in a tile with a light grey outline; a long one carries on in a new tile on the next page. */
+        need(14);label("Write-up",M,y+3);y+=5.5;
+        const PAD=4.5,size=10.5,lh=size*.3528*1.45;
+        doc.setFont("helvetica","normal");doc.setFontSize(size);
+        let lines=doc.splitTextToSize(pdfText(e.w),CW-PAD*2);
+        while(lines.length){
+          if(BOTTOM-y<PAD*2+lh*2){doc.addPage();y=M}
+          const fit=Math.max(1,Math.min(lines.length,Math.floor((BOTTOM-y-PAD*2)/lh))),chunk=lines.splice(0,fit),h=chunk.length*lh+PAD*2-1;
+          doc.setFillColor(250,251,252);doc.setDrawColor(223,227,233);doc.setLineWidth(.3);doc.roundedRect(M,y,CW,h,2.5,2.5,"FD");
+          doc.setFont("helvetica","normal");doc.setFontSize(size);doc.setTextColor(52,64,84);
+          chunk.forEach((l,n)=>doc.text(l,M+PAD,y+PAD+lh*.75+n*lh));
+          y+=h+(lines.length?0:5);
+          if(lines.length){doc.addPage();y=M}
+        }
+      }
       const ksbs=(e.k||[]).filter(Boolean);
       if(ksbs.length){
-        need(10);label("KSBs covered",M,y+3);y+=5.5;
+        /* Small grey pills, wrapping onto new lines as needed. */
+        need(12);label("KSBs covered",M,y+3);y+=5.5;
+        doc.setFont("helvetica","bold");doc.setFontSize(7.5);
+        const ph=5,px=2.4,pg=1.6;let x=M;
         ksbs.forEach(k=>{
-          doc.setFont("helvetica","normal");doc.setFontSize(8.8);
-          const lines=doc.splitTextToSize(pdfText(wording.get(k)||""),CW-16);
-          need(Math.max(1,lines.length)*4+1.5);
-          doc.setFont("helvetica","bold");doc.setTextColor(...ink);doc.text(pdfText(k),M,y+3);
-          doc.setFont("helvetica","normal");doc.setTextColor(71,84,103);
-          lines.forEach((l,n)=>doc.text(l,M+16,y+3+n*4));
-          y+=Math.max(1,lines.length)*4+1.5;
+          const t=pdfText(k),w=doc.getTextWidth(t)+px*2;
+          if(x+w>W-M){x=M;y+=ph+pg}
+          need(ph+2);
+          doc.setFillColor(242,244,247);doc.setDrawColor(228,231,236);doc.setLineWidth(.2);doc.roundedRect(x,y,w,ph,ph/2,ph/2,"FD");
+          doc.setTextColor(71,84,103);doc.text(t,x+px,y+ph/2+1.05);
+          x+=w+pg;
         });
-        y+=2;
+        y+=ph+5;
       }
       if(e.signature){
         need(22);
@@ -115,6 +126,11 @@
       doc.setPage(n);doc.setFont("helvetica","normal");doc.setFontSize(7.5);doc.setTextColor(...muted);
       doc.text(pdfText(learner+" · "+unitName),M,H-9);
       doc.text("Page "+n+" of "+pages,W-M,H-9,{align:"right"});
+      /* Branding: a tiny Evia (yellow square, two eyes) and "Created using Evia", centred. */
+      const brand="Created using Evia",bw=doc.getTextWidth(brand),s=3.4,bx=W/2-(s+1.6+bw)/2,by=H-9-2.6;
+      doc.setFillColor(229,188,2);doc.roundedRect(bx,by,s,s,.7,.7,"F");
+      doc.setFillColor(255,255,255);doc.ellipse(bx+s*.2835,by+s*.49,s*.111,s*.168,"F");doc.ellipse(bx+s*.7165,by+s*.49,s*.111,s*.168,"F");
+      doc.setTextColor(...muted);doc.text(brand,bx+s+1.6,H-9);
     }
     const out=doc.output("blob");out.evPages=pages;return out;
   }
