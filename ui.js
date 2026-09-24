@@ -154,25 +154,14 @@
   /* ---------- Progress ---------- */
   const GROUPS=[["K","Knowledge"],["S","Skills"],["B","Behaviours"]];
   let expanded={}; /* groups start collapsed: three rings, tap one to see its KSBs */
-  function progressScreen(){
+  function progressScreen(still){ /* still: redrawn after opening a KSB group, so don't replay the animations */
     $("#page-title").textContent="Progress";
     const a=analyse(),all=allK(),supporting=supportingMeta().filter(s=>s.course===course);
     const hasSupport=c=>supporting.some(s=>Array.isArray(s.ksbs)&&s.ksbs.includes(c));
-    let pace="";
-    if(a.timePct!=null){const gap=a.timePct-a.ksbPct;pace=gap>10?"A little behind: aim for a couple of units this month.":gap<-5?"You’re ahead of schedule. Great work.":"You’re on track."}
-    else pace="Add your start and end dates in Profile to see if you’re on track.";
-    const st=(()=>{try{return window.eviaStats?window.eviaStats.compute():null}catch(_){return null}})();
-    if(st&&st.weeksPerUnit!=null){const w=Math.max(1,Math.floor(st.weeksPerUnit));pace+=" About "+w+" week"+(w===1?"":"s")+" per unit left."}
+    const S=window.eviaStats,st=(()=>{try{return S?S.compute():null}catch(_){return null}})();
     $("#screen").innerHTML=
       '<div class="ui-page">'+
-        '<section class="ui-summary">'+
-          ring(a.ksbPct,112,12,a.ksbPct+"%","of KSBs")+
-          '<div class="ui-summary-lines">'+
-            '<div><small>Course time</small><strong>'+(a.timePct==null?"Not set":a.timePct+"%"+(a.endDate?" · ends "+a.endDate.toLocaleDateString("en-GB",{month:"short",year:"numeric"}):""))+'</strong></div>'+
-            '<div><small>Off-the-job</small><strong>'+a.otj.toFixed(1)+' hours'+(st?' · '+(Math.round(st.otjWeek*10)/10)+' this week':"")+'</strong></div>'+
-            '<span class="ui-accent-text">'+escHtml(pace)+'</span>'+
-          '</div>'+
-        '</section>'+
+        (st?S.heroHtml(st):"")+
         '<section class="ui-card ui-groups">'+GROUPS.map(([letter,label],gi)=>{
           const items=all.filter(x=>x[0].startsWith(letter));if(!items.length)return"";
           const done=items.filter(x=>a.evidenced.has(x[0])).length,pct=Math.round(done/items.length*100),open=!!expanded[letter]||document.body.classList.contains("evia-onboarding"); /* the demo points at K2 and S2, so keep groups open */
@@ -181,9 +170,10 @@
               '<span class="ui-group-copy"><strong>'+label+'</strong><small>'+done+' of '+items.length+' with evidence</small></span><span class="ui-group-pct">'+pct+'%</span><span class="ui-chev'+(open?" open":"")+'">'+icon(ICONS.chev,18)+'</span></button>'+
             (open?'<div class="ui-ksb-grid">'+items.map(x=>{const met=a.evidenced.has(x[0]);return '<button type="button" class="ui-ksb'+(met?" met":"")+'" data-ksb-code="'+escHtml(x[0])+'" aria-label="'+escHtml(x[0])+(met?", evidence captured":"")+'">'+(met?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>':"")+escHtml(x[0])+(hasSupport(x[0])?'<i class="ui-ksb-dot" aria-label="Supporting evidence"></i>':"")+'</button>'}).join("")+'</div>':"");
         }).join("")+'<p class="ui-help">Tap a KSB to see its wording and the evidence mapped to it.</p></section>'+
-        (st&&window.eviaStats?window.eviaStats.sectionHtml(st):"")+
+        (st?S.sectionHtml(st):"")+
       '</div>';
-    document.querySelectorAll("[data-group]").forEach(b=>b.onclick=()=>{expanded[b.dataset.group]=!expanded[b.dataset.group];progressScreen()});
+    if(st)S.animate(document.getElementById("screen"),still===true);
+    document.querySelectorAll("[data-group]").forEach(b=>b.onclick=()=>{const y=window.scrollY;expanded[b.dataset.group]=!expanded[b.dataset.group];progressScreen(true);window.scrollTo(0,y)});
     document.querySelectorAll("[data-st-action]").forEach(b=>b.onclick=()=>{if(!window.eviaPractice)return;if(b.dataset.stAction==="tests")window.eviaPractice.openHub();else if(b.dataset.stAction==="scenarios"){if(window.eviaScenarios)window.eviaScenarios.openTopics()}else window.eviaPractice.openConfidence()});
     document.querySelectorAll("[data-ksb-code]").forEach(b=>b.onclick=()=>{const item=all.find(x=>x[0]===b.dataset.ksbCode);if(item)ksbDetail(item[0],item[1],a.evidenced.has(item[0]))});
   }

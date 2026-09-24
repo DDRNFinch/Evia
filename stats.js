@@ -54,7 +54,7 @@
       coverage,checks,avgPhotos:unitEntries.length?unitEntries.reduce((n,e)=>n+photoCount(e),0)/unitEntries.length:null,
       tests:Object.values(byType),testCount:tests.length,bestTest:tests.reduce((n,t)=>Math.max(n,testPct(t)),0),
       lastTestAt:type=>{const s=byType[type];return s&&s.latest?Date.parse(s.latest.savedAt):null},
-      confidence:{last:lastConf?Date.parse(lastConf.startedAt||lastConf.savedAt||0)||null:null,practise,confident,sessions:sessions.length},
+      confidence:{last:lastConf?Date.parse(lastConf.startedAt||lastConf.savedAt||0)||null:null,practise,confident,sessions:sessions.length,scores:[...latestByArea].map(([area,score])=>({area,score}))},
       maths:!!p.mathsEnabled,english:!!p.englishEnabled,
       ppeDone:entries.some(e=>e.u===PPE_UNIT),
       scenarios:window.eviaScenarios?window.eviaScenarios.progress():{done:0,total:0,last:null,topicsDone:0}
@@ -129,27 +129,102 @@
   const escHtml=v=>String(v??"").replace(/[&<>"']/g,x=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[x]));
   const ago=t=>{if(t==null)return"Not yet";const d=Math.floor((new Date().setHours(0,0,0,0)-new Date(t).setHours(0,0,0,0))/DAY);return d<=0?"Today":d===1?"Yesterday":d+" days ago"};
   const BADGE='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="6"/><path d="m8.5 14-1.5 7 5-3 5 3-1.5-7"/></svg>';
-  function sectionHtml(s){
-    const ach=achievements(s);
-    const tile=(label,value,sub)=>'<div class="st-tile"><small>'+label+'</small><strong>'+value+'</strong>'+(sub?'<span>'+sub+'</span>':"")+'</div>';
-    const tests=s.tests.length?s.tests.map(t=>'<li><span>'+escHtml(t.name)+'</span><strong>'+testPct(t.latest)+'%</strong><small>best '+t.best+'% · '+ago(Date.parse(t.latest.savedAt)).toLowerCase()+'</small></li>').join(""):'<li class="st-empty">No tests taken yet</li>';
-    const chips=(list,cls)=>list.length?list.map(x=>'<span class="st-chip '+cls+'">'+escHtml(x)+'</span>').join(""):'<span class="st-none">None</span>';
-    return '<section class="ui-card st-card" id="ui-stats" aria-labelledby="st-title">'+
-      '<h2 id="st-title" class="st-title">My stats</h2>'+
-      '<div class="st-tiles">'+tile("Last upload",ago(s.lastUpload))+tile("Streak",s.streak+" week"+(s.streak===1?"":"s"),s.activeThisWeek||!s.streak?"":"add something this week to keep it")+'</div>'+
-      '<div class="st-row"><small>Evidence quality</small><p>'+(s.coverage==null?"Submit a unit write-up to see this.":"Write-ups cover <strong>"+s.coverage+"%</strong> of key points"+(s.avgPhotos!=null?" · "+(Math.round(s.avgPhotos*10)/10)+" photos per pack":""))+'</p></div>'+
-      '<div class="st-row"><small>Tests</small><ul class="st-tests">'+tests+'</ul><button type="button" class="st-action" data-st-action="tests">Practice tests</button></div>'+
-      '<div class="st-row"><small>Confidence '+(s.confidence.last?"· rated "+ago(s.confidence.last).toLowerCase():"")+'</small>'+
-        (s.confidence.sessions?'<div class="st-conf"><span class="st-conf-label">Needs practice</span><div>'+chips(s.confidence.practise,"low")+'</div><span class="st-conf-label">Confident</span><div>'+chips(s.confidence.confident,"high")+'</div></div>':'<p>Do a confidence check to see which skills need practice.</p>')+
-        '<button type="button" class="st-action" data-st-action="confidence">'+(s.confidence.sessions?"Rate my skills again":"Rate my skills")+'</button>'+
-      '</div>'+
-      (s.scenarios.total?'<div class="st-row"><small>Real-life scenarios</small><p><strong>'+s.scenarios.done+' of '+s.scenarios.total+'</strong> done · '+s.scenarios.topicsDone+' of 4 topics complete</p><button type="button" class="st-action" data-st-action="scenarios">'+(s.scenarios.done?"Carry on":"Start")+'</button></div>':"")+
-      '<div class="st-row"><small>Achievements · '+ach.count+' of '+ach.list.length+'</small>'+
-        (ach.count?'<ul class="st-earned">'+ach.list.filter(x=>x.earned).map(x=>'<li title="'+escHtml(x.desc)+'"><span class="st-badge-icon">'+BADGE+'</span>'+escHtml(x.label)+'</li>').join("")+'</ul>':'<p>None yet. Your first one isn’t far away.</p>')+
-        '<details class="st-all"><summary>See all '+ach.list.length+'</summary><ul class="st-badges">'+ach.list.map(x=>'<li class="'+(x.earned?"on":"")+'"><span class="st-badge-icon">'+BADGE+'</span><strong>'+escHtml(x.label)+'</strong><small>'+escHtml(x.desc)+'</small></li>').join("")+'</ul></details>'+
+  /* ---------- Progress page: one card style, animated bars, counting numbers and popping badges ---------- */
+  const ICON={
+    pace:'<path d="M12 21a9 9 0 1 1 9-9"/><path d="M12 12l4-3"/><circle cx="12" cy="12" r="1.2"/>',
+    activity:'<path d="M3 12h4l3-7 4 14 3-7h4"/>',
+    quality:'<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9Z"/>',
+    tests:'<path d="M7 3.5h10a1.5 1.5 0 0 1 1.5 1.5v15l-3-1.8-3 1.8-3-1.8-3 1.8V5A1.5 1.5 0 0 1 7 3.5Z"/><path d="M9 8.5h6M9 12h6"/>',
+    skills:'<path d="M4 20h16"/><rect x="5.5" y="12" width="3" height="6" rx="1"/><rect x="10.5" y="8" width="3" height="10" rx="1"/><rect x="15.5" y="4" width="3" height="14" rx="1"/>',
+    scen:'<path d="M12 3.5 5 6v5.5c0 4.4 3 7.9 7 9 4-1.1 7-4.6 7-9V6l-7-2.5Z"/>',
+    award:'<circle cx="12" cy="9" r="6"/><path d="m8.5 14-1.5 7 5-3 5 3-1.5-7"/>',
+    flame:'<path d="M12 21c-3.9 0-6.5-2.6-6.5-6.2 0-3.1 2-5.2 3.6-7 .5 1.8 1.5 2.9 2.6 3.4-.3-3 .9-5.8 3.3-8.2.3 2.9 1.4 4.6 2.7 6.4 1 1.4 1.8 3 1.8 5.1 0 3.9-2.9 6.5-7.5 6.5Z"/>',
+    camera:'<rect x="3" y="6.5" width="18" height="14" rx="3"/><path d="M8 6.5l1.4-2h5.2l1.4 2"/><circle cx="12" cy="13.5" r="3.5"/>',
+    clock:'<circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/>'
+  };
+  const svg=d=>'<svg viewBox="0 0 24 24" aria-hidden="true">'+d+'</svg>';
+  const num=(to,opts={})=>'<b class="pg-num" data-to="'+to+'" data-dec="'+(opts.dec||0)+'">'+(opts.dec?Number(to).toFixed(opts.dec):to)+'</b>';
+  const bar=(pct,opts={})=>{const p=Math.max(0,Math.min(100,Math.round(pct)));return '<span class="pg-bar'+(opts.cls?" "+opts.cls:"")+'" role="img" aria-label="'+escHtml(opts.label||p+"%")+'"><i style="--to:'+p+'%;--d:'+(opts.delay||0)+'ms"></i>'+(opts.mark!=null?'<em style="left:'+Math.max(0,Math.min(100,opts.mark))+'%"></em>':"")+'</span>'};
+  const card=(id,icon,title,meta,body,action)=>'<section class="ui-card pg-card" id="'+id+'"><header class="pg-head"><span class="pg-icon">'+svg(ICON[icon])+'</span><h3>'+title+'</h3>'+(meta?'<span class="pg-meta">'+meta+'</span>':"")+'</header>'+body+(action?'<button type="button" class="pg-action" data-st-action="'+action[1]+'">'+action[0]+'</button>':"")+'</section>';
+  const row=(label,value,barHtml)=>'<div class="pg-row"><div class="pg-row-top"><span>'+label+'</span><strong>'+value+'</strong></div>'+barHtml+'</div>';
+
+  /* Top of the Progress page: KSB ring plus course time against evidence. */
+  function heroHtml(s){
+    const a=s.a,tp=a.timePct,gap=tp==null?null:tp-a.ksbPct;
+    const verdict=gap==null?null:gap>10?["behind","A little behind"]:gap<-5?["ahead","Ahead of schedule"]:["ontrack","On track"];
+    const perUnit=s.weeksPerUnit!=null?Math.max(1,Math.floor(s.weeksPerUnit)):null;
+    return '<section class="ui-card pg-card pg-hero" id="pg-hero">'+
+      '<div class="pg-hero-ring" data-ring="'+a.ksbPct+'">'+ringSvg(a.ksbPct)+'<span class="pg-hero-label"><span class="pg-hero-num">'+num(a.ksbPct)+'<small>%</small></span><em>of KSBs</em></span></div>'+
+      '<div class="pg-hero-side">'+
+        '<p class="pg-hero-lead"><strong>'+num(a.met)+' of '+a.total+'</strong> KSBs have evidence</p>'+
+        (tp!=null?row("Course time",tp+"%",bar(tp,{cls:"muted"}))+row("Evidence",a.ksbPct+"%",bar(a.ksbPct,{delay:150})):'<p class="pg-note">Add your start and end dates in Profile to see if you’re on track.</p>')+
+        (verdict?'<span class="pg-verdict '+verdict[0]+'">'+verdict[1]+'</span>':"")+
+        (perUnit?'<span class="pg-note">About '+perUnit+' week'+(perUnit===1?"":"s")+' per unit left</span>':"")+
       '</div>'+
     '</section>';
   }
+  function ringSvg(pct){const r=52,c=2*Math.PI*r;return '<svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="'+r+'" class="pg-ring-track"/><circle cx="60" cy="60" r="'+r+'" class="pg-ring-fill" style="--c:'+c.toFixed(1)+';--v:'+(c*Math.max(0,Math.min(100,pct))/100).toFixed(1)+'" transform="rotate(-90 60 60)"/></svg>'}
 
-  window.eviaStats={compute,achievements,markSeen,nudges,sectionHtml,ago};
+  function sectionHtml(s){
+    const ach=achievements(s);
+    const out=[];
+    // Activity
+    out.push(card("pg-activity","activity","Activity","Last upload: "+escHtml(ago(s.lastUpload).toLowerCase()),
+      '<div class="pg-tiles">'+
+        '<div class="pg-tile'+(s.activeThisWeek?" hot":"")+'"><span class="pg-tile-icon flame">'+svg(ICON.flame)+'</span>'+num(s.streak)+'<small>week streak</small></div>'+
+        '<div class="pg-tile"><span class="pg-tile-icon">'+svg(ICON.camera)+'</span>'+num(s.allPacks)+'<small>evidence packs'+(s.packsThisMonth?' · +'+s.packsThisMonth+' this month':"")+'</small></div>'+
+        '<div class="pg-tile"><span class="pg-tile-icon">'+svg(ICON.clock)+'</span>'+num(Math.round(s.otjTotal*10)/10,{dec:s.otjTotal%1?1:0})+'<small>OTJ hours'+(s.otjWeek?' · +'+(Math.round(s.otjWeek*10)/10)+' this week':"")+'</small></div>'+
+      '</div>'+(s.streak&&!s.activeThisWeek?'<p class="pg-note">Add something this week to keep your streak going.</p>':"")));
+    // Evidence quality
+    out.push(card("pg-quality","quality","Evidence quality","",
+      s.coverage==null?'<p class="pg-note">Submit a unit with a write-up and Evia will score how many key points it covers.</p>':
+      row("Write-ups cover the key points",s.coverage+"%",bar(s.coverage))+
+      (s.avgPhotos!=null?row("Photos per evidence pack",(Math.round(s.avgPhotos*10)/10)+" · aim for 5+",bar(s.avgPhotos/5*100,{delay:120})):"")));
+    // Tests
+    out.push(card("pg-tests","tests","Tests",s.tests.length?s.testCount+" taken":"",
+      s.tests.length?s.tests.map((t,i)=>{const last=t.latest?(typeof t.latest.pct==="number"?t.latest.pct:Math.round((t.latest.score||0)/(t.latest.total||1)*100)):0;return row(escHtml(t.name),last+"% <small>best "+t.best+"%</small>",bar(last,{delay:i*100,mark:t.best,cls:last>=80?"good":last<50?"low":""}))}).join(""):'<p class="pg-note">No tests taken yet. A quick EPA quiz takes about 3 minutes.</p>',
+      ["Practice tests","tests"]));
+    // Skills (confidence self-assessment)
+    const scores=s.confidence.scores.slice().sort((x,y)=>x.score-y.score);
+    const LEVEL=["Need more training","Know the basics","Quite confident","Mastered"];
+    out.push(card("pg-skills","skills","Your skills",s.confidence.last?"rated "+escHtml(ago(s.confidence.last).toLowerCase()):"",
+      scores.length?scores.map((x,i)=>row(escHtml(x.area),LEVEL[x.score-1]||"",bar(x.score/4*100,{delay:i*60,cls:x.score<=2?"low":"good"}))).join(""):'<p class="pg-note">Rate yourself on each practical skill to see what to practise.</p>',
+      [scores.length?"Rate my skills again":"Rate my skills","confidence"]));
+    // Scenarios
+    const sc=s.scenarios&&s.scenarios.topics;
+    if(sc&&sc.length)out.push(card("pg-scen","scen","Real-life scenarios",s.scenarios.done+" of "+s.scenarios.total,
+      sc.map((t,i)=>row(escHtml(t.title),t.done+" of "+t.total,bar(t.total?t.done/t.total*100:0,{delay:i*90,cls:t.done===t.total?"good":""}))).join(""),
+      [s.scenarios.done?"Carry on":"Start","scenarios"]));
+    // Achievements
+    const earned=ach.list.filter(x=>x.earned),fresh=new Set(ach.fresh.map(x=>x.id));
+    out.push(card("pg-awards","award","Achievements",'<b class="pg-num" data-to="'+ach.count+'">'+ach.count+'</b> of '+ach.list.length,
+      (earned.length?'<ul class="pg-badges">'+earned.map((x,i)=>'<li class="pg-badge'+(fresh.has(x.id)?" new":"")+'" style="--i:'+i+'" title="'+escHtml(x.desc)+'"><span class="pg-badge-icon">'+BADGE+'</span><strong>'+escHtml(x.label)+'</strong></li>').join("")+'</ul>':'<p class="pg-note">None yet. Your first one isn’t far away.</p>')+
+      '<details class="pg-all"><summary>See all '+ach.list.length+'</summary><ul class="pg-locked">'+ach.list.map(x=>'<li class="'+(x.earned?"on":"")+'"><span class="pg-badge-icon">'+BADGE+'</span><span><strong>'+escHtml(x.label)+'</strong><small>'+escHtml(x.desc)+'</small></span></li>').join("")+'</ul></details>'));
+    return '<div class="pg-stats" id="ui-stats">'+out.join("")+'</div>';
+  }
+
+  /* Plays each card's animation as it scrolls into view; everything shows at once with reduced motion. */
+  function animate(root,still){
+    if(!root)return;
+    const reduced=still||(window.eviaAccessibility&&window.eviaAccessibility.reducedMotion())||matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const cards=[...root.querySelectorAll(".pg-card,.ui-groups")];
+    const countUp=el=>{
+      const to=Number(el.dataset.to)||0,dec=Number(el.dataset.dec)||0,start=performance.now(),dur=900;
+      const step=t=>{const k=Math.min(1,(t-start)/dur),e=1-Math.pow(1-k,3);el.textContent=(to*e).toFixed(dec);if(k<1)requestAnimationFrame(step)};
+      el.textContent=(0).toFixed(dec);requestAnimationFrame(step);
+    };
+    const play=c=>{
+      if(c.classList.contains("pg-in"))return;
+      c.classList.add("pg-in");
+      if(reduced)return;
+      c.querySelectorAll(".pg-num").forEach(countUp);
+      c.querySelectorAll(".ui-ring-fill").forEach(el=>{const full=el.getAttribute("stroke-dasharray");if(!full)return;const circ=full.split(" ")[1];el.style.transition="none";el.setAttribute("stroke-dasharray","0 "+circ);void el.getBoundingClientRect();el.style.transition="stroke-dasharray 1s cubic-bezier(.3,.8,.3,1)";el.setAttribute("stroke-dasharray",full)});
+    };
+    if(reduced||!("IntersectionObserver" in window)){cards.forEach(c=>{c.classList.add("pg-in","pg-still")});return}
+    root.classList.add("pg-animate");
+    const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){play(e.target);io.unobserve(e.target)}}),{threshold:.25});
+    cards.forEach(c=>io.observe(c));
+  }
+
+  window.eviaStats={compute,achievements,markSeen,nudges,sectionHtml,heroHtml,animate,ago};
 })();

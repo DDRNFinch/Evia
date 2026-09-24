@@ -38,14 +38,14 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("Home shows progress and quick actions",await page.$("#ui-home-progress")&&await page.$("#ui-practice"));
     for(const s of ["course","progress","portfolio","learning","home"]){await page.evaluate(s=>nav(s),s);await page.waitForTimeout(450)}
     await page.evaluate(()=>nav("progress"));await page.waitForTimeout(450);
-    check("Progress shows KSB groups and My stats",await page.$(".ui-groups")&&await page.$("#ui-stats"));
+    check("Progress shows the hero, KSB groups and stats cards",await page.$("#pg-hero")&&await page.$(".ui-groups")&&await page.$("#pg-activity")&&await page.$("#pg-awards"));
     await page.evaluate(()=>nav("portfolio"));await page.waitForTimeout(450);
     check("Portfolio shows the unit with evidence",await page.$("[data-unit-open]"));
     await page.evaluate(()=>{nav("course")});await page.waitForTimeout(450);await page.evaluate(()=>openUnit(3));await page.waitForTimeout(900);
     check("An evidence pack opens",await page.$("#write"));
 
     await page.evaluate(()=>window.eviaOpenSendToPortfolio(data().u[2][0]));await page.waitForTimeout(3500);
-    check("Send to e-portfolio prepares the PDF and photo",await page.evaluate(()=>/Evidence PDF/.test(document.getElementById("eport-files").innerText)&&/Photo 1/.test(document.getElementById("eport-files").innerText)));
+    check("Send to e-portfolio shows a PDF preview, Save PDF and the zip",await page.evaluate(()=>!!document.getElementById("eport-preview")&&!!document.getElementById("eport-save")&&/1 photo, just in case/.test(document.getElementById("eport-zip").innerText)));
 
     await page.evaluate(()=>nav("home"));await page.waitForTimeout(450);
     await page.evaluate(()=>window.chat());

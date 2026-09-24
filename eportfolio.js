@@ -107,16 +107,13 @@
       doc.text(pdfText(learner+" · "+unitName),M,H-9);
       doc.text("Page "+n+" of "+pages,W-M,H-9,{align:"right"});
     }
-    return doc.output("blob");
+    const out=doc.output("blob");out.evPages=pages;return out;
   }
 
   function saveFile(file){
     const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=file.name;
     document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),60000);
   }
-  /* Chrome on Android refuses shares of more than 10 files (or very large ones), so Share all only appears within that. */
-  const SHARE_MAX_FILES=10,SHARE_MAX_BYTES=45*1024*1024;
-  const withinShareLimits=files=>files.length<=SHARE_MAX_FILES&&files.reduce((n,f)=>n+f.size,0)<=SHARE_MAX_BYTES;
   function notify(message){if(typeof showEvidenceToast==="function")showEvidenceToast(message,true);else alert(message)}
   /* Resolves true once shared. Never falls back to downloading: a failed share says so and leaves Save for the learner. */
   async function shareFiles(files){
@@ -152,20 +149,35 @@
       .eport-ksbs{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px}
       .eport-ksbs span{font-size:11px;font-weight:750;color:var(--yellow-ink);background:var(--soft);border:1px solid var(--yellow-line);border-radius:999px;padding:3px 9px}
       .eport-copy{min-height:40px;padding:8px 14px;border-radius:12px;border:1px solid #e3e7ed;background:#fff;font-size:12px;font-weight:700;cursor:pointer}
-      .eport-files{display:grid;gap:8px}
-      .eport-file{display:flex;align-items:center;gap:12px;padding:10px!important;margin:0!important}
-      .eport-thumb{width:48px;height:48px;flex:0 0 48px;border-radius:12px;object-fit:cover;background:#f2f4f7;display:grid;place-items:center;color:var(--yellow-ink)}
-      .eport-thumb svg,.eport-btn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-      .eport-thumb.pdf{background:var(--soft)}
-      .eport-meta{flex:1;min-width:0;display:grid;gap:3px}
-      .eport-meta strong{font-size:13px;line-height:1.25}
-      .eport-meta span{font-size:10.5px;color:#667085;overflow-wrap:anywhere;line-height:1.3}
-      .eport-actions{display:flex;gap:6px;flex:0 0 auto}
-      .eport-btn{width:40px;height:40px;border-radius:12px;border:1px solid #e3e7ed;background:#fff;display:grid;place-items:center;color:#273244;cursor:pointer}
-      .eport-btn:disabled{opacity:.4}
-      .eport-all{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-      .eport-all.single{grid-template-columns:1fr}
-      .eport-all button{min-height:48px;border-radius:14px}
+      .eport-files{display:grid;gap:10px;margin-bottom:13px}
+      .eport-pdf{display:grid;gap:12px;margin:0!important}
+      .eport-sheet{position:relative;display:flex;flex-direction:column;gap:6px;width:min(230px,70%);aspect-ratio:1/1.414;margin:4px auto 0;padding:16px 14px;border-radius:6px;border:1px solid #e4e7ec;background:#fff;box-shadow:0 10px 26px rgba(16,24,40,.12),0 2px 4px rgba(16,24,40,.06);text-align:left;font:inherit;color:#172033;cursor:pointer;overflow:hidden;transition:transform .2s ease,box-shadow .2s ease}
+      .eport-sheet:active{transform:scale(.98)}
+      .eport-sheet-kicker{font-size:6.5px;font-weight:800;letter-spacing:.14em;color:#667085}
+      .eport-sheet-title{font-size:14px;line-height:1.15;font-weight:800}
+      .eport-sheet-sub{font-size:7.5px;color:#667085}
+      .eport-sheet-rule{height:2px;background:var(--yellow);border-radius:2px;margin:2px 0}
+      .eport-sheet-photos{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+      .eport-sheet-photos img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:3px;background:#f2f4f7}
+      .eport-sheet-text{font-size:7.5px;line-height:1.45;color:#344054;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+      .eport-sheet-ksbs{display:flex;flex-wrap:wrap;gap:3px}
+      .eport-sheet-ksbs i{font-style:normal;font-size:6.5px;font-weight:800;padding:1.5px 4px;border-radius:3px;background:var(--soft);color:var(--yellow-ink)}
+      .eport-sheet-open{position:absolute;left:0;right:0;bottom:0;padding:8px;background:linear-gradient(transparent,rgba(255,255,255,.96) 40%);font-size:10px;font-weight:800;color:var(--yellow-ink);text-align:center}
+      .eport-sheet.is-loading{cursor:default;gap:10px;box-shadow:0 6px 18px rgba(16,24,40,.08)}
+      .eport-sheet.is-loading span{display:block;height:10px;border-radius:4px;background:linear-gradient(90deg,#f2f4f7,#e9edf2,#f2f4f7);background-size:200% 100%;animation:eportShimmer 1.2s linear infinite}
+      .eport-sheet.is-loading span:nth-child(1){width:60%;height:14px}.eport-sheet.is-loading span:nth-child(3){height:70px}
+      @keyframes eportShimmer{to{background-position:-200% 0}}
+      .eport-status{margin:0;text-align:center;font-size:12px;color:#667085}
+      .eport-status strong{color:#172033}
+      .eport-main{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+      .eport-main.single{grid-template-columns:1fr}
+      .eport-main button{min-height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14.5px}
+      .eport-main svg,.eport-zip svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+      .eport-zip{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:13px 16px;border-radius:16px;border:1px dashed #d0d5dd;background:transparent;font:inherit;text-align:left;color:#344054;cursor:pointer}
+      .eport-zip span{display:grid;gap:2px}
+      .eport-zip strong{font-size:13.5px;color:#172033}
+      .eport-zip small{font-size:11.5px;color:#667085}
+      .eport-zip:disabled{opacity:.6}
       .eport-steps{margin:0;padding-left:18px;font-size:12px;line-height:1.6;color:#475467}
     `;
     document.head.appendChild(style);
@@ -190,11 +202,10 @@
     const ksbs=[...new Set(entries.flatMap(e=>e.k||[]))];
     $("#screen").innerHTML=back+
       '<div class="eport-page">'+
-        '<div class="card eport-intro"><div class="section-title">SEND TO E-PORTFOLIO</div><h2>'+escHtml(unitName)+'</h2><p>Upload these files to Aptem or your e-portfolio. Each file is named so your assessor can see what it is.</p><span class="eport-sent" id="eport-sent">'+(sent?"Last sent "+escHtml(ukDate(sent)):"")+'</span></div>'+
+        '<div class="card eport-intro"><div class="section-title">SEND TO E-PORTFOLIO</div><h2>'+escHtml(unitName)+'</h2><p>Upload this PDF to Aptem or your e-portfolio. It’s named so your assessor can see what it is.</p><span class="eport-sent" id="eport-sent">'+(sent?"Last sent "+escHtml(ukDate(sent)):"")+'</span></div>'+
         '<div class="card"><div class="section-title">KSBS COVERED</div><div class="eport-ksbs">'+ksbs.map(k=>'<span>'+escHtml(k)+'</span>').join("")+'</div><button type="button" class="eport-copy" id="eport-copy">Copy KSB codes</button></div>'+
-        '<div class="section-title">FILES</div><div class="eport-files" id="eport-files"><div class="card eport-file"><span class="eport-thumb pdf">'+icon.pdf+'</span><span class="eport-meta"><strong>Evidence PDF</strong><span>Preparing…</span></span></div></div>'+
-        '<div class="eport-all" id="eport-all"></div>'+
-        '<div class="card"><div class="section-title">HOW TO UPLOAD</div><ol class="eport-steps"><li>Tap <strong>Share</strong> to send a file straight to another app, or <strong>Save</strong> to keep it on your phone.</li><li>In Aptem (or your e-portfolio), add new evidence and upload the PDF and any photos.</li><li>Tag the KSBs listed above.</li></ol></div>'+
+        '<div class="eport-files" id="eport-files"><div class="card eport-pdf"><div class="eport-sheet is-loading" aria-hidden="true"><span></span><span></span><span></span></div><p class="eport-status">Preparing your evidence PDF…</p></div></div>'+
+        '<div class="card"><div class="section-title">HOW TO UPLOAD</div><ol class="eport-steps"><li>Tap <strong>Share PDF</strong> to send it straight to Aptem or another app, or <strong>Save PDF</strong> to keep it on your phone.</li><li>In Aptem (or your e-portfolio), add new evidence and upload the PDF.</li><li>Tag the KSBs listed above.</li></ol></div>'+
       '</div>';
     $("#eport-back").onclick=()=>nav("portfolio");
     $("#eport-copy").onclick=async()=>{
@@ -215,7 +226,7 @@
     const lastDate=isoDate(entryTime(entries[entries.length-1])||Date.now());
     try{
       const pdf=await buildUnitPdf(unitName,entries,photosByEntry);
-      files.push({kind:"pdf",title:"Evidence PDF",file:new File([pdf],base+"_evidence_"+lastDate+".pdf",{type:"application/pdf"})});
+      files.push({kind:"pdf",title:"Evidence PDF",pages:pdf.evPages,file:new File([pdf],base+"_evidence_"+lastDate+".pdf",{type:"application/pdf"})});
     }catch(err){console.error("Evia PDF failed",err);problems.push(/PDF library/.test(err&&err.message)?"The PDF couldn’t be made because part of Evia hasn’t downloaded yet. Open Evia once with signal, then try again.":"The PDF couldn’t be made on this phone ("+escHtml((err&&err.message)||"unknown error")+").")}
     let n=0,unreadable=Math.max(0,expected-photosByEntry.flat().length);
     for(const src of photosByEntry.flat()){
@@ -233,29 +244,41 @@
       return;
     }
     if(!document.getElementById("eport-files"))return; // learner navigated away
-    const shareOk=canShareFiles([files[0].file]);
-    $("#eport-files").innerHTML=files.map((f,i)=>
-      '<div class="card eport-file">'+
-        (f.kind==="pdf"?'<span class="eport-thumb pdf">'+icon.pdf+'</span>':'<img class="eport-thumb" src="'+f.src+'" alt="">')+
-        '<span class="eport-meta"><strong>'+escHtml(f.title)+'</strong><span>'+escHtml(f.file.name)+' · '+formatBytes(f.file.size)+'</span></span>'+
-        '<span class="eport-actions">'+(shareOk?'<button type="button" class="eport-btn" data-eport-share="'+i+'" aria-label="Share '+escHtml(f.title)+'">'+icon.share+'</button>':"")+'<button type="button" class="eport-btn" data-eport-save="'+i+'" aria-label="Save '+escHtml(f.title)+'">'+icon.save+'</button></span>'+
-      '</div>').join("");
-    document.querySelectorAll("[data-eport-share]").forEach(b=>b.onclick=async()=>{const f=files[+b.dataset.eportShare];if(await shareFiles([f.file]))markSent(unitName)});
-    document.querySelectorAll("[data-eport-save]").forEach(b=>b.onclick=()=>{saveFile(files[+b.dataset.eportSave].file);markSent(unitName)});
-    if(problems.length)$("#eport-files").insertAdjacentHTML("afterbegin",'<div class="card eport-note" role="status"><p>'+problems.join("<br>")+'</p></div>');
-    const all=files.map(f=>f.file),shareAll=files.length>1&&withinShareLimits(all)&&canShareFiles(all);
-    const allEl=$("#eport-all");
-    allEl.classList.toggle("single",!shareAll);
-    allEl.innerHTML=(shareAll?'<button type="button" class="primary" id="eport-share-all">Share all files</button>':"")+'<button type="button" class="secondary" id="eport-zip">Download all (.zip)</button>';
-    const shareAllBtn=$("#eport-share-all");
-    if(shareAllBtn)shareAllBtn.onclick=async()=>{if(await shareFiles(all))markSent(unitName)};
+    /* The PDF is the main download, with a preview of its first page; the zip (PDF plus every photo) is there just in case. */
+    const pdf=files.find(f=>f.kind==="pdf"),photos=files.filter(f=>f.kind==="photo");
+    const shareOk=pdf&&canShareFiles([pdf.file]);
+    const first=entries[0]||{},firstPhotos=(photosByEntry[0]||[]).slice(0,2);
+    const excerpt=String(first.w||"").trim();
+    const preview=pdf?'<button type="button" class="eport-sheet" id="eport-preview" aria-label="Open the full evidence PDF">'+
+        '<span class="eport-sheet-kicker">EVIA · EVIDENCE PACK</span>'+
+        '<strong class="eport-sheet-title">'+escHtml(unitName)+'</strong>'+
+        '<span class="eport-sheet-sub">'+escHtml(readJson("evia7-profile",{}).name||"Apprentice")+' · '+entries.length+' evidence entr'+(entries.length===1?"y":"ies")+'</span>'+
+        '<span class="eport-sheet-rule"></span>'+
+        (firstPhotos.length?'<span class="eport-sheet-photos">'+firstPhotos.map(src=>'<img src="'+src+'" alt="">').join("")+'</span>':"")+
+        (excerpt?'<span class="eport-sheet-text">'+escHtml(excerpt.length>150?excerpt.slice(0,150).trim()+"…":excerpt)+'</span>':"")+
+        '<span class="eport-sheet-ksbs">'+ksbs.slice(0,8).map(k=>'<i>'+escHtml(k)+'</i>').join("")+(ksbs.length>8?'<i>+'+(ksbs.length-8)+'</i>':"")+'</span>'+
+        '<span class="eport-sheet-open">Tap to open the full PDF</span>'+
+      '</button>':"";
+    $("#eport-files").innerHTML=
+      (problems.length?'<div class="card eport-note" role="status"><p>'+problems.join("<br>")+'</p></div>':"")+
+      (pdf?'<div class="card eport-pdf">'+preview+
+        '<p class="eport-status"><strong>Evidence PDF</strong> · '+(pdf.pages?pdf.pages+" page"+(pdf.pages===1?"":"s")+" · ":"")+formatBytes(pdf.file.size)+'</p>'+
+        '<div class="eport-main'+(shareOk?"":" single")+'">'+(shareOk?'<button type="button" class="primary" id="eport-share">'+icon.share+'Share PDF</button>':"")+'<button type="button" class="'+(shareOk?"secondary":"primary")+'" id="eport-save">'+icon.save+'Save PDF</button></div>'+
+      '</div>':"")+
+      '<button type="button" class="eport-zip" id="eport-zip"><span><strong>Download everything (.zip)</strong><small>'+(pdf?"The PDF and ":"")+photos.length+' photo'+(photos.length===1?"":"s")+', just in case</small></span>'+icon.save+'</button>';
+    if(pdf){
+      const pdfUrl=URL.createObjectURL(pdf.file);
+      $("#eport-preview").onclick=()=>{const w=window.open(pdfUrl,"_blank");if(!w)saveFile(pdf.file)};
+      const shareBtn=$("#eport-share");if(shareBtn)shareBtn.onclick=async()=>{if(await shareFiles([pdf.file]))markSent(unitName)};
+      $("#eport-save").onclick=()=>{saveFile(pdf.file);markSent(unitName)};
+    }
     $("#eport-zip").onclick=async()=>{
-      const btn=$("#eport-zip");btn.disabled=true;btn.textContent="Preparing zip…";
+      const btn=$("#eport-zip"),label=btn.querySelector("strong");btn.disabled=true;label.textContent="Preparing zip…";
       try{
         const zip=await makeStoredZip(files.map(f=>({path:f.file.name,blob:f.file})));
         saveFile(new File([zip],base+"_"+isoDate(Date.now())+".zip",{type:"application/zip"}));markSent(unitName);
       }catch(err){console.error("Evia zip failed",err);alert("Evia couldn't create the zip. Please try again.")}
-      finally{btn.disabled=false;btn.textContent="Download all (.zip)"}
+      finally{btn.disabled=false;label.textContent="Download everything (.zip)"}
     };
   }
 

@@ -164,7 +164,7 @@
     if(!list.length){openConfidence();return}
     const i=Math.min(index||0,list.length-1),x=list[i],t=x.task;
     const body='<p class="pr-intro">'+escHtml(t.brief)+'</p>'+
-      '<div class="pr-chips">'+t.skills.map(k=>'<span class="st-chip '+(x.covers.includes(k)?"low":"")+'">'+escHtml(k)+'</span>').join("")+'</div>'+
+      '<div class="pr-chips">'+t.skills.map(k=>'<span class="pr-chip '+(x.covers.includes(k)?"low":"")+'">'+escHtml(k)+'</span>').join("")+'</div>'+
       '<p class="pr-note">Highlighted skills are ones you rated low. Time: about '+escHtml(t.time)+'.</p>'+
       '<h3 class="pr-h">Steps</h3><ol class="pr-steps">'+t.steps.map(st=>'<li>'+escHtml(st)+'</li>').join("")+'</ol>'+
       '<div class="pr-banner">'+escHtml(t.check)+' Take photos as you go: you can add them to your portfolio as supporting evidence.</div>'+
