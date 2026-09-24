@@ -99,7 +99,7 @@
     if(seen.day===today&&(!n.celebrate||seen.id===n.id))return;
     const name=firstName();
     const fire=()=>{
-      if(screen!=="course"||document.querySelector(".chat-sheet"))return;
+      if(screen!=="course"||!document.getElementById("ui-next")||document.querySelector(".chat-sheet"))return;
       if(document.querySelector(".evidence-toast")){bubbleTimer=setTimeout(fire,2400);return} /* wait for "Saved"-style messages to clear */
       const dismiss=()=>{localStorage.setItem(TIP_KEY,JSON.stringify({day:today,id:n.id}));if(n.achievements)window.eviaStats.markSeen(n.achievements)};
       const lead=n.celebrate?(name?"Well done "+escHtml(name)+"! ":"Well done! "):partOfDay()+(name?" "+escHtml(name):"")+". ";
@@ -663,6 +663,9 @@
     courseNudge();
   };
   window.portfolio=()=>{courseView="evidence";window.courses()};
+  /* Evia's bubble belongs to the Course list: it goes when anything else (a unit, supporting evidence) replaces it. */
+  const scrEl=document.getElementById("screen");
+  if(scrEl)new MutationObserver(()=>{if(!document.getElementById("ui-next")&&document.getElementById("ui-evia-bubble"))hideBubble()}).observe(scrEl,{childList:true});
   /* Page changes fade: the current page fades out, the new one fades in. */
   const reduced=()=>window.eviaAccessibility?window.eviaAccessibility.reducedMotion():matchMedia("(prefers-reduced-motion: reduce)").matches;
   let fadeTimer=null;
