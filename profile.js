@@ -14,21 +14,33 @@
 
   function openProfile(){
     const p=get();
+    const nvqOn=!!(window.eviaNvq&&window.eviaNvq.on()),dsl=p.safeguarding||{};
+    const row=(id,icon,title,sub)=>'<button type="button" class="pf-row" id="'+id+'"><span class="pf-row-icon" aria-hidden="true">'+icon+'</span><span class="pf-row-copy"><strong>'+title+'</strong>'+(sub?'<small>'+sub+'</small>':"")+'</span><span class="pf-chev" aria-hidden="true">›</span></button>';
+    const sw=(id,title,sub)=>'<label class="pf-row pf-switch"><span class="pf-row-copy"><strong>'+title+'</strong>'+(sub?'<small>'+sub+'</small>':"")+'</span><input id="'+id+'" type="checkbox" role="switch"><i aria-hidden="true"></i></label>';
+    const group=(title,body,cls)=>'<section class="pf-group'+(cls?" "+cls:"")+'">'+(title?'<h3>'+title+'</h3>':"")+'<div class="pf-card">'+body+'</div></section>';
     document.getElementById("modal-root").innerHTML=
-      '<div class="profile-overlay"><section class="profile-sheet">'+
-      '<div class="profile-head"><div><div class="profile-kicker">YOUR PROFILE</div><h2>Apprentice profile</h2></div><button class="profile-close" id="profile-close">×</button></div>'+
-      '<div class="profile-avatar-row profile-photo-row">'+avatarMarkup(p,false)+'<div class="profile-photo-copy"><strong>Profile picture</strong><label class="profile-upload">Choose photo<input id="avatar-file" type="file" accept="image/*"></label></div></div>'+
-      '<div class="profile-fields">'+
-      '<label>Name<input id="profile-name" value="'+esc(p.name)+'" placeholder="Your name"></label>'+
-      '<div class="profile-dates"><label>Start date<input id="profile-start" type="date" value="'+esc(p.start)+'"></label><label>End date<input id="profile-end" type="date" value="'+esc(p.end)+'"></label></div>'+
-      '</div>'+
-      '<div class="profile-block"><div class="profile-kicker">YOUR COURSE</div><div class="course-options">'+Object.keys(C).map(k=>'<button type="button" class="course-option '+(k===course?"selected":"")+'" data-profile-course="'+k+'">'+esc(C[k].name)+'<span>›</span></button>').join("")+'</div></div>'+
-      (window.eviaNvq&&window.eviaNvq.on()?'<div class="profile-block"><div class="profile-kicker">OPTIONAL UNITS</div><p>Choose at least one. Your Course and Progress pages update straight away.</p><div class="nvq-opts" id="profile-nvq-opts">'+window.eviaNvq.optionalHtml()+'</div></div>':"")+
-      '<div class="profile-block"><div class="profile-kicker">SAFEGUARDING</div><p>Optional. Add your college’s safeguarding lead so you know who to talk to if something’s wrong. Your tutor can tell you who it is. This stays on your phone.</p><div class="profile-fields"><label>Their name<input id="profile-dsl-name" value="'+esc((p.safeguarding||{}).name||"")+'" placeholder="e.g. Jo Smith" autocomplete="off"></label><label>Phone<input id="profile-dsl-phone" type="tel" value="'+esc((p.safeguarding||{}).phone||"")+'" placeholder="e.g. 01234 567890"></label><label>Email<input id="profile-dsl-email" type="email" value="'+esc((p.safeguarding||{}).email||"")+'" placeholder="e.g. safeguarding@college.ac.uk"></label></div></div>'+
-      '<div class="profile-block"><div class="profile-kicker">MATHS & ENGLISH</div><p>Choose which subjects Evia should include in your tests and progress reviews.</p><label class="study-check"><input id="profile-maths" type="checkbox"><span>I am studying Maths</span></label><label class="study-check"><input id="profile-english" type="checkbox"><span>I am studying English</span></label></div>'+
-      '<div class="profile-block"><div class="settings-list"><button type="button" class="settings-entry" id="open-settings"><span class="settings-entry-icon" aria-hidden="true">Aa</span><span class="settings-entry-copy"><strong>Accessibility & settings</strong><small>Personalise how Evia looks, reads and behaves</small></span><span class="settings-entry-arrow" aria-hidden="true">›</span></button><button type="button" class="settings-entry" id="open-shape-picker"><span class="settings-entry-icon" aria-hidden="true"><i class="evia-theme-dot"></i></span><span class="settings-entry-copy"><strong>Evia shape</strong><small>Choose the shape of Evia</small></span><span class="settings-entry-arrow" aria-hidden="true">›</span></button><button type="button" class="settings-entry" id="open-theme-picker"><span class="settings-entry-icon" aria-hidden="true"><i class="evia-theme-dot"></i></span><span class="settings-entry-copy"><strong>Evia colour</strong><small>Choose the colour Evia uses throughout the app</small></span><span class="settings-entry-arrow" aria-hidden="true">›</span></button></div></div><div class="profile-block"><div class="profile-kicker">YOUR SIGNATURE</div><p>Write your signature with your finger. It will be attached to saved evidence with the time and date.</p><div class="signature-wrap"><canvas id="signature-pad" width="900" height="260"></canvas><button type="button" id="clear-signature">Clear</button></div></div>'+
-      '<div class="profile-block evia-storage-block"><div class="profile-kicker">YOUR DATA</div><p id="evia-storage-usage">Checking storage…</p><p id="evia-storage-status"></p><p class="evia-storage-last" id="evia-storage-last"></p><div class="evia-storage-actions"><button type="button" class="secondary" id="evia-backup">Back up portfolio</button><label class="secondary evia-restore-label">Restore backup<input id="evia-restore" type="file" accept=".zip,application/zip" hidden></label></div></div>'+
-      '<div class="profile-actions"><button type="button" class="secondary" id="download-portfolio">Download PDF</button><button type="button" class="primary" id="save-profile">Save profile</button></div>'+
+      '<div class="profile-overlay"><section class="profile-sheet pf-sheet" role="dialog" aria-modal="true" aria-label="Your profile">'+
+      '<button class="profile-close pf-close" id="profile-close" aria-label="Close">×</button>'+
+      '<header class="pf-head"><label class="pf-avatar" title="Change photo">'+avatarMarkup(p,false)+'<span class="pf-avatar-edit" aria-hidden="true">✎</span><input id="avatar-file" type="file" accept="image/*" hidden></label>'+
+        '<input class="pf-name" id="profile-name" value="'+esc(p.name)+'" placeholder="Your name" aria-label="Your name" autocomplete="name">'+
+        '<span class="pf-course">'+esc(C[course].name)+' · '+esc(C[course].std)+'</span></header>'+
+      group("Apprenticeship",
+        '<div class="pf-dates"><label>Started<input id="profile-start" type="date" value="'+esc(p.start)+'"></label><label>Finishes<input id="profile-end" type="date" value="'+esc(p.end)+'"></label></div>'+
+        (nvqOn?'<details class="pf-more"><summary>Optional units<span>'+esc(window.eviaNvq.optionalChosen().join(", "))+'</span></summary><div class="nvq-opts" id="profile-nvq-opts">'+window.eviaNvq.optionalHtml()+'</div></details>':"")+
+        sw("profile-maths","Maths","Include maths in tests and reviews")+
+        sw("profile-english","English","Include English in tests and reviews")+
+        '<details class="pf-more pf-change"><summary>Change course<span>Only if you’ve moved course</span></summary><div class="course-options">'+Object.keys(C).map(k=>'<button type="button" class="course-option '+(k===course?"selected":"")+'" data-profile-course="'+k+'">'+esc(C[k].name)+'<span>'+(k===course?"Current":"›")+'</span></button>').join("")+'</div></details>')+
+      group("Evia",
+        row("open-shape-picker",'<span class="evia-mini"><span class="evia-face"><i></i><i></i></span></span>',"Evia’s shape")+
+        row("open-theme-picker",'<i class="pf-dot"></i>',"Evia’s colour")+
+        row("open-settings","Aa","Accessibility","Text size, reading font, contrast and more"))+
+      group("Signature",'<div class="signature-wrap pf-sign"><canvas id="signature-pad" width="900" height="260" aria-label="Sign with your finger"></canvas><button type="button" id="clear-signature">Clear</button></div><p class="pf-note">Sign with your finger. It’s added to evidence you save.</p>')+
+      group("Safeguarding",
+        '<details class="pf-more"'+(dsl.name?"":"")+'><summary>'+(dsl.name?esc(dsl.name):"Add your safeguarding lead")+'<span>'+(dsl.name?esc(dsl.phone||dsl.email||""):"Optional · your tutor can tell you who")+'</span></summary><div class="pf-fields"><label>Name<input id="profile-dsl-name" value="'+esc(dsl.name||"")+'" placeholder="e.g. Jo Smith" autocomplete="off"></label><label>Phone<input id="profile-dsl-phone" type="tel" value="'+esc(dsl.phone||"")+'" placeholder="e.g. 01234 567890"></label><label>Email<input id="profile-dsl-email" type="email" value="'+esc(dsl.email||"")+'" placeholder="e.g. safeguarding@college.ac.uk"></label></div></details>')+
+      group("Your data",
+        '<div class="evia-storage-block pf-data"><p id="evia-storage-usage">Checking storage…</p><p id="evia-storage-status"></p><p class="evia-storage-last" id="evia-storage-last"></p></div>'+
+        '<div class="pf-data-actions"><button type="button" class="secondary" id="evia-backup">Back up</button><label class="secondary evia-restore-label">Restore<input id="evia-restore" type="file" accept=".zip,application/zip" hidden></label><button type="button" class="secondary" id="download-portfolio">Portfolio PDF</button></div>')+
+      '<div class="pf-save"><button type="button" class="primary" id="save-profile">Save</button></div>'+
       '</section></div>';
 
     const canvas=document.getElementById("signature-pad"),ctx=canvas.getContext("2d");

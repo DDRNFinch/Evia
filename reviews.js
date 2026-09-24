@@ -145,7 +145,9 @@
     const task=window.eviaPractice&&window.eviaPractice.suggestTasks(1)[0];
     const prevReview=readJson(REVIEWS,[]).filter(r=>r.course===course).pop();
     const prevTargets=mine();
+    const prof=readJson("evia7-profile",{}),startMs=Date.parse(prof.start||"");
     return {
+      weeksIn:isNaN(startMs)?null:Math.max(0,(Date.now()-startMs)/(7*864e5)),maths:!!prof.mathsEnabled,english:!!prof.englishEnabled,
       ksbPct:a.ksbPct,met:a.met,total:a.total,timePct:a.timePct,verdict:gap==null?null:gap>10?"behind":gap<-5?"ahead":"ontrack",weeksPerUnit:S.weeksPerUnit!=null?Math.max(1,Math.floor(S.weeksPerUnit)):null,weeksLeft:S.weeksLeft,
       unitsStarted:startedUnits(S),unitsTotal:a.units.length,packs:S.allPacks,coverage:S.coverage,avgPhotos:S.avgPhotos!=null?Math.round(S.avgPhotos*10)/10:null,
       strongest:checks[0]?checks[0].u.name:null,weakest:checks.length>1?checks[checks.length-1].u.name:null,weakestMissing:checks.length>1?checks[checks.length-1].missing.slice(0,3):[],
@@ -158,47 +160,83 @@
   }
   const bar=(pct,cls,d)=>'<span class="pg-bar'+(cls?" "+cls:"")+'"><i style="--to:'+Math.round(Math.max(0,Math.min(100,pct)))+'%;--d:'+(d||0)+'ms"></i></span>';
   const row=(l,v,b)=>'<div class="pg-row"><div class="pg-row-top"><span>'+l+'</span><strong>'+v+'</strong></div>'+b+'</div>';
+  /* "You" against "where you should be by now", with a tick when they're there. */
+  const goals=list=>{list=list.filter(Boolean);return list.length?'<div class="rv-goals"><div class="rv-goals-head"><span></span><span>You</span><span>Where you should be</span></div>'+list.map(([label,you,target,ok])=>'<div class="rv-goal '+(ok?"ok":"under")+'"><span>'+label+'</span><b>'+you+'</b><em>'+target+'</em></div>').join("")+'</div>':""};
+  /* Quick things to do now: the review saves your place and brings you back. */
+  const quick=(readOnly,items)=>{items=items.filter(Boolean);return readOnly||!items.length?"":'<div class="rv-quick"><span>Want to do one now? I’ll bring you back here.</span><div>'+items.map(([id,label])=>'<button type="button" class="secondary" data-rv-quick="'+id+'">'+label+'</button>').join("")+'</div></div>'};
   const big=(n,l)=>'<div class="rv-big"><b>'+n+'</b><small>'+l+'</small></div>';
-  const say=t=>'<p class="rv-evia"><span class="rv-evia-face" aria-hidden="true"><i></i><i></i></span><span>'+t+'</span></p>';
+  /* A small Evia in the learner's own shape and colour. */
+  const say=t=>'<p class="rv-evia"><span class="evia-mini" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span><span>'+t+'</span></p>';
   const chips=(list,cls)=>list.length?'<div class="rv-chips">'+list.map(x=>'<span class="pr-chip '+(cls||"")+'">'+escHtml(x)+'</span>').join("")+'</div>':"";
   function slides(r,readOnly){
     const s=r.snapshot,v={behind:["A little behind","low"],ontrack:["On track","good"],ahead:["Ahead of schedule","good"]}[s.verdict];
+    const tp=s.timePct,nvq=!!(window.eviaNvq&&window.eviaNvq.on()),w=nvq?"criteria":"KSBs";
     const out=[];
     out.push({title:"Overview",body:
-      '<div class="rv-hero"><div class="rv-ring" style="--p:'+s.ksbPct+'"><b>'+s.ksbPct+'%</b><small>of KSBs</small></div><div class="rv-hero-side">'+
+      '<div class="rv-hero"><div class="rv-ring" style="--p:'+s.ksbPct+'"><b>'+s.ksbPct+'%</b><small>of '+w+'</small></div><div class="rv-hero-side">'+
         (s.timePct!=null?row("Course time",s.timePct+"%",bar(s.timePct,"muted"))+row("Evidence",s.ksbPct+"%",bar(s.ksbPct,"",150)):"")+(v?'<span class="pg-verdict '+(v[1]==="good"?"ontrack":"behind")+'">'+v[0]+'</span>':"")+'</div></div>'+
-      say(s.met+" of "+s.total+" KSBs have evidence."+(s.weeksPerUnit?" You’ve got about "+plural(s.weeksLeft,"week")+" left, roughly "+plural(s.weeksPerUnit,"week")+" per unit still to start.":"")+(s.prevReviewDate?" Your last review was on "+ukDate(s.prevReviewDate)+".":""))});
+      goals([tp!=null&&[(nvq?"Criteria":"KSBs")+" with evidence",s.ksbPct+"%","About "+tp+"%",s.ksbPct>=tp-10]])+
+      say(s.met+" of "+s.total+" "+w+" have evidence."+(tp!=null?(s.ksbPct>=tp-10?" That’s about where you should be, "+tp+"% of the way through your course.":" "+tp+"% of the way through, you should have about "+tp+"% evidenced, so it’s worth catching up."):"")+(s.weeksPerUnit?" You’ve got about "+plural(s.weeksLeft,"week")+" left, roughly "+plural(s.weeksPerUnit,"week")+" per unit still to start.":"")+(s.prevReviewDate?" Your last review was on "+ukDate(s.prevReviewDate)+".":""))});
+    const expUnits=tp!=null&&s.unitsTotal?Math.min(s.unitsTotal,Math.ceil(tp/100*s.unitsTotal)):null;
     out.push({title:"Evidence",body:
-      '<div class="rv-bigs">'+big(s.unitsStarted+"/"+s.unitsTotal,"units started")+big(s.packs,"evidence packs")+big(s.avgPhotos==null?"–":s.avgPhotos,"photos per pack")+'</div>'+
-      (s.coverage!=null?row("Write-ups cover the key points",s.coverage+"%",bar(s.coverage,s.coverage>=70?"good":s.coverage<40?"low":"")):"")+
+      '<div class="rv-bigs">'+big(s.unitsStarted+"/"+s.unitsTotal,nvq?"jobs started":"units started")+big(s.packs,"evidence packs")+big(s.avgPhotos==null?"–":s.avgPhotos,"photos per pack")+'</div>'+
+      goals([expUnits!=null&&[nvq?"Jobs started":"Units started",s.unitsStarted+" of "+s.unitsTotal,"About "+expUnits,s.unitsStarted>=expUnits],s.avgPhotos!=null&&["Photos per pack",s.avgPhotos,"5 or more",s.avgPhotos>=5],s.coverage!=null&&["Write-ups cover the key points",s.coverage+"%","70% or more",s.coverage>=70]])+
       say((s.strongest?"Your strongest write-up is <strong>"+escHtml(s.strongest)+"</strong>. ":"")+(s.weakest?"<strong>"+escHtml(s.weakest)+"</strong> needs the most work"+(s.weakestMissing.length?": mention "+escHtml(s.weakestMissing.join(", "))+" next time.":"."):s.packs?"":"Capture your first unit and Evia will start checking your write-ups."))});
+    const otjDue=s.weeksIn!=null?Math.round(s.weeksIn*6):null;
     out.push({title:"Learning and activity",body:
       '<div class="rv-bigs">'+big(s.otjTotal,"OTJ hours")+big(s.otjMonth,"this month")+big(s.streak,"week streak")+'</div>'+
-      say((s.lastUpload?"Your last upload was "+escHtml(window.eviaStats.ago(s.lastUpload).toLowerCase())+". ":"")+(s.longest>1?"Your longest streak is "+plural(s.longest,"week")+". ":"")+(s.otjMonth<8?"Try to log a bit more off-the-job learning each month.":"Good off-the-job learning this month."))});
+      goals([otjDue!=null&&["OTJ hours in total",s.otjTotal,"About "+otjDue,s.otjTotal>=otjDue*.9],["OTJ hours this month",s.otjMonth,"About 26",s.otjMonth>=22],["Weeks active in a row",s.streak,"Every week",s.streak>=2]])+
+      say((s.lastUpload?"Your last upload was "+escHtml(window.eviaStats.ago(s.lastUpload).toLowerCase())+". ":"")+(s.otjMonth<22?"Try to log a bit more off-the-job learning each month.":"Good off-the-job learning this month.")+" The OTJ targets assume about 6 hours a week. Your commitment statement says exactly how many you need.")+
+      quick(readOnly,[["otj","Log OTJ hours"]])});
     out.push({title:"Tests",body:
+      goals(s.tests.map(t=>[escHtml(t.name),t.latest+"%","70% or more",t.latest>=70]).concat([!nvq&&tp!=null&&tp>=75&&!s.tests.some(t=>/EPA/.test(t.name))&&["Full EPA mock","Not yet","Taken by now",false]]))+
       (s.tests.length?s.tests.map((t,i)=>row(escHtml(t.name),t.latest+"% <small>best "+t.best+"%</small>",bar(t.latest,t.latest>=70?"good":t.latest<50?"low":"",i*100))).join(""):'<p class="pg-note">No tests taken yet.</p>')+
       (s.missed.length?'<p class="rv-label">Worth revising from your last full mock</p>'+chips(s.missed):"")+
-      say(s.tests.length?(s.tests.some(t=>t.latest<70)?"Keep practising the tests below 70%: little and often works best.":"Strong results. Keep them ticking over."):"A quick EPA quiz takes about 3 minutes. It’s a good place to start.")});
+      say(s.tests.length?(s.tests.some(t=>t.latest<70)?"Keep practising the tests below 70%: little and often works best.":"Strong results. Keep them ticking over."):"A quick quiz takes about 3 minutes. It’s a good place to start.")+
+      quick(readOnly,[["quiz",nvq?"Quick quiz · 3 min":"EPA quick quiz · 3 min"],s.maths&&["maths","Maths"],s.english&&["english","English"]])});
+    const confDue=Math.round(40+(tp||0)*.35);
     out.push({title:"Your skills",body:
+      goals([s.confPct!=null&&["Course confidence",s.confPct+"%","About "+confDue+"%",s.confPct>=confDue],s.confPct!=null&&["Skills needing training",s.lowSkills.length,tp!=null&&tp>=50?"None by now":"Fewer each check",tp!=null&&tp>=50?!s.lowSkills.length:true]])+
       (s.confPct!=null?'<div class="rv-bigs">'+big(s.confPct+"%","course confidence")+(s.confPrevPct!=null?big((s.confPct-s.confPrevPct>0?"+":"")+(s.confPct-s.confPrevPct),"since last check"):"")+'</div>':'<p class="pg-note">No confidence check yet.</p>')+
       (s.lowSkills.length?'<p class="rv-label">Needs more training</p>'+chips(s.lowSkills,"low"):"")+
-      say(s.task?"A good college task for this: <strong>"+escHtml(s.task)+"</strong>. Ask your tutor to set it up.":s.lowSkills.length?"Tell your tutor you’d like more practice on these.":"Rate your skills regularly so your tutor knows where to focus.")});
+      say(s.task?"A good college task for this: <strong>"+escHtml(s.task)+"</strong>. Ask your tutor to set it up.":s.lowSkills.length?"Tell your tutor you’d like more practice on these.":"Rate your skills regularly so your tutor knows where to focus.")+
+      quick(readOnly,[["skills","Rate my skills"]])});
+    const scDone=s.scen?s.scen.reduce((n,t)=>n+t.done,0):0,scTotal=s.scen?s.scen.reduce((n,t)=>n+t.total,0):0;
     if(s.scen&&s.scen.length)out.push({title:"Staying safe and respected",body:
+      goals([["Scenarios done",scDone+" of "+scTotal,tp!=null&&tp<25?"All by 6 months in":"All "+scTotal,scDone===scTotal||(tp!=null&&tp<25)]])+
       s.scen.map((t,i)=>row(escHtml(t.title),t.done+" of "+t.total,bar(t.total?t.done/t.total*100:0,t.done===t.total?"good":"",i*90))).join("")+
-      say(s.scen.every(t=>t.done===t.total)?"You’ve completed every real-life scenario. Brilliant.":"These cover safeguarding, Prevent, British values and equality. Each takes about 5 minutes.")});
+      say(s.scen.every(t=>t.done===t.total)?"You’ve completed every real-life scenario. Brilliant.":"These cover safeguarding, Prevent, British values and equality. Each takes about 5 minutes.")+
+      quick(readOnly,[scDone<scTotal&&["scenario","Try a scenario"]])});
     const c=r.reflection||{},q=r.ksbFollowUp;
     out.push({title:"Your comments",body:
       '<label class="rv-q"><span>Is anything affecting your wellbeing, learning or work that you’d like your tutor to know? <small>Optional</small></span>'+(readOnly?'<p class="rv-a">'+escHtml(c.wellbeing||"No comment.")+'</p>':'<textarea data-reflect="wellbeing" rows="3">'+escHtml(c.wellbeing||"")+'</textarea>')+'</label>'+
       '<label class="rv-q"><span>How are you finding your apprenticeship? <small>Optional</small></span>'+(readOnly?'<p class="rv-a">'+escHtml(c.learnerFeedback||"No comment.")+'</p>':'<textarea data-reflect="learnerFeedback" rows="3">'+escHtml(c.learnerFeedback||"")+'</textarea>')+'</label>'+
-      (q?'<label class="rv-q"><span>'+escHtml(q.question)+' <small>Optional</small></span>'+(readOnly?'<p class="rv-a">'+escHtml(c.ksbFollowUp||"No comment.")+'</p>':'<textarea data-reflect="ksbFollowUp" rows="3">'+escHtml(c.ksbFollowUp||"")+'</textarea>')+'</label>':"")});
+      (readOnly&&q&&c.ksbFollowUp?'<label class="rv-q"><span>'+escHtml(q.question)+'</span><p class="rv-a">'+escHtml(c.ksbFollowUp)+'</p></label>':"")});
     out.push({title:readOnly?"Targets set":"Your new targets",body:
       (!readOnly&&s.prevTargets?'<p class="pg-note">These replace your current targets ('+s.prevTargets.done+' of '+s.prevTargets.total+' done).</p>':"")+
       '<ol class="rv-targets">'+r.targets.map(t=>'<li><strong>'+escHtml(t.title)+'</strong><small>'+escHtml(t.why)+'</small><em>Due '+ukDate(t.due+"T12:00:00")+'</em></li>').join("")+'</ol>'+
       say(readOnly?"You can see how you’re getting on with your current targets in My targets.":"Tap <strong>Save review</strong> and these become your targets. I’ll track them for you.")});
     return out;
   }
-  function openReview(r,readOnly){
-    const list=slides(r,readOnly);let i=0;
+  /* A review left part-way through for a quick action: where it was, and any comments typed so far. */
+  const DRAFT="evia7-review-draft";
+  function hideResume(){const b=document.getElementById("rv-resume");if(b)b.remove()}
+  function showResume(){
+    hideResume();const d=readJson(DRAFT,null);if(!d||Date.now()-(d.at||0)>864e5)return;
+    const b=document.createElement("div");b.id="rv-resume";b.className="rv-resume";
+    b.innerHTML='<button type="button" class="rv-resume-go">‹ Back to your review</button><button type="button" class="rv-resume-x" aria-label="Finish the review another time">×</button>';
+    document.body.appendChild(b);
+    b.querySelector(".rv-resume-go").onclick=resumeReview;
+    b.querySelector(".rv-resume-x").onclick=()=>{localStorage.removeItem(DRAFT);hideResume()};
+  }
+  function resumeReview(){
+    const d=readJson(DRAFT,null);hideResume();
+    const m=document.getElementById("modal-root");if(m)m.innerHTML="";
+    const fab=document.getElementById("evia-fab");if(fab)fab.classList.remove("chat-active");
+    startReview(d||null);
+  }
+  function openReview(r,readOnly,startAt){
+    const list=slides(r,readOnly);let i=0;hideResume();
     const root=document.getElementById("modal-root");
     root.innerHTML='<div class="overlay"><section class="sheet pr-sheet rv-sheet" role="dialog" aria-modal="true" aria-labelledby="rv-title"><div class="sheet-head"><div><div class="chat-kicker" id="rv-kicker"></div><h2 id="rv-title" tabindex="-1"></h2></div><button class="close" id="rv-close" type="button" aria-label="Close">×</button></div>'+
       '<div class="rv-dots" id="rv-dots">'+list.map((s,n)=>'<button type="button" data-rv-go="'+n+'" aria-label="'+escHtml(s.title)+'"></button>').join("")+'</div>'+
@@ -218,29 +256,46 @@
       next.textContent=last?(readOnly?"Download PDF":"Save review"):"Next";
       root.querySelector(".rv-sheet").scrollTop=0;
     };
-    root.querySelector("#rv-close").onclick=()=>{root.innerHTML=""};
+    root.querySelector("#rv-close").onclick=()=>{root.innerHTML="";if(!readOnly)localStorage.removeItem(DRAFT)};
+    /* Quick actions: save the place (and any comments), do the thing, then offer the way back. */
+    const QUICK={
+      otj:()=>{nav("learning");setTimeout(()=>{const h=document.getElementById("hrs");if(h)h.focus()},400)},
+      quiz:()=>window.eviaStartTest&&window.eviaStartTest("epa",5,(window.eviaNvq&&window.eviaNvq.on())?"Quick quiz":"EPA quick quiz"),
+      maths:()=>window.eviaStartTest&&window.eviaStartTest("maths",5,"Maths"),
+      english:()=>window.eviaStartTest&&window.eviaStartTest("english",5,"English"),
+      skills:()=>window.eviaPractice&&window.eviaPractice.openConfidence(),
+      scenario:()=>window.eviaScenarios&&window.eviaScenarios.openNext()
+    };
+    body.addEventListener("click",e=>{
+      const b=e.target.closest("[data-rv-quick]");if(!b||!QUICK[b.dataset.rvQuick])return;
+      keepComments();localStorage.setItem(DRAFT,JSON.stringify({i,reflection:r.reflection||{},at:Date.now()}));
+      root.innerHTML="";QUICK[b.dataset.rvQuick]();setTimeout(showResume,300);
+    });
     back.onclick=()=>show(i-1);
     root.querySelectorAll("[data-rv-go]").forEach(d=>d.onclick=()=>show(+d.dataset.rvGo));
     next.onclick=()=>{
       if(i<list.length-1)return show(i+1);
       if(readOnly){if(window.eviaDownloadReviewPdf)window.eviaDownloadReviewPdf(r);return}
-      keepComments();save(r);root.innerHTML="";
+      keepComments();save(r);root.innerHTML="";localStorage.removeItem(DRAFT);
       if(typeof showEvidenceToast==="function")showEvidenceToast("Review saved. Your new targets are ready.");
       if(window.eviaMood)window.eviaMood("happy");
       if(typeof screen!=="undefined"&&(screen==="progress"||screen==="home"))render();
     };
-    show(0);
+    show(startAt||0);
   }
   function save(r){
     const reviews=readJson(REVIEWS,[]);reviews.push(r);write(REVIEWS,reviews.slice(-30));
     setTargets(r.targets.map(t=>Object.assign({},t,{reviewId:r.id,reviewDate:r.date})));
   }
-  function startReview(){
+  function startReview(resume){
+    if(resume&&resume.type)resume=null; /* called straight from a click */
     const S=stats();if(!S)return;
     const base=window.eviaBuildReviewRecord?window.eviaBuildReviewRecord():{course,date:new Date().toISOString()};
     const targets=suggest(S);
     const r=Object.assign(base,{id:"review-"+Date.now(),format:2,snapshot:snapshot(S),targets:targets.map(t=>Object.assign({},t,{reason:t.why,deadline:t.due})),reflection:{}});
-    openReview(r,false);
+    /* Picking up where they left off: fresh figures (the quick action may have changed them), same comments and step. */
+    if(resume){r.reflection=resume.reflection||{};localStorage.removeItem(DRAFT)}
+    openReview(r,false,resume?resume.i:0);
   }
   /* Opening a saved review: new ones use the click-through, older ones the original screen. */
   function showReview(id){
@@ -249,7 +304,10 @@
   }
 
   window.eviaTargets={ensure:ensureTargets,mine,progress,cardHtml,bind,check,stats};
-  window.eviaStartReview=startReview;
+  window.eviaStartReview=()=>startReview();
+  window.eviaResumeReview=resumeReview;
+  window.eviaReviewDraft=()=>!!readJson(DRAFT,null);
+  setTimeout(showResume,1500); /* a review left part-way through before the app was closed */
   window.eviaShowReview=showReview;
   window.eviaCheckTargets=()=>check(true);
 })();

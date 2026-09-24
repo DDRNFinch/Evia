@@ -519,6 +519,7 @@
     const d=e.detail||{};
     if(d.pct>=80&&window.eviaMood)window.eviaMood("happy");
     const opts=[{label:"Try another test",primary:true,run:()=>{closeChat();setTimeout(()=>window.eviaPractice&&window.eviaPractice.openHub(),60)}}];
+    if(window.eviaReviewDraft&&window.eviaReviewDraft()){opts[0].primary=false;opts.unshift({label:"Back to my review",primary:true,run:()=>{closeChat();setTimeout(()=>window.eviaResumeReview&&window.eviaResumeReview(),60)}})}
     if(d.missed&&d.missed.length)opts.push({label:"Go to Progress",run:()=>{closeChat();setTimeout(()=>nav("progress"),60)}});
     opts.push({label:"See my stats",run:()=>{closeChat();setTimeout(showStats,60)}},{label:"Something else",run:somethingElse});
     queue=queue.then(()=>new Promise(r=>setTimeout(r,1400))); /* let the result bubble finish "thinking" first */

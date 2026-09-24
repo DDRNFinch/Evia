@@ -34,7 +34,7 @@
     '</svg>';
   }
   /* Every place Evia's face appears gets the outline for its shape: pickers use their own shape, everything else the learner's. */
-  const HOSTS=".evia-fab,.evia-welcome-face,.target-evia,.evia-shape-avatar,.evia-theme-avatar";
+  const HOSTS=".evia-fab,.evia-welcome-face,.target-evia,.evia-mini,.evia-shape-avatar,.evia-theme-avatar";
   function hostShape(el){const m=[...el.classList].find(c=>c.startsWith("shape-")&&c!=="shape-svg");return m&&SHAPES[m.slice(6)]?m.slice(6):(el.classList.contains("evia-shape-avatar")?null:currentShape())}
   function decorate(el){
     const name=el.classList.contains("evia-theme-avatar")?currentShape():hostShape(el);if(!name)return;

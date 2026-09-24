@@ -624,3 +624,88 @@ body:has(#a11y-speak) .ui-page-head{margin-left:56px}
 .ui-bars-key>span:first-child{font-weight:750;color:var(--ui-text)}
 .ui-bars-key-item{display:inline-flex;align-items:center;gap:6px}
 .ui-bars-key .unit-strength-bars{transform:scale(.8);transform-origin:left center}
+/* Small Evia (review tips and elsewhere): the learner's shape and colour */
+.evia-mini{flex:0 0 auto;position:relative;width:34px;height:34px;display:grid;place-items:center;background:#fff;border:2.5px solid var(--yellow);border-radius:50%}
+html[data-evia-shape="squircle"] .evia-mini{border-radius:30%}
+.evia-mini .evia-face{position:relative;inset:auto;z-index:1;display:flex;gap:4px}
+.evia-mini .evia-face i{width:7px!important;height:9px!important;border-width:2px!important;border-color:var(--yellow)!important}
+.evia-mini .evia-face i:after{display:none}
+.evia-mini.evia-svg-shape .evia-outline{inset:-18%;width:136%;height:136%}
+.evia-mini.evia-svg-shape{--evia-shape-width:2.5px}
+/* The review's buttons sit over the bottom of the sheet: leave room so the last question and Evia's tip can scroll clear of them */
+.rv-body{padding-bottom:88px}
+/* Review: "You" vs "Where you should be" */
+.rv-goals{display:flex;flex-direction:column;border:1px solid var(--ui-line);border-radius:16px;overflow:hidden;background:#fff}
+.rv-goals-head,.rv-goal{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,.7fr) minmax(0,1fr);gap:8px;align-items:center;padding:9px 12px}
+.rv-goals-head{background:#f8fafc;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--ui-muted)}
+.rv-goal{border-top:1px solid var(--ui-line);font-size:13px;color:var(--ui-text)}
+.rv-goal b{font-size:14px;font-weight:800;color:var(--ui-ink)}
+.rv-goal em{font-style:normal;font-size:12.5px;color:var(--ui-muted)}
+.rv-goal>span{position:relative;padding-left:20px}
+.rv-goal>span::before{content:"";position:absolute;left:0;top:50%;width:13px;height:13px;margin-top:-7px;border-radius:50%}
+.rv-goal.ok>span::before{background:#12b76a;box-shadow:inset 0 0 0 3px #d1fadf}
+.rv-goal.under>span::before{background:#f79009;box-shadow:inset 0 0 0 3px #fef0c7}
+.rv-goal.ok b{color:#05603a}
+/* Review: quick things to do now */
+.rv-quick{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:16px;border:1px dashed var(--yellow-line,#f1d878);background:#fff}
+.rv-quick>span{font-size:12.5px;font-weight:650;color:var(--ui-muted)}
+.rv-quick>div{display:flex;flex-wrap:wrap;gap:8px}
+html body .rv-quick button{min-height:40px;padding:8px 14px;border-radius:12px;font-size:13.5px}
+/* Back to your review */
+.rv-resume{position:fixed;z-index:200;left:50%;top:max(12px,env(safe-area-inset-top));transform:translateX(-50%);display:flex;align-items:center;gap:2px;padding:4px;border-radius:999px;background:var(--ui-ink,#172033);box-shadow:0 10px 26px rgba(16,24,40,.25);animation:rvResume .3s ease-out}
+@keyframes rvResume{from{opacity:0;transform:translate(-50%,-8px)}to{opacity:1;transform:translate(-50%,0)}}
+.rv-resume button{border:0;background:none;color:#fff;font:inherit;font-weight:750;cursor:pointer}
+.rv-resume-go{padding:9px 14px;font-size:14px;white-space:nowrap}
+.rv-resume-x{width:34px;height:34px;border-radius:50%;font-size:20px;opacity:.7}
+@media(prefers-reduced-motion:reduce){.rv-resume{animation:none}}
+/* ---------- Profile: minimal, grouped ---------- */
+html body .pf-sheet{position:relative;padding:22px 18px 0;background:#f7f8fa!important}
+.pf-close{position:absolute;top:14px;right:14px;width:38px;height:38px;border-radius:50%;border:0;background:#fff;box-shadow:0 1px 3px rgba(16,24,40,.08);font-size:22px;color:var(--ui-muted);cursor:pointer;z-index:2}
+.pf-head{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 0 18px;text-align:center}
+.pf-avatar{position:relative;cursor:pointer}
+.pf-avatar .profile-photo{width:84px!important;height:84px!important;flex:none!important;border-radius:50%!important;object-fit:cover;border:3px solid #fff;box-shadow:0 4px 14px rgba(16,24,40,.1)}
+.pf-avatar-edit{position:absolute;right:-2px;bottom:-2px;width:28px;height:28px;border-radius:50%;background:var(--yellow);color:var(--ui-on-accent);display:grid;place-items:center;font-size:13px;border:2px solid #fff}
+html body .pf-name{width:100%;max-width:300px;border:0!important;background:transparent!important;text-align:center;font-size:22px;font-weight:800;color:var(--ui-ink);padding:4px 8px;border-radius:12px;box-shadow:none!important}
+.pf-name:focus{background:#fff!important;outline:2px solid var(--yellow-line)}
+.pf-course{font-size:13px;font-weight:650;color:var(--ui-muted)}
+.pf-group{margin:0 0 16px}
+.pf-group h3{margin:0 4px 7px;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ui-muted)}
+.pf-card{background:#fff;border:1px solid var(--ui-line);border-radius:18px;overflow:hidden}
+.pf-card>*+*{border-top:1px solid var(--ui-line)}
+html body .pf-row{display:flex;align-items:center;gap:12px;width:100%;min-height:54px;padding:10px 14px;background:#fff;border:0;border-radius:0;font:inherit;text-align:left;color:var(--ui-ink);cursor:pointer;box-shadow:none}
+.pf-row-icon{flex:0 0 30px;height:30px;border-radius:9px;background:var(--soft);color:var(--yellow-ink);display:grid;place-items:center;font-size:12px;font-weight:800}
+.pf-row-copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.pf-row-copy strong{font-size:14.5px;font-weight:700}
+.pf-row-copy small{font-size:12px;color:var(--ui-muted)}
+.pf-chev{font-size:20px;color:var(--ui-faint)}
+.pf-switch input{position:absolute;opacity:0;width:1px;height:1px}
+.pf-switch i{flex:0 0 46px;height:28px;border-radius:999px;background:#d0d5dd;position:relative;transition:background .2s}
+.pf-switch i::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(16,24,40,.25);transition:transform .2s}
+.pf-switch input:checked+i{background:var(--yellow)}
+.pf-switch input:checked+i::after{transform:translateX(18px)}
+.pf-switch input:focus-visible+i{outline:3px solid var(--yellow-ink);outline-offset:2px}
+.pf-dates{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 14px}
+.pf-dates label,.pf-fields label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:var(--ui-muted);min-width:0}
+.pf-dates input,.pf-fields input{width:100%;box-sizing:border-box;min-height:42px;padding:8px 10px;border:1px solid var(--ui-line);border-radius:11px;font:inherit;font-size:14.5px;color:var(--ui-ink);background:#fff}
+.pf-more>summary{list-style:none;display:flex;flex-direction:column;gap:1px;padding:12px 40px 12px 14px;cursor:pointer;position:relative;font-size:14.5px;font-weight:700;color:var(--ui-ink)}
+.pf-more>summary::-webkit-details-marker{display:none}
+.pf-more>summary::after{content:"›";position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:20px;color:var(--ui-faint);transition:transform .2s}
+.pf-more[open]>summary::after{transform:translateY(-50%) rotate(90deg)}
+.pf-more>summary span{font-size:12px;font-weight:500;color:var(--ui-muted)}
+.pf-more>:not(summary){padding:0 14px 14px}
+.pf-change>summary{font-size:13px;font-weight:650;color:var(--ui-muted)}
+.pf-fields{display:flex;flex-direction:column;gap:10px}
+.pf-more .course-options{display:flex;flex-direction:column;gap:6px}
+.pf-sign{padding:12px 14px 0;border:0!important}
+.pf-sign canvas{width:100%;height:auto;aspect-ratio:900/260;border:1px dashed var(--ui-line);border-radius:12px;background:#fafbfc;touch-action:none}
+.pf-note{margin:0;padding:6px 14px 12px;border:0!important;font-size:12px;color:var(--ui-muted)}
+.pf-data{padding:12px 14px 4px}
+.pf-data p{margin:0 0 4px;font-size:12.5px;line-height:1.45;color:var(--ui-muted)}
+.pf-data-actions{display:flex;flex-wrap:wrap;gap:8px;padding:10px 14px 14px;border:0!important}
+html body .pf-data-actions>*{flex:1 1 auto;min-height:42px;padding:9px 12px;border-radius:12px;font-size:13.5px;text-align:center;display:flex;align-items:center;justify-content:center}
+.pf-save{position:sticky;bottom:0;margin:4px -18px 0;padding:12px 18px max(14px,env(safe-area-inset-bottom));background:linear-gradient(transparent,#f7f8fa 30%)}
+html body .pf-save button{width:100%;min-height:50px;border-radius:14px;font-size:16px}
+.pf-row-icon .evia-mini{width:24px;height:24px;border-width:2px}
+.pf-row-icon .evia-mini .evia-face{gap:3px}
+.pf-row-icon .evia-mini .evia-face i{width:5px!important;height:7px!important;border-width:1.5px!important}
+.pf-dot{width:16px;height:16px;border-radius:50%;background:var(--yellow);box-shadow:0 0 0 3px #fff,0 0 0 4px var(--yellow-line)}
