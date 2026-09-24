@@ -85,7 +85,10 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>{document.body.classList.remove("evia-onboarding");nav("home")});await page.waitForTimeout(450);
 
     await page.evaluate(()=>window.eviaStartReview());await page.waitForTimeout(400);
-    for(let i=0;i<10;i++){const t=await page.evaluate(()=>document.getElementById("rv-next").textContent);await page.click("#rv-next");await page.waitForTimeout(200);if(t==="Save review")break}
+    for(let i=0;i<12;i++){const t=await page.evaluate(()=>document.getElementById("rv-next").textContent);await page.click("#rv-next");await page.waitForTimeout(200);if(t==="Save review")break}
+    await page.waitForSelector("#rvp-save",{timeout:20000}).catch(()=>{});
+    check("Saving a review offers the two-page review PDF to share and sign",await page.evaluate(()=>!!document.getElementById("rvp-save")&&/2 pages/.test(document.querySelector(".eport-status").textContent)));
+    await page.evaluate(()=>{document.getElementById("modal-root").innerHTML=""});
     check("A full review clicks through and replaces the targets",await page.evaluate(()=>{const r=JSON.parse(localStorage.getItem("evia7-progress-reviews")||"[]").pop();return r&&r.format===2&&window.eviaTargets.mine().every(t=>t.reviewId===r.id)}));
     await page.evaluate(()=>window.eviaSetShape("gear"));
     check("Outline Evia shapes draw on the Evia button",await page.$("#evia-fab .evia-outline"));

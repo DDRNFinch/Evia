@@ -389,6 +389,215 @@
     const sb=$("#eport-share");if(sb)sb.onclick=()=>shareFiles([pdf.file]);
     $("#eport-save").onclick=()=>saveFile(pdf.file);
   }
+  /* ---------- Progress review PDF: two pages you can take in at a glance ----------
+     Page 1: where the learner is (status, tiles against where they should be, going well / focus on).
+     Page 2: what happens next (last targets, SMART targets, off-the-job plan, personal development,
+     comments, employer and tutor boxes, signatures) - the parts a progress review record needs. */
+  async function buildReviewPdf(r){
+    const {jsPDF}=await loadJsPdf();
+    const doc=new jsPDF({unit:"mm",format:"a4",compress:true});
+    const s=r.snapshot||{},profile=readJson("evia7-profile",{}),learner=r.learner||profile.name||"Apprentice";
+    const W=210,H=297,M=14,CW=W-2*M,BOTTOM=H-18,ink=[23,32,51],muted=[102,112,133],faint=[152,162,179],line=[228,231,236],accent=accentRgb();
+    const GREEN=[18,183,106],AMBER=[247,144,9],RED=[217,45,32],GREY=[190,196,206];
+    const nvq=!!s.nvq,w=nvq?"criteria":"KSBs",tp=s.timePct;
+    const reviewDate=new Date(r.date),next=new Date(reviewDate);next.setMonth(next.getMonth()+3);
+    let y=M;
+    const T=(t,x,yy,size,style,color,opts)=>{doc.setFont("helvetica",style||"normal");doc.setFontSize(size);doc.setTextColor(...(color||ink));doc.text(pdfText(t),x,yy,opts)};
+    const label=(t,x,yy,color)=>{doc.setFont("helvetica","bold");doc.setFontSize(7.2);doc.setTextColor(...(color||muted));doc.setCharSpace(.4);doc.text(pdfText(t).toUpperCase(),x,yy);doc.setCharSpace(0)};
+    const box=(x,yy,ww,hh,fill,stroke,r0)=>{if(fill)doc.setFillColor(...fill);if(stroke){doc.setDrawColor(...stroke);doc.setLineWidth(.3)}doc.roundedRect(x,yy,ww,hh,r0==null?3:r0,r0==null?3:r0,fill&&stroke?"FD":fill?"F":"S")};
+    const bar=(x,yy,ww,pct,color,h)=>{h=h||1.8;box(x,yy,ww,h,[237,240,244],null,h/2);const f=Math.max(0,Math.min(1,pct/100))*ww;if(f>0.5){doc.setFillColor(...color);doc.roundedRect(x,yy,Math.max(h,f),h,h/2,h/2,"F")}};
+    const dot=(x,yy,color)=>{doc.setFillColor(...color);doc.circle(x,yy,1.5,"F")};
+    const ring=(cx,cy,rad,pct,color,width)=>{
+      doc.setLineCap("round");doc.setLineWidth(width);doc.setDrawColor(237,240,244);doc.circle(cx,cy,rad,"S");
+      const end=Math.max(0,Math.min(1,pct/100))*360;if(end<=0)return;
+      doc.setDrawColor(...color);let a0=-90;
+      for(let a=-90+3;a<=-90+end+0.01;a+=3){const r1=a0*Math.PI/180,r2=Math.min(a,-90+end)*Math.PI/180;doc.line(cx+rad*Math.cos(r1),cy+rad*Math.sin(r1),cx+rad*Math.cos(r2),cy+rad*Math.sin(r2));a0=a}
+      doc.setLineCap("butt");
+    };
+    const status=(ok,ahead,none)=>none?GREY:ok?GREEN:ahead===false?RED:AMBER;
+    const wrap=(t,x,yy,ww,size,color,lh,style)=>{doc.setFont("helvetica",style||"normal");doc.setFontSize(size);doc.setTextColor(...(color||ink));const ls=doc.splitTextToSize(pdfText(t),ww);ls.forEach((l,i)=>doc.text(l,x,yy+i*(lh||size*.42)));return ls.length*(lh||size*.42)};
+
+    /* ----- Page 1: header ----- */
+    label("Evia · Progress review",M,y+3,accent.map(c=>Math.round(c*.6)));
+    T(ukDate(r.date),W-M,y+3,9,"bold",ink,{align:"right"});y+=6;
+    T(learner,M,y+8,22,"bold");y+=11;
+    T(data().name+"  ·  "+data().std,M,y+4,9.5,"normal",muted);y+=8;
+    const meta=[["Period covered",(s.periodFrom?ukDate(s.periodFrom):"Start")+" to "+ukDate(r.date)],["Apprenticeship",(profile.start?ukDate(profile.start):"—")+" to "+(profile.end?ukDate(profile.end):"—")],["Next review due",ukDate(next)]];
+    meta.forEach((m,i)=>{const x=M+i*(CW/3);label(m[0],x,y+2);T(m[1],x,y+7,9,"bold")});y+=12;
+
+    /* ----- Status panel ----- */
+    const soft=accent.map(c=>Math.round(c+(255-c)*.9));
+    box(M,y,CW,44,soft,null,5);
+    const verdict=tp==null?null:s.ksbPct>=tp+10?["Ahead of schedule",GREEN]:s.ksbPct>=tp-10?["On track",GREEN]:["Behind schedule",AMBER];
+    ring(M+24,y+22,14,s.ksbPct,accent,4.2);
+    T(s.ksbPct+"%",M+24,y+23.5,16,"bold",ink,{align:"center"});T("of "+w,M+24,y+28,7.5,"normal",muted,{align:"center"});
+    const px=M+48,pw=CW-56;
+    T(s.met+" of "+s.total+" "+w+" have evidence",px,y+9,11,"bold");
+    if(tp!=null){T("Course time",px,y+17,8.5,"normal",muted);T(tp+"%",px+pw,y+17,8.5,"bold",ink,{align:"right"});bar(px,y+19,pw,tp,[152,162,179]);
+      T("Evidence",px,y+26,8.5,"normal",muted);T(s.ksbPct+"%",px+pw,y+26,8.5,"bold",ink,{align:"right"});bar(px,y+28,pw,s.ksbPct,accent)}
+    if(verdict){doc.setFont("helvetica","bold");doc.setFontSize(8.5);const vw=doc.getTextWidth(verdict[0])+8;box(px,y+33,vw,6.5,verdict[1].map(c=>Math.round(c+(255-c)*.82)),null,3.25);T(verdict[0],px+4,y+37.4,8.5,"bold",verdict[1].map(c=>Math.round(c*.55)))}
+    if(s.weeksLeft!=null&&s.met<s.total){T("About "+s.weeksLeft+" weeks left",px+pw,y+37.4,8.5,"normal",muted,{align:"right"})}
+    y+=50;
+
+    /* ----- At a glance: tiles against where they should be ----- */
+    label("At a glance",M,y+2);
+    {doc.setFont("helvetica","normal");doc.setFontSize(6.8);let lx=W-M;[["Not started",GREY],["Needs attention",AMBER],["On track",GREEN]].forEach(([t,c])=>{const tw0=doc.getTextWidth(t);lx-=tw0;T(t,lx,y+2,6.8,"normal",muted);lx-=3;doc.setFillColor(...c);doc.circle(lx,y+1.1,1,"F");lx-=5})}
+    y+=5;
+    const expUnits=tp!=null&&s.unitsTotal?Math.min(s.unitsTotal,Math.ceil(tp/100*s.unitsTotal)):null;
+    const tests=s.tests||[],findT=re=>tests.find(t=>re.test(t.name));
+    const knowledge=findT(/EPA|Knowledge/),maths=findT(/Maths/),english=findT(/English/);
+    const scDone=(s.scen||[]).reduce((n,t)=>n+t.done,0),scTotal=(s.scen||[]).reduce((n,t)=>n+t.total,0);
+    const tiles=[
+      [(nvq?"Criteria":"KSBs")+" evidenced",s.met+"/"+s.total,tp!=null?"Expected about "+tp+"%":"Add course dates to compare",s.ksbPct,tp==null?null:s.ksbPct>=tp-10,false],
+      [nvq?"Site jobs started":"Units started",s.unitsStarted+"/"+s.unitsTotal,expUnits!=null?"Expected about "+expUnits:"",s.unitsTotal?s.unitsStarted/s.unitsTotal*100:0,expUnits==null?null:s.unitsStarted>=expUnits,false],
+      ["Off-the-job hours",String(s.otjTotal),s.otjExpected!=null?"Planned about "+s.otjExpected+" by now":s.otjMonth+" this month",s.otjExpected?s.otjTotal/s.otjExpected*100:0,s.otjExpected==null?null:s.otjTotal>=s.otjExpected*.9,false],
+      [nvq?"Knowledge test":"EPA practice",knowledge?knowledge.latest+"%":"Not yet","Target 70% or more",knowledge?knowledge.latest:0,knowledge?knowledge.latest>=70:null,!knowledge],
+      nvq&&s.nvqQ?["Knowledge questions",s.nvqQ.done+"/"+s.nvqQ.total,"Answered in own words",s.nvqQ.total?s.nvqQ.done/s.nvqQ.total*100:0,tp==null?null:s.nvqQ.done/Math.max(1,s.nvqQ.total)*100>=tp-15,false]:null,
+      s.maths||maths?["Maths",maths?maths.latest+"%":"Not yet","Target 70% or more",maths?maths.latest:0,maths?maths.latest>=70:null,!maths]:null,
+      s.english||english?["English",english?english.latest+"%":"Not yet","Target 70% or more",english?english.latest:0,english?english.latest>=70:null,!english]:null,
+      ["Skills confidence",s.confPct!=null?s.confPct+"%":"Not yet",s.lowSkills&&s.lowSkills.length?s.lowSkills.length+" skill"+(s.lowSkills.length===1?"":"s")+" need training":"Self-rated",s.confPct||0,s.confPct==null?null:s.confPct>=Math.round(40+(tp||0)*.35),s.confPct==null],
+      ["Staying safe",scTotal?scDone+"/"+scTotal:"—","Safeguarding, Prevent, values",scTotal?scDone/scTotal*100:0,scTotal?scDone===scTotal||(tp!=null&&tp<25):null,!scDone],
+      ["Write-up quality",s.coverage!=null?s.coverage+"%":"—","Key points covered",s.coverage||0,s.coverage==null?null:s.coverage>=70,s.coverage==null]
+    ].filter(Boolean);
+    if(tiles.length>9)tiles.splice(tiles.findIndex(t=>t[0]==="Write-up quality"),1); /* keep a tidy 3 by 3 grid */
+    const cols=3,gap=3,tw=(CW-gap*(cols-1))/cols,th=23;
+    tiles.forEach((t,i)=>{
+      const x=M+(i%cols)*(tw+gap),yy=y+Math.floor(i/cols)*(th+gap);
+      const col=t[5]||t[4]==null?GREY:t[4]?GREEN:AMBER;
+      box(x,yy,tw,th,[255,255,255],line,3);
+      dot(x+4.5,yy+5.2,col);T(t[0],x+8,yy+6.3,7.6,"bold",muted);
+      T(t[1],x+4,yy+14.5,15,"bold",ink);
+      T(t[2],x+4,yy+19.4,6.9,"normal",muted);
+      bar(x+4,yy+th-2.6,tw-8,t[3],col,1.1);
+    });
+    y+=Math.ceil(tiles.length/cols)*(th+gap)+4;
+
+    /* ----- Going well / Focus on ----- */
+    const good=tiles.filter(t=>t[4]===true).map(t=>t[0]+": "+t[1]);
+    const focus=tiles.filter(t=>t[4]===false||(t[5]&&!/Staying|Write/.test(t[0]))).map(t=>t[0]+(t[4]===false?": "+t[1]+" ("+t[2].toLowerCase()+")":": not started"));
+    const colW=(CW-gap)/2,listH=Math.max(good.length,focus.length,1)*5.2+11;
+    [[good,"Going well",GREEN],[focus,"Focus on next",AMBER]].forEach(([list,title,col],i)=>{
+      const x=M+i*(colW+gap);box(x,y,colW,listH,col.map(c=>Math.round(c+(255-c)*.9)),null,3);
+      T(title,x+4,y+6.5,9,"bold",col.map(c=>Math.round(c*.55)));
+      (list.length?list:["Nothing yet"]).slice(0,6).forEach((l,n)=>{dot(x+5,y+11.7+n*5.2,col);T(l,x+8,y+12.7+n*5.2,7.8,"normal",ink)});
+    });
+    y+=listH+4;
+    if(s.missed&&s.missed.length){label("Worth revising",M,y+2);T(s.missed.slice(0,8).join("  ·  "),M,y+7,8,"normal",ink);y+=10}
+    /* Readiness to finish: what has to be in place before gateway (standards) or completion (NVQ). */
+    {const checks=nvq?[
+        ["All criteria evidenced",s.met>=s.total],
+        ["Knowledge questions answered",s.nvqQ?s.nvqQ.done>=s.nvqQ.total:false],
+        ["Off-the-job hours on plan",s.otjExpected!=null&&s.otjTotal>=s.otjExpected*.9],
+        ["Witness testimony added","na"],
+        ["Staying safe scenarios done",scTotal>0&&scDone===scTotal]
+      ]:[
+        ["All KSBs evidenced",s.met>=s.total],
+        ["Practice test 70%+",!!knowledge&&knowledge.latest>=70],
+        ["Off-the-job hours on plan",s.otjExpected!=null&&s.otjTotal>=s.otjExpected*.9],
+        ["English and maths",(!s.maths||!!maths&&maths.latest>=70)&&(!s.english||!!english&&english.latest>=70)],
+        ["Staying safe scenarios done",scTotal>0&&scDone===scTotal]
+      ];
+     if(y+26<BOTTOM){
+       label(nvq?"Ready to complete?":"Ready for gateway?",M,y+2);T(checks.filter(c=>c[1]===true).length+" of "+checks.filter(c=>c[1]!=="na").length+" in place",W-M,y+2,7.4,"bold",muted,{align:"right"});y+=5;
+       const cw5=(CW-gap*(checks.length-1))/checks.length;
+       checks.forEach(([t,ok],i)=>{const x=M+i*(cw5+gap);const na=ok==="na",col=na?GREY:ok?GREEN:[208,213,221];
+         box(x,y,cw5,15,ok===true?[236,253,243]:[250,251,252],line,2.5);
+         doc.setFillColor(...col);doc.circle(x+cw5/2,y+4.8,2.3,"F");if(ok===true){doc.setDrawColor(255,255,255);doc.setLineWidth(.5);doc.line(x+cw5/2-1.1,y+4.9,x+cw5/2-.2,y+5.8);doc.line(x+cw5/2-.2,y+5.8,x+cw5/2+1.3,y+3.9)}
+         doc.setFont("helvetica","bold");doc.setFontSize(6.6);const ls=doc.splitTextToSize(pdfText(na?t+" (tutor to check)":t),cw5-4);ls.slice(0,2).forEach((l,n)=>T(l,x+cw5/2,y+10+n*2.8,6.6,"bold",ok===true?[5,96,58]:muted,{align:"center"}))});
+       y+=19}}
+
+    /* ----- Page 2 ----- */
+    doc.addPage();y=M;
+    const section=(title,h)=>{if(y+h>BOTTOM){doc.addPage();y=M}label(title,M,y+3);y+=6};
+    // Last targets
+    const pt=s.prevTargetList||[];
+    if(pt.length){
+      section("Targets from last review · "+pt.filter(t=>t.done).length+" of "+pt.length+" achieved",8+Math.ceil(pt.length/2)*6.5);
+      const hw=(CW-gap)/2;
+      pt.forEach((t,i)=>{const x=M+(i%2)*(hw+gap),yy=y+Math.floor(i/2)*6.5;box(x,yy,hw,5.6,t.done?[236,253,243]:[255,250,235],null,2.2);dot(x+3.5,yy+2.8,t.done?GREEN:AMBER);
+        doc.setFont("helvetica","normal");doc.setFontSize(7.6);const tl=doc.splitTextToSize(pdfText(t.title),hw-26)[0];T(tl,x+7,yy+3.9,7.6,"normal",ink);T(t.done?"Achieved":"Not yet",x+hw-3,yy+3.9,7.2,"bold",t.done?[5,96,58]:[181,71,8],{align:"right"})});
+      y+=Math.ceil(pt.length/2)*6.5+3;
+    }
+    // New targets
+    const tg=r.targets||[];
+    section("New targets · agreed "+ukDate(r.date),8+tg.length*12);
+    tg.forEach((t,i)=>{
+      doc.setFont("helvetica","normal");doc.setFontSize(7.8);const why=doc.splitTextToSize(pdfText(t.why||t.reason||""),CW-44);const h=7+why.length*3.3;
+      box(M,y,CW,h,[255,255,255],line,2.5);
+      doc.setFillColor(...accent);doc.circle(M+5,y+4.6,2.6,"F");T(String(i+1),M+5,y+5.6,8,"bold",[255,255,255],{align:"center"});
+      T(t.title,M+10,y+5,9,"bold");T("By "+ukDate((t.due||t.deadline)+"T12:00:00"),W-M-4,y+5,8,"bold",accent.map(c=>Math.round(c*.6)),{align:"right"});
+      T(why,M+10,y+9,7.8,"normal",muted);y+=h+2;
+    });
+    y+=2;
+    // Off-the-job plan
+    section("Off-the-job training",22);
+    {const exp=s.otjExpected,got=s.otjTotal,short=exp!=null?Math.max(0,Math.round((exp-got)*10)/10):null;
+     const endMs=Date.parse(profile.end||""),weeks=isNaN(endMs)?null:Math.max(1,Math.round((endMs-Date.now())/(7*864e5)));
+     box(M,y,CW,16,[250,251,252],line,3);
+     T("Logged "+got+" hrs"+(exp!=null?" · planned about "+exp+" hrs by now":""),M+4,y+6,9,"bold");
+     const plan=short==null?"Add course dates in Evia to track this against the plan.":short<=0?"On plan. Keep logging training, toolbox talks and research each week.":"About "+short+" hrs behind plan. Re-plan with your employer and tutor: spread over the "+(weeks||"remaining")+" weeks left, that's about "+(weeks?Math.round((6+short/weeks)*10)/10:"a few more")+" hrs a week instead of 6.";
+     T(plan,M+4,y+11.8,8.2,"normal",short>0?[181,71,8]:muted);y+=20}
+    // Personal development
+    section("Personal development and staying safe",24);
+    {const topics=s.scen||[],cw=(CW-gap*3)/4;
+     topics.slice(0,4).forEach((t,i)=>{const x=M+i*(cw+gap),done=t.done===t.total;box(x,y,cw,11,done?[236,253,243]:[250,251,252],line,2.5);T(t.title,x+3,y+4.6,7.4,"bold",ink);T(t.done+" of "+t.total+(done?" ✓":""),x+3,y+8.8,7.4,"normal",done?[5,96,58]:muted)});
+     y+=13;
+     T("Safeguarding lead saved in Evia: "+(s.dsl?"Yes":"Not yet")+"   ·   Latest skills self-rating: "+(s.confPct!=null?s.confPct+"%":"not done"),M,y+3,7.8,"normal",muted);y+=7}
+    // Apprentice comments
+    const c=r.reflection||{};
+    const comments=[["Wellbeing and support",c.wellbeing],["How the apprenticeship is going",c.learnerFeedback],["Next steps and career plans",c.nextSteps]];
+    section("Apprentice's comments",30);
+    comments.forEach(([q,a])=>{doc.setFont("helvetica","normal");doc.setFontSize(8.2);const ls=doc.splitTextToSize(pdfText(a||"No comment."),CW-8);const h=6.5+ls.length*3.6;if(y+h>BOTTOM){doc.addPage();y=M}
+      box(M,y,CW,h,[255,255,255],line,2.5);T(q,M+4,y+4.3,7.4,"bold",muted);ls.forEach((l,n)=>T(l,M+4,y+8.3+n*3.6,8.2,"normal",a?ink:faint));y+=h+2});
+    y+=2;
+    // Employer and tutor
+    section("Employer and training provider comments",26);
+    {const hw=(CW-gap)/2;[["Employer","Progress at work, support, off-the-job time"],["Tutor / assessor","Progress, English and maths, "+(nvq?"completion":"gateway")]].forEach(([q,sub],i)=>{const x=M+i*(hw+gap);box(x,y,hw,24,[255,255,255],line,2.5);T(q,x+4,y+4.5,7.6,"bold",ink);T(sub,x+4,y+8,6.6,"normal",faint);doc.setDrawColor(...line);doc.setLineWidth(.2);[14,19].forEach(o=>doc.line(x+4,y+o,x+hw-4,y+o))});y+=27}
+    // Signatures
+    section("Signed and agreed by all three",31);
+    {const sw=(CW-gap*2)/3;[["Apprentice",learner],["Employer",""],["Training provider",""]].forEach(([role,name],i)=>{const x=M+i*(sw+gap);box(x,y,sw,28,[255,255,255],line,2.5);T(role,x+3,y+4.6,7.4,"bold",muted);
+       if(i===0&&(profile.signature||r.signature)){try{doc.addImage(profile.signature||r.signature,"PNG",x+3,y+6,sw-6,9,undefined,"FAST")}catch(_){}}
+       doc.setDrawColor(...line);doc.line(x+3,y+16.5,x+sw-3,y+16.5);
+       T("Name: "+(name||""),x+3,y+21,7.4,"normal",name?ink:faint);T("Date: "+(i===0?ukDate(r.date):""),x+3,y+25.5,7.4,"normal",i===0?ink:faint)});
+     y+=32}
+
+    const pages=doc.getNumberOfPages();
+    for(let n=1;n<=pages;n++){
+      doc.setPage(n);doc.setFont("helvetica","normal");doc.setFontSize(7.2);doc.setTextColor(...muted);
+      doc.text(pdfText(learner+" · Progress review · "+ukDate(r.date)),M,H-8);doc.text("Page "+n+" of "+pages,W-M,H-8,{align:"right"});
+      const brand="Created using Evia",bw=doc.getTextWidth(brand),sq=3.2,bx=W/2-(sq+1.6+bw)/2,by=H-8-2.5;
+      doc.setFillColor(229,188,2);doc.roundedRect(bx,by,sq,sq,.7,.7,"F");doc.setFillColor(255,255,255);doc.ellipse(bx+sq*.2835,by+sq*.49,sq*.111,sq*.168,"F");doc.ellipse(bx+sq*.7165,by+sq*.49,sq*.111,sq*.168,"F");
+      doc.setTextColor(...muted);doc.text(brand,bx+sq+1.6,H-8);
+    }
+    const out=doc.output("blob");out.evPages=pages;return out;
+  }
+  async function openReviewPdf(r){
+    injectStyles();
+    const root=document.getElementById("modal-root");
+    const learner=r.learner||readJson("evia7-profile",{}).name||"Apprentice";
+    root.innerHTML='<div class="overlay"><section class="sheet pr-sheet" role="dialog" aria-modal="true"><div class="sheet-head"><div><div class="chat-kicker">PROGRESS REVIEW · '+escHtml(ukDate(r.date).toUpperCase())+'</div><h2>Review PDF</h2></div><button class="close" id="rvp-close" type="button" aria-label="Close">×</button></div>'+
+      '<div class="eport-files" id="rvp-files"><div class="card eport-pdf"><div class="eport-sheet is-loading" aria-hidden="true"><span></span><span></span><span></span></div><p class="eport-status">Preparing your review PDF…</p></div></div>'+
+      '<p class="pg-note">Two pages: where you are, then your targets and signatures. Share it with your employer and tutor so all three of you can sign it.</p></section></div>';
+    root.querySelector("#rvp-close").onclick=()=>{root.innerHTML=""};
+    let file;
+    try{const blob=await buildReviewPdf(r);file=new File([blob],slug(learner)+"_progress-review_"+isoDate(r.date)+".pdf",{type:"application/pdf"});file.evPages=blob.evPages}
+    catch(err){console.error("Evia review PDF failed",err);const l=document.getElementById("rvp-files");if(l)l.innerHTML='<div class="card"><p>Evia couldn’t make the PDF. Please try again.</p></div>';return}
+    const list=document.getElementById("rvp-files");if(!list)return;
+    const shareOk=canShareFiles([file]),s=r.snapshot||{};
+    list.innerHTML='<div class="card eport-pdf"><button type="button" class="eport-sheet" id="rvp-preview" aria-label="Open the review PDF">'+
+      '<span class="eport-sheet-kicker">EVIA · PROGRESS REVIEW</span><strong class="eport-sheet-title">'+escHtml(learner)+'</strong>'+
+      '<span class="eport-sheet-sub">'+escHtml(ukDate(r.date))+' · '+(s.ksbPct!=null?s.ksbPct+'% '+(s.nvq?"criteria":"KSBs"):"")+(s.timePct!=null?' · '+s.timePct+'% through':"")+'</span><span class="eport-sheet-rule"></span>'+
+      (r.targets||[]).slice(0,3).map((t,i)=>'<span class="eport-sheet-text"><b>'+(i+1)+'.</b> '+escHtml(t.title)+'</span>').join("")+
+      '<span class="eport-sheet-open">Tap to open the full PDF</span></button>'+
+      '<p class="eport-status"><strong>Review PDF</strong> · '+file.evPages+' pages · '+formatBytes(file.size)+'</p>'+
+      '<div class="eport-main'+(shareOk?"":" single")+'">'+(shareOk?'<button type="button" class="primary" id="rvp-share">'+icon.share+'Share PDF</button>':"")+'<button type="button" class="'+(shareOk?"secondary":"primary")+'" id="rvp-save">'+icon.save+'Save PDF</button></div></div>';
+    const url=URL.createObjectURL(file);
+    document.getElementById("rvp-preview").onclick=()=>{const w=window.open(url,"_blank");if(!w)saveFile(file)};
+    const sb=document.getElementById("rvp-share");if(sb)sb.onclick=()=>shareFiles([file]);
+    document.getElementById("rvp-save").onclick=()=>saveFile(file);
+  }
+  window.eviaBuildReviewPdf=buildReviewPdf;
+  window.eviaOpenReviewPdf=openReviewPdf;
   window.eviaOpenOtjPdf=openOtjPdf;
   window.eviaOpenSendToPortfolio=openSendToPortfolio;
 })();

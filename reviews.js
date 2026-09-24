@@ -155,6 +155,10 @@
       tests:S.tests.map(t=>({name:t.name,latest:t.latest?(typeof t.latest.pct==="number"?t.latest.pct:Math.round((t.latest.score||0)/(t.latest.total||1)*100)):0,best:t.best})),missed:lastFull&&Array.isArray(lastFull.missed)?lastFull.missed.slice(0,8):[],
       confPct,confPrevPct,lowSkills:conf.filter(x=>x.score<=2).map(x=>x.area),highSkills:conf.filter(x=>x.score>=3).map(x=>x.area),task:task?task.task.title:null,
       scen:window.eviaScenarios?window.eviaScenarios.progress().topics:[],
+      prevTargetList:prevTargets.map(t=>({title:t.title,done:!!t.done,due:t.due})),
+      periodFrom:prevReview?prevReview.date:(prof.start||null),otjExpected:isNaN(startMs)?null:Math.round(Math.max(0,(Date.now()-startMs)/(7*864e5))*6),
+      dsl:!!((prof.safeguarding||{}).name),nvq:!!(window.eviaNvq&&window.eviaNvq.on()),
+      nvqQ:window.eviaNvq&&window.eviaNvq.on()?(()=>{const q=window.eviaNvq.myQuestions(),a=window.eviaNvq.answers();return {done:q.filter(x=>a[x]&&String(a[x].t).trim().split(/\s+/).length>=12).length,total:q.length}})():null,
       prevReviewDate:prevReview?prevReview.date:null,prevTargets:prevTargets.length?{done:prevTargets.filter(t=>t.done).length,total:prevTargets.length}:null
     };
   }
@@ -183,6 +187,11 @@
         s.ksbPct>=tp-10?" That’s about where you should be, "+tp+"% of the way through your course.":
         " "+tp+"% of the way through, you should have about "+tp+"% evidenced, so it’s worth catching up.")+
         (s.weeksPerUnit&&s.met<s.total?" You’ve got about "+plural(s.weeksLeft,"week")+" left, roughly "+plural(s.weeksPerUnit,"week")+" per unit still to start.":"")+(s.prevReviewDate?" Your last review was on "+ukDate(s.prevReviewDate)+".":""))});
+    /* Looking back first: how the targets from the last review went. */
+    const pt=s.prevTargetList||[];
+    if(pt.length)out.push({title:"Your last targets",body:
+      '<ul class="rv-last">'+pt.map(t=>'<li class="'+(t.done?"done":"")+'"><span aria-hidden="true">'+(t.done?"✓":"○")+'</span><strong>'+escHtml(t.title)+'</strong><em>'+(t.done?"Achieved":"Not yet")+'</em></li>').join("")+'</ul>'+
+      say(pt.every(t=>t.done)?"You achieved every target from your last review. Brilliant.":pt.some(t=>t.done)?"You achieved "+pt.filter(t=>t.done).length+" of "+pt.length+". Anything not finished can carry on into your new targets.":"None of these are finished yet. Your new targets will pick up where they left off.")});
     const expUnits=tp!=null&&s.unitsTotal?Math.min(s.unitsTotal,Math.ceil(tp/100*s.unitsTotal)):null;
     out.push({title:"Evidence",body:
       '<div class="rv-bigs">'+big(s.unitsStarted+"/"+s.unitsTotal,nvq?"jobs started":"units started")+big(s.packs,"evidence packs")+big(s.avgPhotos==null?"–":s.avgPhotos,"photos per pack")+'</div>'+
@@ -217,6 +226,7 @@
     out.push({title:"Your comments",body:
       '<label class="rv-q"><span>Is anything affecting your wellbeing, learning or work that you’d like your tutor to know? <small>Optional</small></span>'+(readOnly?'<p class="rv-a">'+escHtml(c.wellbeing||"No comment.")+'</p>':'<textarea data-reflect="wellbeing" rows="3">'+escHtml(c.wellbeing||"")+'</textarea>')+'</label>'+
       '<label class="rv-q"><span>How are you finding your apprenticeship? <small>Optional</small></span>'+(readOnly?'<p class="rv-a">'+escHtml(c.learnerFeedback||"No comment.")+'</p>':'<textarea data-reflect="learnerFeedback" rows="3">'+escHtml(c.learnerFeedback||"")+'</textarea>')+'</label>'+
+      '<label class="rv-q"><span>What would you like to do after your apprenticeship? <small>Optional</small></span>'+(readOnly?'<p class="rv-a">'+escHtml(c.nextSteps||"No comment.")+'</p>':'<textarea data-reflect="nextSteps" rows="2" placeholder="e.g. stay on as a bricklayer, go on to Level 3, become a site supervisor…">'+escHtml(c.nextSteps||"")+'</textarea>')+'</label>'+
       (readOnly&&q&&c.ksbFollowUp?'<label class="rv-q"><span>'+escHtml(q.question)+'</span><p class="rv-a">'+escHtml(c.ksbFollowUp)+'</p></label>':"")});
     out.push({title:readOnly?"Targets set":"Your new targets",body:
       (!readOnly&&s.prevTargets?'<p class="pg-note">These replace your current targets ('+s.prevTargets.done+' of '+s.prevTargets.total+' done).</p>':"")+
@@ -281,9 +291,11 @@
     root.querySelectorAll("[data-rv-go]").forEach(d=>d.onclick=()=>show(+d.dataset.rvGo));
     next.onclick=()=>{
       if(i<list.length-1)return show(i+1);
-      if(readOnly){if(window.eviaDownloadReviewPdf)window.eviaDownloadReviewPdf(r);return}
+      if(readOnly){if(window.eviaOpenReviewPdf)window.eviaOpenReviewPdf(r);else if(window.eviaDownloadReviewPdf)window.eviaDownloadReviewPdf(r);return}
       keepComments();save(r);root.innerHTML="";localStorage.removeItem(DRAFT);
       if(typeof showEvidenceToast==="function")showEvidenceToast("Review saved. Your new targets are ready.");
+      /* The record needs sharing and signing by the learner, employer and provider: offer the PDF straight away. */
+      if(window.eviaOpenReviewPdf)setTimeout(()=>window.eviaOpenReviewPdf(r),450);
       if(window.eviaMood)window.eviaMood("happy");
       if(typeof screen!=="undefined"&&(screen==="progress"||screen==="home"))render();
     };
