@@ -37,6 +37,7 @@ joiner:{name:"Bench Joiner",std:"ST0264 v1.4",u:[
 ["Ironmongery",["S29|Architectural joiner: Fit ironmongery including door locks, door handles, door hinges, latches and draw runners.","K39|Architectural joiner: Ironmongery installation techniques.","S4|Comply with industry regulations, standards, and guidance.","K7|Standards and regulations associated with carpentry activities: British standards, building regulations and warranty provider standards.","S9|Select, use and store hand tools.","K14|Hand tool use and storage methods and techniques: Chisels, planes, hand saws, hammers, squares, tri-square, bevels, marking and mortise gauges, spirit levels.","K19|Inclusion, equity and diversity in the workplace","B4|Seek learning and development opportunities."]],
 ["Fixed Machinery",["S30|Architectural joiner: Inspect, prepare and operate fixed machinery.","K31|Architectural joiner: Safe use of fixed machinery, inspection, preparation and operation techniques: Crosscut saw, band saw, planer and thicknesser and mortiser.","S2|Identify and use safety control equipment, for example, RPE, dust suppression, PPE and LEV.","K1|Fire safety, fire extinguishers","S5|Prepare and maintain a safe working area.","K3|Safe systems of work: Site inductions, tool box talks, risk assessments, method statements and hazard identification in the work area.","K5|Principles of building and modern methods of construction","B5|Team-focus to meet team goals including, considering the wider build team."]]
 ]}};
+Object.assign(C,window.EVIA_EXTRA_COURSES||{}); /* NVQ courses (nvq.js) */
 const esc=s=>String(s??"").replace(/[&<>"']/g,x=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[x]));
 let course=localStorage.getItem("evia7-course")||"bricklayer", screen="course", unit=-1, photos=[], evidence=JSON.parse(localStorage.getItem("evia7-evidence")||"[]"), hours=JSON.parse(localStorage.getItem("evia7-hours")||"[]"), otjBatches=JSON.parse(localStorage.getItem("evia7-otj-batches")||"[]");
 hours=hours.map((x,i)=>Object.assign({id:"legacy-"+i,createdAt:x.createdAt||Date.parse(x.d)||Date.now(),savedAt:x.savedAt||x.d||""},x));
@@ -162,6 +163,7 @@ function supportingPrepare(base,type){
      close();
      showEvidenceToast("Added to Portfolio");
      openSupportingEvidence();
+     openSupportingDetails(id,true);
    }catch(e){console.error("Supporting evidence save failed",e);showEvidenceToast("Couldn't save — please try again",true);}
  };
  /* Video and voice notes use the full-screen recorder (camera.js); Keep saves the recording. */
@@ -244,12 +246,43 @@ function supportingPrepare(base,type){
    stopBtn.onclick=()=>{if(recorder&&recorder.state!=="inactive")recorder.stop()};
  }
 }
+function supportingSummary(x){return [x.witness&&x.witness.name?"Witness testimony · "+x.witness.name+(x.witness.role?", "+x.witness.role:""):supportingTypeLabel(x.type),x.nvqUnit?"Unit "+x.nvqUnit+(Array.isArray(x.ksbs)&&x.ksbs.length?" · "+x.ksbs.length+" criteria":""):""].filter(Boolean).join(" · ")}
+/* About this evidence: mark it as witness testimony and, on NVQ courses, link it to a unit and the criteria it shows. */
+function openSupportingDetails(id,fresh,after){
+ const all=supportingMeta(),x=all.find(r=>r.id===id);if(!x)return;
+ const nvq=window.eviaNvq&&window.eviaNvq.on(),w=x.witness||{};
+ const units=nvq?window.eviaNvq.selected():[];
+ const critList=u=>{const list=u?window.eviaNvq.doCodesFor(u):[];return list.length?'<div class="sd-crit-head">What does it show? Tick what applies, your assessor will check it.</div>'+list.map(([c,t])=>'<label class="sd-crit"><input type="checkbox" value="'+esc(c)+'"'+((x.ksbs||[]).includes(c)?" checked":"")+'><span><strong>'+esc(c.split(".").slice(1).join("."))+'</strong> '+esc(t)+'</span></label>').join(""):""};
+ $("#modal-root").innerHTML='<div class="overlay"><section class="sheet pr-sheet sd-sheet"><div class="sheet-head"><div><div class="chat-kicker">'+(fresh?"ADDED TO PORTFOLIO":"SUPPORTING EVIDENCE")+'</div><h2>About this evidence</h2></div><button class="close" id="sd-close" aria-label="Close">×</button></div><div class="pr-body">'+
+  '<label class="sd-field">Name of the file<input id="sd-title" value="'+esc(x.title||"")+'"></label>'+
+  '<label class="sd-toggle"><input type="checkbox" id="sd-witness"'+(w.name?" checked":"")+'><span><strong>This is witness testimony</strong><small>A supervisor or colleague describing work they saw you do.</small></span></label>'+
+  '<div id="sd-witness-fields" class="sd-pair"'+(w.name?"":" hidden")+'><label class="sd-field">Their name<input id="sd-wname" value="'+esc(w.name||"")+'" autocomplete="off"></label><label class="sd-field">Their job title<input id="sd-wrole" value="'+esc(w.role||"")+'" placeholder="e.g. Site supervisor"></label></div>'+
+  (nvq?'<label class="sd-field">Which unit does it show?<select id="sd-unit"><option value="">Not linked yet</option>'+units.map(u=>'<option value="'+u.n+'"'+(x.nvqUnit===u.n?" selected":"")+'>'+u.n+' '+esc(u.short)+'</option>').join("")+'</select></label><div id="sd-crits">'+critList(x.nvqUnit)+'</div>':"")+
+  '<div class="pr-save"><button type="button" class="secondary" id="sd-skip">'+(fresh?"Skip":"Cancel")+'</button><button type="button" class="primary" id="sd-save">Save details</button></div>'+
+  '</div></section></div>';
+ const done=()=>{$("#modal-root").innerHTML="";if(after)after()};
+ $("#sd-close").onclick=$("#sd-skip").onclick=done;
+ $("#sd-witness").onchange=e=>{$("#sd-witness-fields").hidden=!e.target.checked;if(e.target.checked)$("#sd-wname").focus()};
+ if(nvq)$("#sd-unit").onchange=e=>{x.ksbs=[];$("#sd-crits").innerHTML=critList(e.target.value)};
+ $("#sd-save").onclick=()=>{
+  const list=supportingMeta(),r=list.find(v=>v.id===id);if(!r)return done();
+  r.title=$("#sd-title").value.trim()||r.title;
+  const name=$("#sd-wname").value.trim();
+  if($("#sd-witness").checked&&name)r.witness={name,role:$("#sd-wrole").value.trim()};else delete r.witness;
+  if(nvq){r.nvqUnit=$("#sd-unit").value||"";r.ksbs=[...document.querySelectorAll("#sd-crits input:checked")].map(i=>i.value);if(!r.nvqUnit){delete r.nvqUnit;r.ksbs=[]}}
+  localStorage.setItem("evia7-supporting-evidence",JSON.stringify(list));
+  showEvidenceToast(r.ksbs&&r.ksbs.length?"Linked to "+r.ksbs.length+" criteria":"Details saved");
+  if(window.eviaCheckTargets)window.eviaCheckTargets();
+  done();
+ };
+}
 async function openSupportingPortfolio(){
  const items=supportingMeta().filter(x=>x.course===course).slice().reverse();
  $("#page-title").textContent="Supporting Evidence";
  $("#screen").innerHTML='<button class="secondary" id="back-supporting-portfolio" type="button">‹ Back to portfolio</button><div class="card portfolio-intro"><div class="section-title">PORTFOLIO</div><h2>Supporting Evidence</h2><p>Supporting evidence you have added to your portfolio.</p></div>'+
- (items.length?'<div class="supporting-portfolio-list">'+items.map(x=>'<div class="card supporting-portfolio-item"><div class="supporting-portfolio-copy"><strong>'+esc(x.title||"Supporting evidence")+'</strong><span>'+esc(supportingTypeLabel(x.type))+'</span></div></div>').join("")+'</div><div class="row" style="margin-top:10px"><button class="primary" id="download-supporting-portfolio-zip" type="button">Download ZIP</button></div>':'<div class="card"><p>No supporting evidence has been added yet.</p></div>');
+ (items.length?'<div class="supporting-portfolio-list">'+items.map(x=>'<button type="button" class="card supporting-portfolio-item" data-supporting-details="'+esc(x.id)+'"><div class="supporting-portfolio-copy"><strong>'+esc(x.title||"Supporting evidence")+'</strong><span>'+esc(supportingSummary(x))+'</span></div><span class="supporting-course-arrow">›</span></button>').join("")+'</div><div class="row" style="margin-top:10px"><button class="primary" id="download-supporting-portfolio-zip" type="button">Download ZIP</button></div>':'<div class="card"><p>No supporting evidence has been added yet.</p></div>');
  $("#back-supporting-portfolio").onclick=()=>nav("portfolio");
+ document.querySelectorAll("[data-supporting-details]").forEach(b=>b.onclick=()=>openSupportingDetails(b.dataset.supportingDetails,false,openSupportingPortfolio));
  const zip=$("#download-supporting-portfolio-zip");if(zip)zip.onclick=downloadSupportingEvidenceZip;
 }
 async function downloadSupportingEvidenceZip(){const items=supportingMeta().filter(x=>x.course===course);if(!items.length){alert("There is no supporting evidence to download yet.");return}if(!window.eviaSupportingFileGet){alert("Supporting evidence storage is unavailable.");return}const files=[],used=new Set();for(const item of items){const rec=await window.eviaSupportingFileGet(item.id);if(!rec||!rec.blob)continue;let filename=item.filename||supportingSlug(item.title)+".bin",path=filename,n=2;while(used.has(path)){const dot=filename.lastIndexOf("."),name=dot>0?filename.slice(0,dot):filename,ext=dot>0?filename.slice(dot):"";path=name+"-"+n+ext;n++}used.add(path);files.push({path,blob:rec.blob})}if(!files.length){alert("The supporting evidence files could not be loaded.");return}const zip=await makeStoredZip(files),a=document.createElement("a");a.href=URL.createObjectURL(zip);a.download="Supporting-Evidence.zip";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
@@ -269,6 +302,7 @@ function strengthBars(level){
  return '<span class="unit-strength-bars" aria-label="'+(level?esc(level):"No evidence")+'">'+[0,1,2].map(i=>'<i class="signal-bar signal-bar-'+(i+1)+(i<n?" filled":"")+'"></i>').join("")+'</span>';
 }
 function courses(){
+ if(window.eviaNvq&&window.eviaNvq.on())return window.eviaNvq.courseScreen();
  $("#page-title").textContent="Course";
  $("#screen").innerHTML='<div class="card"><div class="section-title">'+esc(data().std)+'</div><h2>'+esc(data().name)+'</h2><p>'+data().u.length+' units. Open a unit to capture evidence.</p></div>'+data().u.map((u,i)=>{
    const level=unitStrengthForCourse(u[0]);
@@ -277,12 +311,13 @@ function courses(){
  bindCourses();document.querySelectorAll("[data-u]").forEach(b=>b.onclick=()=>openUnit(+b.dataset.u));const supportingCard=document.querySelector("[data-supporting-evidence]");if(supportingCard)supportingCard.onclick=()=>openSupportingEvidence();
 }
 function bindCourses(){document.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{course=b.dataset.c;persist();render()})}
-function allK(){let m=new Map();data().u.forEach(u=>u[1].forEach(k=>m.set(code(k),text(k))));return [...m].sort((a,b)=>a[0][0].localeCompare(b[0][0])||Number(a[0].slice(1))-Number(b[0].slice(1)))}
+function allK(){if(window.eviaNvq&&window.eviaNvq.on())return window.eviaNvq.allK();let m=new Map();data().u.forEach(u=>u[1].forEach(k=>m.set(code(k),text(k))));return [...m].sort((a,b)=>a[0][0].localeCompare(b[0][0])||Number(a[0].slice(1))-Number(b[0].slice(1)))}
 function courseProgressMeta(){
  const metas={
   bricklayer:{durationMonths:24,epaMonths:3},
   site:{durationMonths:24,epaMonths:6},
-  joiner:{durationMonths:24,epaMonths:6}
+  joiner:{durationMonths:24,epaMonths:6},
+  trowel3:{durationMonths:18,epaMonths:0}
  };
  return metas[course]||metas.bricklayer;
 }
@@ -368,6 +403,20 @@ function confidenceQuestions(){
    ["Materials","How confident are you at selecting timber and timber-based products for the job and recognising their characteristics?"],
    ["Drawings","How confident are you at interpreting drawings and specifications and extracting the information you need to manufacture a component?"],
    ["Power tools","How confident are you at selecting, using, inspecting and storing the correct power tools for the job?"]
+  ],
+  trowel3:[
+   ["Setting out","How confident are you at setting out masonry structures, including datums, right angles, curves and levels on sloping ground?"],
+   ["Arches","How confident are you at setting out and building arches, including the centre, springing line and voussoirs?"],
+   ["Chimneys and fireplaces","How confident are you at building a chimney stack or fireplace, including flue liners, DPCs and hearths?"],
+   ["Decorative work","How confident are you at building flush, projecting and decorative features such as corbels, plinths and string courses?"],
+   ["Curved and splayed walls","How confident are you at building walls curved on plan or in elevation, and walls splayed on plan?"],
+   ["Masonry cladding","How confident are you at cladding timber frame, steel or concrete structures, including ties, cavity trays and fire barriers?"],
+   ["Masonry structures","How confident are you at building cavity and solid walls with openings, cills, copings and joint finishes?"],
+   ["Repairs","How confident are you at repairing and maintaining existing masonry, matching materials and bond?"],
+   ["Drawings and information","How confident are you at interpreting drawings, specifications, schedules and method statements for a job?"],
+   ["Planning work","How confident are you at planning the sequence of work, estimating resources and keeping to a programme?"],
+   ["Methods of work","How confident are you at choosing and confirming the best method of work for a job?"],
+   ["Working relationships","How confident are you at communicating with your team, other trades and customers, and sorting out disagreements?"]
   ]
  };
  return banks[course]||banks.bricklayer;

@@ -48,7 +48,7 @@
   /* opts.type starts a test straight away; opts.count sets how many questions (the full EPA mock uses 20). */
   function eviaTestMe(opts){
     opts=opts||{};
-    const options=[["epa","EPA quick quiz"],["epa-full","EPA full mock"],["discussion","Discussion"]];
+    const options=(window.eviaNvq&&window.eviaNvq.on())?[["epa","Quick quiz"],["epa-full","Full knowledge test"],["discussion","Discussion practice"]]:[["epa","EPA quick quiz"],["epa-full","EPA full mock"],["discussion","Discussion"]];
     if(academicEnabled("maths"))options.push(["maths","Maths"]);
     if(academicEnabled("english"))options.push(["english","English"]);
     const chatEl=$("#chat");

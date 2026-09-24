@@ -88,6 +88,18 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("Outline Evia shapes draw on the Evia button",await page.$("#evia-fab .evia-outline"));
     await page.evaluate(()=>window.eviaSetShape("circle"));
 
+    // Trowel Occupations L3 (NVQ): packs and questions by unit, shared answers, witness testimony.
+    await page.evaluate(()=>{course="trowel3";persist();nav("course")});await page.waitForTimeout(450);
+    check("The NVQ course shows its units with packs and questions",await page.evaluate(()=>document.querySelectorAll(".nvq-unit-block").length===9&&!!document.querySelector('[data-nvq-q="313"]')&&document.querySelectorAll("[data-u]").length===7));
+    await page.evaluate(()=>window.eviaNvq.openQuestions("313"));await page.click("[data-q]");
+    await page.fill("#nvq-answer","I would stop work and report it to my supervisor straight away, then wait until the drawings or materials are put right.");await page.click("#nvq-save");
+    check("One answer ticks the same question in every unit that asks it",await page.evaluate(()=>["234.1.3","235.1.3","313.1.3","701.1.3","690.1.3"].every(c=>window.eviaNvq.evidenced().has(c))));
+    await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";const e=data().u;["Arches","Chimney stack","Fireplace"].forEach((t,i)=>{const u=e.find(x=>x[0]===t);evidence.push({id:"n"+i,c:course,u:t,k:u[1].map(code),w:"x",p:[],savedAt:new Date().toISOString()})});persist()});
+    check("Three different 313 jobs complete the at-least-three criterion",await page.evaluate(()=>window.eviaNvq.evidenced().has("313.7.3")));
+    await page.evaluate(()=>nav("progress"));await page.waitForTimeout(450);
+    check("NVQ Progress shows unit rings and says criteria, not KSBs",await page.evaluate(()=>!!document.querySelector("[data-nvq-unit='313']")&&!/KSB/.test(document.getElementById("screen").innerText)));
+    await page.evaluate(()=>{course="bricklayer";persist();nav("home")});await page.waitForTimeout(450);
+
     // Offline: once everything is saved, Evia opens with no connection.
     await page.evaluate(()=>navigator.serviceWorker.ready);await page.waitForTimeout(1500);
     await ctx.setOffline(true);await page.reload();await page.waitForTimeout(2500);

@@ -28,7 +28,7 @@
   /* ---------- Shared analysis used by Home and the coach ---------- */
   function analyse(){
     const units=data().u,entries=evidence.filter(e=>e.c===course);
-    const evidenced=new Set(entries.flatMap(e=>Array.isArray(e.k)?e.k:[]));
+    const evidenced=window.eviaNvq&&window.eviaNvq.on()?window.eviaNvq.evidenced():new Set(entries.flatMap(e=>Array.isArray(e.k)?e.k:[]));
     const all=allK(),met=all.filter(x=>evidenced.has(x[0])).length;
     const ksbPct=all.length?Math.round(met/all.length*100):0;
     const unitInfo=units.map((u,i)=>{
@@ -168,21 +168,22 @@
       '<div class="ui-page">'+
         (st?S.heroHtml(st):"")+
         (window.eviaTargets?(window.eviaTargets.check(false),window.eviaTargets.cardHtml()):"")+
-        '<section class="ui-card ui-groups">'+GROUPS.map(([letter,label],gi)=>{
+        (window.eviaNvq&&window.eviaNvq.on()?window.eviaNvq.progressHtml(a):'<section class="ui-card ui-groups">'+GROUPS.map(([letter,label],gi)=>{
           const items=all.filter(x=>x[0].startsWith(letter));if(!items.length)return"";
           const done=items.filter(x=>a.evidenced.has(x[0])).length,pct=Math.round(done/items.length*100),open=!!expanded[letter]||document.body.classList.contains("evia-onboarding"); /* the demo points at K2 and S2, so keep groups open */
           return (gi?'<div class="ui-divider"></div>':"")+
             '<button type="button" class="ui-group-head" data-group="'+letter+'" aria-expanded="'+open+'">'+ring(pct,44,5,null)+
               '<span class="ui-group-copy"><strong>'+label+'</strong><small>'+done+' of '+items.length+' with evidence</small></span><span class="ui-group-pct">'+pct+'%</span><span class="ui-chev'+(open?" open":"")+'">'+icon(ICONS.chev,18)+'</span></button>'+
             (open?'<div class="ui-ksb-grid">'+items.map(x=>{const met=a.evidenced.has(x[0]);return '<button type="button" class="ui-ksb'+(met?" met":"")+'" data-ksb-code="'+escHtml(x[0])+'" aria-label="'+escHtml(x[0])+(met?", evidence captured":"")+'">'+(met?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>':"")+escHtml(x[0])+(hasSupport(x[0])?'<i class="ui-ksb-dot" aria-label="Supporting evidence"></i>':"")+'</button>'}).join("")+'</div>':"");
-        }).join("")+'<p class="ui-help">Tap a KSB to see its wording and the evidence mapped to it.</p></section>'+
+        }).join("")+'<p class="ui-help">Tap a KSB to see its wording and the evidence mapped to it.</p></section>')+
         (st?S.sectionHtml(st):"")+
       '</div>';
     if(window.eviaTargets){window.eviaTargets.bind(document.getElementById("pg-targets"),()=>progressScreen(true))}
+    if(window.eviaNvq&&window.eviaNvq.on())window.eviaNvq.bindProgress(()=>progressScreen(true));
     if(st)S.animate(document.getElementById("screen"),still===true);
     document.querySelectorAll("[data-group]").forEach(b=>b.onclick=()=>{const y=window.scrollY;expanded[b.dataset.group]=!expanded[b.dataset.group];progressScreen(true);window.scrollTo(0,y)});
     document.querySelectorAll("[data-st-action]").forEach(b=>b.onclick=()=>{if(!window.eviaPractice)return;if(b.dataset.stAction==="tests")window.eviaPractice.openHub();else if(b.dataset.stAction==="scenarios"){if(window.eviaScenarios)window.eviaScenarios.openTopics()}else window.eviaPractice.openConfidence()});
-    document.querySelectorAll("[data-ksb-code]").forEach(b=>b.onclick=()=>{const item=all.find(x=>x[0]===b.dataset.ksbCode);if(item)ksbDetail(item[0],item[1],a.evidenced.has(item[0]))});
+    document.querySelectorAll(".ui-groups [data-ksb-code]").forEach(b=>b.onclick=()=>{const item=all.find(x=>x[0]===b.dataset.ksbCode);if(item)ksbDetail(item[0],item[1],a.evidenced.has(item[0]))});
   }
 
   /* ---------- Portfolio ---------- */

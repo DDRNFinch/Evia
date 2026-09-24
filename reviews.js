@@ -55,7 +55,8 @@
     }
     if(S.otjMonth<8)add("otj","Log 10 off-the-job hours","You’ve logged "+(Math.round(S.otjMonth*10)/10)+" hours this month. Training, toolbox talks and research all count.",10,S.otjTotal,6);
     const epaBest=bestTestSince(["epa"],0,true);
-    if(a.timePct!=null&&a.timePct>=60)add("epa","Score 70% or more on a full EPA mock",epaBest>=0?"Your best full mock so far is "+epaBest+"%.":"You haven’t tried a full EPA mock yet, and your end-point assessment is getting closer.",70,0,4);
+    if((window.eviaNvq&&window.eviaNvq.on())){} /* NVQs have no end-point assessment */
+    else if(a.timePct!=null&&a.timePct>=60)add("epa","Score 70% or more on a full EPA mock",epaBest>=0?"Your best full mock so far is "+epaBest+"%.":"You haven’t tried a full EPA mock yet, and your end-point assessment is getting closer.",70,0,4);
     else if(!S.tests.some(t=>t.type==="epa"))add("quiz","Try an EPA quick quiz","It only takes a few minutes and shows what the end-point test is like.",1,0,4);
     const skills=S.confidence.scores.filter(x=>x.score<=2).sort((x,y)=>x.score-y.score);
     if(skills.length){

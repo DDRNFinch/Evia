@@ -1,4 +1,4 @@
-const VERSION = "2026-09-24-evia7-v56";
+const VERSION = "2026-09-25-evia7-v57";
 const CACHE_NAME = "evia7-offline-" + VERSION;
 
 const APP_SHELL = [
@@ -12,6 +12,8 @@ const APP_SHELL = [
   "./vendor/fonts/lexend-latin-400-normal.woff2",
   "./vendor/fonts/lexend-latin-600-normal.woff2",
   "./storage.js",
+  "./nvq-data.js",
+  "./nvq.js",
   "./app.js",
   "./polish.js",
   "./profile.js",

@@ -27,7 +27,7 @@
   function profile(){return readJson("evia7-profile",{})}
   function timePct(){try{return window.eviaCoach.analyse().timePct}catch(_){return null}}
   const daysAgo=t=>t==null?Infinity:(Date.now()-t)/DAY;
-  function epaDue(){const tp=timePct();if(tp==null||tp<75)return false;const t=testsOf("epa");const last=t.length?Date.parse(t[t.length-1].savedAt):null;return daysAgo(last)>(tp>=90?7:14)}
+  function epaDue(){if((window.eviaNvq&&window.eviaNvq.on()))return false;const tp=timePct();if(tp==null||tp<75)return false;const t=testsOf("epa");const last=t.length?Date.parse(t[t.length-1].savedAt):null;return daysAgo(last)>(tp>=90?7:14)}
 
   function closeSheet(){const r=document.getElementById("modal-root");if(r)r.innerHTML=""}
   function sheet(kicker,title,body,cls){
@@ -44,9 +44,10 @@
     const p=profile(),tp=timePct(),conf=confidenceState(),tasks=suggestTasks(2);
     const rows=[];
     const row=(id,iconKey,title,desc,sum,due)=>rows.push('<button type="button" class="pr-row" data-pr="'+id+'"><span class="pr-icon">'+icon(ICONS[iconKey])+'</span><span class="pr-copy"><strong>'+title+(due?' <em class="pr-due">Due</em>':"")+'</strong><small>'+desc+'</small><small class="pr-sum">'+escHtml(sum)+'</small></span></button>');
-    row("epa-full","epa","EPA full mock","20 questions from across your KSBs",summary("epa",t=>t.full||t.total>=20).text,epaDue());
-    row("epa","quick","EPA quick quiz","5 questions · about 3 minutes",summary("epa",t=>!(t.full||t.total>=20)).text,false);
-    row("discussion","discussion","Professional discussion","5 questions · type your answers",summary("discussion").text,false);
+    const nvq=(window.eviaNvq&&window.eviaNvq.on());
+    row("epa-full","epa",nvq?"Full knowledge test":"EPA full mock","20 questions from across your KSBs",summary("epa",t=>t.full||t.total>=20).text,epaDue());
+    row("epa","quick",nvq?"Quick quiz":"EPA quick quiz","5 questions · about 3 minutes",summary("epa",t=>!(t.full||t.total>=20)).text,false);
+    row("discussion","discussion",nvq?"Discussion practice":"Professional discussion","5 questions · type your answers",summary("discussion").text,false);
     if(p.mathsEnabled)row("maths","maths","Maths","5 questions with worked answers",summary("maths").text,daysAgo(summary("maths").last)>14);
     if(p.englishEnabled)row("english","english","English","5 questions with worked answers",summary("english").text,daysAgo(summary("english").last)>14);
     const banner=tp!=null&&tp>=75

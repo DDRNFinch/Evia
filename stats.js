@@ -35,7 +35,7 @@
     /* Tests saved by review.js. */
     const tests=readJson("evia7-test-results",[]).filter(t=>t&&t.course===course);
     const byType={};
-    tests.forEach(t=>{const k=t.type;if(!byType[k])byType[k]={type:k,name:TEST_NAMES[k]||k,count:0,best:0,latest:null};const s=byType[k];s.count++;s.best=Math.max(s.best,testPct(t));if(!s.latest||Date.parse(t.savedAt)>Date.parse(s.latest.savedAt))s.latest=t});
+    tests.forEach(t=>{const k=t.type;if(!byType[k])byType[k]={type:k,name:(k==="epa"&&(window.eviaNvq&&window.eviaNvq.on())?"Knowledge test":TEST_NAMES[k])||k,count:0,best:0,latest:null};const s=byType[k];s.count++;s.best=Math.max(s.best,testPct(t));if(!s.latest||Date.parse(t.savedAt)>Date.parse(s.latest.savedAt))s.latest=t});
     /* Confidence: the learner's own rating. 1–2 = needs practice, 3–4 = confident. */
     const sessions=readJson("evia7-confidence",[]).filter(x=>x&&x.course===course&&Array.isArray(x.scores)&&x.scores.length);
     const lastConf=sessions[sessions.length-1]||null;
@@ -119,7 +119,7 @@
     if(s.packs>=2&&(lastReview==null||daysAgo(lastReview)>70))list.push({id:"review",text:lastReview?"It’s been over 10 weeks since your last progress review. It takes about 3 minutes and sets your next targets.":"Ready for your first progress review? It takes about 3 minutes and sets your targets.",action:{label:"Start a review",kind:"review"}});
     if(s.otjWeek===0&&(day===0||day>=4))list.push({id:"otj-week",text:"No off-the-job learning logged this week yet. Training, toolbox talks and research all count.",action:{label:"Log OTJ hours",kind:"learning"}});
     const timePct=s.a.timePct;
-    if(timePct!=null&&timePct>=75){
+    if(timePct!=null&&timePct>=75&&!(window.eviaNvq&&window.eviaNvq.on())){ /* NVQs have no end-point assessment */
       const gap=timePct>=90?7:14;
       if(daysAgo(s.lastTestAt("epa"))>gap)list.push({id:"epa",text:"You’re "+timePct+"% of the way through your course, so it’s time to practise for your end-point assessment. Try an EPA mock test.",action:{label:"Take an EPA full mock",kind:"test"}});
     }

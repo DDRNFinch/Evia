@@ -2,12 +2,14 @@
 (function(){
   const KEY="evia7-onboarding";
   const PPE_UNIT="Personal protective equipment";
-  const PPE_KSBS=["K2","S2"];
+  const nvqOn=()=>!!(window.eviaNvq&&window.eviaNvq.on());
+  const ppeCodes=()=>nvqOn()?["102.1.2","102.1.4"]:["K2","S2"]; /* NVQ: using H&S control equipment, and why and when to use it */
   const MAX_PHOTOS=4;
   const COURSES=[
     {key:"bricklayer",label:"Bricklayer",sub:"Brickwork and blockwork"},
     {key:"site",label:"Site Carpenter",sub:"Carpentry on site"},
-    {key:"joiner",label:"Bench Joiner",sub:"Joinery in the workshop"}
+    {key:"joiner",label:"Bench Joiner",sub:"Joinery in the workshop"},
+    {key:"trowel3",label:"Trowel Occupations L3",sub:"NVQ Level 3 Diploma · City & Guilds"}
   ];
   const escHtml=s=>String(s??"").replace(/[&<>"']/g,x=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[x]));
   const readState=()=>{try{return JSON.parse(localStorage.getItem(KEY)||"null")}catch(_){return null}};
@@ -108,9 +110,10 @@
     requestAnimationFrame(()=>root.classList.add("visible"));
     root.querySelectorAll("[data-onboard-course]").forEach(b=>b.onclick=()=>{
       course=b.dataset.onboardCourse;persist();
-      writeState("unit");
+      const nvq=nvqOn();
+      writeState(nvq?"optional":"unit");
       root.classList.add("leaving");
-      setTimeout(()=>{root.remove();showPpeUnit()},320);
+      setTimeout(()=>{root.remove();nvq?showOptionalPicker():showPpeUnit()},320);
     });
   }
 
@@ -128,7 +131,30 @@
     img.src=url;
   });
   const blobToDataUrl=blob=>new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(r.error);r.readAsDataURL(blob)});
-  function ppeKsbs(){return allK().filter(x=>PPE_KSBS.includes(x[0]))}
+  function ppeKsbs(){const c=ppeCodes();return allK().filter(x=>c.includes(x[0]))}
+
+  /* ---------- NVQ only: choose the optional unit(s) ---------- */
+  function showOptionalPicker(){
+    injectStyles();
+    const root=document.createElement("div");
+    root.id="evia-onboard-course";
+    root.innerHTML='<div class="evia-onboard-inner">'+
+      '<div class="evia-onboard-kicker">TROWEL OCCUPATIONS L3</div>'+
+      '<h2>Which optional unit are you doing?</h2>'+
+      '<p>You need at least one. Most learners do <strong>690 Repair and maintenance</strong>. You can change this later in Profile.</p>'+
+      '<div class="nvq-opts">'+window.eviaNvq.optionalHtml()+'</div>'+
+      '<button type="button" class="primary evia-onboard-go" id="nvq-opt-go">Continue</button></div>';
+    document.body.appendChild(root);
+    requestAnimationFrame(()=>root.classList.add("visible"));
+    const go=root.querySelector("#nvq-opt-go"),upd=()=>{go.disabled=!window.eviaNvq.readOptional(root).length};
+    root.querySelectorAll(".nvq-opt input").forEach(i=>i.onchange=upd);upd();
+    go.onclick=()=>{
+      window.eviaNvq.setOptional(window.eviaNvq.readOptional(root));
+      writeState("unit");
+      root.classList.add("leaving");
+      setTimeout(()=>{root.remove();showPpeUnit()},320);
+    };
+  }
 
   function showPpeUnit(){
     injectStyles();
@@ -210,7 +236,7 @@
           else inline.push(await blobToDataUrl(p.blob));
         }
         const profile=JSON.parse(localStorage.getItem("evia7-profile")||"{}");
-        const entry={id:Date.now()+"-"+Math.random().toString(36).slice(2,8),c:course,u:PPE_UNIT,d:new Date().toLocaleString("en-GB"),p:inline,w:write.value.trim(),k:PPE_KSBS.slice(),learnerProfile:{name:profile.name||"",start:profile.start||"",end:profile.end||""},signature:profile.signature||"",savedAt:new Date().toISOString(),photoCount:photos.length,induction:true};
+        const entry={id:Date.now()+"-"+Math.random().toString(36).slice(2,8),c:course,u:PPE_UNIT,d:new Date().toLocaleString("en-GB"),p:inline,w:write.value.trim(),k:ppeCodes(),learnerProfile:{name:profile.name||"",start:profile.start||"",end:profile.end||""},signature:profile.signature||"",savedAt:new Date().toISOString(),photoCount:photos.length,induction:true};
         if(photoIds.length)entry.photoIds=photoIds;
         evidence.push(entry);persist();
         photos.forEach(p=>URL.revokeObjectURL(p.url));
@@ -232,15 +258,16 @@
     const tile=k=>document.querySelector('[data-ksb-code="'+k+'"]');
     const focus=el=>{if(el)el.scrollIntoView({block:"start",behavior:"smooth"})};
     const name=firstName();
-    guide('Your PPE evidence has been added to your portfolio'+(name?", "+escHtml(name):"")+'. This is your <strong>Progress</strong> page — <strong>K2</strong> is now ticked off.',{
-      targets:[tile("K2")],button:"Next",onNext:()=>{
-        guide('…and so is <strong>S2</strong>. You have submitted evidence for <strong>2 of your KSBs</strong>, but you will need further evidence for them as you work through your course, so keep capturing jobs that show them.',{
-          targets:[tile("S2")],button:"Next",onNext:()=>{writeState("portfolio");showPortfolioStep()}
+    const [c1,c2]=ppeCodes(),nvq=nvqOn();
+    guide('Your PPE evidence has been added to your portfolio'+(name?", "+escHtml(name):"")+'. This is your <strong>Progress</strong> page — '+(nvq?'your units are listed here, and in <strong>Unit 102</strong>, criterion <strong>1.2</strong> (using health and safety equipment) is now ticked off.':'<strong>K2</strong> is now ticked off.'),{
+      targets:[tile(c1)],button:"Next",onNext:()=>{
+        guide(nvq?'…and so is <strong>1.4</strong> (why and when to use it). Every criterion works this way: your evidence packs, answers to questions and witness testimony tick them off as you go.':'…and so is <strong>S2</strong>. You have submitted evidence for <strong>2 of your KSBs</strong>, but you will need further evidence for them as you work through your course, so keep capturing jobs that show them.',{
+          targets:[tile(c2)],button:"Next",onNext:()=>{writeState("portfolio");showPortfolioStep()}
         });
-        focus(tile("S2"));
+        focus(tile(c2));
       }
     });
-    focus(tile("K2"));
+    focus(tile(c1));
   }
 
   /* ---------- Step 4: portfolio ---------- */
@@ -305,6 +332,7 @@
 
   function resume(stage){
     if(stage==="course")showCoursePicker();
+    else if(stage==="optional"&&nvqOn())showOptionalPicker();
     else if(stage==="unit")showPpeUnit();
     else if(stage==="progress")showProgressStep();
     else if(stage==="portfolio")showPortfolioStep();

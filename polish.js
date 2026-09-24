@@ -100,6 +100,7 @@
       "Fixed Machinery":{photos:"fixed machinery · PPE · safe working area",writeup:"machinery · safe systems · site inductions · toolbox talks · risk assessments · method statements · hazard identification · building principles · learning & development · teamwork"}
     }
   };
+  Object.assign(LEARNER_PROMPTS,window.EVIA_EXTRA_PROMPTS||{});
   window.eviaLearnerPrompts=LEARNER_PROMPTS;
   function learnerPrompts(){
     const coursePrompts=LEARNER_PROMPTS[course]||{};
