@@ -204,24 +204,32 @@
     };
 
     // Prepare the files up front so Share still counts as a direct tap when it is pressed.
-    const files=[];
+    /* Each part is prepared on its own, so one unreadable photo or a PDF problem never blocks the rest. */
+    const files=[],problems=[];
+    const photosByEntry=[];let expected=0;
+    for(const e of entries){
+      expected+=Array.isArray(e.photoIds)&&e.photoIds.length?e.photoIds.length:Array.isArray(e.p)?e.p.length:0;
+      try{photosByEntry.push(window.eviaGetEvidencePhotoData?await window.eviaGetEvidencePhotoData(e):(e.p||[]))}
+      catch(err){console.error("Evia photo read failed",err);photosByEntry.push([])}
+    }
+    const lastDate=isoDate(entryTime(entries[entries.length-1])||Date.now());
     try{
-      const photosByEntry=[];
-      for(const e of entries)photosByEntry.push(window.eviaGetEvidencePhotoData?await window.eviaGetEvidencePhotoData(e):(e.p||[]));
-      const lastDate=isoDate(entryTime(entries[entries.length-1])||Date.now());
       const pdf=await buildUnitPdf(unitName,entries,photosByEntry);
       files.push({kind:"pdf",title:"Evidence PDF",file:new File([pdf],base+"_evidence_"+lastDate+".pdf",{type:"application/pdf"})});
-      let n=0;
-      for(const src of photosByEntry.flat()){
-        n++;
+    }catch(err){console.error("Evia PDF failed",err);problems.push(/PDF library/.test(err&&err.message)?"The PDF couldn’t be made because part of Evia hasn’t downloaded yet. Open Evia once with signal, then try again.":"The PDF couldn’t be made on this phone ("+escHtml((err&&err.message)||"unknown error")+").")}
+    let n=0,unreadable=Math.max(0,expected-photosByEntry.flat().length);
+    for(const src of photosByEntry.flat()){
+      try{
         const blob=await (await fetch(src)).blob();
+        n++;
         const ext=/png/i.test(blob.type)?"png":"jpg";
         files.push({kind:"photo",title:"Photo "+n,src,file:new File([blob],base+"_photo-"+String(n).padStart(2,"0")+"."+ext,{type:blob.type||"image/jpeg"})});
-      }
-    }catch(err){
-      console.error("Evia e-portfolio files failed",err);
-      const list=$("#eport-files");
-      if(list)list.innerHTML='<div class="card"><p>Evia couldn\'t prepare the files. Check you are online the first time you use this, then try again.</p></div>';
+      }catch(err){console.error("Evia photo file failed",err);unreadable++}
+    }
+    if(unreadable)problems.push(unreadable+" photo"+(unreadable===1?"":"s")+" couldn’t be read on this phone and "+(unreadable===1?"was":"were")+" left out. If this evidence came from a backup, restore the backup again from your profile.");
+    const list=$("#eport-files");
+    if(!files.length){
+      if(list)list.innerHTML='<div class="card"><p>Evia couldn’t prepare the files. '+(problems.join(" ")||"Please try again.")+'</p></div>';
       return;
     }
     if(!document.getElementById("eport-files"))return; // learner navigated away
@@ -234,6 +242,7 @@
       '</div>').join("");
     document.querySelectorAll("[data-eport-share]").forEach(b=>b.onclick=async()=>{const f=files[+b.dataset.eportShare];if(await shareFiles([f.file]))markSent(unitName)});
     document.querySelectorAll("[data-eport-save]").forEach(b=>b.onclick=()=>{saveFile(files[+b.dataset.eportSave].file);markSent(unitName)});
+    if(problems.length)$("#eport-files").insertAdjacentHTML("afterbegin",'<div class="card eport-note" role="status"><p>'+problems.join("<br>")+'</p></div>');
     const all=files.map(f=>f.file),shareAll=files.length>1&&withinShareLimits(all)&&canShareFiles(all);
     const allEl=$("#eport-all");
     allEl.classList.toggle("single",!shareAll);

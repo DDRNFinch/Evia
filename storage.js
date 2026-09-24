@@ -218,10 +218,19 @@
         });
       }
       for(const s of dbInfo.stores||[]){
-        const tx=target.transaction(s.name,"readwrite"),store=tx.objectStore(s.name);
-        store.clear();
-        rehydrate(s.records||[],bytes).forEach(r=>store.put(r));
-        await txDone(tx);
+        const clearTx=target.transaction(s.name,"readwrite");clearTx.objectStore(s.name).clear();await txDone(clearTx);
+        /* Photos are copied into Evia's own storage (not left pointing at the backup file, which some phones stop
+           letting the app read after a reload). Done in small batches to keep memory low. */
+        const records=s.records||[];
+        for(let i=0;i<records.length;i+=20){
+          const batch=records.slice(i,i+20);
+          const needed=new Set();JSON.stringify(batch,(k,v)=>{if(k==="__eviaBlob")needed.add(v);return v});
+          const copies=new Map();
+          for(const path of needed){const f=bytes.get(path);if(f)copies.set(path,new Blob([await f.arrayBuffer()]))}
+          const tx=target.transaction(s.name,"readwrite"),store=tx.objectStore(s.name);
+          rehydrate(batch,copies).forEach(r=>store.put(r));
+          await txDone(tx);
+        }
       }
       target.close();
     }

@@ -294,3 +294,4 @@ html body .evia-fab.evia-svg-shape .evia-outline{filter:drop-shadow(0 6px 8px rg
 #screen.ui-entering{animation:uiPageIn .24s ease-out both}
 @keyframes uiPageIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 html[data-a11y-motion="reduce"] #screen,html[data-a11y-motion="reduce"] #chat > *{transition:none!important;animation:none!important}
+.eport-note{background:#fff8ec!important;border-color:#f6d9a8!important}.eport-note p{margin:0;font-size:13.5px;line-height:1.5;color:#7a4a00}

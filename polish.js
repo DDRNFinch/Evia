@@ -206,8 +206,9 @@
     if(!Array.isArray(e.photoIds))return[];
     const out=[];
     for(const id of e.photoIds){
-      const rec=await idbGet(id);
-      if(rec&&rec.blob)out.push(await blobToDataUrl(rec.blob));
+      /* An unreadable photo is skipped rather than failing the whole evidence pack. */
+      try{const rec=await idbGet(id);if(rec&&rec.blob)out.push(await blobToDataUrl(rec.blob))}
+      catch(err){console.warn("Evia photo unreadable",id,err)}
     }
     return out;
   }
