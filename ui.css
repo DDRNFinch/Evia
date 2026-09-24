@@ -739,3 +739,20 @@ html body .rv-sheet{display:flex;flex-direction:column;overflow:hidden;max-heigh
 html body .rv-sheet .rv-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:16px;margin:0 -20px;padding-left:20px;padding-right:20px}
 html body .rv-sheet .rv-nav{position:static;flex:0 0 auto;margin:0 -20px}
 @media(max-width:520px){html body .rv-sheet .rv-body{margin:0 -17px;padding-left:17px;padding-right:17px}html body .rv-sheet .rv-nav{margin:0 -17px}}
+/* ---------- Small phones (up to 380px wide) ---------- */
+@media (max-width:380px){
+  /* Portfolio tabs: share the width instead of running off the edge */
+  .ui-tabs{overflow:visible;gap:4px}
+  .ui-tabs button{flex:1 1 0;min-width:0;padding:8px 6px;font-size:12px;gap:3px;justify-content:center}
+  .ui-tabs button span{font-size:10px}
+  /* Portfolio sub-page headers stack instead of squeezing into three columns */
+  html body .portfolio-intro{flex-direction:column;align-items:flex-start;gap:4px}
+  html body .portfolio-intro h2{margin:0}
+  html body .portfolio-intro p{max-width:none!important;text-align:left!important}
+  /* "N units not started yet  Go to Course" wraps onto two tidy lines */
+  .ui-more-units{flex-wrap:wrap;row-gap:4px}
+}
+/* OTJ hours: the Add button stays inside the card at any width */
+.learning-input{min-width:0}
+.learning-input input{min-width:0;width:100%}
+.learning-input button{flex:0 0 auto}
