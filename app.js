@@ -196,8 +196,24 @@ function supportingPrepare(base,type){
    gallery.onchange=()=>{add(gallery.files[0]);gallery.value=""};
    saveBtn.onclick=()=>save(blob,mime,"Photo_"+now()+".jpg");
  }else if(type==="document"){
-   area.innerHTML='<div class="evidence-capture-tile"><div class="section-title">FILES</div><input id="supporting-file" type="file"><p class="supporting-hint">Choose a file from your device.</p></div>';
-   $("#supporting-file").onchange=e=>{const f=e.target.files[0];if(f)save(f,f.type||"application/octet-stream",f.name)};
+   /* Gallery for photos and videos already on the phone; Files for documents (PDFs, certificates, Word files…). */
+   area.innerHTML='<div class="evidence-capture-tile"><div class="section-title">UPLOAD</div><div class="evidence-photo-actions"><button type="button" class="primary" id="supporting-pick-gallery">Gallery</button><button type="button" class="secondary" id="supporting-pick-files">Files</button></div><input id="supporting-gallery-files" type="file" accept="image/*,video/*" multiple hidden><input id="supporting-file" type="file" multiple hidden><p class="supporting-hint">Gallery for photos and videos on your phone. Files for documents like PDFs and certificates. You can choose more than one.</p></div>';
+   const kindOf=f=>/^image\//i.test(f.type)?"photo":/^video\//i.test(f.type)?"video":/^audio\//i.test(f.type)?"audio":"document";
+   const saveFiles=async list=>{
+     const files=[...list].filter(f=>f&&f.size);if(!files.length)return;
+     try{
+       for(const f of files){
+         const id="support-"+Date.now()+"-"+Math.random().toString(36).slice(2,9);
+         await supportingSaveRecord({id,course,title:f.name,type:kindOf(f),mime:f.type||"application/octet-stream",filename:f.name,addedAt:new Date().toISOString(),size:f.size},f);
+       }
+       close();showEvidenceToast(files.length===1?"Added to Portfolio":files.length+" files added to Portfolio");openSupportingEvidence();
+     }catch(e){console.error("Supporting upload failed",e);showEvidenceToast("Couldn't save — please try again",true)}
+   };
+   const galleryInput=$("#supporting-gallery-files"),fileInput=$("#supporting-file");
+   $("#supporting-pick-gallery").onclick=()=>galleryInput.click();
+   $("#supporting-pick-files").onclick=()=>fileInput.click();
+   galleryInput.onchange=()=>{saveFiles(galleryInput.files);galleryInput.value=""};
+   fileInput.onchange=()=>{saveFiles(fileInput.files);fileInput.value=""};
  }else{
    const video=type==="video";
    area.innerHTML='<div class="evidence-capture-tile"><div class="section-title">'+(video?"VIDEO CAMERA":"VOICE RECORDER")+'</div><video id="supporting-live" autoplay muted playsinline '+(video?"style=\"display:block;width:100%;aspect-ratio:1/1;height:auto;object-fit:cover;border-radius:18px;background:#000\"":"style=\"display:none\"")+'></video><div class="supporting-recorder-actions"><button class="primary" id="supporting-record">Start recording</button><button class="secondary" id="supporting-stop" type="button" disabled>Stop</button></div><p class="supporting-hint">'+(video?"Video recording is targeted at approximately 11 MB per minute.":"Audio is recorded at a high-quality bitrate to retain as much recording data as practical.")+'</p></div>';
