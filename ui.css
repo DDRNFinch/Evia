@@ -756,3 +756,18 @@ html body .rv-sheet .rv-nav{position:static;flex:0 0 auto;margin:0 -20px}
 .learning-input{min-width:0}
 .learning-input input{min-width:0;width:100%}
 .learning-input button{flex:0 0 auto}
+
+/* Course page: each type of work is a dropdown */
+.nvq-group{margin:0 0 10px;background:var(--ui-card);border:1px solid var(--ui-line);border-radius:var(--ui-radius);box-shadow:var(--ui-shadow)}
+.nvq-group>summary{list-style:none;display:flex;align-items:center;gap:12px;padding:15px 16px;cursor:pointer;border-radius:var(--ui-radius)}
+.nvq-group>summary::-webkit-details-marker{display:none}
+.nvq-group>summary:focus-visible{outline:3px solid var(--yellow-line,#f1d878);outline-offset:2px}
+.nvq-group-copy{flex:1;min-width:0}
+.nvq-group-copy strong{display:block;font-size:15.5px;color:var(--ui-ink)}
+.nvq-group-copy small{display:block;margin-top:3px;font-size:12.5px;color:var(--ui-muted)}
+.nvq-group-chev{flex:0 0 auto;font-size:22px;line-height:1;color:var(--ui-faint);transition:transform .2s}
+.nvq-group[open]>.nvq-group-chev,.nvq-group[open]>summary .nvq-group-chev{transform:rotate(90deg)}
+.nvq-group-body{padding:0 10px 10px}
+.nvq-group-body .nvq-min{margin:0 6px 10px}
+.nvq-group-body .unit-card{box-shadow:none}
+@media (prefers-reduced-motion:reduce){.nvq-group-chev{transition:none}}

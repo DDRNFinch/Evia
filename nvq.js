@@ -143,28 +143,36 @@
     return ask+" · "+got+" covered";
   }
 
+  function readOpen(){try{return JSON.parse(localStorage.getItem("evia7-nvq-open")||"[]")}catch(_){return[]}}
+  function saveOpen(list){try{localStorage.setItem("evia7-nvq-open",JSON.stringify(list))}catch(_){}}
+
   /* ---------- Course screen: site jobs by type of work, one knowledge pack, workplace evidence ---------- */
   function courseScreen(){
     document.getElementById("page-title").textContent="Course";
     const ev=evidenced(),a=answers(),packs=data().u.map((u,i)=>({u,i,meta:u[2]||{}}));
     const qs=myQuestions(),qDone=qs.filter(q=>answered(q,a)).length,qPct=qs.length?Math.round(qDone/qs.length*100):0;
     const sel=selected().map(u=>u.n);
+    /* Each type of work is a dropdown, so the page opens as a short list. Which ones are open is remembered. */
+    const openSet=new Set(readOpen());
     const jobs=GROUPS.map(([gid,gname,nums])=>{
-      const units=nums.filter(n=>sel.includes(n)).map(n=>BY[n]);if(!units.length)return"";
-      return '<div class="section-title nvq-section">'+escH(gname)+'</div>'+units.map(u=>{
-        const mine=packs.filter(p=>p.meta.unit===u.n);if(!mine.length)return"";
+      const units=nums.filter(n=>sel.includes(n)).map(n=>BY[n]).filter(u=>packs.some(p=>p.meta.unit===u.n));if(!units.length)return"";
+      const count=packs.filter(p=>units.some(u=>u.n===p.meta.unit)).length,done=units.filter(u=>{const m=minCrit(u);return m&&ev.has(u.n+"."+m.n)}).length;
+      const status=done===units.length?'<span class="nvq-ok">✓ Complete</span>':units.length>1?done+" of "+units.length+" units complete":ruleText(units[0],ev);
+      return '<details class="nvq-group" data-group="'+gid+'"'+(openSet.has(gid)?" open":"")+'><summary><span class="nvq-group-copy"><strong>'+escH(gname)+'</strong><small>'+count+' job'+(count===1?"":"s")+' · '+status+'</small></span><span class="nvq-group-chev" aria-hidden="true">›</span></summary><div class="nvq-group-body">'+units.map(u=>{
+        const mine=packs.filter(p=>p.meta.unit===u.n);
         return '<p class="nvq-min">'+(units.length>1?'<strong>'+escH(u.short)+'</strong> · ':"")+ruleText(u,ev)+'</p>'+
           mine.map(p=>'<div class="card unit-card" data-u="'+p.i+'"><div class="unit-title">'+escH(p.u[0])+(typeof draftChip==="function"?draftChip(p.u[0]):"")+'<small class="nvq-job-unit">Unit '+u.n+'</small></div>'+(typeof strengthBars==="function"?strengthBars(unitStrengthForCourse(p.u[0])):"")+'</div>').join("");
-      }).join("");
+      }).join("")+'</div></details>';
     }).join("");
     document.getElementById("screen").innerHTML=
       '<div class="card"><div class="section-title">'+escH(data().std)+'</div><h2>'+escH(data().name)+'</h2><p>Capture your site jobs, answer the knowledge questions and add witness testimony. Evia maps everything to your units for you.</p></div>'+
-      jobs+
+      '<div class="section-title nvq-section">Site jobs</div>'+jobs+
       '<div class="section-title nvq-section">Knowledge</div>'+
       '<button type="button" class="card unit-card nvq-link-card nvq-knowledge" data-nvq-knowledge>'+miniRing(qPct,40)+'<span class="nvq-knowledge-copy"><span class="unit-title">Knowledge questions</span><small>'+qDone+' of '+qs.length+' answered · counts across all your units</small></span><span class="supporting-course-arrow">›</span></button>'+
       '<div class="section-title nvq-section">Workplace evidence</div>'+
       '<button type="button" class="card unit-card nvq-link-card" data-supporting-evidence><span><span class="unit-title">Witness testimony and documents</span><small>Photos, video, audio and files. Link each one to the unit it shows.</small></span><span class="supporting-course-arrow">›</span></button>';
     document.querySelectorAll("[data-u]").forEach(b=>b.onclick=()=>openUnit(+b.dataset.u));
+    document.querySelectorAll("details.nvq-group").forEach(d=>d.addEventListener("toggle",()=>saveOpen([...document.querySelectorAll("details.nvq-group[open]")].map(x=>x.dataset.group))));
     document.querySelectorAll("[data-supporting-evidence]").forEach(b=>b.onclick=()=>openSupportingEvidence());
     const k=document.querySelector("[data-nvq-knowledge]");if(k)k.onclick=()=>{sheetClosed=courseScreen;openKnowledge()};
   }

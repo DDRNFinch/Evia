@@ -60,7 +60,7 @@
       '<h3 class="pr-h">Tests</h3><div class="pr-list">'+rows.join("")+'</div>'+
       (!p.mathsEnabled&&!p.englishEnabled?'<p class="pr-note">Maths and English practice can be switched on in your Profile.</p>':"")+
       '<h3 class="pr-h">Your skills</h3><div class="pr-list"><button type="button" class="pr-row" data-pr="confidence"><span class="pr-icon">'+icon(ICONS.confidence)+'</span><span class="pr-copy"><strong>Confidence check'+(daysAgo(conf.last)>30?' <em class="pr-due">Due</em>':"")+'</strong><small>Rate yourself on each practical skill</small><small class="pr-sum">'+escHtml(conf.last?conf.practise.length+" need more training · rated "+ago(conf.last):"Not done yet")+'</small></span></button>'+
-      (tasks.length?'<button type="button" class="pr-row" data-pr="task"><span class="pr-icon">'+icon(ICONS.task)+'</span><span class="pr-copy"><strong>Practice task for you</strong><small>'+escHtml(tasks[0].task.title)+'</small><small class="pr-sum">Practises '+escHtml(listText(tasks[0].covers))+'</small></span></button>':"")+'</div>';
+      (allTasks().length?'<button type="button" class="pr-row" data-pr="task"><span class="pr-icon">'+icon(ICONS.task)+'</span><span class="pr-copy"><strong>College tasks</strong><small>'+(tasks.length?"Evia’s pick: "+escHtml(tasks[0].task.title):allTasks().length+" workshop tasks for your course")+'</small><small class="pr-sum">'+escHtml(tasks.length?"Practises "+listText(tasks[0].covers):conf.last?"All your skills are rated OK. Pick any task.":"Do a confidence check and Evia will pick one for you")+'</small></span></button>':"")+'</div>';
     const sp=window.eviaScenarios?window.eviaScenarios.progress():null;
     const scen=sp?'<h3 class="pr-h">Real-life scenarios</h3><div class="pr-list"><button type="button" class="pr-row" data-pr="scenarios"><span class="pr-icon">'+icon(ICONS.scenarios)+'</span><span class="pr-copy"><strong>What would you do?</strong><small>Safeguarding, Prevent, British values and equality</small><small class="pr-sum">'+sp.done+' of '+sp.total+' done</small></span></button></div>':"";
     const el=sheet("PRACTICE","Tests and checks",body+scen);
@@ -68,7 +68,7 @@
     el.querySelectorAll("[data-pr]").forEach(b=>b.onclick=()=>{
       const id=b.dataset.pr;closeSheet();
       if(id==="confidence"){openConfidence();return}
-      if(id==="task"){openTask(0);return}
+      if(id==="task"){openAllTasks();return}
       if(id==="scenarios"){window.eviaScenarios.openTopics();return}
       const label=b.querySelector("strong").childNodes[0].textContent.trim();
       startTest(id==="epa-full"?"epa":id,id==="epa-full"?20:5,label);
@@ -195,20 +195,37 @@
     return '<button type="button" class="pr-task" data-task="'+i+'"><span class="pr-task-kicker">Try this at college</span><strong>'+escHtml(x.task.title)+'</strong><small>Practises '+escHtml(listText(x.covers))+'</small></button>';
   }
   const listText=a=>a.length<2?a.join(""):a.slice(0,-1).join(", ")+" and "+a[a.length-1];
+  const allTasks=()=>(window.EVIA_PRACTICE_TASKS||{})[course]||[];
+  /* Every task for the course, with Evia's picks (from the confidence check) at the top. */
+  function openAllTasks(){
+    const picks=suggestTasks(3),all=allTasks();
+    if(!all.length){openConfidence();return}
+    const card=(t,covers,pick)=>'<button type="button" class="pr-task" data-id="'+escHtml(t.id)+'"><span class="pr-task-kicker">'+(pick?"Evia’s pick for you":escHtml(t.time))+'</span><strong>'+escHtml(t.title)+'</strong><small>'+(pick?"Practises "+escHtml(listText(covers)):escHtml(listText(t.skills)))+'</small></button>';
+    const rest=all.filter(t=>!picks.some(x=>x.task===t));
+    const body=(picks.length?picks.map(x=>card(x.task,x.covers,true)).join("")+'<h3 class="pr-h">All tasks</h3>'
+        :'<p class="pr-intro">Tasks to try in the workshop at college. '+(confidenceState().last?"None of your skills are rated low, so pick whichever you like.":"Do a confidence check and Evia will pick the ones that practise your weakest skills.")+'</p>'+(confidenceState().last?"":'<div class="pr-actions"><button type="button" class="secondary" id="pr-conf">Do a confidence check</button></div>'))+
+      rest.map(t=>card(t,[],false)).join("");
+    const el=sheet("PRACTICE","College tasks",body);
+    const cb=el.querySelector("#pr-conf");if(cb)cb.onclick=()=>{closeSheet();openConfidence()};
+    el.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>{const p=picks.find(x=>x.task.id===b.dataset.id);viewTask(all.find(t=>t.id===b.dataset.id),p?p.covers:[])});
+  }
   function openTask(index){
     const list=suggestTasks(3);
-    if(!list.length){openConfidence();return}
-    const i=Math.min(index||0,list.length-1),x=list[i],t=x.task;
+    if(!list.length){openAllTasks();return}
+    const i=Math.min(index||0,list.length-1);
+    viewTask(list[i].task,list[i].covers,list.length>1?()=>openTask((i+1)%list.length):null);
+  }
+  function viewTask(t,covers,another){
     const body='<p class="pr-intro">'+escHtml(t.brief)+'</p>'+
-      '<div class="pr-chips">'+t.skills.map(k=>'<span class="pr-chip '+(x.covers.includes(k)?"low":"")+'">'+escHtml(k)+'</span>').join("")+'</div>'+
-      '<p class="pr-note">Highlighted skills are ones you rated low. Time: about '+escHtml(t.time)+'.</p>'+
+      '<div class="pr-chips">'+t.skills.map(k=>'<span class="pr-chip '+(covers.includes(k)?"low":"")+'">'+escHtml(k)+'</span>').join("")+'</div>'+
+      '<p class="pr-note">'+(covers.length?"Highlighted skills are ones you rated low. ":"")+'Time: about '+escHtml(t.time)+'.</p>'+
       '<h3 class="pr-h">Steps</h3><ol class="pr-steps">'+t.steps.map(st=>'<li>'+escHtml(st)+'</li>').join("")+'</ol>'+
       '<div class="pr-banner">'+escHtml(t.check)+' Take photos as you go: you can add them to your portfolio as supporting evidence.</div>'+
-      '<div class="pr-actions">'+(list.length>1?'<button type="button" class="secondary" id="pr-other">Another idea</button>':"")+'<button type="button" class="secondary" id="pr-share">Show my tutor</button><button type="button" class="primary" id="pr-ok">Got it</button></div><p class="pr-note" id="pr-sent" role="status"></p>';
-    const el=sheet("PRACTICE TASK",escHtml(t.title),body);
+      '<div class="pr-actions">'+(another?'<button type="button" class="secondary" id="pr-other">Another idea</button>':'<button type="button" class="secondary" id="pr-other">All tasks</button>')+'<button type="button" class="secondary" id="pr-share">Show my tutor</button><button type="button" class="primary" id="pr-ok">Got it</button></div><p class="pr-note" id="pr-sent" role="status"></p>';
+    const el=sheet("COLLEGE TASK",escHtml(t.title),body);
     el.querySelector("#pr-ok").onclick=closeSheet;
-    const other=el.querySelector("#pr-other");if(other)other.onclick=()=>openTask((i+1)%list.length);
-    el.querySelector("#pr-share").onclick=()=>share("Practice task: "+t.title,"Practice task: "+t.title+"\n"+t.brief+"\n\nPractises: "+x.covers.join(", ")+"\n\n"+t.steps.map((st,n)=>(n+1)+". "+st).join("\n")+"\n\n"+t.check,el);
+    el.querySelector("#pr-other").onclick=another||openAllTasks;
+    el.querySelector("#pr-share").onclick=()=>share("College task: "+t.title,"College task: "+t.title+"\n"+t.brief+(covers.length?"\n\nPractises: "+covers.join(", "):"")+"\n\n"+t.steps.map((st,n)=>(n+1)+". "+st).join("\n")+"\n\n"+t.check,el);
   }
   async function share(title,text,el){
     const note=el.querySelector("#pr-sent");
@@ -217,5 +234,5 @@
     catch(_){note.textContent="Sharing isn’t available here. Show your tutor this screen instead."}
   }
 
-  window.eviaPractice={openHub,openConfidence,epaDue,startTest,suggestTasks,openTask};
+  window.eviaPractice={openHub,openConfidence,epaDue,startTest,suggestTasks,openTask,openAllTasks};
 })();

@@ -494,6 +494,23 @@
     say("I’ll take you through your review in a few short sections: evidence, learning, tests, skills and staying safe. At the end I’ll set your new targets. It takes about 3 minutes."+(last?" Your last review was on "+new Date(last.date).toLocaleDateString("en-GB",{day:"numeric",month:"short"})+".":""));
     replies([{label:"Start my review",primary:true,run:()=>{closeChat();setTimeout(window.eviaStartReview,80)}},{label:"Not now",run:somethingElse}]);
   }
+  /* College task: Evia's pick from the confidence check, or the full list if there isn't one. */
+  function taskFromMenu(){
+    userSays("Suggest a college task");
+    const P=window.eviaPractice,picks=P.suggestTasks(3),all=(window.EVIA_PRACTICE_TASKS||{})[course]||[];
+    const open=f=>()=>{closeChat();setTimeout(f,80)};
+    if(picks.length){
+      const x=picks[0];
+      say("Try this in the workshop: <strong>"+escHtml(x.task.title)+"</strong>. It practises "+escHtml(x.covers.join(", "))+", which you rated low in your confidence check. It takes about "+escHtml(x.task.time)+".");
+      replies([{label:"Show me the steps",primary:true,run:open(()=>P.openTask(0))},{label:"See all college tasks",run:open(P.openAllTasks)},{label:"Something else",run:somethingElse}]);
+    }else if(all.length){
+      say("I pick college tasks from your confidence check, so I can aim them at the skills you’re least sure of. You haven’t rated anything low yet. Do a quick confidence check, or have a look at all "+all.length+" tasks for your course.");
+      replies([{label:"Do a confidence check",primary:true,run:open(P.openConfidence)},{label:"See all college tasks",run:open(P.openAllTasks)},{label:"Something else",run:somethingElse}]);
+    }else{
+      say("I don’t have college tasks for your course yet. Ask your tutor which jobs to practise in the workshop.");
+      replies([{label:"Something else",run:somethingElse}]);
+    }
+  }
   function enhanceChat(opts){
     const c=chatBox();if(!c)return;
     queue=Promise.resolve();chatGen++;
@@ -511,6 +528,13 @@
       b.innerHTML="<strong>"+escHtml(item.label)+"</strong>";
       b.onclick=()=>{userTurns++;const box=b.closest(".chat-options");if(box)box.remove();item.run()};
     });
+    /* College task goes in after the app's own options. */
+    const optBox=c.querySelector("[data-chat-option]")&&c.querySelector("[data-chat-option]").closest(".chat-options");
+    if(optBox&&window.eviaPractice&&window.eviaPractice.openAllTasks){
+      const item={label:"College task",run:taskFromMenu};menuItems.push(item);
+      const b=document.createElement("button");b.type="button";b.className=optBox.querySelector("[data-chat-option]").className;b.innerHTML="<strong>College task</strong>";
+      b.onclick=()=>{userTurns++;optBox.remove();item.run()};optBox.appendChild(b);
+    }
     /* app.js only brings the profile button back on some screens when the chat closes; Home needs it too. */
     const x=document.getElementById("x");
     if(x)x.addEventListener("click",()=>{const pb=document.getElementById("profile-btn");if(pb&&screen==="home")pb.style.display="flex"});

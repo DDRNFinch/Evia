@@ -81,5 +81,32 @@ window.EVIA_PRACTICE_TASKS={
      brief:"Make a small wall unit carcass with a shelf and a hung door.",
      steps:["Choose sheet materials and work out a cutting list","Cut the panels to size","Join the carcass and fit the back square","Fit an adjustable shelf","Hang the door on concealed hinges and adjust it"],
      check:"Ask your tutor to check square, the joints and the door alignment."}
+  ],
+  trowel3:[
+    {id:"l3-arch",title:"Segmental arch over an opening",time:"2–3 workshop sessions",
+     skills:["Arches","Setting out","Drawings and information","Decorative work"],
+     brief:"Set out and build a segmental arch in brick over a small opening, using a turning piece.",
+     steps:["Read the drawing and work out the span, rise and springing line","Set out the arch full size on a board: centre point, radius and voussoir positions","Set up the turning piece at the springing line and check it's level","Lay the voussoirs from each side, keeping joints radial and the same thickness","Set the key brick, point the joints, then ease and strike the turning piece once the mortar has gone off"],
+     check:"Ask your tutor to check your setting out, the radial joints and the rise before the turning piece comes out."},
+    {id:"l3-curve",title:"Wall curved on plan, with a splayed return",time:"2 workshop sessions",
+     skills:["Curved and splayed walls","Setting out","Masonry structures","Drawings and information"],
+     brief:"Build a short half-brick wall curved on plan, finishing with a splayed return at one end.",
+     steps:["Set out the radius with a trammel and mark the curve on the base","Make a template from the radius to check the curve as you go","Build the curve, keeping perpends even and checking with the template every course","Set out the splay angle and cut or use squints at the return","Finish the joints and check plumb, level and the curve"],
+     check:"Ask your tutor to check the curve against your template, the splay angle and your cuts."},
+    {id:"l3-setting-out",title:"Set out a small building from drawings",time:"1–2 workshop sessions",
+     skills:["Setting out","Drawings and information","Planning work","Methods of work"],
+     brief:"Set out the corners, openings and levels of a small building from a drawing, using profiles and lines.",
+     steps:["Read the drawing and list the dimensions and levels you need","Establish a datum and transfer it to your profiles","Set out the main lines and check square with 3-4-5 and the diagonals","Mark door and window openings on the lines","Write a short method statement for how you'd build it"],
+     check:"Ask your tutor to check your diagonals, the datum and the opening positions before you strike the lines."},
+    {id:"l3-repair",title:"Cut out and repair damaged brickwork",time:"1–2 workshop sessions",
+     skills:["Repairs","Masonry structures","Methods of work","Working relationships"],
+     brief:"Cut out a section of damaged brickwork and replace it, matching the bricks, bond and joint.",
+     steps:["Identify the cause of the damage and plan the repair with your tutor","Set up a safe area and agree what needs propping, if anything","Cut out the damaged bricks without disturbing the ones around them","Match the new bricks, mortar colour and joint finish to the existing wall","Tooth in the new work, point up and clean down"],
+     check:"Ask your tutor to check how well the repair matches, the bond and how cleanly you cut out."},
+    {id:"l3-chimney",title:"Corbelled feature or chimney stack section",time:"2–3 workshop sessions",
+     skills:["Chimneys and fireplaces","Decorative work","Masonry cladding","Drawings and information"],
+     brief:"Build a short chimney stack section, or a decorative panel with corbelled and projecting courses.",
+     steps:["Read the drawing and set out the stack or panel","Build the core, keeping the flue or panel square and plumb","Form the corbel or projecting courses, keeping projections even","Show where DPCs, trays or flashings would go","Finish the joints and clean down"],
+     check:"Ask your tutor to check the projections, plumb and how you've shown the weathering details."}
   ]
 };
