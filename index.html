@@ -12,7 +12,7 @@
 <title>Evia</title>
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="polish.css">
-<link rel="stylesheet" href="ui.css?v=ui-v26">
+<link rel="stylesheet" href="ui.css?v=ui-v27">
 <link rel="stylesheet" href="accessibility.css?v=a11y-v2">
 <style>
 html.evia-booting body{visibility:hidden}
@@ -73,7 +73,7 @@ html.evia-booting body{visibility:hidden}
 </nav>
 </div>
 <div id="modal-root"></div>
-<script src="storage.js?v=storage-v3" data-app-scripts="nvq-data.js?v=nvq-data-v1 nvq.js?v=nvq-v5 app.js polish.js theme.js?v=evia-theme-v5 accessibility.js?v=a11y-v1 onboarding.js?v=onboarding-v9 profile.js?v=profile-v6 eportfolio.js?v=eport-v8 test-banks.js review.js?v=tests-v4 repair.js?v=a11y-v1 provider.js?v=provider-v2 practice-tasks.js?v=tasks-v1 scenarios.js?v=scenarios-v2 stats.js?v=stats-v8 practice.js?v=practice-v6 reviews.js?v=reviews-v6 ui.js?v=ui-v18 camera.js?v=camera-v1 writing.js?v=writing-v2 evia-alive.js?v=alive-v3"></script>
+<script src="storage.js?v=storage-v3" data-app-scripts="nvq-data.js?v=nvq-data-v1 nvq.js?v=nvq-v5 app.js polish.js theme.js?v=evia-theme-v5 accessibility.js?v=a11y-v1 onboarding.js?v=onboarding-v9 profile.js?v=profile-v6 eportfolio.js?v=eport-v9 test-banks.js review.js?v=tests-v4 repair.js?v=a11y-v1 provider.js?v=provider-v2 practice-tasks.js?v=tasks-v1 scenarios.js?v=scenarios-v2 stats.js?v=stats-v9 practice.js?v=practice-v6 reviews.js?v=reviews-v7 ui.js?v=ui-v19 camera.js?v=camera-v1 writing.js?v=writing-v2 evia-alive.js?v=alive-v3"></script>
 <script>
 (function(){
   if (!("serviceWorker" in navigator)) return;
@@ -83,7 +83,7 @@ html.evia-booting body{visibility:hidden}
   navigator.serviceWorker.addEventListener("controllerchange",function(){if(reloading||!hadController||Date.now()-openedAt>8000)return;reloading=true;window.location.reload();});
   window.addEventListener("load", async function(){
     try {
-      const registration=await navigator.serviceWorker.register("./sw-v16.js?v=evia7-v65",{updateViaCache:"none"});
+      const registration=await navigator.serviceWorker.register("./sw-v16.js?v=evia7-v66",{updateViaCache:"none"});
       await registration.update().catch(()=>{}); /* fails harmlessly with no signal */
       const activateWaiting=worker=>{if(!worker)return;worker.postMessage({type:"SKIP_WAITING"});};
       if(registration.waiting) activateWaiting(registration.waiting);

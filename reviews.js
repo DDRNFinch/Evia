@@ -226,12 +226,23 @@
     out.push({title:"Your comments",body:
       '<label class="rv-q"><span>Is anything affecting your wellbeing, learning or work that you’d like your tutor to know? <small>Optional</small></span>'+(readOnly?'<p class="rv-a">'+escHtml(c.wellbeing||"No comment.")+'</p>':'<textarea data-reflect="wellbeing" rows="3">'+escHtml(c.wellbeing||"")+'</textarea>')+'</label>'+
       '<label class="rv-q"><span>How are you finding your apprenticeship? <small>Optional</small></span>'+(readOnly?'<p class="rv-a">'+escHtml(c.learnerFeedback||"No comment.")+'</p>':'<textarea data-reflect="learnerFeedback" rows="3">'+escHtml(c.learnerFeedback||"")+'</textarea>')+'</label>'+
+      '<label class="rv-q"><span>Is there anything that would help you learn? For example extra help with reading, writing or maths, or support for dyslexia, a disability or anything else. <small>Optional</small></span>'+(readOnly?'<p class="rv-a">'+escHtml(c.support||"No comment.")+'</p>':'<textarea data-reflect="support" rows="2">'+escHtml(c.support||"")+'</textarea>')+'</label>'+
       '<label class="rv-q"><span>What would you like to do after your apprenticeship? <small>Optional</small></span>'+(readOnly?'<p class="rv-a">'+escHtml(c.nextSteps||"No comment.")+'</p>':'<textarea data-reflect="nextSteps" rows="2" placeholder="e.g. stay on as a bricklayer, go on to Level 3, become a site supervisor…">'+escHtml(c.nextSteps||"")+'</textarea>')+'</label>'+
       (readOnly&&q&&c.ksbFollowUp?'<label class="rv-q"><span>'+escHtml(q.question)+'</span><p class="rv-a">'+escHtml(c.ksbFollowUp)+'</p></label>':"")});
     out.push({title:readOnly?"Targets set":"Your new targets",body:
       (!readOnly&&s.prevTargets?'<p class="pg-note">These replace your current targets ('+s.prevTargets.done+' of '+s.prevTargets.total+' done).</p>':"")+
       '<ol class="rv-targets">'+r.targets.map(t=>'<li><strong>'+escHtml(t.title)+'</strong><small>'+escHtml(t.why)+'</small><em>Due '+ukDate(t.due+"T12:00:00")+'</em></li>').join("")+'</ol>'+
-      say(readOnly?"You can see how you’re getting on with your current targets in My targets.":"Tap <strong>Save review</strong> and these become your targets. I’ll track them for you.")});
+      say(readOnly?"You can see how you’re getting on with your current targets in My targets.":"These become your targets when you save the review. I’ll track them for you.")});
+    /* Sign-off: all three agree the review. Employer and tutor can sign on this phone now, or on the PDF later. */
+    const so=r.signoff||{},pf=readJson("evia7-profile",{});
+    const pad=(who,label,hint)=>{const v=so[who]||{};return '<div class="rv-sign" data-sign="'+who+'"><div class="rv-sign-top"><strong>'+label+'</strong>'+(v.sig?'<span class="rv-signed">✓ Signed '+escHtml(ukDate(v.date||r.date))+'</span>':'<small>'+hint+'</small>')+'</div>'+
+      '<input type="text" class="rv-sign-name" placeholder="Their name" value="'+escHtml(v.name||"")+'" aria-label="'+label+' name">'+
+      '<div class="rv-sign-pad"><canvas width="600" height="170" aria-label="'+label+' signature"></canvas><button type="button" class="rv-sign-clear">Clear</button></div></div>'};
+    out.push({title:"Sign off",body:
+      '<div class="rv-sign rv-sign-me"><div class="rv-sign-top"><strong>Apprentice</strong>'+(pf.signature?'<span class="rv-signed">✓ Signed</span>':'<small>Add your signature in Profile</small>')+'</div>'+(pf.signature?'<img src="'+pf.signature+'" alt="Your signature">':"")+'</div>'+
+      pad("employer","Employer","If they’re with you, they can sign here")+
+      pad("provider","Tutor or assessor","If they’re with you, they can sign here")+
+      say("A review should be agreed by you, your employer and your college. If they’re not with you now, share the review PDF and they can sign that instead.")});
     return out;
   }
   /* A review left part-way through for a quick action: where it was, and any comments typed so far. */
@@ -259,20 +270,31 @@
       '<div class="rv-body pg-animate" id="rv-body"></div>'+
       '<div class="rv-nav"><button type="button" class="secondary" id="rv-back">Back</button><button type="button" class="primary" id="rv-next">Next</button></div></section></div>';
     const body=root.querySelector("#rv-body"),next=root.querySelector("#rv-next"),back=root.querySelector("#rv-back");
-    const keepComments=()=>{if(readOnly)return;body.querySelectorAll("[data-reflect]").forEach(t=>{r.reflection=r.reflection||{};r.reflection[t.dataset.reflect]=t.value.trim()})};
+    /* Signature pads: kept on the review as images; a saved review can still be signed later. */
+    const keepSigns=()=>{body.querySelectorAll("[data-sign]").forEach(el=>{const who=el.dataset.sign,cv=el.querySelector("canvas"),name=el.querySelector(".rv-sign-name").value.trim();r.signoff=r.signoff||{};const prev=r.signoff[who]||{};
+      const inked=cv&&cv.dataset.inked==="1";if(inked||name||prev.sig)r.signoff[who]={name:name||prev.name||"",sig:inked?cv.toDataURL("image/png"):prev.sig||"",date:inked?new Date().toISOString():prev.date||""}})};
+    const bindSigns=()=>{body.querySelectorAll("[data-sign]").forEach(el=>{const cv=el.querySelector("canvas");if(!cv)return;const ctx=cv.getContext("2d");ctx.lineWidth=4;ctx.lineCap="round";ctx.lineJoin="round";ctx.strokeStyle="#172033";
+      const prev=(r.signoff||{})[el.dataset.sign];if(prev&&prev.sig){const im=new Image();im.onload=()=>ctx.drawImage(im,0,0,cv.width,cv.height);im.src=prev.sig}
+      let on=false;const pt=e=>{const b=cv.getBoundingClientRect();return{x:(e.clientX-b.left)*cv.width/b.width,y:(e.clientY-b.top)*cv.height/b.height}};
+      cv.onpointerdown=e=>{on=true;cv.setPointerCapture(e.pointerId);const q=pt(e);ctx.beginPath();ctx.moveTo(q.x,q.y)};
+      cv.onpointermove=e=>{if(!on)return;const q=pt(e);ctx.lineTo(q.x,q.y);ctx.stroke();cv.dataset.inked="1"};
+      cv.onpointerup=cv.onpointercancel=()=>{on=false};
+      el.querySelector(".rv-sign-clear").onclick=()=>{ctx.clearRect(0,0,cv.width,cv.height);cv.dataset.inked="";if(r.signoff&&r.signoff[el.dataset.sign])r.signoff[el.dataset.sign].sig=""}})};
+    const saveSignsOnSaved=()=>{if(!readOnly)return;keepSigns();const all=readJson(REVIEWS,[]),k=all.findIndex(x=>x.id===r.id);if(k>=0){all[k].signoff=r.signoff;write(REVIEWS,all)}};
+    const keepComments=()=>{keepSigns();saveSignsOnSaved();if(readOnly)return;body.querySelectorAll("[data-reflect]").forEach(t=>{r.reflection=r.reflection||{};r.reflection[t.dataset.reflect]=t.value.trim()})};
     const show=n=>{
       keepComments();i=Math.max(0,Math.min(list.length-1,n));
       root.querySelector("#rv-kicker").textContent=(readOnly?"REVIEW · "+ukDate(r.date).toUpperCase():"PROGRESS REVIEW")+" · "+(i+1)+" OF "+list.length;
       root.querySelector("#rv-title").textContent=list[i].title;
-      body.innerHTML='<div class="pg-card rv-slide">'+list[i].body+'</div>';
+      body.innerHTML='<div class="pg-card rv-slide">'+list[i].body+'</div>';bindSigns();
       requestAnimationFrame(()=>requestAnimationFrame(()=>{const c=body.querySelector(".pg-card");if(c)c.classList.add("pg-in")}));
       root.querySelectorAll("[data-rv-go]").forEach((d,n)=>d.classList.toggle("on",n===i));
       back.style.visibility=i?"visible":"hidden";
       const last=i===list.length-1;
       next.textContent=last?(readOnly?"Download PDF":"Save review"):"Next";
-      root.querySelector(".rv-sheet").scrollTop=0;
+      root.querySelector(".rv-sheet").scrollTop=0;body.scrollTop=0;
     };
-    root.querySelector("#rv-close").onclick=()=>{root.innerHTML="";if(!readOnly)localStorage.removeItem(DRAFT)};
+    root.querySelector("#rv-close").onclick=()=>{keepComments();root.innerHTML="";if(!readOnly)localStorage.removeItem(DRAFT)};
     /* Quick actions: save the place (and any comments), do the thing, then offer the way back. */
     const QUICK={
       otj:()=>{nav("learning");setTimeout(()=>{const h=document.getElementById("hrs");if(h)h.focus()},400)},
@@ -291,7 +313,7 @@
     root.querySelectorAll("[data-rv-go]").forEach(d=>d.onclick=()=>show(+d.dataset.rvGo));
     next.onclick=()=>{
       if(i<list.length-1)return show(i+1);
-      if(readOnly){if(window.eviaOpenReviewPdf)window.eviaOpenReviewPdf(r);else if(window.eviaDownloadReviewPdf)window.eviaDownloadReviewPdf(r);return}
+      if(readOnly){keepComments();if(window.eviaOpenReviewPdf)window.eviaOpenReviewPdf(r);else if(window.eviaDownloadReviewPdf)window.eviaDownloadReviewPdf(r);return}
       keepComments();save(r);root.innerHTML="";localStorage.removeItem(DRAFT);
       if(typeof showEvidenceToast==="function")showEvidenceToast("Review saved. Your new targets are ready.");
       /* The record needs sharing and signing by the learner, employer and provider: offer the PDF straight away. */
@@ -324,6 +346,13 @@
   window.eviaTargets={ensure:ensureTargets,mine,progress,cardHtml,bind,check,stats};
   window.eviaStartReview=()=>startReview();
   window.eviaResumeReview=resumeReview;
+  /* Reviews are due every 3 calendar months: 3 months after the last one, or after the course start. */
+  window.eviaReviewDue=()=>{
+    const last=readJson(REVIEWS,[]).filter(x=>x&&x.course===course).pop(),p=readJson("evia7-profile",{});
+    const from=last?new Date(last.date):p.start?new Date(p.start+"T12:00:00"):null;if(!from||isNaN(from))return null;
+    const due=new Date(from);due.setMonth(due.getMonth()+3);
+    const days=Math.ceil((due-Date.now())/864e5);return {due,days,first:!last};
+  };
   window.eviaReviewDraft=()=>!!readJson(DRAFT,null);
   setTimeout(showResume,1500); /* a review left part-way through before the app was closed */
   window.eviaShowReview=showReview;

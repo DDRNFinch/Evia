@@ -179,6 +179,7 @@
     $("#screen").innerHTML=pageHead("Progress")+
       '<div class="ui-page">'+
         (st?S.heroHtml(st):"")+
+        (()=>{const rd=window.eviaReviewDue&&window.eviaReviewDue();if(!rd)return"";const d=rd.due.toLocaleDateString("en-GB",{day:"numeric",month:"short"});return '<button type="button" class="ui-card ui-review-due'+(rd.days<=14?" soon":"")+'" id="ui-review-due"><span><small>Next progress review</small><strong>'+(rd.days<0?"Overdue · was due "+d:rd.days===0?"Due today":"Due "+d+(rd.days<=14?" · in "+rd.days+" day"+(rd.days===1?"":"s"):""))+'</strong></span><em>'+(rd.days<=14?"Start now":"Do it early")+' ›</em></button>'})()+
         (window.eviaTargets?(window.eviaTargets.check(false),window.eviaTargets.cardHtml()):"")+
         (window.eviaNvq&&window.eviaNvq.on()?window.eviaNvq.progressHtml(a):'<section class="ui-card ui-groups">'+GROUPS.map(([letter,label],gi)=>{
           const items=all.filter(x=>x[0].startsWith(letter));if(!items.length)return"";
@@ -192,6 +193,7 @@
       '</div>';
     if(window.eviaTargets){window.eviaTargets.bind(document.getElementById("pg-targets"),()=>progressScreen(true))}
     if(window.eviaNvq&&window.eviaNvq.on())window.eviaNvq.bindProgress(()=>progressScreen(true));
+    const rdb=document.getElementById("ui-review-due");if(rdb)rdb.onclick=()=>window.eviaStartReview&&window.eviaStartReview();
     if(st)S.animate(document.getElementById("screen"),still===true);
     document.querySelectorAll("[data-group]").forEach(b=>b.onclick=()=>{const y=window.scrollY;expanded[b.dataset.group]=!expanded[b.dataset.group];progressScreen(true);window.scrollTo(0,y)});
     document.querySelectorAll("[data-st-action]").forEach(b=>b.onclick=()=>{if(!window.eviaPractice)return;if(b.dataset.stAction==="tests")window.eviaPractice.openHub();else if(b.dataset.stAction==="scenarios"){if(window.eviaScenarios)window.eviaScenarios.openTopics()}else window.eviaPractice.openConfidence()});
@@ -487,7 +489,8 @@
   /* Progress review: a short click-through of sections; finishing it sets new targets. */
   function reviewFromMenu(){
     userSays("Progress review");
-    const last=(window.eviaGetReviews?window.eviaGetReviews():[])[0];
+    const last=(window.eviaGetReviews?window.eviaGetReviews():[])[0],rd=window.eviaReviewDue?window.eviaReviewDue():null;
+    if(rd)say(rd.days<0?"Your review was due on <strong>"+rd.due.toLocaleDateString("en-GB",{day:"numeric",month:"long"})+"</strong>, so now’s a good time.":"Your next review is due on <strong>"+rd.due.toLocaleDateString("en-GB",{day:"numeric",month:"long"})+"</strong>"+(rd.days<=14?", so now’s a good time.":". You can do one early whenever you like."));
     say("I’ll take you through your review in a few short sections: evidence, learning, tests, skills and staying safe. At the end I’ll set your new targets. It takes about 3 minutes."+(last?" Your last review was on "+new Date(last.date).toLocaleDateString("en-GB",{day:"numeric",month:"short"})+".":""));
     replies([{label:"Start my review",primary:true,run:()=>{closeChat();setTimeout(window.eviaStartReview,80)}},{label:"Not now",run:somethingElse}]);
   }

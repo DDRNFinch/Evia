@@ -38,6 +38,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("Home shows progress and quick actions",await page.$("#ui-home-progress")&&await page.$("#ui-practice"));
     for(const s of ["course","progress","portfolio","learning","home"]){await page.evaluate(s=>nav(s),s);await page.waitForTimeout(450)}
     await page.evaluate(()=>nav("progress"));await page.waitForTimeout(450);
+    check("Progress shows when the next review is due",await page.evaluate(()=>!window.eviaReviewDue()||!!document.getElementById("ui-review-due")));
     check("Progress shows the hero, KSB groups and stats cards",await page.$("#pg-hero")&&await page.$(".ui-groups")&&await page.$("#pg-activity")&&await page.$("#pg-awards"));
     await page.evaluate(()=>nav("portfolio"));await page.waitForTimeout(450);
     check("Portfolio shows the unit with evidence",await page.$("[data-unit-open]"));
@@ -86,6 +87,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
 
     await page.evaluate(()=>window.eviaStartReview());await page.waitForTimeout(400);
     for(let i=0;i<12;i++){const t=await page.evaluate(()=>document.getElementById("rv-next").textContent);await page.click("#rv-next");await page.waitForTimeout(200);if(t==="Save review")break}
+    check("The review ends with a sign-off step for employer and tutor",await page.evaluate(()=>true)&&!!(await page.evaluate(()=>{const r=JSON.parse(localStorage.getItem("evia7-progress-reviews")||"[]").pop();return r&&r.format===2})));
     await page.waitForSelector("#rvp-save",{timeout:20000}).catch(()=>{});
     check("Saving a review offers the two-page review PDF to share and sign",await page.evaluate(()=>!!document.getElementById("rvp-save")&&/2 pages/.test(document.querySelector(".eport-status").textContent)));
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML=""});

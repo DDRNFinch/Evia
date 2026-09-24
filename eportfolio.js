@@ -545,7 +545,7 @@
      T("Safeguarding lead saved in Evia: "+(s.dsl?"Yes":"Not yet")+"   ·   Latest skills self-rating: "+(s.confPct!=null?s.confPct+"%":"not done"),M,y+3,7.8,"normal",muted);y+=7}
     // Apprentice comments
     const c=r.reflection||{};
-    const comments=[["Wellbeing and support",c.wellbeing],["How the apprenticeship is going",c.learnerFeedback],["Next steps and career plans",c.nextSteps]];
+    const comments=[["Wellbeing and support",c.wellbeing],["How the apprenticeship is going",c.learnerFeedback],["Extra help with learning",c.support],["Next steps and career plans",c.nextSteps]].filter((x,i)=>i<2||x[1]);
     section("Apprentice's comments",30);
     comments.forEach(([q,a])=>{doc.setFont("helvetica","normal");doc.setFontSize(8.2);const ls=doc.splitTextToSize(pdfText(a||"No comment."),CW-8);const h=6.5+ls.length*3.6;if(y+h>BOTTOM){doc.addPage();y=M}
       box(M,y,CW,h,[255,255,255],line,2.5);T(q,M+4,y+4.3,7.4,"bold",muted);ls.forEach((l,n)=>T(l,M+4,y+8.3+n*3.6,8.2,"normal",a?ink:faint));y+=h+2});
@@ -555,10 +555,11 @@
     {const hw=(CW-gap)/2;[["Employer","Progress at work, support, off-the-job time"],["Tutor / assessor","Progress, English and maths, "+(nvq?"completion":"gateway")]].forEach(([q,sub],i)=>{const x=M+i*(hw+gap);box(x,y,hw,24,[255,255,255],line,2.5);T(q,x+4,y+4.5,7.6,"bold",ink);T(sub,x+4,y+8,6.6,"normal",faint);doc.setDrawColor(...line);doc.setLineWidth(.2);[14,19].forEach(o=>doc.line(x+4,y+o,x+hw-4,y+o))});y+=27}
     // Signatures
     section("Signed and agreed by all three",31);
-    {const sw=(CW-gap*2)/3;[["Apprentice",learner],["Employer",""],["Training provider",""]].forEach(([role,name],i)=>{const x=M+i*(sw+gap);box(x,y,sw,28,[255,255,255],line,2.5);T(role,x+3,y+4.6,7.4,"bold",muted);
-       if(i===0&&(profile.signature||r.signature)){try{doc.addImage(profile.signature||r.signature,"PNG",x+3,y+6,sw-6,9,undefined,"FAST")}catch(_){}}
+    {const sw=(CW-gap*2)/3,so=r.signoff||{};
+     [["Apprentice",learner,profile.signature||r.signature,r.date],["Employer",(so.employer||{}).name,(so.employer||{}).sig,(so.employer||{}).date],["Training provider",(so.provider||{}).name,(so.provider||{}).sig,(so.provider||{}).date]].forEach(([role,name,sig,date],i)=>{const x=M+i*(sw+gap);box(x,y,sw,28,[255,255,255],line,2.5);T(role,x+3,y+4.6,7.4,"bold",muted);
+       if(sig){try{doc.addImage(sig,"PNG",x+3,y+6,sw-6,9,undefined,"FAST")}catch(_){}}
        doc.setDrawColor(...line);doc.line(x+3,y+16.5,x+sw-3,y+16.5);
-       T("Name: "+(name||""),x+3,y+21,7.4,"normal",name?ink:faint);T("Date: "+(i===0?ukDate(r.date):""),x+3,y+25.5,7.4,"normal",i===0?ink:faint)});
+       T("Name: "+(name||""),x+3,y+21,7.4,"normal",name?ink:faint);T("Date: "+((sig||i===0)&&date?ukDate(date):""),x+3,y+25.5,7.4,"normal",sig||i===0?ink:faint)});
      y+=32}
 
     const pages=doc.getNumberOfPages();

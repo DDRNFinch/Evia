@@ -121,7 +121,9 @@
     const T=window.eviaTargets,targets=T?T.mine():[],overdue=targets.filter(t=>!t.done&&new Date(t.due+"T23:59:59").getTime()<s.now);
     if(overdue.length)list.push({id:"target-overdue",text:"Your target “"+overdue[0].title+"” is past its date. Want to take a look?",action:{label:"My targets",kind:"targets"}});
     const reviews=readJson("evia7-progress-reviews",[]).filter(r=>r&&r.course===course),lastReview=reviews.length?Date.parse(reviews[reviews.length-1].date):null;
-    if(s.packs>=2&&(lastReview==null||daysAgo(lastReview)>70))list.push({id:"review",text:lastReview?"It’s been over 10 weeks since your last progress review. It takes about 3 minutes and sets your next targets.":"Ready for your first progress review? It takes about 3 minutes and sets your targets.",action:{label:"Start a review",kind:"review"}});
+    const rd=window.eviaReviewDue?window.eviaReviewDue():null,dueTxt=rd?rd.due.toLocaleDateString("en-GB",{day:"numeric",month:"short"}):"";
+    if(rd&&rd.days<=14&&(s.packs>=1||!rd.first))list.push({id:"review",text:rd.days<0?"Your progress review was due on "+dueTxt+". It takes about 3 minutes and sets your next targets.":rd.days===0?"Your progress review is due today. It takes about 3 minutes and sets your next targets.":"Your next progress review is due on "+dueTxt+". It takes about 3 minutes and sets your next targets.",action:{label:"Start a review",kind:"review"}});
+    else if(!rd&&s.packs>=2&&(lastReview==null||daysAgo(lastReview)>70))list.push({id:"review",text:lastReview?"It’s been over 10 weeks since your last progress review. It takes about 3 minutes and sets your next targets.":"Ready for your first progress review? It takes about 3 minutes and sets your targets.",action:{label:"Start a review",kind:"review"}});
     if(s.otjWeek===0&&(day===0||day>=4))list.push({id:"otj-week",text:"No off-the-job learning logged this week yet. Training, toolbox talks and research all count.",action:{label:"Log OTJ hours",kind:"learning"}});
     const timePct=s.a.timePct;
     if(timePct!=null&&timePct>=75&&!(window.eviaNvq&&window.eviaNvq.on())){ /* NVQs have no end-point assessment */
