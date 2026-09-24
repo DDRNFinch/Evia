@@ -121,7 +121,7 @@
     const a=KINDS[t.kind].action[1],close=()=>{const x=document.getElementById("x");if(x)x.click();else{const r=document.getElementById("modal-root");if(r)r.innerHTML=""}};
     close();
     setTimeout(()=>{
-      if(a==="learning"||a==="course")nav(a);
+      if(a==="learning"||a==="course")nav(a==="learning"?"hours":a);
       else if(a==="confidence")window.eviaPractice&&window.eviaPractice.openConfidence();
       else if(a==="scenarios")window.eviaScenarios&&window.eviaScenarios.openTopics();
       else if(window.eviaStartTest)window.eviaStartTest(a==="epa-full"?"epa":a,a==="epa-full"?20:5,KINDS[t.kind].action[0]);
@@ -297,7 +297,7 @@
     root.querySelector("#rv-close").onclick=()=>{keepComments();root.innerHTML="";if(!readOnly)localStorage.removeItem(DRAFT)};
     /* Quick actions: save the place (and any comments), do the thing, then offer the way back. */
     const QUICK={
-      otj:()=>{nav("learning");setTimeout(()=>{const h=document.getElementById("hrs");if(h)h.focus()},400)},
+      otj:()=>{nav("hours");setTimeout(()=>{const h=document.getElementById("hrs");if(h)h.focus()},400)},
       quiz:()=>window.eviaStartTest&&window.eviaStartTest("epa",5,(window.eviaNvq&&window.eviaNvq.on())?"Quick quiz":"EPA quick quiz"),
       maths:()=>window.eviaStartTest&&window.eviaStartTest("maths",5,"Maths"),
       english:()=>window.eviaStartTest&&window.eviaStartTest("english",5,"English"),

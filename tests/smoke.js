@@ -35,13 +35,20 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       hours.push({id:"h1",n:3,description:"Toolbox talk",createdAt:Date.now()});persist();render()});
     await page.waitForTimeout(500);
 
-    check("The app opens on Course with Evia's next job and no Home tab",await page.evaluate(()=>screen==="course"&&!!document.getElementById("ui-next")&&!document.querySelector('[data-nav="home"]')&&!!document.querySelector('[data-nav="learning"]')));
-    for(const s of ["course","progress","portfolio","learning"]){await page.evaluate(s=>nav(s),s);await page.waitForTimeout(450)}
+    check("The app opens on Course with Evia's next job; the nav is Course, Evia and Learning",await page.evaluate(()=>screen==="course"&&!!document.getElementById("ui-next")&&[...document.querySelectorAll("[data-nav]")].map(b=>b.dataset.nav).join()==="course,learning"));
+    for(const s of ["course","progress","portfolio","learning","hours"]){await page.evaluate(s=>nav(s),s);await page.waitForTimeout(450)}
     await page.evaluate(()=>nav("progress"));await page.waitForTimeout(450);
     check("Progress shows when the next review is due",await page.evaluate(()=>!window.eviaReviewDue()||!!document.getElementById("ui-review-due")));
-    check("Progress shows the hero, KSB groups and the extras list",await page.$("#pg-hero")&&await page.$(".ui-groups")&&await page.$("#pg-tests")&&await page.$("#pg-awards"));
+    check("Learning shows where you are, the KSB groups and one tile per extra",await page.evaluate(()=>screen==="learning"&&!!document.getElementById("pg-hero")&&!!document.querySelector(".ui-groups")&&["hours","tests","skills","badges","reviews"].every(t=>document.getElementById("lt-"+t))));
+    await page.click("#lt-hours");await page.waitForTimeout(450);
+    await page.click('[data-hrs="2"]');await page.fill("#otj-description","Toolbox talk on manual handling");await page.click("#add");await page.waitForTimeout(200);
+    check("Hours are logged from Learning with a tap and a line of text",await page.evaluate(()=>hours.some(h=>h.n===2&&/manual handling/.test(h.description))&&screen==="hours"));
+    await page.evaluate(()=>nav("learning"));await page.waitForTimeout(450);
     await page.evaluate(()=>nav("portfolio"));await page.waitForTimeout(450);
-    check("Portfolio shows the unit with evidence",await page.$("[data-unit-open]"));
+    check("My evidence on Course shows the unit with evidence",await page.evaluate(()=>screen==="course"&&!!document.querySelector("[data-unit-open]")&&document.querySelector('[data-view="evidence"]').classList.contains("on")));
+    await page.click("[data-unit-open]");await page.waitForTimeout(300);
+    check("A unit with evidence opens a sheet with its packs and Add evidence",await page.evaluate(()=>!!document.getElementById("ui-unit-add")&&document.querySelectorAll(".ui-unit-pack").length>=1));
+    await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";document.querySelector('[data-view="units"]').click()});await page.waitForTimeout(300);
     await page.evaluate(()=>{nav("course")});await page.waitForTimeout(450);await page.evaluate(()=>openUnit(3));await page.waitForTimeout(900);
     check("An evidence pack opens",await page.$("#write"));
     await page.fill("#write","i laid the morter on the dpc and checked it was plum");await page.click(".wc-btn");await page.click(".wc-all");
@@ -119,7 +126,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";window.eviaStartTest("maths",5,"Maths")});await page.waitForSelector("[data-test-answer]",{state:"visible",timeout:12000});
     check("A test from Practice opens on its own screen, without the chat menu",await page.evaluate(()=>/Maths/.test(document.querySelector(".chat-sheet h2").textContent)&&!document.querySelector("#chat [data-chat-option]")));
     await page.click("#x");await page.waitForTimeout(300);
-    await page.evaluate(()=>{nav("learning")});await page.waitForTimeout(500);
+    await page.evaluate(()=>{nav("hours")});await page.waitForTimeout(500);
     await page.evaluate(()=>{const b=document.getElementById("download-otj")||document.getElementById("download-last-otj");b.click()});await page.waitForSelector("#eport-save",{timeout:15000});
     check("The OTJ log downloads as a PDF with a preview",await page.evaluate(()=>!!document.getElementById("eport-preview")&&/OTJ PDF/.test(document.querySelector(".eport-status").textContent)));
     await page.evaluate(()=>nav("home"));await page.waitForTimeout(400);

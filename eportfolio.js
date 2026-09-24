@@ -217,7 +217,7 @@
     const base=(learnerSlug&&learnerSlug!=="Evidence"?learnerSlug+"_":"")+slug(unitName);
     const sent=readJson(SENT_KEY,{})[course+"|"+unitName];
     $("#page-title").textContent="Send to e-portfolio";
-    const back='<button class="secondary" id="eport-back" type="button">‹ Back to portfolio</button>';
+    const back='<button class="secondary" id="eport-back" type="button">‹ My evidence</button>';
     if(!entries.length){
       $("#screen").innerHTML=back+'<div class="eport-page"><div class="card eport-intro"><div class="section-title">SEND TO E-PORTFOLIO</div><h2>'+escHtml(unitName)+'</h2><p>There is no evidence saved for this unit yet. Capture some evidence first, then come back here to send it to your e-portfolio.</p></div>'+(unitIndex>=0?'<button class="primary" id="eport-open-unit" type="button">Open unit</button>':"")+'</div>';
       $("#eport-back").onclick=()=>nav("portfolio");
@@ -366,7 +366,7 @@
     $("#screen").innerHTML='<button class="secondary" id="eport-back" type="button">‹ Back to hours</button>'+
       '<div class="eport-page"><div class="card eport-intro"><div class="section-title">OFF-THE-JOB LEARNING</div><h2>Your OTJ log</h2><p>'+entries.length+' entr'+(entries.length===1?"y":"ies")+' · '+total.toFixed(2)+' hours. Upload this PDF to Aptem or your e-portfolio so your hours are counted.</p></div>'+
       '<div class="eport-files" id="eport-files"><div class="card eport-pdf"><div class="eport-sheet is-loading" aria-hidden="true"><span></span><span></span><span></span></div><p class="eport-status">Preparing your OTJ PDF…</p></div></div></div>';
-    $("#eport-back").onclick=()=>nav("learning");
+    $("#eport-back").onclick=()=>nav("hours");
     let pdf;
     try{const blob=await buildOtjPdf(sorted,createdAt);pdf={pages:blob.evPages,file:new File([blob],slug(learner)+"_OTJ-log_"+isoDate(createdAt)+".pdf",{type:"application/pdf"})}}
     catch(err){console.error("Evia OTJ PDF failed",err);const l=$("#eport-files");if(l)l.innerHTML='<div class="card"><p>'+(/PDF library/.test(err&&err.message)?"The PDF couldn’t be made because part of Evia hasn’t downloaded yet. Open Evia once with signal, then try again.":"Evia couldn’t make the PDF. Please try again.")+'</p></div>';return}

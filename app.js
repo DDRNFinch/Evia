@@ -282,7 +282,7 @@ function openSupportingDetails(id,fresh,after){
 async function openSupportingPortfolio(){
  const items=supportingMeta().filter(x=>x.course===course).slice().reverse();
  $("#page-title").textContent="Supporting Evidence";
- $("#screen").innerHTML='<button class="secondary" id="back-supporting-portfolio" type="button">‹ Back to portfolio</button><div class="card portfolio-intro"><div class="section-title">PORTFOLIO</div><h2>Supporting Evidence</h2><p>Supporting evidence you have added to your portfolio.</p></div>'+
+ $("#screen").innerHTML='<button class="secondary" id="back-supporting-portfolio" type="button">‹ My evidence</button><div class="card portfolio-intro"><div class="section-title">PORTFOLIO</div><h2>Supporting Evidence</h2><p>Supporting evidence you have added to your portfolio.</p></div>'+
  (items.length?'<div class="supporting-portfolio-list">'+items.map(x=>'<button type="button" class="card supporting-portfolio-item" data-supporting-details="'+esc(x.id)+'"><div class="supporting-portfolio-copy"><strong>'+esc(x.title||"Supporting evidence")+'</strong><span>'+esc(supportingSummary(x))+'</span></div><span class="supporting-course-arrow">›</span></button>').join("")+'</div><div class="row" style="margin-top:10px"><button class="primary" id="download-supporting-portfolio-zip" type="button">Download ZIP</button></div>':'<div class="card"><p>No supporting evidence has been added yet.</p></div>');
  $("#back-supporting-portfolio").onclick=()=>nav("portfolio");
  document.querySelectorAll("[data-supporting-details]").forEach(b=>b.onclick=()=>openSupportingDetails(b.dataset.supportingDetails,false,openSupportingPortfolio));
@@ -355,9 +355,9 @@ function openSavedLearningLogs(){
 function openSavedReviews(){
  const reviews=window.eviaGetReviews?window.eviaGetReviews():[];
  $("#page-title").textContent="Reviews";
- $("#screen").innerHTML='<button class="secondary" id="back-reviews-portfolio" type="button">‹ Back to portfolio</button><div class="card portfolio-intro"><div class="section-title">PORTFOLIO</div><h2>Saved Reviews</h2><p>All progress reviews saved for this course.</p></div>'+
+ $("#screen").innerHTML='<button class="secondary" id="back-reviews-portfolio" type="button">‹ Learning</button><div class="card portfolio-intro"><div class="section-title">PORTFOLIO</div><h2>Saved Reviews</h2><p>All progress reviews saved for this course.</p></div>'+
  (reviews.length?'<div class="saved-reviews-list">'+reviews.map((r,i)=>'<button type="button" class="card saved-review-item" data-review-id="'+esc(r.id||"")+'"><div><strong>Progress Review</strong><span>'+esc(new Date(r.date).toLocaleDateString("en-GB"))+'</span></div><b>›</b></button>').join("")+'</div>':'<div class="card"><p>No saved reviews yet.</p></div>');
- $("#back-reviews-portfolio").onclick=()=>nav("portfolio");
+ $("#back-reviews-portfolio").onclick=()=>nav("learning");
  document.querySelectorAll("[data-review-id]").forEach(b=>b.onclick=()=>{
    const id=b.getAttribute("data-review-id");
    if(window.eviaShowReview)window.eviaShowReview(id);

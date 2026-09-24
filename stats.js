@@ -177,22 +177,33 @@
   }
   function ringSvg(pct){const r=52,c=2*Math.PI*r;return '<svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="'+r+'" class="pg-ring-track"/><circle cx="60" cy="60" r="'+r+'" class="pg-ring-fill" style="--c:'+c.toFixed(1)+';--v:'+(c*Math.max(0,Math.min(100,pct))/100).toFixed(1)+'" transform="rotate(-90 60 60)"/></svg>'}
 
-  /* The extras (practice, scenarios, badges) sit under the course progress as one short list. */
-  function sectionHtml(s){
-    const ach=achievements(s),sp=s.scenarios;
-    const last=s.tests.length?s.tests.map(t=>t.latest).filter(Boolean).sort((x,y)=>Date.parse(y.savedAt||0)-Date.parse(x.savedAt||0))[0]:null;
+  /* Learning tab: one number per thing, the detail one tap away. */
+  function tilesHtml(s){
+    const nvq=window.eviaNvq&&window.eviaNvq.on(),ach=achievements(s),sp=s.scenarios;
+    const last=s.tests.map(t=>t.latest).filter(Boolean).sort((x,y)=>Date.parse(y.savedAt||0)-Date.parse(x.savedAt||0))[0];
     const lastPct=last?(typeof last.pct==="number"?last.pct:Math.round((last.score||0)/(last.total||1)*100)):null;
     const low=s.confidence.scores.filter(x=>x.score<=2).length;
-    const row=(id,icon,title,sub,action)=>'<button type="button" class="pg-x-row" id="'+id+'" data-st-action="'+action+'"><span class="pg-icon">'+svg(ICON[icon])+'</span><span class="pg-x-copy"><strong>'+title+'</strong><small>'+sub+'</small></span><span class="pg-x-chev" aria-hidden="true">›</span></button>';
-    const earned=ach.list.filter(x=>x.earned),fresh=new Set(ach.fresh.map(x=>x.id));
-    const rows=[
-      row("pg-tests","tests","Practice",escHtml(!s.tests.length&&!s.confidence.last?"Tests, skills check and college tasks":[s.tests.length?s.testCount+" test"+(s.testCount===1?"":"s")+" taken"+(lastPct!=null?" · last "+lastPct+"%":""):"No tests yet",s.confidence.last?(low?low+" skill"+(low===1?"":"s")+" to practise":"skills check done"):"no skills check yet"].join(" · ")),"tests"),
-      sp&&sp.topics&&sp.topics.length?row("pg-scen","scen","Real-life scenarios",sp.done+" of "+sp.total+" done","scenarios"):"",
-      '<details class="pg-x-row pg-x-awards" id="pg-awards"><summary><span class="pg-icon">'+svg(ICON.award)+'</span><span class="pg-x-copy"><strong>Achievements'+(ach.fresh.length?' <em class="pg-x-new">New</em>':"")+'</strong><small>'+ach.count+' of '+ach.list.length+' earned</small></span><span class="pg-x-chev" aria-hidden="true">›</span></summary>'+
-        (earned.length?'<ul class="pg-badges">'+earned.map((x,i)=>'<li class="pg-badge'+(fresh.has(x.id)?" new":"")+'" style="--i:'+i+'" title="'+escHtml(x.desc)+'"><span class="pg-badge-icon">'+BADGE+'</span><strong>'+escHtml(x.label)+'</strong></li>').join("")+'</ul>':'<p class="pg-note">None yet. Your first one isn’t far away.</p>')+
-        '<ul class="pg-locked">'+ach.list.filter(x=>!x.earned).map(x=>'<li><span class="pg-badge-icon">'+BADGE+'</span><span><strong>'+escHtml(x.label)+'</strong><small>'+escHtml(x.desc)+'</small></span></li>').join("")+'</ul></details>'
+    const tasks=((window.EVIA_PRACTICE_TASKS||{})[course]||[]).length,picks=window.eviaPractice?window.eviaPractice.suggestTasks(1):[];
+    const epaDue=window.eviaPractice&&window.eviaPractice.epaDue&&window.eviaPractice.epaDue();
+    const reviews=window.eviaGetReviews?window.eviaGetReviews().length:0;
+    const hrs=Math.round(s.otjTotal*10)/10,wk=Math.round(s.otjWeek*10)/10;
+    const tile=(id,icon,value,label,sub,flag)=>'<button type="button" class="ui-tile-stat" data-tile="'+id+'" id="lt-'+id+'"><span class="pg-icon">'+svg(ICON[icon])+'</span><strong>'+value+(flag?' <em class="pg-x-new">'+flag+'</em>':"")+'</strong><span>'+label+'</span><small>'+sub+'</small></button>';
+    const out=[
+      tile("hours","clock",hrs+'<small> hrs</small>',"Off-the-job hours",wk?"+"+wk+" this week":"None this week"),
+      tile("tests","tests",lastPct!=null?lastPct+"%":"–",nvq?"Knowledge tests":"Tests and EPA mocks",s.testCount?"Last score · "+s.testCount+" taken":"None taken yet",epaDue?"Due":""),
+      nvq&&window.eviaNvq.myQuestions?(()=>{const qs=window.eviaNvq.myQuestions(),ans=window.eviaNvq.answers(),d=qs.filter(q=>ans[q]&&String(ans[q].t).trim().split(/\s+/).length>=12).length;return tile("knowledge","quality",d+'<small> / '+qs.length+'</small>',"Knowledge questions","Answered")})():"",
+      tile("skills","skills",s.confidence.last?String(low):"–","Skills to practise",s.confidence.last?"Rated "+escHtml(ago(s.confidence.last).toLowerCase()):"Rate your skills",s.confidence.last&&Date.now()-s.confidence.last>30*DAY?"Due":""),
+      tasks?tile("tasks","camera",String(tasks),"College tasks",picks.length?"1 picked for you":"For the workshop"):"",
+      sp&&sp.total?tile("scenarios","scen",sp.done+'<small> / '+sp.total+'</small>',"Real-life scenarios","Done"):"",
+      tile("badges","award",ach.count+'<small> / '+ach.list.length+'</small>',"Achievements",ach.fresh.length?"New one earned":"Earned",ach.fresh.length?"New":""),
+      tile("reviews","pace",String(reviews),"Progress reviews",reviews?"Saved":"None yet")
     ];
-    return '<h2 class="pg-x-h">Extras</h2><section class="ui-card pg-card pg-x" id="ui-stats">'+rows.join("")+'</section>';
+    return '<div class="ui-tiles-grid" id="ui-stats">'+out.join("")+'</div>';
+  }
+  function badgesHtml(s){
+    const ach=achievements(s),earned=ach.list.filter(x=>x.earned),fresh=new Set(ach.fresh.map(x=>x.id));
+    return (earned.length?'<ul class="pg-badges">'+earned.map((x,i)=>'<li class="pg-badge'+(fresh.has(x.id)?" new":"")+'" style="--i:'+i+'" title="'+escHtml(x.desc)+'"><span class="pg-badge-icon">'+BADGE+'</span><strong>'+escHtml(x.label)+'</strong></li>').join("")+'</ul>':'<p class="pg-note">None yet. Your first one isn’t far away.</p>')+
+      '<h3 class="pr-h">Still to earn</h3><ul class="pg-locked">'+ach.list.filter(x=>!x.earned).map(x=>'<li><span class="pg-badge-icon">'+BADGE+'</span><span><strong>'+escHtml(x.label)+'</strong><small>'+escHtml(x.desc)+'</small></span></li>').join("")+'</ul>';
   }
 
   /* Plays each card's animation as it scrolls into view; everything shows at once with reduced motion. */
@@ -218,5 +229,5 @@
     cards.forEach(c=>io.observe(c));
   }
 
-  window.eviaStats={compute,achievements,markSeen,nudges,sectionHtml,heroHtml,animate,ago};
+  window.eviaStats={compute,achievements,markSeen,nudges,tilesHtml,badgesHtml,heroHtml,animate,ago};
 })();

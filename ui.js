@@ -114,7 +114,7 @@
     const go=fn=>{if(inChat)closeChat();setTimeout(fn,inChat?60:0)};
     if(kind==="stats")go(showStats);
     else if(kind==="course")go(()=>nav("course"));
-    else if(kind==="learning")go(()=>nav("learning"));
+    else if(kind==="learning")go(()=>nav("hours"));
     else if(kind==="backup")go(async()=>{try{await window.eviaStorage.backup();if(typeof showEvidenceToast==="function")showEvidenceToast("Backup saved to your downloads. Keep a copy somewhere safe, like your email")}catch(e){console.error(e);if(typeof showEvidenceToast==="function")showEvidenceToast("Couldn’t make the backup. Try again from Profile",true)}});
     else if(kind==="targets"||kind==="review"){
       const label=kind==="targets"?"My targets":"Progress review";
@@ -144,22 +144,55 @@
     }
   }
   function showStats(){
-    if(screen!=="progress")nav("progress");
+    if(screen!=="learning")nav("learning");
     setTimeout(()=>{const el=document.getElementById("ui-stats");if(el)el.scrollIntoView({behavior:window.eviaAccessibility&&window.eviaAccessibility.reducedMotion()?"auto":"smooth",block:"start"})},80);
+  }
+  /* Evia's one tip for the Learning tab: the most useful learning nudge (not a celebration or a backup reminder). */
+  function learningTip(st){
+    if(!st||!window.eviaStats)return null;
+    try{return window.eviaStats.nudges(st).find(n=>!n.celebrate&&n.action&&!["backup","course","stats","review","targets"].includes(n.action.kind))||null}catch(_){return null}
+  }
+  function openTile(id,st){
+    const P=window.eviaPractice;
+    if(id==="hours")nav("hours");
+    else if(id==="tests"&&P)P.openHub();
+    else if(id==="skills"&&P)P.openConfidence();
+    else if(id==="tasks"&&P)P.openAllTasks();
+    else if(id==="scenarios"&&window.eviaScenarios)window.eviaScenarios.openTopics();
+    else if(id==="knowledge"&&window.eviaNvq)window.eviaNvq.openKnowledge();
+    else if(id==="reviews")openSavedReviews();
+    else if(id==="badges"&&st){
+      uiSheet("LEARNING","Achievements",window.eviaStats.badgesHtml(st));
+      window.eviaStats.markSeen(window.eviaStats.achievements(st).fresh.map(x=>x.id));
+    }
+  }
+  /* A bottom sheet in the same style as Practice. */
+  function uiSheet(kicker,title,body){
+    const root=document.getElementById("modal-root");
+    root.innerHTML='<div class="overlay"><section class="sheet pr-sheet" role="dialog" aria-modal="true" aria-labelledby="ui-sheet-title"><div class="sheet-head"><div><div class="chat-kicker">'+kicker+'</div><h2 id="ui-sheet-title">'+escHtml(title)+'</h2></div><button class="close" id="ui-sheet-close" type="button" aria-label="Close">×</button></div><div class="pr-body">'+body+'</div></section></div>';
+    const close=()=>{root.innerHTML=""};
+    document.getElementById("ui-sheet-close").onclick=close;
+    root.querySelector(".overlay").addEventListener("click",e=>{if(e.target.classList.contains("overlay"))close()});
+    const h=document.getElementById("ui-sheet-title");h.setAttribute("tabindex","-1");h.focus({preventScroll:true});
+    return {el:root.querySelector(".pr-sheet"),close};
   }
   /* ---------- Progress ---------- */
   const GROUPS=[["K","Knowledge"],["S","Skills"],["B","Behaviours"]];
   let expanded={}; /* groups start collapsed: three rings, tap one to see its KSBs */
   function progressScreen(still){ /* still: redrawn after opening a KSB group, so don't replay the animations */
-    $("#page-title").textContent="Progress";
+    $("#page-title").textContent="Learning";
     const a=analyse(),all=allK(),supporting=supportingMeta().filter(s=>s.course===course);
     const hasSupport=c=>supporting.some(s=>Array.isArray(s.ksbs)&&s.ksbs.includes(c));
     const S=window.eviaStats,st=(()=>{try{return S?S.compute():null}catch(_){return null}})();
-    $("#screen").innerHTML=pageHead("Progress")+
+    const tip=learningTip(st);
+    $("#screen").innerHTML=pageHead("Learning")+
       '<div class="ui-page">'+
         (st?S.heroHtml(st):"")+
         (()=>{const rd=window.eviaReviewDue&&window.eviaReviewDue();if(!rd)return"";const d=rd.due.toLocaleDateString("en-GB",{day:"numeric",month:"short"});return '<button type="button" class="ui-card ui-review-due'+(rd.days<=14?" soon":"")+'" id="ui-review-due"><span><small>Next progress review</small><strong>'+(rd.days<0?"Overdue · was due "+d:rd.days===0?"Due today":"Due "+d+(rd.days<=14?" · in "+rd.days+" day"+(rd.days===1?"":"s"):""))+'</strong></span><em>'+(rd.days<=14?"Start now":"Do it early")+' ›</em></button>'})()+
         (window.eviaTargets?(window.eviaTargets.check(false),window.eviaTargets.cardHtml()):"")+
+        (tip?'<section class="ui-card ui-tip"><span class="evia-mini" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span><div><p>'+escHtml(tip.text)+'</p><button type="button" class="ui-tip-go" id="ui-tip-go">'+escHtml(tip.action.label)+' ›</button></div></section>':"")+
+        (st?S.tilesHtml(st):"")+
+        (window.eviaNvq&&window.eviaNvq.on()?"":'<h2 class="pg-x-h">Knowledge, skills and behaviours</h2>')+
         (window.eviaNvq&&window.eviaNvq.on()?window.eviaNvq.progressHtml(a):'<section class="ui-card ui-groups">'+GROUPS.map(([letter,label],gi)=>{
           const items=all.filter(x=>x[0].startsWith(letter));if(!items.length)return"";
           const done=items.filter(x=>a.evidenced.has(x[0])).length,pct=Math.round(done/items.length*100),open=!!expanded[letter]||document.body.classList.contains("evia-onboarding"); /* the demo points at K2 and S2, so keep groups open */
@@ -168,45 +201,69 @@
               '<span class="ui-group-copy"><strong>'+label+'</strong><small>'+done+' of '+items.length+' with evidence</small></span><span class="ui-group-pct">'+pct+'%</span><span class="ui-chev'+(open?" open":"")+'">'+icon(ICONS.chev,18)+'</span></button>'+
             (open?'<div class="ui-ksb-grid">'+items.map(x=>{const met=a.evidenced.has(x[0]);return '<button type="button" class="ui-ksb'+(met?" met":"")+'" data-ksb-code="'+escHtml(x[0])+'" aria-label="'+escHtml(x[0])+(met?", evidence captured":"")+'">'+(met?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>':"")+escHtml(x[0])+(hasSupport(x[0])?'<i class="ui-ksb-dot" aria-label="Supporting evidence"></i>':"")+'</button>'}).join("")+'</div>':"");
         }).join("")+'<p class="ui-help">Tap a KSB to see its wording and the evidence mapped to it.</p></section>')+
-        (st?S.sectionHtml(st):"")+
       '</div>';
     if(window.eviaTargets){window.eviaTargets.bind(document.getElementById("pg-targets"),()=>progressScreen(true))}
     if(window.eviaNvq&&window.eviaNvq.on())window.eviaNvq.bindProgress(()=>progressScreen(true));
     const rdb=document.getElementById("ui-review-due");if(rdb)rdb.onclick=()=>window.eviaStartReview&&window.eviaStartReview();
     if(st)S.animate(document.getElementById("screen"),still===true);
     document.querySelectorAll("[data-group]").forEach(b=>b.onclick=()=>{const y=window.scrollY;expanded[b.dataset.group]=!expanded[b.dataset.group];progressScreen(true);window.scrollTo(0,y)});
-    document.querySelectorAll("[data-st-action]").forEach(b=>b.onclick=()=>{if(!window.eviaPractice)return;if(b.dataset.stAction==="tests")window.eviaPractice.openHub();else if(b.dataset.stAction==="scenarios"){if(window.eviaScenarios)window.eviaScenarios.openTopics()}else window.eviaPractice.openConfidence()});
+    document.querySelectorAll("[data-tile]").forEach(b=>b.onclick=()=>openTile(b.dataset.tile,st));
+    const tg=document.getElementById("ui-tip-go");if(tg)tg.onclick=()=>runNudge(tip);
     document.querySelectorAll(".ui-groups [data-ksb-code]").forEach(b=>b.onclick=()=>{const item=all.find(x=>x[0]===b.dataset.ksbCode);if(item)ksbDetail(item[0],item[1],a.evidenced.has(item[0]))});
   }
 
-  /* ---------- Portfolio ---------- */
-  function portfolioScreen(){
-    $("#page-title").textContent="Portfolio";
-    const a=analyse(),supporting=supportingMeta().filter(x=>x.course===course),reviews=window.eviaGetReviews?window.eviaGetReviews():[];
+  /* ---------- Course tab: All units / My evidence ---------- */
+  let courseView="units";
+  const bars=level=>{const n={strong:3,good:2,weak:1}[level]||0;return '<span class="ui-bars" aria-label="Evidence strength: '+(level||"none")+'">'+[0,1,2].map(i=>'<i class="'+(i<n?"on":"")+'" style="height:'+(5+i*3)+'px"></i>').join("")+'</span>'};
+  function segHtml(count){
+    return '<div class="ui-seg" role="tablist" aria-label="Course view"><button type="button" role="tab" data-view="units" aria-selected="'+(courseView==="units")+'" class="'+(courseView==="units"?"on":"")+'">All units</button><button type="button" role="tab" data-view="evidence" aria-selected="'+(courseView==="evidence")+'" class="'+(courseView==="evidence"?"on":"")+'">My evidence'+(count?' <span>'+count+'</span>':"")+'</button></div>';
+  }
+  function bindSeg(){document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>{if(courseView===b.dataset.view)return;courseView=b.dataset.view;window.scrollTo(0,0);courses()})}
+  const photoOf=async e=>{try{const p=window.eviaGetEvidencePhotoData?await window.eviaGetEvidencePhotoData(e):(e.p||[]);return p[0]||null}catch(_){return null}};
+  /* My evidence: everything collected, one tile per unit, then supporting evidence. */
+  function evidenceScreen(){
+    $("#page-title").textContent="Course";
+    const a=analyse(),supporting=supportingMeta().filter(x=>x.course===course);
     const tiles=a.units.map(u=>({name:u.name,index:u.index,entries:u.entries}));
     const ppe=a.entries.filter(e=>e.u===PPE_UNIT);
     if(ppe.length)tiles.unshift({name:PPE_UNIT,index:-1,entries:ppe});
-    const shown=tiles.filter(t=>t.entries.length),notStarted=a.units.filter(u=>!u.started).length;
-    const bars=level=>{const n={strong:3,good:2,weak:1}[level]||0;return '<span class="ui-bars" aria-label="Evidence strength: '+(level||"none")+'">'+[0,1,2].map(i=>'<i class="'+(i<n?"on":"")+'" style="height:'+(5+i*3)+'px"></i>').join("")+'</span>'};
-    $("#screen").innerHTML=pageHead("Portfolio")+
+    const shown=tiles.filter(t=>t.entries.length);
+    $("#screen").innerHTML=pageHead("Course")+segHtml(a.entries.length)+
       '<div class="ui-page">'+
-        '<div class="ui-tabs" role="tablist"><button type="button" class="on" aria-selected="true">Units</button><button type="button" id="ui-tab-supporting">Supporting <span>'+supporting.length+'</span></button><button type="button" id="ui-tab-reviews">Reviews <span>'+reviews.length+'</span></button></div>'+
-        (shown.length?'<div class="ui-gallery">'+shown.map((t,i)=>'<button type="button" class="ui-tile" data-unit-open="'+escHtml(t.name)+'"><span class="ui-tile-photo" data-cover="'+i+'">'+icon(ICONS.camera,26)+'</span><span class="ui-tile-scrim"><strong>'+escHtml(t.name)+'</strong><span class="ui-tile-meta"><small>'+t.entries.length+' saved</small>'+bars(t.index>=0?unitStrengthForCourse(t.name):"good")+'</span></span></button>'
-        ).join("")+'</div>':'<div class="ui-card ui-empty"><span class="ui-icon-chip">'+icon(ICONS.camera)+'</span><p>Your evidence will show up here once you submit your first unit.</p></div>')+
-        (notStarted?'<button type="button" class="ui-card ui-more-units" id="ui-not-started"><span>'+notStarted+' unit'+(notStarted===1?"":"s")+' not started yet</span><strong>Go to Course '+icon(ICONS.chev,16)+'</strong></button>':"")+
+        (shown.length?'<div class="ui-gallery">'+shown.map((t,i)=>'<button type="button" class="ui-tile" data-unit-open="'+escHtml(t.name)+'"><span class="ui-tile-photo" data-cover="'+i+'">'+icon(ICONS.camera,26)+'</span><span class="ui-tile-scrim"><strong>'+escHtml(t.name)+'</strong><span class="ui-tile-meta"><small>'+t.entries.length+' saved</small>'+bars(t.index>=0?unitStrengthForCourse(t.name):"good")+'</span></span></button>').join("")+'</div>'
+          :'<div class="ui-card ui-empty"><span class="ui-icon-chip">'+icon(ICONS.camera)+'</span><p>Everything you collect shows up here. Pick a unit in <strong>All units</strong> to add your first evidence.</p></div>')+
+        '<button type="button" class="ui-card ui-more-units" id="ui-supporting"><span>Supporting evidence and witness testimony'+(supporting.length?' · '+supporting.length:"")+'</span><strong>'+icon(ICONS.chev,16)+'</strong></button>'+
       '</div>';
-    const ns=$("#ui-not-started");if(ns)ns.onclick=()=>nav("course");
-    document.querySelectorAll("[data-unit-open]").forEach(b=>b.onclick=()=>{const n=b.getAttribute("data-unit-open");if(window.eviaOpenSendToPortfolio)window.eviaOpenSendToPortfolio(n);else if(window.downloadUnitEvidencePack)window.downloadUnitEvidencePack(n)});
-    $("#ui-tab-supporting").onclick=()=>openSupportingPortfolio();
-    $("#ui-tab-reviews").onclick=()=>openSavedReviews();
+    bindSeg();
+    $("#ui-supporting").onclick=()=>openSupportingPortfolio();
+    document.querySelectorAll("[data-unit-open]").forEach(b=>b.onclick=()=>{const n=b.getAttribute("data-unit-open"),i=data().u.findIndex(u=>u[0]===n);if(i>=0)unitSheet(i);else if(window.eviaOpenSendToPortfolio)window.eviaOpenSendToPortfolio(n)});
     shown.forEach(async(t,i)=>{
-      const latest=t.entries.slice().sort((x,y)=>entryTime(y)-entryTime(x));
-      try{
-        for(const e of latest){
-          const photos=window.eviaGetEvidencePhotoData?await window.eviaGetEvidencePhotoData(e):(e.p||[]);
-          if(photos[0]){const el=document.querySelector('[data-cover="'+i+'"]');if(el)el.innerHTML='<img src="'+photos[0]+'" alt="">';break}
-        }
-      }catch(_){}
+      for(const e of t.entries.slice().sort((x,y)=>entryTime(y)-entryTime(x))){const src=await photoOf(e);if(src){const el=document.querySelector('[data-cover="'+i+'"]');if(el)el.innerHTML='<img src="'+src+'" alt="">';break}}
+    });
+  }
+  /* A unit with evidence opens a sheet: what's saved, add more, or send it to the e-portfolio. */
+  function unitSheet(i){
+    const u=data().u[i];if(!u)return;
+    const name=u[0],entries=evidence.filter(e=>e.c===course&&e.u===name).sort((x,y)=>entryTime(y)-entryTime(x));
+    const draft=(()=>{const d=readJson("evia7-working-evidence-packs",{})[course+"|"+name];return d&&((d.photos||[]).length||String(d.write||"").trim())})();
+    if(!entries.length){window.openUnit(i);return}
+    const day=t=>new Date(t).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
+    const sh=uiSheet("UNIT",name,
+      '<div class="ui-unit-sum">'+bars(unitStrengthForCourse(name))+'<span>'+entries.length+' evidence pack'+(entries.length===1?"":"s")+' saved</span></div>'+
+      '<div class="ui-unit-packs">'+entries.map((e,n)=>'<div class="ui-unit-pack"><span class="ui-unit-thumb" data-pack-photo="'+n+'">'+icon(ICONS.camera,20)+'</span><span><strong>'+escHtml(day(entryTime(e)))+'</strong><small>'+(e.photoIds||e.p||[]).length+' photo'+((e.photoIds||e.p||[]).length===1?"":"s")+(String(e.w||"").trim()?" · "+String(e.w).trim().split(/\s+/).length+" words":"")+'</small></span></div>').join("")+'</div>'+
+      '<div class="pr-actions"><button type="button" class="secondary" id="ui-unit-send">Send to e-portfolio</button><button type="button" class="primary" id="ui-unit-add">'+(draft?"Carry on with my draft":"Add evidence")+'</button></div>');
+    sh.el.querySelector("#ui-unit-add").onclick=()=>{sh.close();window.openUnit(i)};
+    sh.el.querySelector("#ui-unit-send").onclick=()=>{sh.close();window.eviaOpenSendToPortfolio&&window.eviaOpenSendToPortfolio(name)};
+    entries.forEach(async(e,n)=>{const src=await photoOf(e);const el=sh.el.querySelector('[data-pack-photo="'+n+'"]');if(src&&el)el.innerHTML='<img src="'+src+'" alt="">'});
+  }
+  /* All units: small photos on units that already have evidence. */
+  function addUnitThumbs(){
+    document.querySelectorAll("#screen .unit-card[data-u]").forEach(card=>{
+      const u=data().u[+card.dataset.u];if(!u)return;
+      const es=evidence.filter(e=>e.c===course&&e.u===u[0]).sort((x,y)=>entryTime(y)-entryTime(x));if(!es.length)return;
+      const title=card.querySelector(".unit-title");if(!title)return;
+      const strip=document.createElement("span");strip.className="ui-unit-strip";strip.innerHTML='<small>'+es.length+' saved</small>';title.appendChild(strip);
+      es.slice(0,3).forEach(async e=>{const src=await photoOf(e);if(src){const img=document.createElement("img");img.src=src;img.alt="";strip.insertBefore(img,strip.lastChild)}});
     });
   }
 
@@ -391,8 +448,8 @@
       {label:"Open "+top[0].unit.name,primary:true,run:()=>openUnitFromChat(top[0].unit)},
       {label:"Show the full list",run:()=>{
         [["K","Knowledge"],["S","Skills"],["B","Behaviours"]].forEach(([l,n])=>{const codes=missing.filter(x=>x[0].startsWith(l)).map(x=>x[0]);if(codes.length)say("<strong>"+n+":</strong> "+escHtml(codes.join(", ")))});
-        say("Tap any KSB on the Progress page to see its full wording.");
-        replies([{label:"Go to Progress",primary:true,run:()=>{closeChat();setTimeout(()=>nav("progress"),60)}}].concat(more("Which KSBs am I missing?").slice(0,2),[{label:"Something else",run:somethingElse}]));
+        say("Tap any KSB on the Learning tab to see its full wording.");
+        replies([{label:"Go to Learning",primary:true,run:()=>{closeChat();setTimeout(()=>nav("progress"),60)}}].concat(more("Which KSBs am I missing?").slice(0,2),[{label:"Something else",run:somethingElse}]));
       }},
       {label:"Something else",run:somethingElse}
     ]);
@@ -462,7 +519,7 @@
       T.bind(box);scrollChat();
       requestAnimationFrame(()=>requestAnimationFrame(()=>{const card=box.querySelector(".pg-card");if(card)card.classList.add("pg-in")}));
     });
-    replies([{label:"See them on Progress",primary:true,run:()=>{closeChat();setTimeout(()=>{nav("progress");setTimeout(()=>{const el=document.getElementById("pg-targets");if(el)el.scrollIntoView({block:"start",behavior:"smooth"})},400)},60)}},{label:"Start a progress review",run:reviewFromMenu},{label:"Something else",run:somethingElse}]);
+    replies([{label:"See them in Learning",primary:true,run:()=>{closeChat();setTimeout(()=>{nav("progress");setTimeout(()=>{const el=document.getElementById("pg-targets");if(el)el.scrollIntoView({block:"start",behavior:"smooth"})},400)},60)}},{label:"Start a progress review",run:reviewFromMenu},{label:"Something else",run:somethingElse}]);
   }
   /* Progress review: a short click-through of sections; finishing it sets new targets. */
   function reviewFromMenu(){
@@ -522,7 +579,7 @@
     if(d.pct>=80&&window.eviaMood)window.eviaMood("happy");
     const opts=[{label:"Try another test",primary:true,run:()=>{closeChat();setTimeout(()=>window.eviaPractice&&window.eviaPractice.openHub(),60)}}];
     if(window.eviaReviewDraft&&window.eviaReviewDraft()){opts[0].primary=false;opts.unshift({label:"Back to my review",primary:true,run:()=>{closeChat();setTimeout(()=>window.eviaResumeReview&&window.eviaResumeReview(),60)}})}
-    if(d.missed&&d.missed.length)opts.push({label:"Go to Progress",run:()=>{closeChat();setTimeout(()=>nav("progress"),60)}});
+    if(d.missed&&d.missed.length)opts.push({label:"Go to Learning",run:()=>{closeChat();setTimeout(()=>nav("progress"),60)}});
     opts.push({label:"See my stats",run:()=>{closeChat();setTimeout(showStats,60)}},{label:"Something else",run:somethingElse});
     queue=queue.then(()=>new Promise(r=>setTimeout(r,1400))); /* let the result bubble finish "thinking" first */
     replies(opts);
@@ -542,7 +599,7 @@
     const week=hours.filter(x=>Number(x.createdAt)>=weekStart).reduce((n,x)=>n+Number(x.n||0),0);
     const fmt=n=>Math.round(n*100)/100;
     const day=t=>new Date(Number(t)).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
-    $("#screen").innerHTML=pageHead("Hours")+
+    $("#screen").innerHTML='<button class="secondary ui-back" id="ui-hours-back" type="button">‹ Learning</button><h1 class="ui-sub-title">Off-the-job hours</h1>'+
       '<div class="ui-page">'+
         '<section class="ui-card ui-hours-sum"><div><strong>'+fmt(total)+'</strong><small>hours logged</small></div><div><strong>'+fmt(week)+'</strong><small>this week</small></div></section>'+
         '<section class="ui-card ui-hours-log">'+
@@ -566,34 +623,46 @@
       hoursScreen();if(typeof showEvidenceToast==="function")showEvidenceToast(fmt(n)+" hour"+(n===1?"":"s")+" saved");
       if(window.eviaCheckTargets)window.eviaCheckTargets();
     };
+    $("#ui-hours-back").onclick=()=>nav("learning");
     const dl=$("#download-otj");if(dl)dl.onclick=()=>downloadOTJPDF("new");
     const lp=$("#download-last-otj");if(lp)lp.onclick=()=>downloadOTJPDF("last");
   }
 
   /* ---------- Wire into the app ---------- */
   const originalRender=window.render,originalChat=window.chat;
-  const TOP_SCREENS=["course","learning","progress","portfolio"];
+  /* Two tabs either side of Evia. Old screen names still work: Portfolio is Course's "My evidence", Progress is Learning. */
+  const TOP_SCREENS=["course","learning"];
   window.render=function(){
     hideBubble();
-    if(screen==="home")screen="course"; /* Home was folded into Course */
+    if(screen==="home")screen="course";
+    if(screen==="portfolio"){screen="course";courseView="evidence"}
+    if(screen==="progress")screen="learning";
     const scr=document.getElementById("screen");if(scr)scr.classList.toggle("ui-top",TOP_SCREENS.includes(screen));
+    if(screen==="learning"||screen==="hours"){
+      const pb=document.getElementById("profile-btn");if(pb)pb.style.display=screen==="learning"?"flex":"none";
+      document.querySelectorAll("[data-nav]").forEach(b=>b.classList.toggle("active",b.dataset.nav==="learning"));
+      if(screen==="hours")hoursScreen();else progressScreen();
+      return;
+    }
     originalRender();
   };
   window.progress=progressScreen;
+  window.learning=()=>screen==="hours"?hoursScreen():progressScreen();
   const originalCourses=window.courses;
   window.courses=function(){
+    if(courseView==="evidence"){evidenceScreen();return}
     originalCourses();
     const head=document.querySelector("#screen > .card:not(.unit-card)");
     if(head)head.remove();
     const scr=document.getElementById("screen");
     const firstCard=scr.querySelector(".unit-card[data-u]");
     if(firstCard&&typeof strengthBars==="function")scr.insertAdjacentHTML("afterbegin",'<p class="ui-bars-key"><span>Evidence strength</span>'+[["weak","Weak"],["good","Good"],["strong","Strong"]].map(([l,t])=>'<span class="ui-bars-key-item">'+strengthBars(l)+t+'</span>').join("")+'</p>');
-    scr.insertAdjacentHTML("afterbegin",pageHead("Course")+nextUpHtml());
-    bindNextUp();
+    scr.insertAdjacentHTML("afterbegin",pageHead("Course")+segHtml(evidence.filter(e=>e.c===course).length)+nextUpHtml());
+    bindSeg();bindNextUp();addUnitThumbs();
+    if(!document.body.classList.contains("evia-onboarding"))document.querySelectorAll("#screen .unit-card[data-u]").forEach(b=>b.onclick=()=>unitSheet(+b.dataset.u));
     courseNudge();
   };
-  window.portfolio=portfolioScreen;
-  window.learning=hoursScreen;
+  window.portfolio=()=>{courseView="evidence";window.courses()};
   /* Page changes fade: the current page fades out, the new one fades in. */
   const reduced=()=>window.eviaAccessibility?window.eviaAccessibility.reducedMotion():matchMedia("(prefers-reduced-motion: reduce)").matches;
   let fadeTimer=null;
