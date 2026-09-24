@@ -601,3 +601,11 @@ button.supporting-portfolio-item .supporting-course-arrow{position:static}
 .sd-field{min-width:0}
 .sd-field input,.sd-field select{width:100%;box-sizing:border-box;min-width:0}
 .nvq-opt input,.sd-toggle input,.sd-crit input{flex:0 0 18px;width:18px;height:18px;margin:2px 0 0;padding:0}
+.nvq-section{margin:22px 4px 10px}
+.nvq-job-unit{display:block;margin-top:3px;font-size:12px;font-weight:650;color:var(--ui-muted)}
+html body .nvq-knowledge{justify-content:flex-start;gap:12px}
+.nvq-knowledge-copy{flex:1;min-width:0}
+.nvq-chev{flex:0 0 auto;font-size:22px;color:var(--ui-faint)}
+.nvq-topic .pr-copy strong{font-size:14.5px}
+.nvq-q-unit{display:block;font-style:normal;font-size:11.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--yellow-ink,#6e5c00);margin-bottom:2px}
+.nvq-q-for{margin:0 0 -4px;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--yellow-ink,#6e5c00)}

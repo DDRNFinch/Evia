@@ -67,7 +67,6 @@
     Object.keys(CRIT).forEach(code=>{const c=CRIT[code].c;if(c.min&&(c.s||[]).filter((_,i)=>s.has(code+subLetter(i))).length>=c.min)s.add(code)});
     return s;
   }
-  const questionsOf=u=>[...new Set(u.o.flatMap(o=>o.c.filter(c=>c.q).map(c=>c.q)))];
   const unitsAsking=q=>selected().filter(u=>u.o.some(o=>o.c.some(c=>c.q===q)));
 
   /* ---------- Shared bits ---------- */
@@ -84,80 +83,99 @@
   const miniRing=(pct,size)=>{size=size||34;const r=(size-4)/2,c=2*Math.PI*r,d=Math.max(0,Math.min(1,pct/100))*c;return '<svg class="nvq-ring" width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'" aria-hidden="true"><circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" class="ui-ring-track" stroke-width="4"/>'+(d>0?'<circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" class="ui-ring-fill" stroke-width="4" stroke-dasharray="'+d.toFixed(1)+' '+c.toFixed(1)+'" transform="rotate(-90 '+size/2+' '+size/2+')" stroke-linecap="round"/>':"")+'</svg>'};
   const unitStats=(u,ev)=>{const codes=unitCodes(u),done=codes.filter(c=>ev.has(c)).length;return {done,total:codes.length,pct:codes.length?Math.round(done/codes.length*100):0}};
 
-  /* ---------- Course screen: packs and questions grouped by unit ---------- */
+  /* ---------- Knowledge: one pack, grouped by topic rather than by unit ---------- */
+  const TOPICS=[["info","Drawings and information"],["hs","Health and safety"],["res","Materials and resources"],["protect","Protecting the work and waste"],["time","Time and programmes"],["craft","How the work is done"],["plan","Planning work"],["method","Methods of work"],["team","Working with others"]];
+  const TOPIC_NAME=Object.fromEntries(TOPICS);
+  const Q_TOPIC={},Q_ORDER=[];
+  UNITS.forEach(u=>u.o.forEach(o=>o.c.forEach(c=>{
+    if(!c.q||Q_TOPIC[c.q])return;
+    Q_TOPIC[c.q]=u.n==="102"?"hs":u.n==="300"?"plan":u.n==="303"?"method":u.n==="502"?"team":({1:"info",2:"hs",3:"hs",4:"res",5:"protect",6:"time"}[o.n]||"craft");
+    Q_ORDER.push(c.q);
+  })));
+  const myQuestions=()=>{const sel=selected();return Q_ORDER.filter(q=>sel.some(u=>u.o.some(o=>o.c.some(c=>c.q===q))))};
+  const topicQuestions=t=>{const qs=myQuestions().filter(q=>Q_TOPIC[q]===t);return TOPICS.findIndex(x=>x[0]===t)===5?qs.sort((a,b)=>+unitsAsking(a)[0].n-+unitsAsking(b)[0].n):qs};
+  const topicOf=q=>Q_TOPIC[q];
+
+  /* ---------- Course screen: site jobs, one knowledge pack, workplace evidence ---------- */
   function courseScreen(){
     document.getElementById("page-title").textContent="Course";
     const ev=evidenced(),a=answers(),packs=data().u.map((u,i)=>({u,i,meta:u[2]||{}}));
-    const blocks=selected().map(u=>{
-      const st=unitStats(u,ev),mine=packs.filter(p=>p.meta.unit===u.n),m=minCrit(u),qs=questionsOf(u),qDone=qs.filter(q=>answered(q,a)).length;
-      let body="";
-      if(mine.length){
-        const got=m?(m.s||[]).filter((_,i)=>ev.has(u.n+"."+m.n+subLetter(i))).length:0;
-        if(m)body+='<p class="nvq-min">Do at least <strong>'+m.min+'</strong> of these '+mine.length+' jobs · '+(got>=m.min?'<span class="nvq-ok">✓ '+got+' done</span>':got+' done')+'</p>';
-        body+=mine.map(p=>'<div class="card unit-card" data-u="'+p.i+'"><div class="unit-title">'+escH(p.u[0])+'</div>'+(typeof strengthBars==="function"?strengthBars(unitStrengthForCourse(p.u[0])):"")+'</div>').join("");
-      }else if(BEHAVIOUR.includes(u.n)){
-        body+='<button type="button" class="card unit-card nvq-link-card" data-nvq-support><span><span class="unit-title">Witness testimony and documents</span><small>Add them in Supporting evidence and link them to this unit.</small></span><span class="supporting-course-arrow">›</span></button>';
-      }else{
-        body+='<div class="card nvq-soon"><small>Evidence packs for this unit are coming next. For now, add site evidence in Supporting evidence and link it to this unit.</small></div>';
-      }
-      if(qs.length)body+='<button type="button" class="card unit-card nvq-link-card" data-nvq-q="'+u.n+'"><span><span class="unit-title">Knowledge questions</span><small>'+qDone+' of '+qs.length+' answered</small></span><span class="supporting-course-arrow">›</span></button>';
-      return '<section class="nvq-unit-block"><div class="nvq-unit-head">'+miniRing(st.pct)+'<div><strong><span class="nvq-unit-num">'+u.n+'</span> '+escH(u.short)+'</strong><small>'+st.done+' of '+st.total+' criteria'+(u.opt?' · optional unit':'')+'</small></div></div>'+body+'</section>';
+    const qs=myQuestions(),qDone=qs.filter(q=>answered(q,a)).length,qPct=qs.length?Math.round(qDone/qs.length*100):0;
+    const jobUnits=selected().filter(u=>packs.some(p=>p.meta.unit===u.n));
+    const waiting=selected().filter(u=>!BEHAVIOUR.includes(u.n)&&!packs.some(p=>p.meta.unit===u.n));
+    const jobs=jobUnits.map(u=>{
+      const mine=packs.filter(p=>p.meta.unit===u.n),m=minCrit(u);
+      const got=m?(m.s||[]).filter((_,i)=>ev.has(u.n+"."+m.n+subLetter(i))).length:0;
+      return (m?'<p class="nvq-min">Do at least <strong>'+m.min+'</strong> of these '+mine.length+' jobs · '+(got>=m.min?'<span class="nvq-ok">✓ '+got+' done</span>':got+' done')+'</p>':"")+
+        mine.map(p=>'<div class="card unit-card" data-u="'+p.i+'"><div class="unit-title">'+escH(p.u[0])+'<small class="nvq-job-unit">Unit '+u.n+'</small></div>'+(typeof strengthBars==="function"?strengthBars(unitStrengthForCourse(p.u[0])):"")+'</div>').join("");
     }).join("");
     document.getElementById("screen").innerHTML=
-      '<div class="card"><div class="section-title">'+escH(data().std)+'</div><h2>'+escH(data().name)+'</h2><p>'+selected().length+' units. Evidence packs for your site jobs, and questions for what you know. Your optional unit can be changed in Profile.</p></div>'+
-      blocks+
-      '<div class="card unit-card supporting-course-card" data-supporting-evidence><div class="unit-title">Supporting Evidence</div><small>Witness testimony, documents, audio and video.</small><span class="supporting-course-arrow">›</span></div>';
+      '<div class="card"><div class="section-title">'+escH(data().std)+'</div><h2>'+escH(data().name)+'</h2><p>Capture your site jobs, answer the knowledge questions and add witness testimony. Evia maps everything to your units for you.</p></div>'+
+      '<div class="section-title nvq-section">Site jobs</div>'+jobs+
+      (waiting.length?'<div class="card nvq-soon"><small>Site jobs for '+waiting.map(u=>escH(u.short.toLowerCase())).join(", ").replace(/, ([^,]*)$/," and $1")+' are coming next. Until then, add that evidence in Supporting evidence and link it to the unit.</small></div>':"")+
+      '<div class="section-title nvq-section">Knowledge</div>'+
+      '<button type="button" class="card unit-card nvq-link-card nvq-knowledge" data-nvq-knowledge>'+miniRing(qPct,40)+'<span class="nvq-knowledge-copy"><span class="unit-title">Knowledge questions</span><small>'+qDone+' of '+qs.length+' answered · counts across all your units</small></span><span class="supporting-course-arrow">›</span></button>'+
+      '<div class="section-title nvq-section">Workplace evidence</div>'+
+      '<button type="button" class="card unit-card nvq-link-card" data-supporting-evidence><span><span class="unit-title">Witness testimony and documents</span><small>Photos, video, audio and files. Link each one to the unit it shows.</small></span><span class="supporting-course-arrow">›</span></button>';
     document.querySelectorAll("[data-u]").forEach(b=>b.onclick=()=>openUnit(+b.dataset.u));
-    document.querySelectorAll("[data-supporting-evidence],[data-nvq-support]").forEach(b=>b.onclick=()=>openSupportingEvidence());
-    document.querySelectorAll("[data-nvq-q]").forEach(b=>b.onclick=()=>{sheetClosed=courseScreen;openQuestions(b.dataset.nvqQ)});
+    document.querySelectorAll("[data-supporting-evidence]").forEach(b=>b.onclick=()=>openSupportingEvidence());
+    const k=document.querySelector("[data-nvq-knowledge]");if(k)k.onclick=()=>{sheetClosed=courseScreen;openKnowledge()};
   }
 
   /* ---------- Knowledge questions ---------- */
-  function openQuestions(unitNum){
-    const u=BY[unitNum];if(!u)return;
-    const a=answers(),seen=new Set();
-    const groups=u.o.map(o=>{
-      const qs=o.c.filter(c=>c.q&&!seen.has(c.q)&&seen.add(c.q));
-      if(!qs.length)return"";
-      return '<div class="pr-h">Outcome '+o.n+'</div><div class="pr-list">'+qs.map(c=>{
-        const q=N.q[c.q],done=answered(c.q,a),also=unitsAsking(c.q).filter(x=>x.n!==u.n).map(x=>x.n);
-        return '<button type="button" class="pr-row nvq-q-row'+(done?" done":"")+'" data-q="'+c.q+'"><span class="nvq-q-tick" aria-hidden="true">'+(done?"✓":"")+'</span><span class="pr-copy"><strong>'+escH(q.t)+'</strong><small>'+(done?"Answered":"Not answered yet")+(also.length?" · also counts for "+also.join(", "):"")+'</small></span></button>';
-      }).join("")+'</div>';
+  function openKnowledge(){
+    const a=answers(),qs=myQuestions(),done=qs.filter(q=>answered(q,a)).length;
+    const rows=TOPICS.map(([t,name])=>{
+      const list=topicQuestions(t);if(!list.length)return"";
+      const d=list.filter(q=>answered(q,a)).length;
+      return '<button type="button" class="pr-row nvq-topic'+(d===list.length?" done":"")+'" data-topic="'+t+'">'+miniRing(Math.round(d/list.length*100),36)+'<span class="pr-copy"><strong>'+escH(name)+'</strong><small>'+d+' of '+list.length+' answered</small></span><span class="nvq-chev" aria-hidden="true">›</span></button>';
     }).join("");
-    const qs=questionsOf(u),done=qs.filter(q=>answered(q,a)).length;
-    sheet("UNIT "+u.n+" · QUESTIONS",escH(u.short),
-      '<p class="pr-intro">Answer each one in your own words, as you would to your assessor. You can type or use your keyboard’s microphone. <strong>'+done+' of '+qs.length+'</strong> answered.</p>'+groups+
+    sheet("KNOWLEDGE","Knowledge questions",
+      '<p class="pr-intro">Answer each one in your own words, as you would to your assessor. You can type or use your keyboard’s microphone. Each answer counts for every unit that asks it. <strong>'+done+' of '+qs.length+'</strong> answered.</p>'+
+      '<div class="pr-list">'+rows+'</div>'+
       (Object.keys(a).length?'<button type="button" class="secondary nvq-pdf-btn" id="nvq-pdf">Download all my answers (PDF) for my assessor</button>':""));
-    document.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>openQuestion(b.dataset.q,u.n));
+    document.querySelectorAll("[data-topic]").forEach(b=>b.onclick=()=>openTopic(b.dataset.topic));
     const pdf=document.getElementById("nvq-pdf");if(pdf)pdf.onclick=()=>answersPdf(pdf);
   }
-  function openQuestion(qid,unitNum){
+  function openTopic(t){
+    const a=answers(),list=topicQuestions(t),done=list.filter(q=>answered(q,a)).length;
+    sheet("KNOWLEDGE · "+done+" OF "+list.length+" ANSWERED",escH(TOPIC_NAME[t]),
+      '<div class="pr-list">'+list.map(q=>{
+        const ok=answered(q,a),asking=unitsAsking(q),units=asking.map(x=>x.n);
+        return '<button type="button" class="pr-row nvq-q-row'+(ok?" done":"")+'" data-q="'+q+'"><span class="nvq-q-tick" aria-hidden="true">'+(ok?"✓":"")+'</span><span class="pr-copy">'+(asking.length===1&&t==="craft"?'<em class="nvq-q-unit">'+escH(asking[0].short)+'</em>':"")+'<strong>'+escH(N.q[q].t)+'</strong><small>'+(ok?"Answered":"Not answered yet")+' · Unit'+(units.length>1?"s ":" ")+units.join(", ")+'</small></span></button>';
+      }).join("")+'</div>'+
+      '<button type="button" class="secondary nvq-pdf-btn" id="nvq-topics">‹ All topics</button>');
+    document.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>openQuestion(b.dataset.q));
+    document.getElementById("nvq-topics").onclick=openKnowledge;
+  }
+  function openQuestion(qid){
     const q=N.q[qid];if(!q)return;
-    const u=BY[unitNum]||unitsAsking(qid)[0],order=u?questionsOf(u):[qid],pos=order.indexOf(qid);
+    const t=topicOf(qid),order=topicQuestions(t),pos=order.indexOf(qid);
     const a=answers(),cur=a[qid]||{},also=unitsAsking(qid);
-    sheet((u?"UNIT "+u.n+" · ":"")+"QUESTION "+(pos+1)+" OF "+order.length,"In your own words",
+    sheet(escH(TOPIC_NAME[t]).toUpperCase()+" · "+(pos+1)+" OF "+order.length,"In your own words",
+      (also.length===1&&t==="craft"?'<p class="nvq-q-for">For your '+escH(also[0].short.toLowerCase())+' work</p>':"")+
       '<p class="nvq-question">'+escH(q.t)+'</p>'+
       (q.s?'<div class="nvq-think"><span>Cover each of these:</span><ul>'+q.s.map(s=>'<li>'+escH(s)+'</li>').join("")+'</ul></div>':"")+
       '<textarea id="nvq-answer" data-nvq-answer rows="7" placeholder="Type your answer, or tap the microphone on your keyboard to speak it…">'+escH(cur.t||"")+'</textarea>'+
       '<p class="nvq-count" id="nvq-count"></p>'+
-      (also.length>1?'<div class="nvq-counts-for"><span>This answer counts for</span>'+also.map(x=>'<span class="pr-chip">'+x.n+' '+escH(x.short)+'</span>').join("")+'</div>':"")+
-      '<div class="pr-save"><button type="button" class="secondary" id="nvq-back">All questions</button><button type="button" class="primary" id="nvq-save">Save answer</button></div>');
+      (also.length?'<div class="nvq-counts-for"><span>Counts for</span>'+also.map(x=>'<span class="pr-chip">'+x.n+' '+escH(x.short)+'</span>').join("")+'</div>':"")+
+      '<div class="pr-save"><button type="button" class="secondary" id="nvq-back">Topic list</button><button type="button" class="primary" id="nvq-save">Save answer</button></div>');
     const ta=document.getElementById("nvq-answer"),count=document.getElementById("nvq-count"),save=document.getElementById("nvq-save");
     const upd=()=>{const n=words(ta.value);count.textContent=n<MIN_WORDS?"Aim for at least "+MIN_WORDS+" words · "+n+" so far":n+" words";count.classList.toggle("ok",n>=MIN_WORDS);save.disabled=!ta.value.trim()};
     ta.addEventListener("input",upd);upd();
-    document.getElementById("nvq-back").onclick=()=>u?openQuestions(u.n):null;
+    document.getElementById("nvq-back").onclick=()=>openTopic(t);
     save.onclick=()=>{
-      const all=answers(),t=ta.value.trim();
-      if(t)all[qid]={t,savedAt:all[qid]&&all[qid].savedAt||new Date().toISOString(),updatedAt:new Date().toISOString()};else delete all[qid];
+      const all=answers(),txt=ta.value.trim();
+      if(txt)all[qid]={t:txt,savedAt:all[qid]&&all[qid].savedAt||new Date().toISOString(),updatedAt:new Date().toISOString()};else delete all[qid];
       localStorage.setItem(ANSWERS_KEY,JSON.stringify(all));
-      if(typeof showEvidenceToast==="function")showEvidenceToast(words(t)>=MIN_WORDS?"Answer saved":"Saved. Add a bit more detail so it counts");
+      if(typeof showEvidenceToast==="function")showEvidenceToast(words(txt)>=MIN_WORDS?"Answer saved":"Saved. Add a bit more detail so it counts");
       if(window.eviaCheckTargets)window.eviaCheckTargets();
-      const next=u?order.slice(pos+1).concat(order.slice(0,pos)).find(x=>!answered(x,all)):null;
-      if(next)openQuestion(next,u.n);else if(u)openQuestions(u.n);
+      const next=order.slice(pos+1).concat(order.slice(0,pos)).find(x=>!answered(x,all));
+      if(next)openQuestion(next);else openTopic(t);
     };
   }
 
-  /* All answered questions in one PDF, each listing every criterion it covers. */
+  /* All answered questions in one PDF, grouped by topic, each listing every criterion it covers. */
   function loadJsPdf(){
     if(window.jspdf)return Promise.resolve(window.jspdf);
     return new Promise((resolve,reject)=>{const s=document.createElement("script");s.src="vendor/jspdf.umd.min.js";s.onload=()=>window.jspdf?resolve(window.jspdf):reject(new Error("PDF library unavailable"));s.onerror=()=>reject(new Error("PDF library unavailable"));document.head.appendChild(s)});
@@ -166,17 +184,17 @@
     const label0=btn.textContent;btn.disabled=true;btn.textContent="Making your PDF…";
     try{
       const {jsPDF}=await loadJsPdf(),doc=new jsPDF({unit:"mm",format:"a4",compress:true});
-      const a=answers(),p=profile(),W=210,M=16,TW=W-2*M,seen=new Set();let y=M;
+      const a=answers(),p=profile(),W=210,M=16,TW=W-2*M;let y=M;
       const room=h=>{if(y+h>280){doc.addPage();y=M}};
       const para=(txt,size,style,color,gap)=>{doc.setFont("helvetica",style||"normal");doc.setFontSize(size);doc.setTextColor(...(color||[23,32,51]));const lines=doc.splitTextToSize(String(txt),TW),lh=size*.42;lines.forEach(l=>{room(lh);doc.text(l,M,y+lh*.8);y+=lh});y+=gap||0};
       para("Knowledge answers",20,"bold",null,2);
       para((p.name||"Learner")+" · "+N.title+" ("+N.qual+")",10,"normal",[102,112,133],1);
       para("Downloaded "+new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"})+". Answers are in the learner’s own words.",9,"normal",[102,112,133],6);
-      selected().forEach(u=>{
-        const qs=questionsOf(u).filter(q=>!seen.has(q)&&answered(q,a));if(!qs.length)return;
-        room(14);para("Unit "+u.n+" · "+u.t,13,"bold",null,3);
+      TOPICS.forEach(([t,name])=>{
+        const qs=topicQuestions(t).filter(q=>answered(q,a));if(!qs.length)return;
+        room(14);para(name,13,"bold",null,3);
         qs.forEach(q=>{
-          seen.add(q);const refs=selected().flatMap(x=>x.o.flatMap(o=>o.c.filter(c=>c.q===q).map(c=>x.n+" "+c.n)));
+          const refs=selected().flatMap(x=>x.o.flatMap(o=>o.c.filter(c=>c.q===q).map(c=>x.n+" "+c.n)));
           para("Criteria "+refs.join(" · "),8.5,"normal",[110,92,0],1);
           para(N.q[q].t+(N.q[q].s?": "+N.q[q].s.join("; "):""),10.5,"bold",null,1.5);
           para(a[q].t,10.5,"normal",[52,64,84],6);
@@ -236,7 +254,7 @@
       (c.min?'<p class="nvq-min">At least <strong>'+c.min+'</strong> needed · '+(c.s||[]).filter((_,i)=>ev.has(code+subLetter(i))).length+' done</p>':"")+
       '<div class="pr-h">Outcome '+o.n+'</div><p class="pr-intro">'+escH(o.t)+'</p>'+
       '<div class="pr-h">Evidence</div>'+(evidenceRows||'<p class="pr-intro">Nothing yet.</p>')+how);
-    const b=document.getElementById("nvq-answer-q");if(b)b.onclick=()=>openQuestion(c.q,u.n);
+    const b=document.getElementById("nvq-answer-q");if(b)b.onclick=()=>openQuestion(c.q);
   }
 
   /* ---------- Optional units (first-run demo and Profile) ---------- */
@@ -251,6 +269,6 @@
   const watch=()=>new MutationObserver(ms=>{if(on())ms.forEach(m=>m.addedNodes.forEach(n=>{if(n.nodeType===1)swap(n);else if(n.nodeType===3&&n.parentNode)swap(n.parentNode)}))}).observe(document.body,{childList:true,subtree:true});
   if(document.body)watch();else document.addEventListener("DOMContentLoaded",watch);
   window.eviaTerm=()=>on()?{one:"criterion",many:"criteria",Many:"Criteria"}:{one:"KSB",many:"KSBs",Many:"KSBs"};
-  window.eviaNvq={on,id:ID,allK,evidenced,courseScreen,progressHtml,bindProgress,criterion,openQuestions,openQuestion,optionalHtml,readOptional,setOptional,optionalChosen,selected,label,critText,units:UNITS,behaviour:BEHAVIOUR,
+  window.eviaNvq={on,id:ID,allK,evidenced,courseScreen,progressHtml,bindProgress,criterion,openKnowledge,openTopic,openQuestion,myQuestions,optionalHtml,readOptional,setOptional,optionalChosen,selected,label,critText,units:UNITS,behaviour:BEHAVIOUR,
     unitCodes:n=>BY[n]?unitCodes(BY[n]):[],doCodesFor:n=>BY[n]?BY[n].o.flatMap(o=>o.c.filter(c=>!c.q).map(c=>[n+"."+c.n,c.t])):[],answers};
 })();
