@@ -38,11 +38,13 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("The app opens on My course; the nav is My course, Evia and My progress",await page.evaluate(()=>screen==="course"&&!!document.getElementById("ui-course-head")&&[...document.querySelectorAll("[data-nav]")].map(b=>b.textContent.trim()).join()==="My course,My progress"));
     for(const s of ["course","progress","portfolio","learning","hours"]){await page.evaluate(s=>nav(s),s);await page.waitForTimeout(450)}
     await page.evaluate(()=>nav("progress"));await page.waitForTimeout(450);
-    check("Progress shows when the next review is due",await page.evaluate(()=>!window.eviaReviewDue()||!!document.getElementById("ui-review-due")));
-    check("Learning shows where you are, the KSB groups and one tile per extra",await page.evaluate(()=>screen==="learning"&&!!document.getElementById("pg-hero")&&!!document.querySelector(".ui-groups")&&["hours","tests","skills","badges","reviews"].every(t=>document.getElementById("lt-"+t))));
-    await page.click("#lt-hours");await page.waitForTimeout(450);
+    check("My progress says when the next review is due",await page.evaluate(()=>!window.eviaReviewDue()||!!document.querySelector(".pv-review-line")));
+    check("My progress shows a chart card for each area, with no action buttons",await page.evaluate(()=>screen==="learning"&&["where","ksb","otj","tests","conf","act","quality","targets","ach"].every(id=>document.getElementById("pv-"+id))&&!document.querySelector("#screen .primary,#screen .pg-action")));
+    await page.click("#pv-otj");await page.waitForTimeout(500);
+    check("Tapping a card opens its deep dive with a how-to note",await page.evaluate(()=>/Off-the-job hours/.test(document.getElementById("pv-sheet-title").textContent)&&!!document.querySelector(".pv-sheet .pv-note")&&!!document.querySelector(".pv-sheet .pv-cols")));
+    await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";nav("hours")});await page.waitForTimeout(450);
     await page.click('[data-hrs="2"]');await page.fill("#otj-description","Toolbox talk on manual handling");await page.click("#add");await page.waitForTimeout(200);
-    check("Hours are logged from Learning with a tap and a line of text",await page.evaluate(()=>hours.some(h=>h.n===2&&/manual handling/.test(h.description))&&screen==="hours"));
+    check("Hours are logged with a tap and a line of text",await page.evaluate(()=>hours.some(h=>h.n===2&&/manual handling/.test(h.description))&&screen==="hours"));
     await page.evaluate(()=>nav("learning"));await page.waitForTimeout(450);
     await page.evaluate(()=>nav("portfolio"));await page.waitForTimeout(450);
     await page.evaluate(()=>openUnit(data().u.findIndex(u=>evidence.some(e=>e.c===course&&e.u===u[0]))));await page.waitForTimeout(1200);
@@ -117,7 +119,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>{const e=data().u;["Cavity wall","Blockwork","Solid wall","Openings"].forEach((t,i)=>{const u=e.find(x=>x[0]===t);evidence.push({id:"w"+i,c:course,u:t,k:u[1].map(code),w:"x",p:[],savedAt:new Date().toISOString()})});persist()});
     check("Unit 235 needs all six of its jobs, not just some",await page.evaluate(()=>{const before=window.eviaNvq.evidenced().has("235.7.3");const u=data().u.find(x=>x[0]==="Cills, cappings and copings");evidence.push({id:"w9",c:course,u:u[0],k:u[1].map(code),w:"x",p:[],savedAt:new Date().toISOString()});return !before&&window.eviaNvq.evidenced().has("235.7.3")}));
     await page.evaluate(()=>nav("progress"));await page.waitForTimeout(450);
-    check("NVQ Progress shows unit rings and says criteria, not KSBs",await page.evaluate(()=>!!document.querySelector("[data-nvq-unit='313']")&&!/KSB/.test(document.getElementById("screen").innerText)));
+    check("NVQ My progress says criteria, not KSBs, and its units deep dive shows unit rings",await page.evaluate(async()=>{const ok=!/KSB/.test(document.getElementById("screen").innerText);window.eviaProgressDeep("ksb");await new Promise(r=>setTimeout(r,300));const r=ok&&!!document.querySelector(".pv-sheet [data-nvq-unit='313']");document.getElementById("modal-root").innerHTML="";return r}));
     await page.evaluate(()=>{course="bricklayer";persist();nav("home")});await page.waitForTimeout(450);
 
     // Page headings, draft tags, the strength key, the backup reminder, clean test screens and the OTJ PDF.

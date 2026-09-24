@@ -621,13 +621,13 @@
     if(screen==="learning"||screen==="hours"){
       const pb=document.getElementById("profile-btn");if(pb)pb.style.display=screen==="learning"?"flex":"none";
       document.querySelectorAll("[data-nav]").forEach(b=>b.classList.toggle("active",b.dataset.nav==="learning"));
-      if(screen==="hours")hoursScreen();else progressScreen();
+      if(screen==="hours")hoursScreen();else if(window.eviaProgressPage&&!document.body.classList.contains("evia-onboarding"))window.eviaProgressPage();else progressScreen(); /* the demo points at KSB tiles on the classic page */
       return;
     }
     originalRender();
   };
   window.progress=progressScreen;
-  window.learning=()=>screen==="hours"?hoursScreen():progressScreen();
+  window.learning=()=>screen==="hours"?hoursScreen():window.eviaProgressPage?window.eviaProgressPage():progressScreen();
   const originalCourses=window.courses;
   window.courses=function(){
     originalCourses();

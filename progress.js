@@ -1,0 +1,309 @@
+/* Evia7 My progress: where the learner is, as animated charts. Each card opens a deep dive with the detail and a
+   short note on how to improve it. There are no action buttons here: doing things is Evia's job. Everything is
+   worked out on the device from data the app already keeps. */
+(function(){
+  const DAY=864e5,WEEK=7*DAY,OTJ_WEEK_GOAL=6;
+  const $=s=>document.querySelector(s);
+  const esc=v=>String(v??"").replace(/[&<>"']/g,x=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[x]));
+  const readJson=(k,f)=>{try{const v=JSON.parse(localStorage.getItem(k)||"null");return v??f}catch(_){return f}};
+  const nvqOn=()=>!!(window.eviaNvq&&window.eviaNvq.on());
+  const term=()=>window.eviaTerm?window.eviaTerm():{one:"KSB",many:"KSBs",Many:"KSBs"};
+  const reduced=()=>window.eviaAccessibility?window.eviaAccessibility.reducedMotion():matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const weekStart=t=>{const d=new Date(t);d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return d.getTime()};
+  const dayStart=t=>{const d=new Date(t);d.setHours(0,0,0,0);return d.getTime()};
+  const entryTime=e=>{const t=Date.parse(e.savedAt||"");if(!isNaN(t))return t;const m=String(e.d||"").match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);return m?new Date(+m[3],m[2]-1,+m[1]).getTime():0};
+  const testPct=t=>typeof t.pct==="number"?t.pct:(t.total?Math.round((t.score||0)/t.total*100):0);
+  const shortDate=t=>new Date(t).toLocaleDateString("en-GB",{day:"numeric",month:"short"});
+  const longDate=t=>new Date(t).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"});
+  /* Hours as a learner says them: 1 h 30 min, never 1.5. */
+  const hm=h=>{const m=Math.round((Number(h)||0)*60),H=Math.floor(m/60),M=m%60;return H&&M?H+" h "+M+" min":H?H+" h":M+" min"};
+  const hmBig=h=>{const m=Math.round((Number(h)||0)*60),H=Math.floor(m/60),M=m%60;return '<b class="pv-num" data-to="'+H+'">'+H+'</b><small> h</small>'+(M?' <b>'+M+'</b><small> min</small>':"")};
+  const num=(n,suffix)=>'<b class="pv-num" data-to="'+n+'">'+n+'</b>'+(suffix?'<small>'+suffix+'</small>':"");
+  const CHEV='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
+  const BADGE='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="6"/><path d="m8.5 14-1.5 7 5-3 5 3-1.5-7"/></svg>';
+  const LEVEL=["Need more training","Know the basics","Quite confident","Mastered"];
+
+  /* ---------- Charts: plain SVG, drawn at rest; CSS plays them in when the card scrolls into view ---------- */
+  /* Timeline: the evidence bar fills; the marker is where you are in the course. */
+  function timeline(timePct,ksbPct,big){
+    const h=big?14:10;
+    return '<div class="pv-timeline'+(big?" big":"")+'" role="img" aria-label="'+(timePct!=null?timePct+"% of the way through the course, ":"")+ksbPct+"% of "+term().many+' with evidence">'+
+      '<div class="pv-tl-track" style="height:'+h+'px"><i class="pv-tl-fill pv-grow-x" style="width:'+ksbPct+'%"></i></div>'+
+      (timePct!=null?'<div class="pv-tl-mark pv-fade" style="left:'+clamp(timePct,0,100)+'%"><span>You are here</span></div>':"")+
+      '<div class="pv-tl-ends"><span>Start</span><span>End</span></div></div>';
+  }
+  /* Ring: stroke drawn round from 12 o'clock. */
+  function ring(pct,size,stroke,inner){
+    const r=(size-stroke)/2,c=2*Math.PI*r,v=clamp(pct,0,100)/100*c;
+    return '<span class="pv-ring" style="width:'+size+'px;height:'+size+'px"><svg viewBox="0 0 '+size+' '+size+'" aria-hidden="true"><circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" class="pv-ring-track" stroke-width="'+stroke+'"/>'+(v>0?'<circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" class="pv-ring-fill pv-draw" stroke-width="'+stroke+'" style="--len:'+c.toFixed(1)+';--v:'+v.toFixed(1)+'" transform="rotate(-90 '+size/2+' '+size/2+')"/>':"")+'</svg>'+(inner!=null?'<span class="pv-ring-label">'+inner+'</span>':"")+'</span>';
+  }
+  /* Columns from one baseline, 4px rounded tops, capped width, optional goal line. */
+  function columns(values,labels,max,opts){
+    opts=opts||{};
+    const W=300,H=opts.h||96,pad=18,n=values.length,slot=W/n,bw=Math.min(24,slot*.62),top=6;
+    const y=v=>H-pad-(clamp(v,0,max)/max)*(H-pad-top);
+    const bars=values.map((v,i)=>{
+      const x=i*slot+(slot-bw)/2,yy=y(v),bh=H-pad-yy;
+      return bh>0?'<path class="pv-col pv-grow-y" style="--d:'+(i*45)+'ms;transform-origin:'+(x+bw/2)+'px '+(H-pad)+'px" d="M'+x+','+(H-pad)+'V'+(yy+Math.min(4,bh))+'q0,-4 4,-4h'+(bw-8)+'q4,0 4,4V'+(H-pad)+'Z"'+(opts.highlight===i?' data-hi="1"':"")+'/>':"";
+    }).join("");
+    const goal=opts.goal!=null?'<line class="pv-goal" x1="0" x2="'+W+'" y1="'+y(opts.goal)+'" y2="'+y(opts.goal)+'"/><text class="pv-goal-label" x="0" y="'+(y(opts.goal)-4)+'" text-anchor="start">'+esc(opts.goalLabel||"")+'</text>':"";
+    const labs=labels.map((l,i)=>l?'<text class="pv-axis" x="'+(i*slot+slot/2)+'" y="'+(H-4)+'" text-anchor="middle">'+esc(l)+'</text>':"").join("");
+    return '<svg class="pv-cols" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(opts.aria||"")+'"><line class="pv-base" x1="0" x2="'+W+'" y1="'+(H-pad)+'" y2="'+(H-pad)+'"/>'+goal+bars+labs+'</svg>';
+  }
+  /* Line of scores over time, 0–100, with the last value labelled at the end. */
+  function line(values,opts){
+    opts=opts||{};
+    const W=300,H=opts.h||70,pad=8,n=values.length;
+    if(!n)return"";
+    const x=i=>n===1?W/2:pad+i*(W-pad*2-34)/(n-1),y=v=>H-pad-(clamp(v,0,100)/100)*(H-pad*2);
+    const pts=values.map((v,i)=>x(i).toFixed(1)+","+y(v).toFixed(1));
+    const last=values[n-1];
+    return '<svg class="pv-line" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(opts.aria||"Scores over time")+'">'+
+      '<line class="pv-base" x1="0" x2="'+W+'" y1="'+y(0)+'" y2="'+y(0)+'"/><line class="pv-grid" x1="0" x2="'+W+'" y1="'+y(80)+'" y2="'+y(80)+'"/>'+
+      (n>1?'<polyline class="pv-stroke pv-draw-line" points="'+pts.join(" ")+'" pathLength="1"/>':"")+
+      '<circle class="pv-dot pv-pop" cx="'+x(n-1)+'" cy="'+y(last)+'" r="4.5"/>'+
+      '<text class="pv-end-label pv-fade" x="'+(x(n-1)+9)+'" y="'+(y(last)+4)+'">'+last+'%</text></svg>';
+  }
+  /* Spider chart of confidence: now (accent) and last time (grey outline). */
+  function radar(areas,now,prev,size){
+    const n=areas.length;if(n<3)return"";
+    const S=size||180,c=S/2,R=S/2-(size>200?44:10);
+    const pt=(i,v)=>{const a=-Math.PI/2+i*2*Math.PI/n,r=R*v/4;return [c+r*Math.cos(a),c+r*Math.sin(a)]};
+    const poly=vals=>vals.map((v,i)=>pt(i,v||0).map(z=>z.toFixed(1)).join(",")).join(" ");
+    const rings=[1,2,3,4].map(l=>'<polygon class="pv-radar-grid" points="'+poly(areas.map(()=>l))+'"/>').join("");
+    const spokes=areas.map((_,i)=>{const [x,y]=pt(i,4);return '<line class="pv-radar-grid" x1="'+c+'" y1="'+c+'" x2="'+x.toFixed(1)+'" y2="'+y.toFixed(1)+'"/>'}).join("");
+    const labels=size>200?areas.map((a,i)=>{const [x,y]=pt(i,4.9);return '<text class="pv-axis" x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" text-anchor="'+(Math.abs(x-c)<8?"middle":x>c?"start":"end")+'" dominant-baseline="middle">'+esc(a.length>16?a.slice(0,15)+"…":a)+'</text>'}).join(""):"";
+    return '<svg class="pv-radar" viewBox="0 0 '+S+' '+S+'" role="img" aria-label="Confidence in each skill">'+rings+spokes+
+      (prev?'<polygon class="pv-radar-prev" points="'+poly(prev)+'"/>':"")+
+      '<g class="pv-radar-now pv-scale" style="transform-origin:'+c+'px '+c+'px"><polygon points="'+poly(now)+'"/>'+now.map((v,i)=>{const [x,y]=pt(i,v||0);return '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3.5"/>'}).join("")+'</g>'+labels+'</svg>';
+  }
+  /* Calendar grid: one square per day, darker for busier days. Columns are weeks, Monday at the top. */
+  function calendar(counts,weeks){
+    const today=dayStart(Date.now()),start=weekStart(today)-(weeks-1)*WEEK,cells=[];
+    for(let w=0;w<weeks;w++)for(let d=0;d<7;d++){
+      const t=start+w*WEEK+d*DAY;if(t>today){cells.push('<i class="pv-cal-cell future"></i>');continue}
+      const n=counts.get(t)||0,lvl=n===0?0:n===1?1:n===2?2:3;
+      cells.push('<i class="pv-cal-cell l'+lvl+' pv-fade" style="--d:'+(w*25)+'ms" title="'+esc(shortDate(t)+": "+(n?n+" thing"+(n===1?"":"s")+" added":"nothing added"))+'"></i>');
+    }
+    return '<div class="pv-cal" style="grid-template-columns:repeat('+weeks+',1fr)" role="img" aria-label="Days you added evidence or hours over the last '+weeks+' weeks">'+cells.join("")+'</div>'+
+      '<div class="pv-cal-key"><span>Less</span><i class="pv-cal-cell l0"></i><i class="pv-cal-cell l1"></i><i class="pv-cal-cell l2"></i><i class="pv-cal-cell l3"></i><span>More</span></div>';
+  }
+  /* Dial: a half circle from weak to strong. */
+  function dial(pct){
+    const r=70,c=Math.PI*r,v=clamp(pct,0,100)/100*c;
+    return '<svg class="pv-dial" viewBox="0 0 180 104" role="img" aria-label="'+pct+'% of the key points covered"><path class="pv-dial-track" d="M20,94 A70,70 0 0 1 160,94"/>'+(v>0?'<path class="pv-dial-fill pv-draw" style="--len:'+c.toFixed(1)+';--v:'+v.toFixed(1)+'" d="M20,94 A70,70 0 0 1 160,94"/>':"")+
+      '<text class="pv-axis" x="20" y="103" text-anchor="middle">Weak</text><text class="pv-axis" x="160" y="103" text-anchor="end">Strong</text></svg>';
+  }
+  const bar=(pct,cls,d)=>'<span class="pv-bar'+(cls?" "+cls:"")+'"><i class="pv-grow-x" style="width:'+clamp(Math.round(pct),0,100)+'%;--d:'+(d||0)+'ms"></i></span>';
+
+  /* ---------- Data ---------- */
+  function gather(){
+    const S=window.eviaStats.compute(),a=S.a;
+    const gap=a.timePct==null?null:a.timePct-a.ksbPct;
+    const verdict=gap==null?null:gap>10?{cls:"behind",text:"A little behind",icon:"!"}:gap<-5?{cls:"ahead",text:"Ahead of schedule",icon:"↑"}:{cls:"ontrack",text:"On track",icon:"✓"};
+    /* Off-the-job: the last 8 weeks, Monday to Sunday. */
+    const thisWeek=weekStart(Date.now()),otjWeeks=[];
+    for(let i=7;i>=0;i--){const ws=thisWeek-i*WEEK;otjWeeks.push({start:ws,h:hours.filter(x=>{const t=Number(x.createdAt);return t>=ws&&t<ws+WEEK}).reduce((n,x)=>n+Number(x.n||0),0)})}
+    /* Activity by day: evidence, hours and supporting files. */
+    const counts=new Map(),add=t=>{if(t>0){const d=dayStart(t);counts.set(d,(counts.get(d)||0)+1)}};
+    a.entries.forEach(e=>add(entryTime(e)));hours.forEach(x=>add(Number(x.createdAt)));
+    try{supportingMeta().filter(x=>x.course===course).forEach(x=>add(Date.parse(x.createdAt||x.addedAt)||Number(x.createdAt)))}catch(_){}
+    const tests=readJson("evia7-test-results",[]).filter(t=>t&&t.course===course).sort((x,y)=>Date.parse(x.savedAt)-Date.parse(y.savedAt));
+    const sessions=readJson("evia7-confidence",[]).filter(x=>x&&x.course===course&&Array.isArray(x.scores)&&x.scores.length);
+    return {S,a,verdict,otjWeeks,counts,tests,sessions};
+  }
+
+  /* ---------- Cards ---------- */
+  const card=(id,title,big,sub,chart,extra)=>'<button type="button" class="pv-card'+(extra||"")+'" data-pv="'+id+'" id="pv-'+id+'"><span class="pv-head"><span class="pv-title">'+title+'</span><span class="pv-chev">'+CHEV+'</span></span><span class="pv-big">'+big+'</span>'+(sub?'<span class="pv-sub">'+sub+'</span>':"")+(chart?'<span class="pv-chart">'+chart+'</span>':"")+'</button>';
+  const empty=text=>'<span class="pv-empty">'+esc(text)+'</span>';
+
+  function cards(D){
+    const {S,a,verdict}=D,T=term(),out=[];
+    // Where you are
+    out.push(card("where","Where you are",num(a.ksbPct,"%"),'of '+esc(T.many)+' have evidence'+(verdict?' · <em class="pv-verdict '+verdict.cls+'"><i aria-hidden="true">'+verdict.icon+'</i>'+verdict.text+'</em>':""),timeline(a.timePct,a.ksbPct),""));
+    // KSB rings, or units for an NVQ
+    if(nvqOn()){
+      out.push(card("ksb","Your units",num(a.met)+'<small> / '+a.total+'</small>',"criteria with evidence",'<span class="pv-rings">'+ring(a.ksbPct,84,9,a.ksbPct+"%")+'</span>'));
+    }else{
+      const all=allK(),g=[["K","Knowledge"],["S","Skills"],["B","Behaviours"]].map(([l,n])=>{const items=all.filter(x=>x[0].startsWith(l)),d=items.filter(x=>a.evidenced.has(x[0])).length;return {n,d,t:items.length,p:items.length?Math.round(d/items.length*100):0}}).filter(x=>x.t);
+      out.push(card("ksb",esc(T.Many),num(a.met)+'<small> / '+a.total+'</small>',"with evidence",'<span class="pv-rings">'+g.map(x=>'<span class="pv-ring-item">'+ring(x.p,74,8,x.p+"%")+'<small>'+x.n+'</small></span>').join("")+'</span>'));
+    }
+    // Off-the-job hours
+    const wk=D.otjWeeks;
+    out.push(card("otj","Off-the-job hours",hmBig(S.otjTotal),S.otjWeek?"+"+hm(S.otjWeek)+" this week":"Nothing logged this week yet",
+      columns(wk.map(w=>w.h),wk.map((w,i)=>i===wk.length-1?"This wk":i%2===1?shortDate(w.start):""),Math.max(OTJ_WEEK_GOAL*1.4,...wk.map(w=>w.h)),{goal:OTJ_WEEK_GOAL,goalLabel:OTJ_WEEK_GOAL+" h a week",aria:"Off-the-job hours for each of the last 8 weeks",highlight:wk.length-1})));
+    // Tests
+    const tests=D.tests,last=tests[tests.length-1];
+    out.push(card("tests",nvqOn()?"Knowledge tests":"Tests",last?num(testPct(last),"%"):"–",last?"last score · best "+S.bestTest+"% · "+tests.length+" taken":"No tests taken yet",
+      tests.length?line(tests.slice(-10).map(testPct),{aria:"Your last "+Math.min(10,tests.length)+" test scores"}):empty("Your scores will chart here")));
+    // Confidence
+    const ses=D.sessions,cur=S.confidence.scores;
+    if(cur.length>=3){
+      const areas=cur.map(x=>x.area),prev=ses.length>1?areas.map(ar=>{const s=ses[ses.length-2].scores.find(x=>x.area===ar);return s?s.score:0}):null;
+      const good=cur.filter(x=>x.score>=3).length;
+      out.push(card("conf","Confidence",num(good)+'<small> / '+cur.length+'</small>',"skills you feel confident in",'<span class="pv-radar-wrap">'+radar(areas,cur.map(x=>x.score),prev,170)+(prev?'<span class="pv-legend"><span><i class="now"></i>Now</span><span><i class="prev"></i>Last time</span></span>':"")+'</span>'));
+    }else out.push(card("conf","Confidence","–","Not rated yet",empty("Rate your skills with Evia to see your shape")));
+    // Activity
+    out.push(card("act","Activity",num(S.streak)+'<small> week'+(S.streak===1?"":"s")+'</small>',S.streak?"in a row · longest "+S.longest+" week"+(S.longest===1?"":"s"):"Add something this week to start a streak",calendar(D.counts,18)));
+    // Evidence quality
+    out.push(card("quality","Evidence quality",S.coverage==null?"–":num(S.coverage,"%"),S.coverage==null?"Submit a unit with a write-up first":"of the key points covered"+(S.avgPhotos!=null?" · "+(Math.round(S.avgPhotos*10)/10)+(Math.round(S.avgPhotos*10)/10===1?" photo":" photos")+" a pack":""),S.coverage==null?empty("Evia checks each write-up once it’s saved"):dial(S.coverage)));
+    // Targets
+    const T2=window.eviaTargets,tg=T2?T2.mine():[];
+    if(T2&&tg.length){
+      const done=tg.filter(t=>t.done).length;
+      out.push(card("targets","Targets",num(done)+'<small> / '+tg.length+'</small>',"done",'<span class="pv-rows">'+tg.slice(0,3).map((t,i)=>{const p=T2.progress(t,S);return '<span class="pv-row"><span class="pv-row-top"><span>'+esc(t.title)+'</span><strong>'+Math.round(p.pct*100)+'%</strong></span>'+bar(p.pct*100,p.pct>=1?"good":"",i*80)+'</span>'}).join("")+'</span>'));
+    }else out.push(card("targets","Targets","–","Set at your next progress review",""));
+    // Scenarios
+    const sp=S.scenarios;
+    if(sp&&sp.topics&&sp.topics.length)out.push(card("scen","Real-life scenarios",num(sp.done)+'<small> / '+sp.total+'</small>',"worked through",'<span class="pv-seg">'+sp.topics.map((t,i)=>'<span><i class="pv-grow-x" style="width:'+(t.total?Math.round(t.done/t.total*100):0)+'%;--d:'+(i*80)+'ms"></i></span>').join("")+'</span><span class="pv-seg-labels">'+sp.topics.map(t=>'<span>'+esc(t.title.split(/[ ,]/)[0])+'</span>').join("")+'</span>'));
+    // Achievements
+    const ach=window.eviaStats.achievements(S),earned=ach.list.filter(x=>x.earned);
+    out.push(card("ach","Achievements",num(ach.count)+'<small> / '+ach.list.length+'</small>',ach.fresh.length?"New one earned":"earned",earned.length?'<span class="pv-badges">'+earned.slice(0,6).map((x,i)=>'<span class="pv-badge pv-pop" style="--d:'+(i*70)+'ms" title="'+esc(x.label)+'">'+BADGE+'</span>').join("")+(earned.length>6?'<span class="pv-badge more">+'+(earned.length-6)+'</span>':"")+'</span>':empty("Your first one isn’t far away")));
+    return out;
+  }
+
+  /* ---------- Deep dives ---------- */
+  function sheet(kicker,title,body){
+    const root=document.getElementById("modal-root");
+    root.innerHTML='<div class="overlay pv-overlay"><section class="sheet pr-sheet pv-sheet" role="dialog" aria-modal="true" aria-labelledby="pv-sheet-title"><div class="sheet-head"><div><div class="chat-kicker">'+kicker+'</div><h2 id="pv-sheet-title">'+title+'</h2></div><button class="close" id="pv-close" type="button" aria-label="Close">×</button></div><div class="pr-body">'+body+'</div></section></div>';
+    const close=()=>{const o=root.querySelector(".overlay");if(!o||reduced()){root.innerHTML="";return}o.classList.add("pv-closing");setTimeout(()=>{if(root.contains(o))root.innerHTML=""},180)};
+    document.getElementById("pv-close").onclick=close;
+    root.querySelector(".overlay").addEventListener("click",e=>{if(e.target.classList.contains("overlay"))close()});
+    const h=document.getElementById("pv-sheet-title");h.setAttribute("tabindex","-1");h.focus({preventScroll:true});
+    const el=root.querySelector(".pv-sheet");play(el,true);
+    return el;
+  }
+  const note=text=>'<p class="pv-note"><span aria-hidden="true">💡</span>'+text+'</p>';
+  const stat=(label,value)=>'<div class="pv-stat"><span>'+label+'</span><strong>'+value+'</strong></div>';
+
+  function deep(id,D){
+    const {S,a,verdict}=D,T=term();
+    if(id==="where"){
+      const p=readJson("evia7-profile",{}),rd=window.eviaReviewDue&&window.eviaReviewDue(),reviews=window.eviaGetReviews?window.eviaGetReviews():[];
+      const el=sheet("MY PROGRESS","Where you are",
+        '<div class="pv-deep-hero">'+num(a.ksbPct,"%")+'<span>of '+esc(T.many)+' have evidence</span></div>'+timeline(a.timePct,a.ksbPct,true)+
+        '<div class="pv-stats">'+
+          (a.timePct!=null?stat("Through your course",a.timePct+"%"):"")+
+          (verdict?stat("Pace",'<em class="pv-verdict '+verdict.cls+'"><i aria-hidden="true">'+verdict.icon+'</i>'+verdict.text+'</em>'):"")+
+          (S.weeksLeft!=null?stat("Weeks left",S.weeksLeft):"")+
+          stat((nvqOn()?"Site jobs":"Units")+" not started",S.unitsLeft)+
+          (S.weeksPerUnit!=null?stat("Time for each one","about "+Math.max(1,Math.floor(S.weeksPerUnit))+" weeks"):"")+
+          (p.start&&p.end?stat("Course dates",shortDate(p.start)+" – "+longDate(p.end)):"")+
+          (rd?stat("Next review",rd.days<0?"Overdue · was due "+shortDate(rd.due):shortDate(rd.due)):"")+
+        '</div>'+
+        (reviews.length?'<h3 class="pv-h">Past reviews</h3><div class="pv-list">'+reviews.map(r=>'<button type="button" class="pv-li" data-review="'+esc(r.id||"")+'"><span>Progress review</span><small>'+esc(longDate(r.date))+'</small>'+CHEV+'</button>').join("")+'</div>':"")+
+        note(verdict&&verdict.cls==="behind"?"To catch up, start a unit you haven’t touched yet: it ticks off the most in one go. Evia can tell you which one.":"Keep adding evidence as you go. Evia can take you through your progress review when it’s due."));
+      el.querySelectorAll("[data-review]").forEach(b=>b.onclick=()=>{if(window.eviaShowReview)window.eviaShowReview(b.dataset.review)});
+    }
+    else if(id==="ksb"){
+      if(nvqOn()){
+        const el=sheet("MY PROGRESS","Your units",window.eviaNvq.progressHtml(a)+note("Answering the knowledge questions and completing site jobs ticks off criteria across all your units."));
+        if(window.eviaNvq.bindProgress)window.eviaNvq.bindProgress(()=>deep("ksb",gather()));
+        return el;
+      }
+      const all=allK(),groups=[["K","Knowledge"],["S","Skills"],["B","Behaviours"]];
+      const el=sheet("MY PROGRESS",esc(T.Many),groups.map(([l,n])=>{
+        const items=all.filter(x=>x[0].startsWith(l));if(!items.length)return"";
+        const d=items.filter(x=>a.evidenced.has(x[0])).length;
+        return '<div class="pv-ksb-group"><div class="pv-ksb-head">'+ring(Math.round(d/items.length*100),40,5,null)+'<span><strong>'+n+'</strong><small>'+d+' of '+items.length+' with evidence</small></span></div><div class="pv-ksb-grid">'+items.map(x=>'<button type="button" class="pv-ksb'+(a.evidenced.has(x[0])?" met":"")+'" data-ksb="'+esc(x[0])+'">'+esc(x[0])+'</button>').join("")+'</div></div>';
+      }).join("")+note("Tap a code to see what it means. Units you haven’t started cover the most missing ones."));
+      el.querySelectorAll("[data-ksb]").forEach(b=>b.onclick=()=>{const it=all.find(x=>x[0]===b.dataset.ksb);if(it&&typeof ksbDetail==="function")ksbDetail(it[0],it[1],a.evidenced.has(it[0]))});
+    }
+    else if(id==="otj"){
+      const wk=D.otjWeeks,log=hours.slice().sort((x,y)=>Number(y.createdAt)-Number(x.createdAt));
+      const el=sheet("MY PROGRESS","Off-the-job hours",
+        '<div class="pv-deep-hero">'+hmBig(S.otjTotal)+'<span>logged in total</span></div>'+
+        columns(wk.map(w=>w.h),wk.map(w=>shortDate(w.start).split(" ")[0]),Math.max(OTJ_WEEK_GOAL*1.4,...wk.map(w=>w.h)),{h:130,goal:OTJ_WEEK_GOAL,goalLabel:OTJ_WEEK_GOAL+" h a week",aria:"Off-the-job hours each week",highlight:wk.length-1})+
+        '<div class="pv-stats">'+stat("This week",hm(S.otjWeek))+stat("This month",hm(S.otjMonth))+stat("Entries",log.length)+'</div>'+
+        (log.length?'<h3 class="pv-h">Your log</h3><div class="pv-list">'+log.map(x=>'<div class="pv-li static"><span class="pv-li-n">'+esc(hm(x.n))+'</span><span class="pv-li-copy"><strong>'+esc(x.description||"")+'</strong><small>'+esc(new Date(Number(x.createdAt)).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}))+'</small></span></div>').join("")+'</div><button type="button" class="pv-link" id="pv-otj-pdf">Download my OTJ log (PDF)</button>':"")+
+        note("Most apprentices need about "+OTJ_WEEK_GOAL+" hours a week; your commitment statement has your exact number. Tell Evia what you did and she’ll log it."));
+      const pdf=el.querySelector("#pv-otj-pdf");if(pdf)pdf.onclick=()=>{const lb=otjBatches[otjBatches.length-1],fresh=hours.some(x=>Number(x.createdAt)>Number(lb?lb.cutoff:0));downloadOTJPDF(fresh?"new":"last")};
+    }
+    else if(id==="tests"){
+      const byType={};D.tests.forEach(t=>{(byType[t.type]=byType[t.type]||[]).push(t)});
+      const NAMES={maths:"Maths",english:"English",epa:nvqOn()?"Knowledge test":"EPA mock",discussion:"Professional discussion"};
+      sheet("MY PROGRESS",nvqOn()?"Knowledge tests":"Tests",
+        (D.tests.length?Object.entries(byType).map(([k,list])=>{
+          const sc=list.map(testPct),best=Math.max(...sc);
+          return '<div class="pv-test"><div class="pv-row-top"><strong>'+esc(NAMES[k]||k)+'</strong><span>best '+best+'% · '+list.length+' taken</span></div>'+line(sc.slice(-12),{h:80,aria:(NAMES[k]||k)+" scores over time"})+'</div>';
+        }).join(""):'<p class="pv-empty">No tests yet.</p>')+
+        note("A score of 80% or more means you’re in good shape. Ask Evia to test you: a few questions a day adds up."));
+    }
+    else if(id==="conf"){
+      const cur=S.confidence.scores,ses=D.sessions,prevS=ses.length>1?ses[ses.length-2].scores:[];
+      if(cur.length<3){sheet("MY PROGRESS","Confidence",'<p class="pv-empty">You haven’t rated your skills yet.</p>'+note("Ask Evia for a confidence check. It takes about two minutes."));return}
+      const areas=cur.map(x=>x.area),prev=prevS.length?areas.map(ar=>{const s=prevS.find(x=>x.area===ar);return s?s.score:0}):null;
+      sheet("MY PROGRESS","Confidence",
+        '<div class="pv-radar-big">'+radar(areas,cur.map(x=>x.score),prev,300)+'</div>'+(prev?'<span class="pv-legend center"><span><i class="now"></i>Now</span><span><i class="prev"></i>Last time</span></span>':"")+
+        '<div class="pv-rows">'+cur.slice().sort((x,y)=>x.score-y.score).map((x,i)=>{const p=prevS.find(s=>s.area===x.area),ch=p?x.score-p.score:0;return '<span class="pv-row"><span class="pv-row-top"><span>'+esc(x.area)+'</span><strong>'+(ch>0?'<em class="pv-up">↑</em> ':ch<0?'<em class="pv-down">↓</em> ':"")+LEVEL[x.score-1]+'</strong></span>'+bar(x.score/4*100,x.score<=2?"low":"",i*50)+'</span>'}).join("")+'</div>'+
+        note("Skills at the top need the most practice. Evia can find you a college task that works on them."));
+    }
+    else if(id==="act"){
+      const months=[];for(let i=5;i>=0;i--){const d=new Date();d.setDate(1);d.setHours(0,0,0,0);d.setMonth(d.getMonth()-i);const s=d.getTime(),e=new Date(d.getFullYear(),d.getMonth()+1,1).getTime();let n=0;D.counts.forEach((v,t)=>{if(t>=s&&t<e)n+=v});months.push({s,n})}
+      sheet("MY PROGRESS","Activity",
+        '<div class="pv-deep-hero">'+num(S.streak)+'<span>week'+(S.streak===1?"":"s")+' in a row</span></div>'+calendar(D.counts,26)+
+        '<h3 class="pv-h">Each month</h3>'+columns(months.map(m=>m.n),months.map(m=>new Date(m.s).toLocaleDateString("en-GB",{month:"short"})),Math.max(4,...months.map(m=>m.n)),{h:110,aria:"Things added each month",highlight:5})+
+        '<div class="pv-stats">'+stat("Longest streak",S.longest+" week"+(S.longest===1?"":"s"))+stat("Evidence packs",S.allPacks)+stat("Last upload",S.lastUpload?shortDate(S.lastUpload):"None yet")+'</div>'+
+        note("Adding a little every week beats a lot at once. Evidence, hours and supporting files all count."));
+    }
+    else if(id==="quality"){
+      const checks=(S.checks||[]).slice().sort((x,y)=>x.covered.length/x.terms.length-y.covered.length/y.terms.length);
+      sheet("MY PROGRESS","Evidence quality",
+        (S.coverage!=null?'<div class="pv-dial-big">'+dial(S.coverage)+'<div class="pv-dial-num">'+num(S.coverage,"%")+'<span>key points covered</span></div></div>':'<p class="pv-empty">Submit a unit with a write-up and Evia will score it.</p>')+
+        (checks.length?'<div class="pv-rows">'+checks.map((c,i)=>{const p=Math.round(c.covered.length/c.terms.length*100);return '<span class="pv-row"><span class="pv-row-top"><span>'+esc(c.u.name)+'</span><strong>'+p+'%</strong></span>'+bar(p,p<50?"low":p>=80?"good":"",i*50)+'<small class="pv-row-note">'+c.photos+' photo'+(c.photos===1?"":"s")+' · '+c.words+' words'+(c.missing.length?' · missing: '+esc(c.missing.slice(0,4).join(", "))+(c.missing.length>4?"…":""):"")+'</small></span>'}).join("")+'</div>':"")+
+        note("Strong evidence has 5 or more photos and mentions each key point. Ask Evia to check your evidence and she’ll tell you exactly what to add."));
+    }
+    else if(id==="targets"){
+      const T2=window.eviaTargets,tg=T2?T2.mine():[];
+      sheet("MY PROGRESS","Targets",
+        (tg.length?'<div class="pv-rows">'+tg.map((t,i)=>{const p=T2.progress(t,S);return '<span class="pv-row"><span class="pv-row-top"><span>'+esc(t.title)+'</span><strong>'+(t.done?"Done":Math.round(p.pct*100)+"%")+'</strong></span>'+bar(p.pct*100,p.pct>=1?"good":"",i*60)+'<small class="pv-row-note">'+esc(p.text||"")+(t.due&&!t.done?(p.text?" · ":"")+"by "+esc(shortDate(t.due)):"")+'</small></span>'}).join("")+'</div>':'<p class="pv-empty">No targets yet.</p>')+
+        note("Targets are set at your progress review and tick off on their own as you go. Evia can take you through your review."));
+    }
+    else if(id==="scen"){
+      const sp=S.scenarios;
+      sheet("MY PROGRESS","Real-life scenarios",
+        '<div class="pv-rows">'+sp.topics.map((t,i)=>'<span class="pv-row"><span class="pv-row-top"><span>'+esc(t.title)+'</span><strong>'+t.done+' of '+t.total+'</strong></span>'+bar(t.total?t.done/t.total*100:0,t.done===t.total?"good":"",i*60)+'</span>').join("")+'</div>'+
+        note("These cover safeguarding, Prevent, British values and equality. Ask Evia to upskill you and she’ll pick one."));
+    }
+    else if(id==="ach"){
+      sheet("MY PROGRESS","Achievements",window.eviaStats.badgesHtml(S));
+      window.eviaStats.markSeen(window.eviaStats.achievements(S).fresh.map(x=>x.id));
+    }
+  }
+
+  /* ---------- Animation: each card plays once as it scrolls into view ---------- */
+  function countUp(el){
+    const to=Number(el.dataset.to)||0,start=performance.now(),dur=900;
+    const step=t=>{const k=Math.min(1,(t-start)/dur),e=1-Math.pow(1-k,3);el.textContent=Math.round(to*e);if(k<1)requestAnimationFrame(step)};
+    el.textContent="0";requestAnimationFrame(step);
+  }
+  function play(el,now){
+    if(!el)return;
+    if(reduced()){el.classList.add("pv-in","pv-still");return}
+    el.classList.add("pv-anim");
+    const go=()=>{void el.offsetWidth;el.classList.add("pv-in");el.querySelectorAll(".pv-num").forEach(countUp)};
+    if(now){requestAnimationFrame(()=>requestAnimationFrame(go));return}
+    return go;
+  }
+  function observe(root){
+    const list=[...root.querySelectorAll(".pv-card")];
+    if(reduced()||!("IntersectionObserver" in window)){list.forEach(c=>play(c,true));return}
+    const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){io.unobserve(e.target);const go=play(e.target);if(go)requestAnimationFrame(()=>requestAnimationFrame(go))}}),{threshold:.2});
+    list.forEach(c=>{c.classList.add("pv-anim");io.observe(c)});
+  }
+
+  /* ---------- The page ---------- */
+  function page(){
+    document.getElementById("page-title").textContent="My progress";
+    let D;try{D=gather()}catch(err){console.error("My progress failed",err);$("#screen").innerHTML='<p class="pv-empty">Evia couldn’t work out your progress just now.</p>';return}
+    const rd=window.eviaReviewDue&&window.eviaReviewDue();
+    const reviewLine=rd?'<p class="pv-review-line'+(rd.days<=14?" soon":"")+'">'+(rd.days<0?"Your progress review is overdue. It was due "+shortDate(rd.due)+".":rd.days===0?"Your progress review is due today.":"Next progress review: "+longDate(rd.due)+(rd.days<=14?" · in "+rd.days+" day"+(rd.days===1?"":"s"):""))+'</p>':"";
+    $("#screen").innerHTML='<header class="ui-page-head"><h1>My progress</h1><span>'+esc(typeof data==="function"?data().name:"")+'</span></header>'+reviewLine+'<div class="pv-grid">'+cards(D).join("")+'</div>';
+    document.querySelectorAll("[data-pv]").forEach(b=>b.onclick=()=>deep(b.dataset.pv,gather()));
+    observe(document.getElementById("screen"));
+  }
+  window.eviaProgressPage=page;
+  window.eviaProgressDeep=id=>deep(id,gather());
+  window.eviaHM=hm;
+})();
