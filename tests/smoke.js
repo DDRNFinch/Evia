@@ -50,7 +50,10 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>nav("home"));await page.waitForTimeout(450);
     await page.evaluate(()=>window.chat());
     await page.waitForFunction(()=>{const c=document.getElementById("chat");return c&&!c.querySelector(".evia-thinking")},null,{timeout:15000});
-    check("Chat menu has My stats, Test me and Progress review",await page.evaluate(()=>{const t=[...document.querySelectorAll("#chat .chat-pill")].map(b=>b.innerText.trim());return ["My stats","Test me","Progress review"].every(x=>t.includes(x))}));
+    check("Chat menu has My stats, Test me, Progress review and My targets",await page.evaluate(()=>{const t=[...document.querySelectorAll("#chat .chat-pill")].map(b=>b.innerText.trim());return ["My stats","Test me","Progress review","My targets"].every(x=>t.includes(x))}));
+    await page.click('#chat .chat-pill >> text="My targets"');
+    await page.waitForSelector("#chat .chat-targets .tg-row",{state:"visible",timeout:15000});
+    check("My targets sets targets and shows them with progress",await page.evaluate(()=>window.eviaTargets.mine().length>=3&&document.querySelectorAll("#chat .chat-targets .pg-bar").length>=3));
     await page.click('#x');await page.waitForTimeout(300);
     check("Profile button comes back after closing the chat",await page.evaluate(()=>getComputedStyle(document.getElementById("profile-btn")).display!=="none"));
 
@@ -76,6 +79,9 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("The first-run demo can point at K2 and S2 on Progress",await page.$('[data-ksb-code="K2"]')&&await page.$('[data-ksb-code="S2"]'));
     await page.evaluate(()=>{document.body.classList.remove("evia-onboarding");nav("home")});await page.waitForTimeout(450);
 
+    await page.evaluate(()=>window.eviaStartReview());await page.waitForTimeout(400);
+    for(let i=0;i<10;i++){const t=await page.evaluate(()=>document.getElementById("rv-next").textContent);await page.click("#rv-next");await page.waitForTimeout(200);if(t==="Save review")break}
+    check("A full review clicks through and replaces the targets",await page.evaluate(()=>{const r=JSON.parse(localStorage.getItem("evia7-progress-reviews")||"[]").pop();return r&&r.format===2&&window.eviaTargets.mine().every(t=>t.reviewId===r.id)}));
     await page.evaluate(()=>window.eviaSetShape("gear"));
     check("Outline Evia shapes draw on the Evia button",await page.$("#evia-fab .evia-outline"));
     await page.evaluate(()=>window.eviaSetShape("circle"));

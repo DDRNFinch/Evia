@@ -134,6 +134,11 @@
     if(kind==="stats")go(showStats);
     else if(kind==="course")go(()=>nav("course"));
     else if(kind==="learning")go(()=>nav("learning"));
+    else if(kind==="targets"||kind==="review"){
+      const label=kind==="targets"?"My targets":"Progress review";
+      const run=()=>{const item=menuItems.find(x=>x.label===label);if(item)item.run()};
+      if(inChat)queue=queue.then(run);else{window.chat({quiet:true});setTimeout(run,50)}
+    }
     else if(kind==="scenario")go(()=>window.eviaScenarios&&window.eviaScenarios.openNext());
     else if(kind==="confidence")go(()=>window.eviaPractice&&window.eviaPractice.openConfidence());
     else if(kind==="test"){
@@ -162,6 +167,7 @@
     $("#screen").innerHTML=
       '<div class="ui-page">'+
         (st?S.heroHtml(st):"")+
+        (window.eviaTargets?(window.eviaTargets.check(false),window.eviaTargets.cardHtml()):"")+
         '<section class="ui-card ui-groups">'+GROUPS.map(([letter,label],gi)=>{
           const items=all.filter(x=>x[0].startsWith(letter));if(!items.length)return"";
           const done=items.filter(x=>a.evidenced.has(x[0])).length,pct=Math.round(done/items.length*100),open=!!expanded[letter]||document.body.classList.contains("evia-onboarding"); /* the demo points at K2 and S2, so keep groups open */
@@ -172,6 +178,7 @@
         }).join("")+'<p class="ui-help">Tap a KSB to see its wording and the evidence mapped to it.</p></section>'+
         (st?S.sectionHtml(st):"")+
       '</div>';
+    if(window.eviaTargets){window.eviaTargets.bind(document.getElementById("pg-targets"),()=>progressScreen(true))}
     if(st)S.animate(document.getElementById("screen"),still===true);
     document.querySelectorAll("[data-group]").forEach(b=>b.onclick=()=>{const y=window.scrollY;expanded[b.dataset.group]=!expanded[b.dataset.group];progressScreen(true);window.scrollTo(0,y)});
     document.querySelectorAll("[data-st-action]").forEach(b=>b.onclick=()=>{if(!window.eviaPractice)return;if(b.dataset.stAction==="tests")window.eviaPractice.openHub();else if(b.dataset.stAction==="scenarios"){if(window.eviaScenarios)window.eviaScenarios.openTopics()}else window.eviaPractice.openConfidence()});
@@ -429,7 +436,7 @@
       const c=chatBox();if(!c||gen!==chatGen)return;
       const box=document.createElement("div");box.className="chat-options ui-replies";
       const b=document.createElement("button");b.type="button";b.className="chat-pill ui-pill-primary";b.innerHTML="<strong>"+escHtml(n.action.label)+"</strong>";
-      b.onclick=()=>{box.remove();if(n.action.kind!=="test"&&n.action.kind!=="confidence")userSays(n.action.label);runNudge(n)};
+      b.onclick=()=>{box.remove();if(!["test","confidence","targets","review"].includes(n.action.kind))userSays(n.action.label);runNudge(n)};
       box.appendChild(b);c.appendChild(box);scrollChat();
     });
   }
@@ -444,17 +451,45 @@
     });
   }
   function statsFromMenu(){userSays("My stats");myStats()}
+  /* My targets: the targets from the latest review, or a new set from Evia if there aren't any. */
+  function targetsFromMenu(){
+    userSays("My targets");
+    const T=window.eviaTargets,{list,created}=T.ensure();
+    if(!list.length){say("I need a bit more from you first. Capture some evidence and I’ll set targets.");replies([{label:"Something else",run:somethingElse}]);return}
+    T.check(false);
+    const now=T.mine(),S=T.stats(),done=now.filter(t=>t.done).length;
+    const open=now.filter(t=>!t.done).map(t=>({t,p:T.progress(t,S).pct})).sort((x,y)=>y.p-x.p);
+    if(created)say("You didn’t have any targets yet, so I’ve set "+plural(now.length,"target")+" based on how you’re getting on.");
+    else say(done===now.length?"You’ve completed all "+now.length+" targets. Brilliant. A progress review will set new ones.":"You’ve completed <strong>"+done+" of "+now.length+"</strong> targets."+(open[0]&&open[0].p>0?" Closest to done: <strong>"+escHtml(open[0].t.title)+"</strong> ("+Math.round(open[0].p*100)+"%).":""));
+    const gen=chatGen;
+    queue=queue.then(()=>{
+      const c=chatBox();if(!c||gen!==chatGen)return;
+      const box=document.createElement("div");box.className="chat-targets pg-animate";box.innerHTML=T.cardHtml({chat:true});c.appendChild(box);
+      T.bind(box);scrollChat();
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{const card=box.querySelector(".pg-card");if(card)card.classList.add("pg-in")}));
+    });
+    replies([{label:"See them on Progress",primary:true,run:()=>{closeChat();setTimeout(()=>{nav("progress");setTimeout(()=>{const el=document.getElementById("pg-targets");if(el)el.scrollIntoView({block:"start",behavior:"smooth"})},400)},60)}},{label:"Start a progress review",run:reviewFromMenu},{label:"Something else",run:somethingElse}]);
+  }
+  /* Progress review: a short click-through of sections; finishing it sets new targets. */
+  function reviewFromMenu(){
+    userSays("Progress review");
+    const last=(window.eviaGetReviews?window.eviaGetReviews():[])[0];
+    say("I’ll take you through your review in a few short sections: evidence, learning, tests, skills and staying safe. At the end I’ll set your new targets. It takes about 3 minutes."+(last?" Your last review was on "+new Date(last.date).toLocaleDateString("en-GB",{day:"numeric",month:"short"})+".":""));
+    replies([{label:"Start my review",primary:true,run:()=>{closeChat();setTimeout(window.eviaStartReview,80)}},{label:"Not now",run:somethingElse}]);
+  }
   function enhanceChat(opts){
     const c=chatBox();if(!c)return;
     queue=Promise.resolve();chatGen++;
     const greet=c.querySelector(".bubble.evia"),name=firstName();
     if(greet)greet.innerHTML=pick([partOfDay()+(name?" "+escHtml(name):"")+". What would you like to do?","Hi"+(name?" "+escHtml(name):"")+". How can I help today?"]);
     menuItems=[];
-    /* Confidence check lives in Practice now, so the menu keeps three options. */
+    /* Confidence check lives in Practice now; its place in the menu goes to My targets. */
     c.querySelectorAll("[data-chat-option]").forEach(b=>{
       const label=b.textContent.trim(),original=b.onclick;
-      if(label==="Confidence check"&&window.eviaPractice){b.remove();return}
-      const item=label==="Portfolio check"?{label:"My stats",run:statsFromMenu}:{label,run:()=>original&&original.call(b)};
+      const item=label==="Portfolio check"?{label:"My stats",run:statsFromMenu}
+        :label==="Confidence check"&&window.eviaTargets?{label:"My targets",run:targetsFromMenu}
+        :label==="Progress review"&&window.eviaStartReview?{label,run:reviewFromMenu}
+        :{label,run:()=>original&&original.call(b)};
       menuItems.push(item);
       b.innerHTML="<strong>"+escHtml(item.label)+"</strong>";
       b.onclick=()=>{const box=b.closest(".chat-options");if(box)box.remove();item.run()};

@@ -409,6 +409,12 @@
     return '<div class="card targets-card"><div class="section-title">TARGETS</div><h2>My targets</h2>'+targets.map(t=>'<div class="target-item '+targetStatus(t)+'"><div><strong>'+escLocal(t.title)+'</strong><p>'+escLocal(t.reason)+'</p><small>Due '+new Date(t.deadline+"T00:00:00").toLocaleDateString("en-GB")+(targetStatus(t)==="overdue"?" · Overdue":"")+'</small></div>'+(targetStatus(t)==="complete"?'<b>Completed</b>':'<button class="secondary" data-target-complete="'+escLocal(t.id||"")+'">Mark complete</button>')+'</div>').join("")+'</div>';
   }
   function bindTargets(){ syncTargets(false); }
+  /* reviews.js builds the new click-through review on top of these saved fields, so old screens and the PDF keep working. */
+  window.eviaBuildReviewRecord=()=>{
+    const m=metrics(),test=latestTests(),p=read("evia7-profile",{});
+    return {course,date:new Date().toISOString(),learner:String(p.name||"").trim(),profile:{start:p.start||"",end:p.end||""},metrics:m,tests:{discussion:test.discussion?.pct??null,epa:test.epa?.pct??null,maths:academicEnabled("maths")?(test.maths?.pct??null):null,english:academicEnabled("english")?(test.english?.pct??null):null},testDetails:m.tests,confidence:m.confidenceRatings,previousConfidence:m.previousConfidenceRatings,autoSummary:reviewAutoSummary(m),ksbFollowUp:reviewKsbFollowUp(m)};
+  };
+  window.eviaOpenLegacyReview=openSavedReview;
   window.eviaTargetsCardHtml=targetsCardHtml;
   window.eviaBindTargets=bindTargets;
   window.eviaTestMe=eviaTestMe;
