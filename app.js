@@ -54,78 +54,6 @@ function render(){
  else if(screen==="portfolio")portfolio();
  else learning();
 }
-async function openUnit(i){
- const profileBtn=document.getElementById("profile-btn");
- if(profileBtn)profileBtn.style.display="none";
- unit=i;
- const u=data().u[i];
- if(!u){nav("course");return}
- $("#page-title").textContent=u[0];
- const existingRaw=evidence.filter(e=>e.c===course&&e.u===u[0]);
- const existing=window.eviaGetEvidencePhotoData?await Promise.all(existingRaw.map(async e=>Object.assign({},e,{p:await window.eviaGetEvidencePhotoData(e)}))):existingRaw;
- $("#screen").innerHTML='<button class="secondary" id="back-course" type="button">‹ Back to course</button>'+
- '<div class="card"><div class="section-title">Unit '+(i+1)+'</div><h2>'+esc(u[0])+'</h2><p>Capture evidence for the work you have completed. Evia helps you gather evidence; your assessor decides whether it meets the required standard.</p></div>'+
- '<div class="card"><div class="section-title">Linked KSBs</div>'+u[1].map(k=>'<div class="ksb" style="margin-bottom:10px"><span class="code">'+esc(code(k))+'</span><div class="ksbtext">'+esc(text(k))+'</div></div>').join("")+'</div>'+
- '<div class="evidence-capture-stack"><div class="evidence-capture-tile evidence-job-tile"><div class="section-title">EVIDENCE PACK</div><h3>'+esc(u[0])+'</h3><p>Capture the whole job in one pack. Take photos from the beginning, middle and end of the job.</p></div><div class="evidence-capture-tile"><div class="section-title">CAPTURE PHOTOS</div><div class="unit-photo-actions"><button type="button" class="unit-photo-btn" id="take-evidence-photo"><span class="unit-photo-btn-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="18" height="14" rx="3"></rect><path d="M8 6.5l1.4-2h5.2l1.4 2"></path><circle cx="12" cy="13.5" r="3.5"></circle></svg></span><strong>Camera</strong></button><button type="button" class="unit-photo-btn" id="choose-evidence-photos"><span class="unit-photo-btn-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"></rect><circle cx="8.5" cy="9.5" r="1.6"></circle><path d="M4 16.5l5-5 4 4 3-3 4 4"></path></svg></span><strong>Gallery</strong></button><input id="unit-camera" type="file" accept="image/*" capture="environment"><input id="unit-gallery" type="file" accept="image/*" multiple></div><div id="unit-photo-preview" class="photo-grid"></div><div class="evidence-guidance-sub"><div class="section-title">THINGS TO CAPTURE</div><p>mixing mortar · ratio · silos · pre-mix · gauging · hand/mechanical · mortar quantity · safety signage · teamwork</p></div></div><div class="evidence-section-divider"></div><div class="evidence-capture-tile evidence-writeup-tile"><div class="section-title">WRITE-UP</div><textarea id="unit-notes" placeholder="Write about the process and what you did…"></textarea><div class="evidence-guidance-sub"><div class="section-title">THINGS TO MENTION</div><p>ratio · silos · pre-mix · gauging · hand/mechanical · mortar quantity · safety signage · teamwork · health · wellbeing</p></div><div class="row" style="margin-top:12px"><button class="primary" id="save-unit-evidence" type="button">Save evidence</button></div></div></div>'+
- (existing.length?'<div class="section-title">Saved evidence</div>'+existing.slice().reverse().map(e=>'<div class="card"><div class="progress-row"><strong>'+esc(e.d)+'</strong><span class="status done">Saved</span></div>'+(e.p&&e.p.length?'<div class="photo-grid">'+e.p.map(p=>'<img class="thumb" src="'+p+'" alt="Evidence photo">').join("")+'</div>':"")+(e.w?'<p style="white-space:pre-wrap">'+esc(e.w)+'</p>':"")+'</div>').join(""):"");
- const camera=$("#unit-camera"),gallery=$("#unit-gallery"),preview=$("#unit-photo-preview"),notes=$("#unit-notes"),saveEvidence=$("#save-unit-evidence");
- const takePhoto=$("#take-evidence-photo"),choosePhotos=$("#choose-evidence-photos");
- let photoReadBusy=false;
- const bytesToDataUrl=(bytes,type)=>{
-   let binary="";
-   const chunk=0x8000;
-   for(let i=0;i<bytes.length;i+=chunk)binary+=String.fromCharCode(...bytes.subarray(i,Math.min(i+chunk,bytes.length)));
-   return "data:"+(type||"image/jpeg")+";base64,"+btoa(binary);
- };
- const readPhoto=async f=>{
-   if(!f)throw new Error("No photo selected");
-   if(!/^image\//i.test(f.type))throw new Error("Unsupported photo type");
-   if(!f.size)throw new Error("The selected photo is empty");
-   if(typeof f.arrayBuffer==="function"){
-     try{
-       const buffer=await f.arrayBuffer();
-       if(buffer&&buffer.byteLength)return bytesToDataUrl(new Uint8Array(buffer),f.type);
-     }catch(e){}
-   }
-   return new Promise((resolve,reject)=>{
-     const r=new FileReader();
-     r.onload=()=>r.result?resolve(r.result):reject(new Error("Photo data was empty"));
-     r.onerror=()=>reject(r.error||new Error("Could not read photo"));
-     r.onabort=()=>reject(new Error("Photo read was cancelled"));
-     try{r.readAsDataURL(f)}catch(e){reject(e)}
-   });
- };
- const addPhotoFiles=async files=>{
-   const selected=[...files].filter(f=>/^image\//i.test(f.type)&&f.size>0).slice(0,Math.max(0,6-photos.length));
-   if(!selected.length){
-     alert("Please choose a valid image photo.");
-     return;
-   }
-   photoReadBusy=true;saveEvidence.disabled=true;saveEvidence.textContent="Adding photos…";
-   try{
-     const loaded=[];
-     for(const file of selected)loaded.push(await readPhoto(file));
-     photos.push(...loaded);
-     preview.innerHTML=photos.map(p=>'<img class="thumb" src="'+p+'" alt="Evidence photo">').join("");
-   }catch(e){
-     console.error("Evia evidence photo read failed",e);
-     alert("The photo could not be added. Please try again.");
-   }finally{
-     photoReadBusy=false;saveEvidence.disabled=false;saveEvidence.textContent="Save evidence";
-   }
- };
- takePhoto.onclick=()=>camera.click();
- choosePhotos.onclick=()=>gallery.click();
- camera.onchange=()=>{const files=camera.files;addPhotoFiles(files).finally(()=>{camera.value=""})};
- gallery.onchange=()=>{const files=gallery.files;addPhotoFiles(files).finally(()=>{gallery.value=""})};
- $("#back-course").onclick=()=>nav("course");
- $("#save-unit-evidence").onclick=async()=>{
-   if(photoReadBusy)return;
-   const entry={c:course,u:u[0],d:new Date().toLocaleDateString("en-GB"),savedAt:new Date().toLocaleString("en-GB"),p:photos.slice(),w:notes.value.trim(),k:u[1].filter(k=>/^[SKB]\d+\|/.test(k)).map(k=>code(k))};
-   if(!entry.p.length&&!entry.w){alert("Add at least one photo or a note before saving.");return}
-   evidence.push(entry);persist();if(window.eviaCheckTargets)window.eviaCheckTargets();openUnit(i);
- };
-}
 function formatDateTime(ts){
  const d=new Date(ts);
  return d.toLocaleString("en-GB",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
@@ -324,10 +252,6 @@ function courseProgressMeta(){
  };
  return metas[course]||metas.bricklayer;
 }
-function progressBar(label,pct,detail){
- const safe=Math.max(0,Math.min(100,Number(pct)||0));
- return '<div class="progress-metric"><div class="progress-metric-head"><strong>'+esc(label)+'</strong><span>'+esc(detail)+'</span></div><div class="progress-track"><span style="width:'+safe+'%"></span></div></div>';
-}
 function ksbDetail(codeValue,wording,mapped){
  const mappedEntries=evidence.filter(e=>e.c===course&&Array.isArray(e.k)&&e.k.includes(codeValue));
  const units=[...new Set(mappedEntries.map(e=>e.u))];
@@ -345,70 +269,6 @@ function ksbDetail(codeValue,wording,mapped){
    '<div class="ksb-modal-foot">'+(mapped?'<span class="ksb-met">✓ Evidence captured</span>':'<span class="ksb-not-met">Not yet captured</span>')+(supporting.length?'<span class="ksb-supporting-status">○ Supporting evidence attached</span>':"")+(units.length?'<span>'+units.length+' unit'+(units.length===1?"":"s")+" mapped</span>":"")+'</div>'+
    '</section></div>';
  document.getElementById("ksb-close").onclick=()=>document.getElementById("modal-root").innerHTML="";
-}
-function progress(){
- $("#page-title").textContent="Progress";
- const all=allK();
- const ev=new Set(evidence.filter(e=>e.c===course).flatMap(e=>Array.isArray(e.k)?e.k:[]));
- const met=all.filter(x=>ev.has(x[0])).length;
- const completion=all.length?Math.round(met/all.length*100):0;
- const totalOTJ=hours.reduce((n,x)=>n+Number(x.n||0),0);
- const meta=courseProgressMeta();
- const p=JSON.parse(localStorage.getItem("evia7-profile")||"{}");
- const startDate=p.start?new Date(p.start+"T00:00:00"):null;
- const endDate=p.end?new Date(p.end+"T23:59:59"):null;
- let timePct=0,timeDetail="Add your start and end dates in Profile";
- if(startDate&&!isNaN(startDate)&&endDate&&!isNaN(endDate)&&endDate>startDate){
-   const now=Date.now();
-   timePct=Math.round(Math.max(0,Math.min(1,(now-startDate.getTime())/(endDate.getTime()-startDate.getTime())))*100);
-   const epaEnd=new Date(endDate);
-   epaEnd.setMonth(epaEnd.getMonth()+meta.epaMonths);
-   timeDetail="Course end "+endDate.toLocaleDateString("en-GB")+" · EPA window to "+epaEnd.toLocaleDateString("en-GB");
- }
- const otjDetail=meta.otjTarget?totalOTJ.toFixed(1)+" / "+meta.otjTarget+" hours":totalOTJ.toFixed(1)+" hours logged";
- const otjPct=meta.otjTarget?Math.round(totalOTJ/meta.otjTarget*100):0;
- const otjBar=meta.otjTarget?progressBar("Off-the-job",otjPct,otjDetail):progressBar("Off-the-job",0,otjDetail+" · target follows funding rules");
- $("#screen").innerHTML=
-   '<div class="card progress-overview"><div class="section-title">'+esc(data().std)+'</div><h2>Progress</h2>'+
-   progressBar("Course time",timePct,timeDetail)+
-   progressBar("Course completion",completion,met+" of "+all.length+" KSBs with evidence")+
-   otjBar+
-   '<div class="progress-note">EPA is a separate assessment phase after the planned course end. It does not count as on-programme course time.</div></div>'+
-   '<div class="card ksb-overview"><div class="section-title">KSB progress</div><div class="ksb-grid">'+
-   all.map(x=>{const hasSupport=supportingMeta().some(s=>s.course===course&&Array.isArray(s.ksbs)&&s.ksbs.includes(x[0]));return '<button type="button" class="ksb-tile '+(ev.has(x[0])?"met":"")+(hasSupport?" has-supporting":"")+'" data-ksb-code="'+esc(x[0])+'"><span>'+esc(x[0])+'</span><span class="ksb-statuses">'+(ev.has(x[0])?'<i aria-label="Evidence captured">✓</i>':"")+(hasSupport?'<i class="ksb-supporting-dot" aria-label="Supporting evidence attached">○</i>':"")+'</span></button>'}).join("")+
-   '</div><p class="ksb-grid-help">Tap a KSB to see the full wording and the evidence mapped to it.</p></div>';
- document.querySelectorAll("[data-ksb-code]").forEach(b=>b.onclick=()=>{
-   const item=all.find(x=>x[0]===b.dataset.ksbCode);
-   if(item)ksbDetail(item[0],item[1],ev.has(item[0]));
- });
-
-}async function portfolio(){
- $("#page-title").textContent="Portfolio";
- const es=evidence.filter(e=>e.c===course);
- const downloaded=JSON.parse(localStorage.getItem("evia7-downloaded-unit-pdfs")||"{}");
- const reviews=window.eviaGetReviews?window.eviaGetReviews():[];
- const supporting=supportingMeta().filter(x=>x.course===course);
- const units=data().u;
- const evidenceCount=name=>es.filter(e=>e.u===name).length;
- const card=(name,index)=>'<button type="button" class="portfolio-app-tile" data-unit-open="'+esc(name)+'"><span class="portfolio-app-count">'+evidenceCount(name)+'</span><span class="portfolio-app-name">'+esc(name)+'</span></button>';
- $("#screen").innerHTML='<div class="card portfolio-intro"><div class="section-title">PORTFOLIO</div><h2>Evidence</h2></div><div class="portfolio-grid portfolio-app-grid">'+
-   (evidenceCount("Personal protective equipment")?card("Personal protective equipment",-1):"")+
-   units.map((u,i)=>card(u[0],i)).join("")+
-   '<button type="button" class="portfolio-app-tile portfolio-app-special" id="supporting-portfolio-file"><span class="portfolio-app-count">'+supporting.length+'</span><span class="portfolio-app-name">Supporting Evidence</span></button>'+
-   '<button type="button" class="portfolio-app-tile portfolio-app-special" id="open-review-files"><span class="portfolio-app-count">'+reviews.length+'</span><span class="portfolio-app-name">Reviews</span></button>'+
-   '<button type="button" class="portfolio-app-tile portfolio-app-special" id="open-learning-log-files"><span class="portfolio-app-count">'+hours.length+'</span><span class="portfolio-app-name">Learning Logs</span></button>'+
- '</div>';
- document.querySelectorAll("[data-unit-open]").forEach(b=>b.onclick=()=>{
-   const name=b.getAttribute("data-unit-open");
-   if(window.eviaOpenSendToPortfolio)window.eviaOpenSendToPortfolio(name);
-   else if(window.downloadUnitEvidencePack)window.downloadUnitEvidencePack(name);
- });
- const supportingCard=$("#supporting-portfolio-file");
- if(supportingCard)supportingCard.onclick=()=>openSupportingPortfolio();
- const reviewOpen=$("#open-review-files");
- if(reviewOpen)reviewOpen.onclick=()=>openSavedReviews();
- const learningOpen=$("#open-learning-log-files");
- if(learningOpen)learningOpen.onclick=()=>openSavedLearningLogs();
 }
 function openSavedLearningLogs(){
  const entries=hours.slice().reverse();
@@ -494,148 +354,15 @@ function chat(){
  $("#x").onclick=()=>{ $("#modal-root").innerHTML=""; fab.classList.remove("chat-active"); const profileBtn=$("#profile-btn"); if(profileBtn && ["learning","course","progress","portfolio"].includes(screen))profileBtn.style.display="flex"; };
  const scroll=()=>$("#chat").scrollTop=$("#chat").scrollHeight;
  const addBubble=v=>$("#chat").insertAdjacentHTML("beforeend",'<div class="bubble user">'+esc(v)+'</div>');
- const thinking=()=>{
-   const el=document.createElement("div");
-   el.className="bubble evia evia-thinking";
-   el.innerHTML='<span class="thinking-label">Evia is thinking</span><span class="thinking-dots"><i></i><i></i><i></i></span>';
-   $("#chat").appendChild(el);scroll();return el;
- };
- const eviaReply=(html,delay=900)=>{
-   const t=thinking();
-   setTimeout(()=>{t.outerHTML='<div class="bubble evia" data-thought-complete="1">'+html+'</div>';scroll()},delay);
- };
  /* Evia's messages "think" one at a time, so several added together still arrive in order. */
  let thoughtChainEnd=0;
  const chatObserver=new MutationObserver(mutations=>{mutations.forEach(m=>m.addedNodes.forEach(node=>{if(!(node instanceof HTMLElement))return;const list=[];if(node.matches&&node.matches(".bubble.evia"))list.push(node);if(node.querySelectorAll)list.push(...node.querySelectorAll(".bubble.evia"));list.forEach(el=>{if(el.classList.contains("evia-thinking")||el.dataset.thoughtComplete==="1"||el.dataset.thoughtQueued==="1")return;el.dataset.thoughtQueued="1";const html=el.innerHTML;el.className="bubble evia evia-thinking";el.innerHTML='<span class="thinking-label">Evia is thinking</span><span class="thinking-dots"><i></i><i></i><i></i></span>';scroll();const now=Date.now(),revealAt=Math.max(now,thoughtChainEnd)+1200;thoughtChainEnd=revealAt;setTimeout(()=>{el.className="bubble evia";el.dataset.thoughtComplete="1";el.innerHTML=html;scroll()},revealAt-now);});}));});chatObserver.observe($("#chat"),{childList:true,subtree:true});
- const firstName=()=>{
-   const p=JSON.parse(localStorage.getItem("evia7-profile")||"{}");
-   return String(p.name||"").trim().split(/\s+/)[0]||"";
- };
- const confidence=()=>{
-   const bank=confidenceQuestions();
-   if(!bank.length){eviaReply("I do not have any practical skill areas loaded for this course yet.");return}
-   const cycleKey="evia7-confidence-cycle-"+course;
-   let cycle;
-   try{cycle=JSON.parse(localStorage.getItem(cycleKey)||"null")}catch(_){cycle=null}
-   if(!cycle||!Array.isArray(cycle.asked)||cycle.asked.length>=bank.length)cycle={asked:[]};
-   const session={id:"confidence-"+Date.now(),course,startedAt:new Date().toISOString(),scores:[]};
-   let answeredThisSession=0;
-   const nextQuestion=()=>{
-     const nextIndex=bank.findIndex(q=>!cycle.asked.includes(q[0]));
-     if(nextIndex===-1){
-       cycle={asked:[]};
-       localStorage.setItem(cycleKey,JSON.stringify(cycle));
-       return;
-     }
-     const q=bank[nextIndex];
-     const t=thinking();
-     setTimeout(()=>{
-       t.outerHTML='<div class="bubble evia">'+esc(q[1])+'</div><div class="rating-options">'+
-         ["Need more training","Know the basics","Quite confident","I've mastered this"].map((label,n)=>'<button class="rating-pill" data-confidence-rating="'+(n+1)+'"><strong>'+label+'</strong></button>').join("")+
-         '</div>';
-       scroll();
-       document.querySelectorAll("[data-confidence-rating]").forEach(b=>b.onclick=()=>{
-         const score=Number(b.dataset.confidenceRating);
-         addBubble("I’d rate myself "+b.querySelector("strong").textContent.toLowerCase()+".");
-         session.scores.push({area:q[0],score,question:q[1],answeredAt:new Date().toISOString()});
-         if(!cycle.asked.includes(q[0]))cycle.asked.push(q[0]);
-         localStorage.setItem(cycleKey,JSON.stringify(cycle));
-         document.querySelectorAll(".rating-options").forEach(x=>x.remove());
-         answeredThisSession++;
-         if(cycle.asked.length>=bank.length){
-           saveConfidenceHistory([...confidenceHistory(),session]);
-           localStorage.setItem(cycleKey,JSON.stringify({asked:[]}));
-           eviaReply("That confidence cycle is complete. I’ve saved all of your ratings. The next confidence check will start a new cycle.");
-           return;
-         }
-         if(answeredThisSession<3){nextQuestion();return}
-         const remaining=bank.length-cycle.asked.length;
-         $( "#chat" ).insertAdjacentHTML("beforeend",'<div class="bubble evia">Would you like to continue with '+remaining+' confidence questions still to go in this cycle?</div><div class="rating-options"><button class="rating-pill" data-confidence-more="yes"><strong>Yes</strong></button><button class="rating-pill" data-confidence-more="no"><strong>No</strong></button></div>');
-         scroll();
-         document.querySelectorAll("[data-confidence-more]").forEach(b=>b.onclick=()=>{
-           addBubble(b.dataset.confidenceMore==="yes"?"Yes":"No");
-           document.querySelectorAll("[data-confidence-more]").forEach(x=>x.parentElement&&x.parentElement.remove());
-           if(b.dataset.confidenceMore==="yes"){answeredThisSession=0;nextQuestion()}
-           else{
-             saveConfidenceHistory([...confidenceHistory(),session]);
-             eviaReply("That confidence check is complete. I’ve saved your ratings for your progress review.");
-           }
-         });
-       });
-     },900);
-   };
-   nextQuestion();
- };
- const portfolioReview=()=>{
-   const entries=evidence.filter(e=>e.c===course);
-   const startedNames=new Set(entries.map(e=>e.u).filter(n=>data().u.some(u=>u[0]===n)));
-   const rows=data().u.map((u,i)=>{
-     const es=entries.filter(e=>e.u===u[0]);
-     if(!es.length)return null;
-     const photos=es.reduce((n,e)=>n+(Array.isArray(e.photoIds)?e.photoIds.length:(Array.isArray(e.p)?e.p.length:0)),0);
-     const words=es.reduce((n,e)=>n+String(e.w||"").trim().split(/\s+/).filter(Boolean).length,0);
-     const photoLevel=photos<=4?"weak":photos<=9?"good":"strong";
-   const textLevel=words<=49?"weak":words<=99?"good":"strong";
-   const levelValue={weak:1,good:2,strong:3};
-   const average=(levelValue[photoLevel]+levelValue[textLevel])/2;
-   const overall=average<1.5?"weak":average<2.5?"good":"strong";
-   let advice="";
-   if(photoLevel==="weak"&&textLevel==="weak")advice="Collect more photos and add more written detail towards this unit.";
-   else if(photoLevel==="weak")advice="Collect more photos towards this unit.";
-   else if(textLevel==="weak")advice="Add more written detail towards this unit.";
-   else if(overall==="strong")advice="You have built a strong evidence base for this unit.";
-   else advice="This is a good evidence base. You can strengthen it further with more photos or written detail.";
-
-   }).filter(Boolean);
-   const remaining=Math.max(0,data().u.length-startedNames.size);
-   const label=x=>x.charAt(0).toUpperCase()+x.slice(1);
-   const lines=rows.map(r=>'<div class="bubble evia"><strong>'+esc(r.name)+'</strong><br>Evidence: '+label(r.overall)+' · '+r.photos+' photos · '+r.words+' words.<br>'+esc(r.advice)+'</div>').join("");
-   eviaReply('<strong>Portfolio check</strong><br>I’ve reviewed the units you have started and saved evidence for. '+(rows.length?"Here is the current evidence strength:":"There is no saved evidence yet.")+lines+'<br><br><strong>Units remaining:</strong> '+remaining+' of '+data().u.length+'.');
- };
- const progressReview=()=>{
-   const entries=evidence.filter(e=>e.c===course);
-   const units=data().u.length;
-   const covered=new Set(entries.map(e=>e.u).filter(n=>data().u.some(u=>u[0]===n))).size;
-   const completion=units?Math.round(covered/units*100):0;
-   const p=JSON.parse(localStorage.getItem("evia7-profile")||"{}");
-   const startDate=p.start?new Date(p.start+"T00:00:00"):null;
-   const endDate=p.end?new Date(p.end+"T23:59:59"):null;
-   let timeText="I don’t have your apprenticeship dates recorded yet.";
-   if(startDate&&!isNaN(startDate)&&endDate&&!isNaN(endDate)&&endDate>startDate){
-     const now=Math.min(Date.now(),endDate.getTime());
-     const elapsed=Math.max(0,Math.min(1,(now-startDate.getTime())/(endDate.getTime()-startDate.getTime())));
-     const elapsedPct=Math.round(elapsed*100);
-     timeText="About "+elapsedPct+"% of your planned course time has elapsed, compared with "+completion+"% of units having saved evidence.";
-   }
-   const totalOTJ=hours.reduce((n,x)=>n+Number(x.n||0),0);
-   const history=confidenceHistory().filter(x=>x.course===course&&Array.isArray(x.scores));
-   const current=history[history.length-1], previous=history[history.length-2];
-   const currentMap=new Map((current?current.scores:[]).map(x=>[x.area,x.score]));
-   const previousMap=new Map((previous?previous.scores:[]).map(x=>[x.area,x.score]));
-   const confident=[...(current?current.scores:[])].sort((a,b)=>b.score-a.score).slice(0,3);
-   const less=[...(current?current.scores:[])].sort((a,b)=>a.score-b.score).slice(0,3);
-   const changes=(current?current.scores:[]).map(x=>previousMap.has(x.area)?{area:x.area,delta:x.score-previousMap.get(x.area)}:null).filter(Boolean);
-   const changeText=changes.length?changes.map(x=>esc(x.area)+" "+(x.delta>0?"↑":x.delta<0?"↓":"→")+" "+Math.abs(x.delta)).join(", "):"No previous confidence check is available yet for comparison.";
-   let guidance="Focus next on the practical units you have not yet captured evidence for, while using another job to strengthen weaker portfolio areas.";
-   if(completion===100) guidance="You have saved evidence against every unit. Use your next jobs to strengthen weaker evidence areas and revisit any low-confidence practical skills.";
-   if(!entries.length) guidance="Start by capturing evidence from your next practical job, then use the confidence check to identify the practical skills you want to revisit.";
-   const name=firstName();
-   eviaReply('<strong>Progress review'+(name?", "+esc(name):"")+'</strong><br>'+
-     'Evidence completion: '+completion+'% ('+covered+'/'+units+' units). '+timeText+'<br>'+
-     'Off-the-job learning: '+totalOTJ.toFixed(2)+' hours across '+hours.length+' learning entries.<br>'+
-     (current?'<br><strong>Most confident areas:</strong> '+confident.map(x=>esc(x.area)).join(", ")+'.<br><strong>Areas to work on:</strong> '+less.map(x=>esc(x.area)).join(", ")+'.<br><strong>Change since your previous check:</strong> '+changeText:'<br>No confidence check has been completed yet.')+
-     '<br><br><strong>Next direction:</strong> '+guidance);
- };
+ /* "Portfolio check" and "Confidence check" are taken over by ui.js (My stats, and the Practice sheet). */
  document.querySelectorAll("[data-chat-option]").forEach(b=>b.onclick=()=>{
    const choice=options[Number(b.dataset.chatOption)];
    addBubble(choice[0]);
-   if(choice[0]==="Portfolio check")portfolioReview();
-   else if(choice[0]==="Progress review"){
-     if(window.eviaProgressReview)window.eviaProgressReview();
-     else progressReview();
-   }
-   else if(choice[0]==="Confidence check")confidence();
-   else window.eviaTestMe();
+   if(choice[0]==="Progress review"&&window.eviaProgressReview)window.eviaProgressReview();
+   else if(choice[0]==="Test me"&&window.eviaTestMe)window.eviaTestMe();
    scroll();
  });
 }

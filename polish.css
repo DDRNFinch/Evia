@@ -772,21 +772,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text"
 }
 html[data-evia-shape="circle"] .evia-fab,
 html[data-evia-shape="circle"] .welcome-avatar{border-radius:50%!important;clip-path:none!important}
-html[data-evia-shape="blob"] .evia-fab,
-html[data-evia-shape="blob"] .welcome-avatar,
-html[data-evia-shape="blob"] .evia-face-wrap,
-html[data-evia-shape="blob"] .target-evia{border-radius:58% 42% 46% 54% / 43% 52% 48% 57%!important;clip-path:none!important}
 html[data-evia-shape="squircle"] .evia-fab,
 html[data-evia-shape="squircle"] .welcome-avatar{border-radius:30%!important;clip-path:none!important}
-html[data-evia-shape="cloud"] .evia-fab,
-html[data-evia-shape="cloud"] .welcome-avatar{
-  border:0!important;
-  border-radius:0!important;
-  background:var(--evia-accent)!important;
-  clip-path:polygon(50% 2%,61% 16%,77% 8%,79% 25%,96% 25%,84% 40%,98% 50%,84% 60%,96% 75%,79% 75%,77% 92%,61% 84%,50% 98%,39% 84%,23% 92%,21% 75%,4% 75%,16% 60%,2% 50%,16% 40%,4% 25%,21% 25%,23% 8%,39% 16%)!important;
-}
-html[data-evia-shape="splat"] .evia-fab{transform:translateX(-50%)}
-html[data-evia-shape="splat"] .evia-fab:after{transform:none}
 /* Supporting evidence save confirmation */
 .evidence-toast{
   position:fixed;
