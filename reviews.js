@@ -161,7 +161,7 @@
   const bar=(pct,cls,d)=>'<span class="pg-bar'+(cls?" "+cls:"")+'"><i style="--to:'+Math.round(Math.max(0,Math.min(100,pct)))+'%;--d:'+(d||0)+'ms"></i></span>';
   const row=(l,v,b)=>'<div class="pg-row"><div class="pg-row-top"><span>'+l+'</span><strong>'+v+'</strong></div>'+b+'</div>';
   /* "You" against "where you should be by now", with a tick when they're there. */
-  const goals=list=>{list=list.filter(Boolean);return list.length?'<div class="rv-goals"><div class="rv-goals-head"><span></span><span>You</span><span>Where you should be</span></div>'+list.map(([label,you,target,ok])=>'<div class="rv-goal '+(ok?"ok":"under")+'"><span>'+label+'</span><b>'+you+'</b><em>'+target+'</em></div>').join("")+'</div>':""};
+  const goals=list=>{list=list.filter(Boolean);return list.length?'<div class="rv-goals"><div class="rv-goals-head"><span></span><span>You</span><span>Where you should be</span></div>'+list.map(([label,you,target,ok,ahead])=>'<div class="rv-goal '+(ok?"ok":"under")+'"><span>'+label+'</span><b>'+you+(ahead?'<i class="rv-ahead">Ahead</i>':"")+'</b><em>'+target+'</em></div>').join("")+'</div>':""};
   /* Quick things to do now: the review saves your place and brings you back. */
   const quick=(readOnly,items)=>{items=items.filter(Boolean);return readOnly||!items.length?"":'<div class="rv-quick"><span>Want to do one now? I’ll bring you back here.</span><div>'+items.map(([id,label])=>'<button type="button" class="secondary" data-rv-quick="'+id+'">'+label+'</button>').join("")+'</div></div>'};
   const big=(n,l)=>'<div class="rv-big"><b>'+n+'</b><small>'+l+'</small></div>';
@@ -175,17 +175,23 @@
     out.push({title:"Overview",body:
       '<div class="rv-hero"><div class="rv-ring" style="--p:'+s.ksbPct+'"><b>'+s.ksbPct+'%</b><small>of '+w+'</small></div><div class="rv-hero-side">'+
         (s.timePct!=null?row("Course time",s.timePct+"%",bar(s.timePct,"muted"))+row("Evidence",s.ksbPct+"%",bar(s.ksbPct,"",150)):"")+(v?'<span class="pg-verdict '+(v[1]==="good"?"ontrack":"behind")+'">'+v[0]+'</span>':"")+'</div></div>'+
-      goals([tp!=null&&[(nvq?"Criteria":"KSBs")+" with evidence",s.ksbPct+"%","About "+tp+"%",s.ksbPct>=tp-10]])+
-      say(s.met+" of "+s.total+" "+w+" have evidence."+(tp!=null?(s.ksbPct>=tp-10?" That’s about where you should be, "+tp+"% of the way through your course.":" "+tp+"% of the way through, you should have about "+tp+"% evidenced, so it’s worth catching up."):"")+(s.weeksPerUnit?" You’ve got about "+plural(s.weeksLeft,"week")+" left, roughly "+plural(s.weeksPerUnit,"week")+" per unit still to start.":"")+(s.prevReviewDate?" Your last review was on "+ukDate(s.prevReviewDate)+".":""))});
+      goals([tp!=null&&[(nvq?"Criteria":"KSBs")+" with evidence",s.ksbPct+"%","About "+tp+"%",s.ksbPct>=tp-10,s.ksbPct>=tp+10]])+
+      say(s.met+" of "+s.total+" "+w+" have evidence."+(
+        s.met>=s.total&&s.total?" You’ve evidenced every one"+(tp!=null&&tp<90?", well ahead of schedule at "+tp+"% of the way through your course":"")+". Brilliant work. From here, focus on making your evidence stronger: more photos, fuller write-ups and "+(nvq?"your knowledge questions.":"getting ready for your end-point assessment."):
+        tp==null?"":
+        s.ksbPct>=tp+10?" You’re ahead of schedule: at "+tp+"% of the way through your course, you’d normally have about "+tp+"% evidenced. Keep it up.":
+        s.ksbPct>=tp-10?" That’s about where you should be, "+tp+"% of the way through your course.":
+        " "+tp+"% of the way through, you should have about "+tp+"% evidenced, so it’s worth catching up.")+
+        (s.weeksPerUnit&&s.met<s.total?" You’ve got about "+plural(s.weeksLeft,"week")+" left, roughly "+plural(s.weeksPerUnit,"week")+" per unit still to start.":"")+(s.prevReviewDate?" Your last review was on "+ukDate(s.prevReviewDate)+".":""))});
     const expUnits=tp!=null&&s.unitsTotal?Math.min(s.unitsTotal,Math.ceil(tp/100*s.unitsTotal)):null;
     out.push({title:"Evidence",body:
       '<div class="rv-bigs">'+big(s.unitsStarted+"/"+s.unitsTotal,nvq?"jobs started":"units started")+big(s.packs,"evidence packs")+big(s.avgPhotos==null?"–":s.avgPhotos,"photos per pack")+'</div>'+
-      goals([expUnits!=null&&[nvq?"Jobs started":"Units started",s.unitsStarted+" of "+s.unitsTotal,"About "+expUnits,s.unitsStarted>=expUnits],s.avgPhotos!=null&&["Photos per pack",s.avgPhotos,"5 or more",s.avgPhotos>=5],s.coverage!=null&&["Write-ups cover the key points",s.coverage+"%","70% or more",s.coverage>=70]])+
+      goals([expUnits!=null&&[nvq?"Jobs started":"Units started",s.unitsStarted+" of "+s.unitsTotal,"About "+expUnits,s.unitsStarted>=expUnits,s.unitsStarted>=expUnits+2],s.avgPhotos!=null&&["Photos per pack",s.avgPhotos,"5 or more",s.avgPhotos>=5],s.coverage!=null&&["Write-ups cover the key points",s.coverage+"%","70% or more",s.coverage>=70]])+
       say((s.strongest?"Your strongest write-up is <strong>"+escHtml(s.strongest)+"</strong>. ":"")+(s.weakest?"<strong>"+escHtml(s.weakest)+"</strong> needs the most work"+(s.weakestMissing.length?": mention "+escHtml(s.weakestMissing.join(", "))+" next time.":"."):s.packs?"":"Capture your first unit and Evia will start checking your write-ups."))});
     const otjDue=s.weeksIn!=null?Math.round(s.weeksIn*6):null;
     out.push({title:"Learning and activity",body:
       '<div class="rv-bigs">'+big(s.otjTotal,"OTJ hours")+big(s.otjMonth,"this month")+big(s.streak,"week streak")+'</div>'+
-      goals([otjDue!=null&&["OTJ hours in total",s.otjTotal,"About "+otjDue,s.otjTotal>=otjDue*.9],["OTJ hours this month",s.otjMonth,"About 26",s.otjMonth>=22],["Weeks active in a row",s.streak,"Every week",s.streak>=2]])+
+      goals([otjDue!=null&&["OTJ hours in total",s.otjTotal,"About "+otjDue,s.otjTotal>=otjDue*.9,s.otjTotal>=otjDue*1.2&&otjDue>0],["OTJ hours this month",s.otjMonth,"About 26",s.otjMonth>=22],["Weeks active in a row",s.streak,"Every week",s.streak>=2]])+
       say((s.lastUpload?"Your last upload was "+escHtml(window.eviaStats.ago(s.lastUpload).toLowerCase())+". ":"")+(s.otjMonth<22?"Try to log a bit more off-the-job learning each month.":"Good off-the-job learning this month.")+" The OTJ targets assume about 6 hours a week. Your commitment statement says exactly how many you need.")+
       quick(readOnly,[["otj","Log OTJ hours"]])});
     out.push({title:"Tests",body:
