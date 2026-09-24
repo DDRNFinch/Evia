@@ -265,7 +265,7 @@
     const focus=el=>{if(el)el.scrollIntoView({block:"start",behavior:"smooth"})};
     const name=firstName();
     const [c1,c2]=ppeCodes(),nvq=nvqOn();
-    guide('Your PPE evidence has been added to your portfolio'+(name?", "+escHtml(name):"")+'. This is your <strong>Learning</strong> tab, where you can see how you’re getting on — '+(nvq?'your units are listed here, and in <strong>Unit 102</strong>, criterion <strong>1.2</strong> (using health and safety equipment) is now ticked off.':'<strong>K2</strong> is now ticked off.'),{
+    guide('Your PPE evidence has been added to your portfolio'+(name?", "+escHtml(name):"")+'. This is <strong>My progress</strong>, where you can see how you’re getting on — '+(nvq?'your units are listed here, and in <strong>Unit 102</strong>, criterion <strong>1.2</strong> (using health and safety equipment) is now ticked off.':'<strong>K2</strong> is now ticked off.'),{
       targets:[tile(c1)],button:"Next",onNext:()=>{
         guide(nvq?'…and so is <strong>1.4</strong> (why and when to use it). Every criterion works this way: your evidence packs, answers to questions and witness testimony tick them off as you go.':'…and so is <strong>S2</strong>. You have submitted evidence for <strong>2 of your KSBs</strong>, but you will need further evidence for them as you work through your course, so keep capturing jobs that show them.',{
           targets:[tile(c2)],button:"Next",onNext:()=>{writeState("portfolio");showPortfolioStep()}
@@ -279,10 +279,10 @@
   /* ---------- Step 4: portfolio ---------- */
   function showPortfolioStep(){
     document.body.classList.add("evia-onboarding");
-    nav("portfolio");
-    const tile=document.querySelector('[data-unit-open="'+PPE_UNIT+'"]');
+    nav("course");
+    const tile=document.querySelector("#screen .unit-card[data-u]");
     window.scrollTo(0,0);
-    guide('This is <strong>My evidence</strong>, on your <strong>Course</strong> tab. Everything you collect is kept here, sorted by unit — your PPE evidence is saved in <strong>'+PPE_UNIT+'</strong>. Tap <strong>All units</strong> at the top to add evidence to any unit.',{
+    guide('This is <strong>My course</strong>. Open any unit to capture evidence — everything you save is kept inside that unit, underneath, ready to look back at or share with your assessor.',{
       targets:[tile],button:"Next",onNext:()=>{writeState("profile");showProfileStep()}
     });
   }

@@ -186,6 +186,7 @@
       }
     };
     renderPhotos(pack);
+    if(window.eviaSavedTiles)window.eviaSavedTiles(u[0],document.querySelector(".evidence-pack-page"));
   }
 
   async function migrateSubmittedEvidence(){
@@ -239,8 +240,9 @@
     evidence.push({id,c:course,u:u[0],d:new Date().toLocaleString("en-GB"),p:[],photoIds,w:pack.write.trim(),k:u[1].map(code),learnerProfile:{name:profile.name||"",start:profile.start||"",end:profile.end||""},signature:profile.signature||"",savedAt:new Date().toISOString(),photoCount:photoIds.length});
     persist();
     await removePack();
-    screen="portfolio";
-    render();
+    /* Back to the same unit: the new pack shows as the first saved tile. */
+    window.openUnit(unit);
+    if(typeof showEvidenceToast==="function")setTimeout(()=>showEvidenceToast("Evidence saved"),300);
     return true;
   }
 

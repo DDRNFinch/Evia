@@ -35,7 +35,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       hours.push({id:"h1",n:3,description:"Toolbox talk",createdAt:Date.now()});persist();render()});
     await page.waitForTimeout(500);
 
-    check("The app opens on Course with Evia's next job; the nav is Course, Evia and Learning",await page.evaluate(()=>screen==="course"&&!!document.getElementById("ui-next")&&[...document.querySelectorAll("[data-nav]")].map(b=>b.dataset.nav).join()==="course,learning"));
+    check("The app opens on My course; the nav is My course, Evia and My progress",await page.evaluate(()=>screen==="course"&&!!document.getElementById("ui-course-head")&&[...document.querySelectorAll("[data-nav]")].map(b=>b.textContent.trim()).join()==="My course,My progress"));
     for(const s of ["course","progress","portfolio","learning","hours"]){await page.evaluate(s=>nav(s),s);await page.waitForTimeout(450)}
     await page.evaluate(()=>nav("progress"));await page.waitForTimeout(450);
     check("Progress shows when the next review is due",await page.evaluate(()=>!window.eviaReviewDue()||!!document.getElementById("ui-review-due")));
@@ -45,10 +45,11 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("Hours are logged from Learning with a tap and a line of text",await page.evaluate(()=>hours.some(h=>h.n===2&&/manual handling/.test(h.description))&&screen==="hours"));
     await page.evaluate(()=>nav("learning"));await page.waitForTimeout(450);
     await page.evaluate(()=>nav("portfolio"));await page.waitForTimeout(450);
-    check("My evidence on Course shows the unit with evidence",await page.evaluate(()=>screen==="course"&&!!document.querySelector("[data-unit-open]")&&document.querySelector('[data-view="evidence"]').classList.contains("on")));
-    await page.click("[data-unit-open]");await page.waitForTimeout(300);
-    check("A unit with evidence opens a sheet with its packs and Add evidence",await page.evaluate(()=>!!document.getElementById("ui-unit-add")&&document.querySelectorAll(".ui-unit-pack").length>=1));
-    await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";document.querySelector('[data-view="units"]').click()});await page.waitForTimeout(300);
+    await page.evaluate(()=>openUnit(data().u.findIndex(u=>evidence.some(e=>e.c===course&&e.u===u[0]))));await page.waitForTimeout(1200);
+    check("A unit shows its saved evidence as tiles under the capture page, with a share icon",await page.evaluate(()=>document.querySelectorAll(".ev-saved .ev-tile").length>=1&&!!document.querySelector(".ev-tile-share")&&!!document.querySelector(".ev-saved-line")));
+    await page.click(".ev-tile-main");await page.waitForTimeout(400);
+    check("Tapping a saved tile shows that pack",await page.evaluate(()=>!!document.getElementById("ev-view-photos")));
+    await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";nav("course")});await page.waitForTimeout(400);
     await page.evaluate(()=>{nav("course")});await page.waitForTimeout(450);await page.evaluate(()=>openUnit(3));await page.waitForTimeout(900);
     check("An evidence pack opens",await page.$("#write"));
     await page.fill("#write","i laid the morter on the dpc and checked it was plum");await page.click(".wc-btn");await page.click(".wc-all");
@@ -121,7 +122,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
 
     // Page headings, draft tags, the strength key, the backup reminder, clean test screens and the OTJ PDF.
     await page.evaluate(()=>{localStorage.setItem("evia7-working-evidence-packs",JSON.stringify({["bricklayer|"+data().u[5][0]]:{course:"bricklayer",unit:data().u[5][0],photos:[],write:"Started"}}));nav("course")});await page.waitForTimeout(450);
-    check("Course has a heading, the strength key and a Draft tag",await page.evaluate(()=>/Course/.test(document.querySelector(".ui-page-head h1").textContent)&&!!document.querySelector(".ui-bars-key")&&document.querySelectorAll(".draft-chip").length===1));
+    check("My course has a heading and a Draft tag",await page.evaluate(()=>/My course/.test(document.querySelector(".ui-page-head h1").textContent)&&document.querySelectorAll(".draft-chip").length===1));
     check("Evia reminds learners to back up once they have a few packs",await page.evaluate(()=>{localStorage.removeItem("evia7-last-backup");return window.eviaStats.nudges(window.eviaStats.compute()).some(n=>n.id==="backup")}));
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";window.eviaStartTest("maths",5,"Maths")});await page.waitForSelector("[data-test-answer]",{state:"visible",timeout:12000});
     check("A test from Practice opens on its own screen, without the chat menu",await page.evaluate(()=>/Maths/.test(document.querySelector(".chat-sheet h2").textContent)&&!document.querySelector("#chat [data-chat-option]")));

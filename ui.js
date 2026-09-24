@@ -56,21 +56,6 @@
     return {unit:null,text:"Every KSB on your course has some evidence. Keep strengthening the units with the least photos and detail.",action:null};
   }
 
-  /* ---------- Course: Evia's card at the top ---------- */
-  /* One card: where you are (tap for Progress) and the one thing Evia suggests doing next. */
-  function nextUpHtml(){
-    const a=analyse(),sg=suggestion(a),T=window.eviaTerm?window.eviaTerm():{many:"KSBs"};
-    const gap=a.timePct==null?null:a.timePct-a.ksbPct,verdict=gap==null?"":gap>10?"A little behind":gap<-5?"Ahead of schedule":"On track";
-    return '<section class="ui-card ui-next" id="ui-next">'+
-      '<button type="button" class="ui-next-status" id="ui-next-progress">'+ring(a.ksbPct,46,5,a.ksbPct+"%")+'<span><strong>'+a.met+' of '+a.total+' '+escHtml(T.many)+'</strong><small>'+(verdict?verdict+" · ":"")+'See progress</small></span><span class="ui-next-chev" aria-hidden="true">›</span></button>'+
-      (sg.unit?'<div class="ui-next-evia"><span class="evia-mini" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span><p>'+escHtml(sg.text)+'</p></div><button type="button" class="primary ui-next-go" id="ui-next-go">'+escHtml(sg.draft?"Finish it":"Start this job")+'</button>':"")+
-    '</section>';
-  }
-  function bindNextUp(){
-    const pb=$("#ui-next-progress");if(pb)pb.onclick=()=>nav("progress");
-    const go=$("#ui-next-go");if(go)go.onclick=()=>{const sg=suggestion(analyse());if(sg.unit)openUnit(sg.unit.index)};
-  }
-
   /* ---------- Evia speaks from her button: one Evia on screen ---------- */
   const TIP_KEY="evia7-home-tip";
   let bubbleTimer=null;
@@ -99,7 +84,7 @@
     if(seen.day===today&&(!n.celebrate||seen.id===n.id))return;
     const name=firstName();
     const fire=()=>{
-      if(screen!=="course"||!document.getElementById("ui-next")||document.querySelector(".chat-sheet"))return;
+      if(screen!=="course"||!document.getElementById("ui-course-head")||document.querySelector(".chat-sheet"))return;
       if(document.querySelector(".evidence-toast")){bubbleTimer=setTimeout(fire,2400);return} /* wait for "Saved"-style messages to clear */
       const dismiss=()=>{localStorage.setItem(TIP_KEY,JSON.stringify({day:today,id:n.id}));if(n.achievements)window.eviaStats.markSeen(n.achievements)};
       const lead=n.celebrate?(name?"Well done "+escHtml(name)+"! ":"Well done! "):partOfDay()+(name?" "+escHtml(name):"")+". ";
@@ -180,12 +165,12 @@
   const GROUPS=[["K","Knowledge"],["S","Skills"],["B","Behaviours"]];
   let expanded={}; /* groups start collapsed: three rings, tap one to see its KSBs */
   function progressScreen(still){ /* still: redrawn after opening a KSB group, so don't replay the animations */
-    $("#page-title").textContent="Learning";
+    $("#page-title").textContent="My progress";
     const a=analyse(),all=allK(),supporting=supportingMeta().filter(s=>s.course===course);
     const hasSupport=c=>supporting.some(s=>Array.isArray(s.ksbs)&&s.ksbs.includes(c));
     const S=window.eviaStats,st=(()=>{try{return S?S.compute():null}catch(_){return null}})();
     const tip=learningTip(st);
-    $("#screen").innerHTML=pageHead("Learning")+
+    $("#screen").innerHTML=pageHead("My progress")+
       '<div class="ui-page">'+
         (st?S.heroHtml(st):"")+
         (()=>{const rd=window.eviaReviewDue&&window.eviaReviewDue();if(!rd)return"";const d=rd.due.toLocaleDateString("en-GB",{day:"numeric",month:"short"});return '<button type="button" class="ui-card ui-review-due'+(rd.days<=14?" soon":"")+'" id="ui-review-due"><span><small>Next progress review</small><strong>'+(rd.days<0?"Overdue · was due "+d:rd.days===0?"Due today":"Due "+d+(rd.days<=14?" · in "+rd.days+" day"+(rd.days===1?"":"s"):""))+'</strong></span><em>'+(rd.days<=14?"Start now":"Do it early")+' ›</em></button>'})()+
@@ -212,60 +197,55 @@
     document.querySelectorAll(".ui-groups [data-ksb-code]").forEach(b=>b.onclick=()=>{const item=all.find(x=>x[0]===b.dataset.ksbCode);if(item)ksbDetail(item[0],item[1],a.evidenced.has(item[0]))});
   }
 
-  /* ---------- Course tab: All units / My evidence ---------- */
-  let courseView="units";
-  const bars=level=>{const n={strong:3,good:2,weak:1}[level]||0;return '<span class="ui-bars" aria-label="Evidence strength: '+(level||"none")+'">'+[0,1,2].map(i=>'<i class="'+(i<n?"on":"")+'" style="height:'+(5+i*3)+'px"></i>').join("")+'</span>'};
-  function segHtml(count){
-    return '<div class="ui-seg" role="tablist" aria-label="Course view"><button type="button" role="tab" data-view="units" aria-selected="'+(courseView==="units")+'" class="'+(courseView==="units"?"on":"")+'">All units</button><button type="button" role="tab" data-view="evidence" aria-selected="'+(courseView==="evidence")+'" class="'+(courseView==="evidence"?"on":"")+'">My evidence'+(count?' <span>'+count+'</span>':"")+'</button></div>';
-  }
-  function bindSeg(){document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>{if(courseView===b.dataset.view)return;courseView=b.dataset.view;window.scrollTo(0,0);courses()})}
+  /* ---------- My course: saved evidence sits under the capture page ---------- */
+  const SHARE_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3.5"/><path d="m7.5 8 4.5-4.5L16.5 8"/><path d="M5 12.5V19a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19v-6.5"/></svg>';
   const photoOf=async e=>{try{const p=window.eviaGetEvidencePhotoData?await window.eviaGetEvidencePhotoData(e):(e.p||[]);return p[0]||null}catch(_){return null}};
-  /* My evidence: everything collected, one tile per unit, then supporting evidence. */
-  function evidenceScreen(){
-    $("#page-title").textContent="Course";
-    const a=analyse(),supporting=supportingMeta().filter(x=>x.course===course);
-    const tiles=a.units.map(u=>({name:u.name,index:u.index,entries:u.entries}));
-    const ppe=a.entries.filter(e=>e.u===PPE_UNIT);
-    if(ppe.length)tiles.unshift({name:PPE_UNIT,index:-1,entries:ppe});
-    const shown=tiles.filter(t=>t.entries.length);
-    $("#screen").innerHTML=pageHead("Course")+segHtml(a.entries.length)+
-      '<div class="ui-page">'+
-        (shown.length?'<div class="ui-gallery">'+shown.map((t,i)=>'<button type="button" class="ui-tile" data-unit-open="'+escHtml(t.name)+'"><span class="ui-tile-photo" data-cover="'+i+'">'+icon(ICONS.camera,26)+'</span><span class="ui-tile-scrim"><strong>'+escHtml(t.name)+'</strong><span class="ui-tile-meta"><small>'+t.entries.length+' saved</small>'+bars(t.index>=0?unitStrengthForCourse(t.name):"good")+'</span></span></button>').join("")+'</div>'
-          :'<div class="ui-card ui-empty"><span class="ui-icon-chip">'+icon(ICONS.camera)+'</span><p>Everything you collect shows up here. Pick a unit in <strong>All units</strong> to add your first evidence.</p></div>')+
-        '<button type="button" class="ui-card ui-more-units" id="ui-supporting"><span>Supporting evidence and witness testimony'+(supporting.length?' · '+supporting.length:"")+'</span><strong>'+icon(ICONS.chev,16)+'</strong></button>'+
-      '</div>';
-    bindSeg();
-    $("#ui-supporting").onclick=()=>openSupportingPortfolio();
-    document.querySelectorAll("[data-unit-open]").forEach(b=>b.onclick=()=>{const n=b.getAttribute("data-unit-open"),i=data().u.findIndex(u=>u[0]===n);if(i>=0)unitSheet(i);else if(window.eviaOpenSendToPortfolio)window.eviaOpenSendToPortfolio(n)});
-    shown.forEach(async(t,i)=>{
-      for(const e of t.entries.slice().sort((x,y)=>entryTime(y)-entryTime(x))){const src=await photoOf(e);if(src){const el=document.querySelector('[data-cover="'+i+'"]');if(el)el.innerHTML='<img src="'+src+'" alt="">';break}}
+  const savedDay=t=>new Date(t).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
+  const tileHtml=(key,img,title,sub)=>'<div class="ev-tile"><button type="button" class="ev-tile-main" data-ev-open="'+key+'"><span class="ev-tile-img" data-ev-img="'+key+'">'+img+'</span><span class="ev-tile-copy"><strong>'+escHtml(title)+'</strong><small>'+escHtml(sub)+'</small></span></button><button type="button" class="ev-tile-share" data-ev-share="'+key+'" aria-label="Share">'+SHARE_ICON+'</button></div>';
+  /* Called by the evidence pack page (polish.js): a grey line, then one tile per saved pack. */
+  function savedTiles(unitName,page){
+    if(!page)return;
+    const entries=evidence.filter(e=>e.c===course&&e.u===unitName).sort((x,y)=>entryTime(y)-entryTime(x));
+    if(!entries.length)return;
+    const words=e=>String(e.w||"").trim()?String(e.w).trim().split(/\s+/).length:0,count=e=>(e.photoIds||e.p||[]).length;
+    page.insertAdjacentHTML("beforeend",'<div class="ev-saved-line"></div><section class="ev-saved"><h3>Saved evidence</h3>'+
+      entries.map(e=>tileHtml(escHtml(e.id),icon(ICONS.camera,20),"Saved "+savedDay(entryTime(e)),count(e)+" photo"+(count(e)===1?"":"s")+" · "+words(e)+" words")).join("")+'</section>');
+    entries.forEach(async e=>{const src=await photoOf(e),el=page.querySelector('[data-ev-img="'+CSS.escape(String(e.id))+'"]');if(src&&el)el.innerHTML='<img src="'+src+'" alt="">'});
+    page.querySelectorAll("[data-ev-open]").forEach(b=>b.onclick=()=>viewPack(entries.find(e=>String(e.id)===b.dataset.evOpen)));
+    page.querySelectorAll("[data-ev-share]").forEach(b=>b.onclick=()=>{const e=entries.find(x=>String(x.id)===b.dataset.evShare);if(e&&window.eviaOpenSendToPortfolio)window.eviaOpenSendToPortfolio(unitName,e.id)});
+  }
+  /* A saved pack, to look back at: its photos and write-up. */
+  async function viewPack(e){
+    if(!e)return;
+    const sh=uiSheet("SAVED "+savedDay(entryTime(e)).toUpperCase(),e.u,
+      '<div class="ev-view-photos" id="ev-view-photos"></div>'+
+      (String(e.w||"").trim()?'<p class="ev-view-text">'+escHtml(e.w)+'</p>':"")+
+      '<div class="pr-actions"><button type="button" class="secondary" id="ev-view-share">'+SHARE_ICON+' Share</button></div>');
+    sh.el.querySelector("#ev-view-share").onclick=()=>{sh.close();window.eviaOpenSendToPortfolio&&window.eviaOpenSendToPortfolio(e.u,e.id)};
+    try{const photos=window.eviaGetEvidencePhotoData?await window.eviaGetEvidencePhotoData(e):(e.p||[]);const g=sh.el.querySelector("#ev-view-photos");if(g)g.innerHTML=photos.map(src=>'<img src="'+src+'" alt="Evidence photo">').join("")}catch(_){}
+  }
+  window.eviaSavedTiles=savedTiles;
+  /* Supporting evidence is its own unit: the same capture page, with its files as tiles underneath. */
+  const originalSupporting=window.openSupportingEvidence;
+  window.openSupportingEvidence=async function(){
+    await originalSupporting.apply(this,arguments);
+    const scr=document.getElementById("screen"),items=supportingMeta().filter(x=>x.course===course).slice().reverse();
+    if(!items.length||!scr)return;
+    const TYPE_ICON={photo:ICONS.camera};
+    scr.insertAdjacentHTML("beforeend",'<div class="ev-saved-line"></div><section class="ev-saved"><h3>Saved evidence</h3>'+
+      items.map(x=>tileHtml(escHtml(x.id),typeof supportingCardIcon==="function"?supportingCardIcon(x.type):icon(TYPE_ICON[x.type]||ICONS.camera,20),x.title||"Supporting evidence",[savedDay(x.createdAt||x.savedAt||Date.now()),typeof supportingSummary==="function"?supportingSummary(x):""].filter(Boolean).join(" · "))).join("")+'</section>');
+    items.filter(x=>x.type==="photo").forEach(async x=>{try{const rec=await window.eviaSupportingFileGet(x.id),el=scr.querySelector('[data-ev-img="'+CSS.escape(x.id)+'"]');if(rec&&rec.blob&&el)el.innerHTML='<img src="'+URL.createObjectURL(rec.blob)+'" alt="">'}catch(_){}});
+    scr.querySelectorAll("[data-ev-open]").forEach(b=>b.onclick=()=>openSupportingDetails(b.dataset.evOpen,false,window.openSupportingEvidence));
+    scr.querySelectorAll("[data-ev-share]").forEach(b=>b.onclick=async()=>{
+      const x=items.find(i=>i.id===b.dataset.evShare);if(!x)return;
+      try{
+        const rec=await window.eviaSupportingFileGet(x.id);if(!rec||!rec.blob)throw new Error("missing");
+        const file=new File([rec.blob],x.filename||"supporting-evidence",{type:rec.blob.type||"application/octet-stream"});
+        if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:x.title||"Supporting evidence"});return}
+        const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=file.name;document.body.appendChild(a);a.click();a.remove();
+      }catch(err){if(!(err&&err.name==="AbortError")&&typeof showEvidenceToast==="function")showEvidenceToast("Couldn’t share that file",true)}
     });
-  }
-  /* A unit with evidence opens a sheet: what's saved, add more, or send it to the e-portfolio. */
-  function unitSheet(i){
-    const u=data().u[i];if(!u)return;
-    const name=u[0],entries=evidence.filter(e=>e.c===course&&e.u===name).sort((x,y)=>entryTime(y)-entryTime(x));
-    const draft=(()=>{const d=readJson("evia7-working-evidence-packs",{})[course+"|"+name];return d&&((d.photos||[]).length||String(d.write||"").trim())})();
-    if(!entries.length){window.openUnit(i);return}
-    const day=t=>new Date(t).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
-    const sh=uiSheet("UNIT",name,
-      '<div class="ui-unit-sum">'+bars(unitStrengthForCourse(name))+'<span>'+entries.length+' evidence pack'+(entries.length===1?"":"s")+' saved</span></div>'+
-      '<div class="ui-unit-packs">'+entries.map((e,n)=>'<div class="ui-unit-pack"><span class="ui-unit-thumb" data-pack-photo="'+n+'">'+icon(ICONS.camera,20)+'</span><span><strong>'+escHtml(day(entryTime(e)))+'</strong><small>'+(e.photoIds||e.p||[]).length+' photo'+((e.photoIds||e.p||[]).length===1?"":"s")+(String(e.w||"").trim()?" · "+String(e.w).trim().split(/\s+/).length+" words":"")+'</small></span></div>').join("")+'</div>'+
-      '<div class="pr-actions"><button type="button" class="secondary" id="ui-unit-send">Send to e-portfolio</button><button type="button" class="primary" id="ui-unit-add">'+(draft?"Carry on with my draft":"Add evidence")+'</button></div>');
-    sh.el.querySelector("#ui-unit-add").onclick=()=>{sh.close();window.openUnit(i)};
-    sh.el.querySelector("#ui-unit-send").onclick=()=>{sh.close();window.eviaOpenSendToPortfolio&&window.eviaOpenSendToPortfolio(name)};
-    entries.forEach(async(e,n)=>{const src=await photoOf(e);const el=sh.el.querySelector('[data-pack-photo="'+n+'"]');if(src&&el)el.innerHTML='<img src="'+src+'" alt="">'});
-  }
-  /* All units: small photos on units that already have evidence. */
-  function addUnitThumbs(){
-    document.querySelectorAll("#screen .unit-card[data-u]").forEach(card=>{
-      const u=data().u[+card.dataset.u];if(!u)return;
-      const es=evidence.filter(e=>e.c===course&&e.u===u[0]).sort((x,y)=>entryTime(y)-entryTime(x));if(!es.length)return;
-      const title=card.querySelector(".unit-title");if(!title)return;
-      const strip=document.createElement("span");strip.className="ui-unit-strip";strip.innerHTML='<small>'+es.length+' saved</small>';title.appendChild(strip);
-      es.slice(0,3).forEach(async e=>{const src=await photoOf(e);if(src){const img=document.createElement("img");img.src=src;img.alt="";strip.insertBefore(img,strip.lastChild)}});
-    });
-  }
+  };
 
   /* ---------- Evia chat: stats, write-ups and KSB gaps ---------- */
   const chatBox=()=>document.getElementById("chat");
@@ -448,8 +428,8 @@
       {label:"Open "+top[0].unit.name,primary:true,run:()=>openUnitFromChat(top[0].unit)},
       {label:"Show the full list",run:()=>{
         [["K","Knowledge"],["S","Skills"],["B","Behaviours"]].forEach(([l,n])=>{const codes=missing.filter(x=>x[0].startsWith(l)).map(x=>x[0]);if(codes.length)say("<strong>"+n+":</strong> "+escHtml(codes.join(", ")))});
-        say("Tap any KSB on the Learning tab to see its full wording.");
-        replies([{label:"Go to Learning",primary:true,run:()=>{closeChat();setTimeout(()=>nav("progress"),60)}}].concat(more("Which KSBs am I missing?").slice(0,2),[{label:"Something else",run:somethingElse}]));
+        say("Tap any KSB on My progress to see its full wording.");
+        replies([{label:"Go to My progress",primary:true,run:()=>{closeChat();setTimeout(()=>nav("progress"),60)}}].concat(more("Which KSBs am I missing?").slice(0,2),[{label:"Something else",run:somethingElse}]));
       }},
       {label:"Something else",run:somethingElse}
     ]);
@@ -519,7 +499,7 @@
       T.bind(box);scrollChat();
       requestAnimationFrame(()=>requestAnimationFrame(()=>{const card=box.querySelector(".pg-card");if(card)card.classList.add("pg-in")}));
     });
-    replies([{label:"See them in Learning",primary:true,run:()=>{closeChat();setTimeout(()=>{nav("progress");setTimeout(()=>{const el=document.getElementById("pg-targets");if(el)el.scrollIntoView({block:"start",behavior:"smooth"})},400)},60)}},{label:"Start a progress review",run:reviewFromMenu},{label:"Something else",run:somethingElse}]);
+    replies([{label:"See them in My progress",primary:true,run:()=>{closeChat();setTimeout(()=>{nav("progress");setTimeout(()=>{const el=document.getElementById("pg-targets");if(el)el.scrollIntoView({block:"start",behavior:"smooth"})},400)},60)}},{label:"Start a progress review",run:reviewFromMenu},{label:"Something else",run:somethingElse}]);
   }
   /* Progress review: a short click-through of sections; finishing it sets new targets. */
   function reviewFromMenu(){
@@ -579,7 +559,7 @@
     if(d.pct>=80&&window.eviaMood)window.eviaMood("happy");
     const opts=[{label:"Try another test",primary:true,run:()=>{closeChat();setTimeout(()=>window.eviaPractice&&window.eviaPractice.openHub(),60)}}];
     if(window.eviaReviewDraft&&window.eviaReviewDraft()){opts[0].primary=false;opts.unshift({label:"Back to my review",primary:true,run:()=>{closeChat();setTimeout(()=>window.eviaResumeReview&&window.eviaResumeReview(),60)}})}
-    if(d.missed&&d.missed.length)opts.push({label:"Go to Learning",run:()=>{closeChat();setTimeout(()=>nav("progress"),60)}});
+    if(d.missed&&d.missed.length)opts.push({label:"Go to My progress",run:()=>{closeChat();setTimeout(()=>nav("progress"),60)}});
     opts.push({label:"See my stats",run:()=>{closeChat();setTimeout(showStats,60)}},{label:"Something else",run:somethingElse});
     queue=queue.then(()=>new Promise(r=>setTimeout(r,1400))); /* let the result bubble finish "thinking" first */
     replies(opts);
@@ -599,7 +579,7 @@
     const week=hours.filter(x=>Number(x.createdAt)>=weekStart).reduce((n,x)=>n+Number(x.n||0),0);
     const fmt=n=>Math.round(n*100)/100;
     const day=t=>new Date(Number(t)).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
-    $("#screen").innerHTML='<button class="secondary ui-back" id="ui-hours-back" type="button">‹ Learning</button><h1 class="ui-sub-title">Off-the-job hours</h1>'+
+    $("#screen").innerHTML='<button class="secondary ui-back" id="ui-hours-back" type="button">‹ My progress</button><h1 class="ui-sub-title">Off-the-job hours</h1>'+
       '<div class="ui-page">'+
         '<section class="ui-card ui-hours-sum"><div><strong>'+fmt(total)+'</strong><small>hours logged</small></div><div><strong>'+fmt(week)+'</strong><small>this week</small></div></section>'+
         '<section class="ui-card ui-hours-log">'+
@@ -635,7 +615,7 @@
   window.render=function(){
     hideBubble();
     if(screen==="home")screen="course";
-    if(screen==="portfolio"){screen="course";courseView="evidence"}
+    if(screen==="portfolio")screen="course";
     if(screen==="progress")screen="learning";
     const scr=document.getElementById("screen");if(scr)scr.classList.toggle("ui-top",TOP_SCREENS.includes(screen));
     if(screen==="learning"||screen==="hours"){
@@ -650,22 +630,16 @@
   window.learning=()=>screen==="hours"?hoursScreen():progressScreen();
   const originalCourses=window.courses;
   window.courses=function(){
-    if(courseView==="evidence"){evidenceScreen();return}
     originalCourses();
     const head=document.querySelector("#screen > .card:not(.unit-card)");
     if(head)head.remove();
-    const scr=document.getElementById("screen");
-    const firstCard=scr.querySelector(".unit-card[data-u]");
-    if(firstCard&&typeof strengthBars==="function")scr.insertAdjacentHTML("afterbegin",'<p class="ui-bars-key"><span>Evidence strength</span>'+[["weak","Weak"],["good","Good"],["strong","Strong"]].map(([l,t])=>'<span class="ui-bars-key-item">'+strengthBars(l)+t+'</span>').join("")+'</p>');
-    scr.insertAdjacentHTML("afterbegin",pageHead("Course")+segHtml(evidence.filter(e=>e.c===course).length)+nextUpHtml());
-    bindSeg();bindNextUp();addUnitThumbs();
-    if(!document.body.classList.contains("evia-onboarding"))document.querySelectorAll("#screen .unit-card[data-u]").forEach(b=>b.onclick=()=>unitSheet(+b.dataset.u));
+    document.getElementById("screen").insertAdjacentHTML("afterbegin",pageHead("My course").replace('class="ui-page-head"','class="ui-page-head" id="ui-course-head"'));
     courseNudge();
   };
-  window.portfolio=()=>{courseView="evidence";window.courses()};
-  /* Evia's bubble belongs to the Course list: it goes when anything else (a unit, supporting evidence) replaces it. */
+  window.portfolio=()=>window.courses();
+  /* Evia's bubble belongs to the course list: it goes when anything else (a unit, supporting evidence) replaces it. */
   const scrEl=document.getElementById("screen");
-  if(scrEl)new MutationObserver(()=>{if(!document.getElementById("ui-next")&&document.getElementById("ui-evia-bubble"))hideBubble()}).observe(scrEl,{childList:true});
+  if(scrEl)new MutationObserver(()=>{if(!document.getElementById("ui-course-head")&&document.getElementById("ui-evia-bubble"))hideBubble()}).observe(scrEl,{childList:true});
   /* Page changes fade: the current page fades out, the new one fades in. */
   const reduced=()=>window.eviaAccessibility?window.eviaAccessibility.reducedMotion():matchMedia("(prefers-reduced-motion: reduce)").matches;
   let fadeTimer=null;

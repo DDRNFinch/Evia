@@ -208,19 +208,21 @@
     document.head.appendChild(style);
   }
 
-  async function openSendToPortfolio(unitName){
+  /* entryId: share just one saved pack (from its tile on the unit page). */
+  async function openSendToPortfolio(unitName,entryId){
     injectStyles();
     const profileBtn=document.getElementById("profile-btn");if(profileBtn)profileBtn.style.display="none";
     const unitIndex=data().u.findIndex(u=>u[0]===unitName);
-    const entries=evidence.filter(e=>e.c===course&&e.u===unitName).sort((a,b)=>entryTime(a)-entryTime(b));
+    const entries=evidence.filter(e=>e.c===course&&e.u===unitName&&(entryId==null||String(e.id)===String(entryId))).sort((a,b)=>entryTime(a)-entryTime(b));
     const learnerSlug=slug(readJson("evia7-profile",{}).name||"");
     const base=(learnerSlug&&learnerSlug!=="Evidence"?learnerSlug+"_":"")+slug(unitName);
     const sent=readJson(SENT_KEY,{})[course+"|"+unitName];
+    const goBack=()=>{if(unitIndex>=0)openUnit(unitIndex);else nav("course")};
     $("#page-title").textContent="Send to e-portfolio";
-    const back='<button class="secondary" id="eport-back" type="button">‹ My evidence</button>';
+    const back='<button class="secondary" id="eport-back" type="button">‹ '+escHtml(unitName)+'</button>';
     if(!entries.length){
       $("#screen").innerHTML=back+'<div class="eport-page"><div class="card eport-intro"><div class="section-title">SEND TO E-PORTFOLIO</div><h2>'+escHtml(unitName)+'</h2><p>There is no evidence saved for this unit yet. Capture some evidence first, then come back here to send it to your e-portfolio.</p></div>'+(unitIndex>=0?'<button class="primary" id="eport-open-unit" type="button">Open unit</button>':"")+'</div>';
-      $("#eport-back").onclick=()=>nav("portfolio");
+      $("#eport-back").onclick=goBack;
       const openBtn=$("#eport-open-unit");if(openBtn)openBtn.onclick=()=>openUnit(unitIndex);
       return;
     }
@@ -232,7 +234,7 @@
         '<div class="eport-files" id="eport-files"><div class="card eport-pdf"><div class="eport-sheet is-loading" aria-hidden="true"><span></span><span></span><span></span></div><p class="eport-status">Preparing your evidence PDF…</p></div></div>'+
         '<div class="card"><div class="section-title">HOW TO UPLOAD</div><ol class="eport-steps"><li>Tap <strong>Share PDF</strong> to send it straight to Aptem or another app, or <strong>Save PDF</strong> to keep it on your phone.</li><li>In Aptem (or your e-portfolio), add new evidence and upload the PDF.</li><li>Tag the KSBs listed above.</li></ol></div>'+
       '</div>';
-    $("#eport-back").onclick=()=>nav("portfolio");
+    $("#eport-back").onclick=goBack;
     $("#eport-copy").onclick=async()=>{
       const text=ksbs.join(", ");
       try{await navigator.clipboard.writeText(text);if(typeof showEvidenceToast==="function")showEvidenceToast("KSB codes copied")}

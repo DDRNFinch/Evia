@@ -866,3 +866,22 @@ html body .bottom-nav{grid-template-columns:1fr 104px 1fr}
 .ui-tile-stat>span:not(.pg-icon),.ui-tile-stat>small{grid-column:1/-1}
 .ui-tile-stat>span:not(.pg-icon){margin-top:6px}
 .ui-tiles-grid>.ui-tile-stat:last-child:nth-child(odd){grid-column:1/-1}
+
+/* ---------- My course: saved evidence under the capture page ---------- */
+.ev-saved-line{height:1px;background:var(--ui-line);margin:26px 2px 18px}
+.ev-saved{display:flex;flex-direction:column;gap:10px}
+.ev-saved h3{margin:0 2px 2px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ui-muted)}
+.ev-tile{display:flex;align-items:stretch;background:var(--ui-card);border:1px solid var(--ui-line);border-radius:16px;overflow:hidden;box-shadow:var(--ui-shadow)}
+.ev-tile-main{flex:1;min-width:0;display:flex;align-items:center;gap:12px;padding:8px;text-align:left;cursor:pointer;font:inherit;color:inherit}
+.ev-tile-img{flex:0 0 auto;width:64px;height:48px;border-radius:10px;overflow:hidden;display:grid;place-items:center;background:var(--soft,#fff7d6);color:var(--yellow-ink)}
+.ev-tile-img img{width:100%;height:100%;object-fit:cover}
+.ev-tile-img svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ev-tile-copy{min-width:0}
+.ev-tile-copy strong{display:block;font-size:14.5px;color:var(--ui-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev-tile-copy small{display:block;margin-top:2px;font-size:12.5px;color:var(--ui-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev-tile-share{flex:0 0 52px;display:grid;place-items:center;border-left:1px solid var(--ui-line);color:var(--ui-muted);cursor:pointer}
+.ev-tile-share svg,#ev-view-share svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+#ev-view-share{display:inline-flex;align-items:center;gap:8px}
+.ev-view-photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin-bottom:14px}
+.ev-view-photos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px}
+.ev-view-text{margin:0 0 14px;font-size:14.5px;line-height:1.55;color:var(--ui-text);white-space:pre-wrap}
