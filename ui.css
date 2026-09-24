@@ -771,3 +771,57 @@ html body .rv-sheet .rv-nav{position:static;flex:0 0 auto;margin:0 -20px}
 .nvq-group-body .nvq-min{margin:0 6px 10px}
 .nvq-group-body .unit-card{box-shadow:none}
 @media (prefers-reduced-motion:reduce){.nvq-group-chev{transition:none}}
+
+/* ---------- Simpler navigation: Course · Hours · Evia · Portfolio · Progress ---------- */
+/* Course: Evia's card */
+.ui-next{padding:6px 6px 14px;margin:0 0 14px;display:flex;flex-direction:column;gap:10px}
+.ui-next-status{display:flex;align-items:center;gap:12px;width:100%;padding:8px 10px;border-radius:16px;text-align:left;cursor:pointer}
+.ui-next-status .ui-ring-label strong{font-size:12px}
+.ui-next-status>span:nth-child(2){flex:1;min-width:0}
+.ui-next-status strong{display:block;font-size:15px;color:var(--ui-ink)}
+.ui-next-status small{display:block;font-size:12.5px;color:var(--ui-muted);margin-top:1px}
+.ui-next-chev,.pg-x-chev{flex:0 0 auto;font-size:22px;line-height:1;color:var(--ui-faint)}
+.ui-next-evia{display:flex;gap:10px;align-items:flex-start;margin:0 10px;padding:12px;border-radius:16px;background:var(--soft,#fff7d6)}
+.ui-next-evia p{margin:0;font-size:14px;line-height:1.45;color:var(--ui-text)}
+.ui-next-go{margin:0 10px;width:calc(100% - 20px);background:var(--yellow);color:var(--ui-on-accent)}
+/* Hours */
+.ui-hours-sum{display:grid;grid-template-columns:1fr 1fr;padding:16px 8px}
+.ui-hours-sum>div{text-align:center}
+.ui-hours-sum>div+div{border-left:1px solid var(--ui-line)}
+.ui-hours-sum strong{display:block;font-size:28px;letter-spacing:-.02em;color:var(--ui-ink)}
+.ui-hours-sum small{font-size:12.5px;color:var(--ui-muted)}
+.ui-hours-log{padding:18px;display:flex;flex-direction:column;gap:12px}
+.ui-hours-log h2{margin:0;font-size:17px;color:var(--ui-ink)}
+.ui-hours-chips{display:flex;flex-wrap:wrap;gap:8px}
+.ui-hours-chip{min-width:48px;height:44px;padding:0 12px;border-radius:14px;border:1.5px solid var(--ui-line);background:#fff;font-weight:700;color:var(--ui-ink);cursor:pointer}
+.ui-hours-chip.on{background:var(--soft,#fff7d6);border-color:var(--yellow);color:var(--yellow-ink)}
+.ui-hours-chips input{flex:1 1 70px;min-width:70px;height:44px;border:1.5px solid var(--ui-line);border-radius:14px;padding:0 12px}
+.ui-hours-log textarea{min-height:0;height:auto;margin:0}
+.ui-hours-log .primary{width:100%;background:var(--yellow);color:var(--ui-on-accent)}
+.ui-hours-hint{margin:0;font-size:12.5px;color:var(--ui-muted);text-align:center}
+.ui-hours-pdf{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 4px;font-size:13.5px;color:var(--ui-text)}
+.ui-hours-pdf .secondary{flex:0 0 auto;padding:10px 14px}
+.ui-hours-h,.pg-x-h{margin:8px 4px -6px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--ui-muted)}
+.ui-hours-list{padding:4px 16px}
+.ui-hours-item{display:flex;gap:14px;align-items:flex-start;padding:13px 0}
+.ui-hours-item+.ui-hours-item{border-top:1px solid var(--ui-line)}
+.ui-hours-n{flex:0 0 52px;font-size:19px;font-weight:800;color:var(--ui-ink);line-height:1.1}
+.ui-hours-n small{display:block;font-size:11px;font-weight:600;color:var(--ui-muted)}
+.ui-hours-copy{flex:1;min-width:0}
+.ui-hours-copy strong{display:block;font-size:14px;font-weight:600;line-height:1.4;color:var(--ui-text);overflow-wrap:anywhere}
+.ui-hours-copy small{display:block;margin-top:3px;font-size:12px;color:var(--ui-muted)}
+.ui-hours-copy em{font-style:normal;font-weight:700;color:var(--yellow-ink)}
+/* Progress: extras as one short list */
+.pg-x{padding:4px 14px}
+.pg-x-row{display:flex;align-items:center;gap:12px;width:100%;padding:12px 0;text-align:left;cursor:pointer;font:inherit;color:inherit}
+details.pg-x-row{display:block;cursor:default}
+details.pg-x-row>summary{display:flex;align-items:center;gap:12px;list-style:none;cursor:pointer}
+details.pg-x-row>summary::-webkit-details-marker{display:none}
+details.pg-x-row[open]>summary .pg-x-chev{transform:rotate(90deg)}
+details.pg-x-row .pg-badges{margin-top:12px}
+.pg-x>*+*{border-top:1px solid var(--ui-line)}
+.pg-x-copy{flex:1;min-width:0}
+.pg-x-copy strong{display:block;font-size:15px;color:var(--ui-ink)}
+.pg-x-copy small{display:block;margin-top:2px;font-size:12.5px;color:var(--ui-muted)}
+.pg-x-new{font-style:normal;font-size:11px;font-weight:800;padding:2px 7px;border-radius:999px;background:var(--yellow);color:var(--ui-on-accent);margin-left:4px}
+.pg-x-chev{transition:transform .2s}

@@ -177,42 +177,22 @@
   }
   function ringSvg(pct){const r=52,c=2*Math.PI*r;return '<svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="'+r+'" class="pg-ring-track"/><circle cx="60" cy="60" r="'+r+'" class="pg-ring-fill" style="--c:'+c.toFixed(1)+';--v:'+(c*Math.max(0,Math.min(100,pct))/100).toFixed(1)+'" transform="rotate(-90 60 60)"/></svg>'}
 
+  /* The extras (practice, scenarios, badges) sit under the course progress as one short list. */
   function sectionHtml(s){
-    const ach=achievements(s);
-    const out=[];
-    // Activity
-    out.push(card("pg-activity","activity","Activity","Last upload: "+escHtml(ago(s.lastUpload).toLowerCase()),
-      '<div class="pg-tiles">'+
-        '<div class="pg-tile'+(s.activeThisWeek?" hot":"")+'"><span class="pg-tile-icon flame">'+svg(ICON.flame)+'</span>'+num(s.streak)+'<small>week streak</small></div>'+
-        '<div class="pg-tile"><span class="pg-tile-icon">'+svg(ICON.camera)+'</span>'+num(s.allPacks)+'<small>evidence packs'+(s.packsThisMonth?' · +'+s.packsThisMonth+' this month':"")+'</small></div>'+
-        '<div class="pg-tile"><span class="pg-tile-icon">'+svg(ICON.clock)+'</span>'+num(Math.round(s.otjTotal*10)/10,{dec:s.otjTotal%1?1:0})+'<small>OTJ hours'+(s.otjWeek?' · +'+(Math.round(s.otjWeek*10)/10)+' this week':"")+'</small></div>'+
-      '</div>'+(s.streak&&!s.activeThisWeek?'<p class="pg-note">Add something this week to keep your streak going.</p>':"")));
-    // Evidence quality
-    out.push(card("pg-quality","quality","Evidence quality","",
-      s.coverage==null?'<p class="pg-note">Submit a unit with a write-up and Evia will score how many key points it covers.</p>':
-      row("Write-ups cover the key points",s.coverage+"%",bar(s.coverage))+
-      (s.avgPhotos!=null?row("Photos per evidence pack",(Math.round(s.avgPhotos*10)/10)+" · aim for 5+",bar(s.avgPhotos/5*100,{delay:120})):"")));
-    // Tests
-    out.push(card("pg-tests","tests","Tests",s.tests.length?s.testCount+" taken":"",
-      s.tests.length?s.tests.map((t,i)=>{const last=t.latest?(typeof t.latest.pct==="number"?t.latest.pct:Math.round((t.latest.score||0)/(t.latest.total||1)*100)):0;return row(escHtml(t.name),last+"% <small>best "+t.best+"%</small>",bar(last,{delay:i*100,mark:t.best,cls:last>=80?"good":last<50?"low":""}))}).join(""):'<p class="pg-note">No tests taken yet. A quick EPA quiz takes about 3 minutes.</p>',
-      ["Practice tests","tests"]));
-    // Skills (confidence self-assessment)
-    const scores=s.confidence.scores.slice().sort((x,y)=>x.score-y.score);
-    const LEVEL=["Need more training","Know the basics","Quite confident","Mastered"];
-    out.push(card("pg-skills","skills","Your skills",s.confidence.last?"rated "+escHtml(ago(s.confidence.last).toLowerCase()):"",
-      scores.length?scores.map((x,i)=>row(escHtml(x.area),LEVEL[x.score-1]||"",bar(x.score/4*100,{delay:i*60,cls:x.score<=2?"low":"good"}))).join(""):'<p class="pg-note">Rate yourself on each practical skill to see what to practise.</p>',
-      [scores.length?"Rate my skills again":"Rate my skills","confidence"]));
-    // Scenarios
-    const sc=s.scenarios&&s.scenarios.topics;
-    if(sc&&sc.length)out.push(card("pg-scen","scen","Real-life scenarios",s.scenarios.done+" of "+s.scenarios.total,
-      sc.map((t,i)=>row(escHtml(t.title),t.done+" of "+t.total,bar(t.total?t.done/t.total*100:0,{delay:i*90,cls:t.done===t.total?"good":""}))).join(""),
-      [s.scenarios.done?"Carry on":"Start","scenarios"]));
-    // Achievements
+    const ach=achievements(s),sp=s.scenarios;
+    const last=s.tests.length?s.tests.map(t=>t.latest).filter(Boolean).sort((x,y)=>Date.parse(y.savedAt||0)-Date.parse(x.savedAt||0))[0]:null;
+    const lastPct=last?(typeof last.pct==="number"?last.pct:Math.round((last.score||0)/(last.total||1)*100)):null;
+    const low=s.confidence.scores.filter(x=>x.score<=2).length;
+    const row=(id,icon,title,sub,action)=>'<button type="button" class="pg-x-row" id="'+id+'" data-st-action="'+action+'"><span class="pg-icon">'+svg(ICON[icon])+'</span><span class="pg-x-copy"><strong>'+title+'</strong><small>'+sub+'</small></span><span class="pg-x-chev" aria-hidden="true">›</span></button>';
     const earned=ach.list.filter(x=>x.earned),fresh=new Set(ach.fresh.map(x=>x.id));
-    out.push(card("pg-awards","award","Achievements",'<b class="pg-num" data-to="'+ach.count+'">'+ach.count+'</b> of '+ach.list.length,
-      (earned.length?'<ul class="pg-badges">'+earned.map((x,i)=>'<li class="pg-badge'+(fresh.has(x.id)?" new":"")+'" style="--i:'+i+'" title="'+escHtml(x.desc)+'"><span class="pg-badge-icon">'+BADGE+'</span><strong>'+escHtml(x.label)+'</strong></li>').join("")+'</ul>':'<p class="pg-note">None yet. Your first one isn’t far away.</p>')+
-      '<details class="pg-all"><summary>See all '+ach.list.length+'</summary><ul class="pg-locked">'+ach.list.map(x=>'<li class="'+(x.earned?"on":"")+'"><span class="pg-badge-icon">'+BADGE+'</span><span><strong>'+escHtml(x.label)+'</strong><small>'+escHtml(x.desc)+'</small></span></li>').join("")+'</ul></details>'));
-    return '<div class="pg-stats" id="ui-stats">'+out.join("")+'</div>';
+    const rows=[
+      row("pg-tests","tests","Practice",escHtml(!s.tests.length&&!s.confidence.last?"Tests, skills check and college tasks":[s.tests.length?s.testCount+" test"+(s.testCount===1?"":"s")+" taken"+(lastPct!=null?" · last "+lastPct+"%":""):"No tests yet",s.confidence.last?(low?low+" skill"+(low===1?"":"s")+" to practise":"skills check done"):"no skills check yet"].join(" · ")),"tests"),
+      sp&&sp.topics&&sp.topics.length?row("pg-scen","scen","Real-life scenarios",sp.done+" of "+sp.total+" done","scenarios"):"",
+      '<details class="pg-x-row pg-x-awards" id="pg-awards"><summary><span class="pg-icon">'+svg(ICON.award)+'</span><span class="pg-x-copy"><strong>Achievements'+(ach.fresh.length?' <em class="pg-x-new">New</em>':"")+'</strong><small>'+ach.count+' of '+ach.list.length+' earned</small></span><span class="pg-x-chev" aria-hidden="true">›</span></summary>'+
+        (earned.length?'<ul class="pg-badges">'+earned.map((x,i)=>'<li class="pg-badge'+(fresh.has(x.id)?" new":"")+'" style="--i:'+i+'" title="'+escHtml(x.desc)+'"><span class="pg-badge-icon">'+BADGE+'</span><strong>'+escHtml(x.label)+'</strong></li>').join("")+'</ul>':'<p class="pg-note">None yet. Your first one isn’t far away.</p>')+
+        '<ul class="pg-locked">'+ach.list.filter(x=>!x.earned).map(x=>'<li><span class="pg-badge-icon">'+BADGE+'</span><span><strong>'+escHtml(x.label)+'</strong><small>'+escHtml(x.desc)+'</small></span></li>').join("")+'</ul></details>'
+    ];
+    return '<h2 class="pg-x-h">Extras</h2><section class="ui-card pg-card pg-x" id="ui-stats">'+rows.join("")+'</section>';
   }
 
   /* Plays each card's animation as it scrolls into view; everything shows at once with reduced motion. */

@@ -35,11 +35,11 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       hours.push({id:"h1",n:3,description:"Toolbox talk",createdAt:Date.now()});persist();render()});
     await page.waitForTimeout(500);
 
-    check("Home shows progress and quick actions",await page.$("#ui-home-progress")&&await page.$("#ui-practice"));
-    for(const s of ["course","progress","portfolio","learning","home"]){await page.evaluate(s=>nav(s),s);await page.waitForTimeout(450)}
+    check("The app opens on Course with Evia's next job and no Home tab",await page.evaluate(()=>screen==="course"&&!!document.getElementById("ui-next")&&!document.querySelector('[data-nav="home"]')&&!!document.querySelector('[data-nav="learning"]')));
+    for(const s of ["course","progress","portfolio","learning"]){await page.evaluate(s=>nav(s),s);await page.waitForTimeout(450)}
     await page.evaluate(()=>nav("progress"));await page.waitForTimeout(450);
     check("Progress shows when the next review is due",await page.evaluate(()=>!window.eviaReviewDue()||!!document.getElementById("ui-review-due")));
-    check("Progress shows the hero, KSB groups and stats cards",await page.$("#pg-hero")&&await page.$(".ui-groups")&&await page.$("#pg-activity")&&await page.$("#pg-awards"));
+    check("Progress shows the hero, KSB groups and the extras list",await page.$("#pg-hero")&&await page.$(".ui-groups")&&await page.$("#pg-tests")&&await page.$("#pg-awards"));
     await page.evaluate(()=>nav("portfolio"));await page.waitForTimeout(450);
     check("Portfolio shows the unit with evidence",await page.$("[data-unit-open]"));
     await page.evaluate(()=>{nav("course")});await page.waitForTimeout(450);await page.evaluate(()=>openUnit(3));await page.waitForTimeout(900);

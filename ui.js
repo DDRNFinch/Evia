@@ -56,40 +56,19 @@
     return {unit:null,text:"Every KSB on your course has some evidence. Keep strengthening the units with the least photos and detail.",action:null};
   }
 
-  /* ---------- Home ---------- */
-  function home(){
-    $("#page-title").textContent="Home";
-    const a=analyse();
-    const recent=a.entries.slice().sort((x,y)=>entryTime(y)-entryTime(x)).slice(0,2);
-    const timeDetail=a.timePct==null?"Dates not set":a.timePct+"%";
-    $("#screen").innerHTML=
-      '<div class="ui-page">'+
-        '<section class="ui-card ui-progress-card" id="ui-home-progress" role="button" tabindex="0" aria-label="Open progress">'+
-          ring(a.ksbPct,104,11,a.ksbPct+"%","KSBs")+
-          '<div class="ui-progress-lines">'+
-            '<div class="ui-line"><div class="ui-line-head"><span>Course time</span><span>'+escHtml(timeDetail)+'</span></div><div class="ui-track"><span style="width:'+(a.timePct||0)+'%"></span></div></div>'+
-            '<div class="ui-line"><div class="ui-line-head"><span>Off-the-job</span><span>'+a.otj.toFixed(1)+' hrs</span></div><div class="ui-track"><span style="width:'+Math.min(100,a.otj/3)+'%"></span></div></div>'+
-            '<span class="ui-accent-text">'+a.met+' of '+a.total+' KSBs have evidence</span>'+
-          '</div>'+
-        '</section>'+
-        '<div class="ui-quick">'+
-          '<button type="button" class="ui-card ui-quick-btn" id="ui-log-otj"><span class="ui-icon-chip">'+icon(ICONS.clock)+'</span><span>Log OTJ hours</span></button>'+
-          '<button type="button" class="ui-card ui-quick-btn" id="ui-practice"><span class="ui-icon-chip">'+icon(ICONS.test)+'</span><span>Practice</span>'+(window.eviaPractice&&window.eviaPractice.epaDue()?'<em class="ui-due">EPA</em>':"")+'</button>'+
-        '</div>'+
-        '<section class="ui-section"><div class="ui-section-head"><h2>Recent evidence</h2>'+(recent.length?'<button type="button" class="ui-link" id="ui-see-all">See all</button>':"")+'</div>'+
-          (recent.length?'<div class="ui-recent">'+recent.map((e,i)=>'<button type="button" class="ui-recent-item" data-recent="'+i+'"><span class="ui-photo" data-recent-photo="'+i+'">'+icon(ICONS.camera,22)+'</span><strong>'+escHtml(e.u)+'</strong><small>'+escHtml(new Date(entryTime(e)).toLocaleDateString("en-GB",{day:"numeric",month:"short"}))+'</small></button>').join("")+'</div>'
-          :'<div class="ui-card ui-empty"><span class="ui-icon-chip">'+icon(ICONS.camera)+'</span><p>Your evidence will show up here once you submit your first unit.</p></div>')+
-        '</section>'+
-      '</div>';
-    const prog=$("#ui-home-progress");prog.onclick=()=>nav("progress");prog.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();nav("progress")}};
-    $("#ui-log-otj").onclick=()=>nav("learning");
-    $("#ui-practice").onclick=()=>window.eviaPractice&&window.eviaPractice.openHub();
-    const all=$("#ui-see-all");if(all)all.onclick=()=>nav("portfolio");
-    document.querySelectorAll("[data-recent]").forEach(b=>b.onclick=()=>{const e=recent[+b.dataset.recent];if(window.eviaOpenSendToPortfolio)window.eviaOpenSendToPortfolio(e.u)});
-    recent.forEach(async(e,i)=>{
-      try{const photos=window.eviaGetEvidencePhotoData?await window.eviaGetEvidencePhotoData(e):(e.p||[]);const el=document.querySelector('[data-recent-photo="'+i+'"]');if(el&&photos[0])el.innerHTML='<img src="'+photos[0]+'" alt="">'}catch(_){}
-    });
-    homeNudge();
+  /* ---------- Course: Evia's card at the top ---------- */
+  /* One card: where you are (tap for Progress) and the one thing Evia suggests doing next. */
+  function nextUpHtml(){
+    const a=analyse(),sg=suggestion(a),T=window.eviaTerm?window.eviaTerm():{many:"KSBs"};
+    const gap=a.timePct==null?null:a.timePct-a.ksbPct,verdict=gap==null?"":gap>10?"A little behind":gap<-5?"Ahead of schedule":"On track";
+    return '<section class="ui-card ui-next" id="ui-next">'+
+      '<button type="button" class="ui-next-status" id="ui-next-progress">'+ring(a.ksbPct,46,5,a.ksbPct+"%")+'<span><strong>'+a.met+' of '+a.total+' '+escHtml(T.many)+'</strong><small>'+(verdict?verdict+" · ":"")+'See progress</small></span><span class="ui-next-chev" aria-hidden="true">›</span></button>'+
+      (sg.unit?'<div class="ui-next-evia"><span class="evia-mini" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span><p>'+escHtml(sg.text)+'</p></div><button type="button" class="primary ui-next-go" id="ui-next-go">'+escHtml(sg.draft?"Finish it":"Start this job")+'</button>':"")+
+    '</section>';
+  }
+  function bindNextUp(){
+    const pb=$("#ui-next-progress");if(pb)pb.onclick=()=>nav("progress");
+    const go=$("#ui-next-go");if(go)go.onclick=()=>{const sg=suggestion(analyse());if(sg.unit)openUnit(sg.unit.index)};
   }
 
   /* ---------- Evia speaks from her button: one Evia on screen ---------- */
@@ -110,8 +89,8 @@
     requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add("show")));
     if(window.eviaMood)window.eviaMood("happy");
   }
-  /* One nudge a day on Home: the most useful thing from My stats. Achievements are celebrated first. */
-  function homeNudge(){
+  /* One nudge a day on Course: the most useful thing from My stats. Achievements are celebrated first. */
+  function courseNudge(){
     hideBubble();
     if(document.body.classList.contains("evia-onboarding")||!window.eviaStats)return;
     let n;try{n=window.eviaStats.nudges(window.eviaStats.compute())[0]}catch(_){return}
@@ -120,7 +99,7 @@
     if(seen.day===today&&(!n.celebrate||seen.id===n.id))return;
     const name=firstName();
     const fire=()=>{
-      if(screen!=="home"||document.querySelector(".chat-sheet"))return;
+      if(screen!=="course"||document.querySelector(".chat-sheet"))return;
       if(document.querySelector(".evidence-toast")){bubbleTimer=setTimeout(fire,2400);return} /* wait for "Saved"-style messages to clear */
       const dismiss=()=>{localStorage.setItem(TIP_KEY,JSON.stringify({day:today,id:n.id}));if(n.achievements)window.eviaStats.markSeen(n.achievements)};
       const lead=n.celebrate?(name?"Well done "+escHtml(name)+"! ":"Well done! "):partOfDay()+(name?" "+escHtml(name):"")+". ";
@@ -129,7 +108,7 @@
     };
     bubbleTimer=setTimeout(fire,900);
   }
-  /* Carries out a nudge's action from Home or the chat. */
+  /* Carries out a nudge's action from Course or the chat. */
   function runNudge(n){
     const kind=n.action.kind,inChat=!!chatBox();
     const go=fn=>{if(inChat)closeChat();setTimeout(fn,inChat?60:0)};
@@ -211,7 +190,7 @@
     const bars=level=>{const n={strong:3,good:2,weak:1}[level]||0;return '<span class="ui-bars" aria-label="Evidence strength: '+(level||"none")+'">'+[0,1,2].map(i=>'<i class="'+(i<n?"on":"")+'" style="height:'+(5+i*3)+'px"></i>').join("")+'</span>'};
     $("#screen").innerHTML=pageHead("Portfolio")+
       '<div class="ui-page">'+
-        '<div class="ui-tabs" role="tablist"><button type="button" class="on" aria-selected="true">Units</button><button type="button" id="ui-tab-supporting">Supporting <span>'+supporting.length+'</span></button><button type="button" id="ui-tab-reviews">Reviews <span>'+reviews.length+'</span></button><button type="button" id="ui-tab-logs">Logs <span>'+hours.length+'</span></button></div>'+
+        '<div class="ui-tabs" role="tablist"><button type="button" class="on" aria-selected="true">Units</button><button type="button" id="ui-tab-supporting">Supporting <span>'+supporting.length+'</span></button><button type="button" id="ui-tab-reviews">Reviews <span>'+reviews.length+'</span></button></div>'+
         (shown.length?'<div class="ui-gallery">'+shown.map((t,i)=>'<button type="button" class="ui-tile" data-unit-open="'+escHtml(t.name)+'"><span class="ui-tile-photo" data-cover="'+i+'">'+icon(ICONS.camera,26)+'</span><span class="ui-tile-scrim"><strong>'+escHtml(t.name)+'</strong><span class="ui-tile-meta"><small>'+t.entries.length+' saved</small>'+bars(t.index>=0?unitStrengthForCourse(t.name):"good")+'</span></span></button>'
         ).join("")+'</div>':'<div class="ui-card ui-empty"><span class="ui-icon-chip">'+icon(ICONS.camera)+'</span><p>Your evidence will show up here once you submit your first unit.</p></div>')+
         (notStarted?'<button type="button" class="ui-card ui-more-units" id="ui-not-started"><span>'+notStarted+' unit'+(notStarted===1?"":"s")+' not started yet</span><strong>Go to Course '+icon(ICONS.chev,16)+'</strong></button>':"")+
@@ -220,7 +199,6 @@
     document.querySelectorAll("[data-unit-open]").forEach(b=>b.onclick=()=>{const n=b.getAttribute("data-unit-open");if(window.eviaOpenSendToPortfolio)window.eviaOpenSendToPortfolio(n);else if(window.downloadUnitEvidencePack)window.downloadUnitEvidencePack(n)});
     $("#ui-tab-supporting").onclick=()=>openSupportingPortfolio();
     $("#ui-tab-reviews").onclick=()=>openSavedReviews();
-    $("#ui-tab-logs").onclick=()=>openSavedLearningLogs();
     shown.forEach(async(t,i)=>{
       const latest=t.entries.slice().sort((x,y)=>entryTime(y)-entryTime(x));
       try{
@@ -535,9 +513,6 @@
       const b=document.createElement("button");b.type="button";b.className=optBox.querySelector("[data-chat-option]").className;b.innerHTML="<strong>College task</strong>";
       b.onclick=()=>{userTurns++;optBox.remove();item.run()};optBox.appendChild(b);
     }
-    /* app.js only brings the profile button back on some screens when the chat closes; Home needs it too. */
-    const x=document.getElementById("x");
-    if(x)x.addEventListener("click",()=>{const pb=document.getElementById("profile-btn");if(pb&&screen==="home")pb.style.display="flex"});
     if(!(opts&&opts.quiet===true))today();
   }
   /* After a test: celebrate a good score and offer what to do next. */
@@ -556,17 +531,52 @@
   /* Page heading in the strip beside the profile button: where you are, and which course. */
   const pageHead=title=>'<header class="ui-page-head"><h1>'+escHtml(title)+'</h1><span>'+escHtml(data().name)+'</span></header>';
 
+  /* ---------- Hours: off-the-job learning ---------- */
+  /* Quick amounts to tap, one line about what you did, and the log underneath. */
+  function hoursScreen(){
+    $("#page-title").textContent="Hours";
+    const lastBatch=otjBatches[otjBatches.length-1],cutoff=Number(lastBatch?lastBatch.cutoff:0);
+    const pending=hours.filter(x=>Number(x.createdAt)>cutoff).length;
+    const total=hours.reduce((n,x)=>n+Number(x.n||0),0);
+    const weekStart=(()=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return d.getTime()})();
+    const week=hours.filter(x=>Number(x.createdAt)>=weekStart).reduce((n,x)=>n+Number(x.n||0),0);
+    const fmt=n=>Math.round(n*100)/100;
+    const day=t=>new Date(Number(t)).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
+    $("#screen").innerHTML=pageHead("Hours")+
+      '<div class="ui-page">'+
+        '<section class="ui-card ui-hours-sum"><div><strong>'+fmt(total)+'</strong><small>hours logged</small></div><div><strong>'+fmt(week)+'</strong><small>this week</small></div></section>'+
+        '<section class="ui-card ui-hours-log">'+
+          '<h2>Log off-the-job hours</h2>'+
+          '<div class="ui-hours-chips" role="group" aria-label="Hours">'+[0.5,1,2,3,7.5].map(n=>'<button type="button" class="ui-hours-chip" data-hrs="'+n+'">'+n+'</button>').join("")+'<input id="hrs" type="number" min="0" step=".25" inputmode="decimal" placeholder="Other" aria-label="Hours"></div>'+
+          '<textarea id="otj-description" rows="2" placeholder="What did you do or learn? For example: toolbox talk on working at height"></textarea>'+
+          '<button class="primary" id="add" type="button">Save hours</button>'+
+          '<p class="ui-hours-hint">College days, training, toolbox talks, research and shadowing all count.</p>'+
+        '</section>'+
+        (pending||lastBatch?'<div class="ui-hours-pdf"><span>'+(pending?"<strong>"+pending+" new "+(pending===1?"entry":"entries")+"</strong> for your OTJ PDF":"All entries are in your last PDF")+'</span>'+(pending?'<button class="secondary" id="download-otj" type="button">Download PDF</button>':'<button class="secondary" id="download-last-otj" type="button">Last PDF again</button>')+'</div>':"")+
+        (hours.length?'<h2 class="ui-hours-h">Your log</h2><div class="ui-card ui-hours-list">'+hours.slice().reverse().map(x=>'<div class="ui-hours-item"><span class="ui-hours-n">'+fmt(Number(x.n||0))+'<small>hrs</small></span><span class="ui-hours-copy"><strong>'+escHtml(x.description||"No description recorded.")+'</strong><small>'+escHtml(day(x.createdAt))+(Number(x.createdAt)>cutoff&&lastBatch?' · <em>New</em>':"")+'</small></span></div>').join("")+'</div>':"")+
+      '</div>';
+    const input=$("#hrs");
+    document.querySelectorAll("[data-hrs]").forEach(b=>b.onclick=()=>{document.querySelectorAll("[data-hrs]").forEach(x=>x.classList.toggle("on",x===b));input.value=b.dataset.hrs});
+    input.oninput=()=>document.querySelectorAll("[data-hrs]").forEach(x=>x.classList.toggle("on",x.dataset.hrs===input.value));
+    $("#add").onclick=()=>{
+      const n=Number(input.value),description=$("#otj-description").value.trim();
+      if(!(n>0)){input.focus();if(typeof showEvidenceToast==="function")showEvidenceToast("Pick how many hours first",true);return}
+      if(!description){$("#otj-description").focus();if(typeof showEvidenceToast==="function")showEvidenceToast("Add a few words about what you did",true);return}
+      const now=Date.now();hours.push({id:"otj-"+now+"-"+Math.random().toString(36).slice(2,8),n,description,createdAt:now,savedAt:formatDateTime(now)});persist();
+      hoursScreen();if(typeof showEvidenceToast==="function")showEvidenceToast(fmt(n)+" hour"+(n===1?"":"s")+" saved");
+      if(window.eviaCheckTargets)window.eviaCheckTargets();
+    };
+    const dl=$("#download-otj");if(dl)dl.onclick=()=>downloadOTJPDF("new");
+    const lp=$("#download-last-otj");if(lp)lp.onclick=()=>downloadOTJPDF("last");
+  }
+
   /* ---------- Wire into the app ---------- */
-  const originalRender=window.render,originalChat=window.chat,originalLearning=window.learning;
-  const TOP_SCREENS=["home","course","progress","portfolio"];
+  const originalRender=window.render,originalChat=window.chat;
+  const TOP_SCREENS=["course","learning","progress","portfolio"];
   window.render=function(){
     hideBubble();
+    if(screen==="home")screen="course"; /* Home was folded into Course */
     const scr=document.getElementById("screen");if(scr)scr.classList.toggle("ui-top",TOP_SCREENS.includes(screen));
-    if(screen==="home"){
-      const profileBtn=document.getElementById("profile-btn");if(profileBtn)profileBtn.style.display="flex";
-      document.querySelectorAll("[data-nav]").forEach(b=>b.classList.toggle("active",b.dataset.nav==="home"));
-      home();return;
-    }
     originalRender();
   };
   window.progress=progressScreen;
@@ -575,16 +585,15 @@
     originalCourses();
     const head=document.querySelector("#screen > .card:not(.unit-card)");
     if(head)head.remove();
-    const firstCard=document.querySelector("#screen .unit-card[data-u]");
-    if(firstCard&&typeof strengthBars==="function")document.getElementById("screen").insertAdjacentHTML("afterbegin",'<p class="ui-bars-key"><span>Evidence strength</span>'+[["weak","Weak"],["good","Good"],["strong","Strong"]].map(([l,t])=>'<span class="ui-bars-key-item">'+strengthBars(l)+t+'</span>').join("")+'</p>');
-    document.getElementById("screen").insertAdjacentHTML("afterbegin",pageHead("Course"));
+    const scr=document.getElementById("screen");
+    const firstCard=scr.querySelector(".unit-card[data-u]");
+    if(firstCard&&typeof strengthBars==="function")scr.insertAdjacentHTML("afterbegin",'<p class="ui-bars-key"><span>Evidence strength</span>'+[["weak","Weak"],["good","Good"],["strong","Strong"]].map(([l,t])=>'<span class="ui-bars-key-item">'+strengthBars(l)+t+'</span>').join("")+'</p>');
+    scr.insertAdjacentHTML("afterbegin",pageHead("Course")+nextUpHtml());
+    bindNextUp();
+    courseNudge();
   };
   window.portfolio=portfolioScreen;
-  window.learning=function(){
-    originalLearning();
-    if(!document.getElementById("ui-back-home"))$("#screen").insertAdjacentHTML("afterbegin",'<button class="secondary ui-back" id="ui-back-home" type="button">‹ Home</button>');
-    $("#ui-back-home").onclick=()=>nav("home");
-  };
+  window.learning=hoursScreen;
   /* Page changes fade: the current page fades out, the new one fades in. */
   const reduced=()=>window.eviaAccessibility?window.eviaAccessibility.reducedMotion():matchMedia("(prefers-reduced-motion: reduce)").matches;
   let fadeTimer=null;
@@ -604,8 +613,7 @@
   window.openUnit=function(i){withFade(()=>originalOpenUnit(i))};
   window.chat=function(opts){hideBubble();originalChat();enhanceChat(opts);if(window.eviaMood)window.eviaMood("happy")};
   $("#evia-fab").onclick=window.chat;
-  window.eviaHome=home;
   window.eviaCoach={analyse,suggestion,checkUnit,showStats};
   window.eviaStartTest=startTest;
-  if(screen==="course"&&!document.body.classList.contains("evia-onboarding")){screen="home";render()}
+  if(!document.body.classList.contains("evia-onboarding"))render();
 })();
