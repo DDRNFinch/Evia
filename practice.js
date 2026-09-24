@@ -83,34 +83,65 @@
     const h=history(),last=h[h.length-1],m=latestMap();
     return {last:last?Date.parse(last.savedAt||last.startedAt)||null:null,practise:[...m.values()].filter(x=>x.score<=2).map(x=>x.area)};
   }
+  /* One slider per skill (1 = need more training … 4 = mastered). Each starts at last time's rating, marked on the
+     track, so a repeat check only means moving what's changed. The overall score at the top updates live. */
+  const SHORT=["Need training","Know the basics","Quite confident","Mastered"];
+  const overallPct=vals=>vals.length?Math.round(vals.reduce((n,v)=>n+v,0)/vals.length/4*100):null;
   function openConfidence(){
     const list=skills();
     if(!list.length){sheet("SKILLS","Confidence check",'<p class="pr-note">There are no practical skills loaded for this course yet.</p>');return}
     const prev=latestMap(),picked=new Map();
-    const body='<p class="pr-intro">Rate yourself honestly on each practical skill. Low ratings aren’t bad: they show you and your tutor what to practise. High ratings mean you can keep improving on the job.</p>'+
-      '<ol class="pr-skills">'+list.map((s,i)=>{
-        const p=prev.get(s.area);
-        return '<li class="pr-skill" data-skill="'+i+'"><div class="pr-skill-head"><strong id="pr-skill-'+i+'">'+escHtml(s.area)+'</strong>'+(p?'<small>Last time: '+escHtml(RATINGS[p.score-1]||"")+'</small>':"")+'</div>'+
-          '<p>'+escHtml(s.desc)+'</p>'+
-          '<div class="pr-scale" role="radiogroup" aria-labelledby="pr-skill-'+i+'">'+RATINGS.map((r,n)=>'<button type="button" role="radio" aria-checked="false" data-rate="'+(n+1)+'" class="lvl'+(n+1)+'"><span class="pr-dots" aria-hidden="true">'+[1,2,3,4].map(d=>'<i class="'+(d<=n+1?"on":"")+'"></i>').join("")+'</span>'+escHtml(r)+'</button>').join("")+'</div></li>';
+    const prevOverall=overallPct(list.map(s=>prev.get(s.area)).filter(Boolean).map(x=>x.score));
+    const body=
+      '<div class="cf-overall" id="cf-overall" aria-live="polite">'+
+        '<div class="cf-overall-top"><span>Course confidence</span><strong id="cf-score">–</strong></div>'+
+        '<span class="cf-overall-bar"><i id="cf-bar"></i></span>'+
+        '<small id="cf-sub"></small>'+
+      '</div>'+
+      '<p class="pr-intro cf-intro">Slide each skill to where you are now. Low is fine: it shows you and your tutor what to practise.'+(prev.size?' The faint dot shows last time.':'')+'</p>'+
+      '<div class="cf-legend" aria-hidden="true"><span>Need training</span><span>Basics</span><span>Confident</span><span>Mastered</span></div>'+
+      '<ol class="cf-list">'+list.map((s,i)=>{
+        const p=prev.get(s.area),v=p?p.score:1;
+        return '<li class="cf-row'+(p?"":" unset")+'" data-skill="'+i+'">'+
+          '<div class="cf-row-top"><strong id="cf-name-'+i+'">'+escHtml(s.area)+'</strong><span class="cf-level" id="cf-level-'+i+'">'+(p?escHtml(SHORT[v-1]):"Slide to rate")+'</span></div>'+
+          '<p class="cf-desc">'+escHtml(s.desc)+'</p>'+
+          '<div class="cf-track" style="--v:'+v+'">'+
+            '<span class="cf-stops" aria-hidden="true"><i></i><i></i><i></i><i></i></span>'+
+            (p?'<span class="cf-last" style="--l:'+p.score+'" title="Last time: '+escHtml(RATINGS[p.score-1])+'"></span>':"")+
+            '<input type="range" min="1" max="4" step="1" value="'+v+'" aria-labelledby="cf-name-'+i+'" aria-valuetext="'+(p?escHtml(RATINGS[v-1]):"Not rated")+'">'+
+          '</div>'+
+        '</li>';
       }).join("")+'</ol>'+
-      '<div class="pr-save"><span id="pr-count">0 of '+list.length+' rated</span><button type="button" class="primary" id="pr-save" disabled>Save my ratings</button></div>';
-    const el=sheet("SKILLS","How confident are you?",body,"pr-conf");
+      '<div class="pr-save"><span id="pr-count"></span><button type="button" class="primary" id="pr-save">Save my ratings</button></div>';
+    const el=sheet("SKILLS","How confident are you?",body,"pr-conf cf-sheet");
     const count=el.querySelector("#pr-count"),save=el.querySelector("#pr-save");
-    el.querySelectorAll(".pr-skill").forEach(li=>{
-      const i=+li.dataset.skill;
-      li.querySelectorAll("[data-rate]").forEach(b=>b.onclick=()=>{
-        picked.set(i,+b.dataset.rate);
-        li.querySelectorAll("[data-rate]").forEach(x=>x.setAttribute("aria-checked",String(x===b)));
-        li.classList.add("done");
-        count.textContent=picked.size+" of "+list.length+" rated";
-        save.disabled=false;
-        const next=li.nextElementSibling;
-        if(next&&!next.classList.contains("done")&&picked.size<list.length)setTimeout(()=>next.scrollIntoView({block:"nearest",behavior:window.eviaAccessibility&&window.eviaAccessibility.reducedMotion()?"auto":"smooth"}),120);
-      });
+    const valueOf=i=>picked.has(i)?picked.get(i):(prev.get(list[i].area)||{}).score;
+    const refresh=()=>{
+      const vals=list.map((_,i)=>valueOf(i)).filter(Boolean),pct=overallPct(vals);
+      el.querySelector("#cf-score").textContent=pct==null?"–":pct+"%";
+      el.querySelector("#cf-bar").style.width=(pct||0)+"%";
+      const low=vals.filter(v=>v<=2).length,high=vals.length-low;
+      const diff=pct!=null&&prevOverall!=null?pct-prevOverall:null;
+      el.querySelector("#cf-sub").innerHTML=vals.length?(low+" need training · "+high+" confident"+(diff?' · <b class="'+(diff>0?"up":"down")+'">'+(diff>0?"↑ ":"↓ ")+Math.abs(diff)+" since last time</b>":prevOverall!=null?" · same as last time":"")):"Move a slider to start";
+      count.textContent=vals.length+" of "+list.length+" rated";
+      save.disabled=!vals.length;
+    };
+    el.querySelectorAll(".cf-row").forEach(li=>{
+      const i=+li.dataset.skill,input=li.querySelector("input"),track=li.querySelector(".cf-track");
+      const set=()=>{
+        const v=+input.value;picked.set(i,v);li.classList.remove("unset");track.style.setProperty("--v",v);
+        const was=prev.get(list[i].area);
+        li.querySelector(".cf-level").innerHTML=escHtml(SHORT[v-1])+(was&&was.score!==v?' <small>· was '+escHtml(["Need training","Basics","Confident","Mastered"][was.score-1])+'</small>':"");
+        li.dataset.level=v<=2?"low":"high";
+        input.setAttribute("aria-valuetext",RATINGS[v-1]);refresh();
+      };
+      if(!li.classList.contains("unset"))li.dataset.level=valueOf(i)<=2?"low":"high";
+      input.addEventListener("input",set);input.addEventListener("change",set);
+      input.addEventListener("pointerup",set); /* a tap on an unrated slider counts, even without moving it */
     });
+    refresh();
     save.onclick=()=>{
-      if(!picked.size)return;
+      if(save.disabled)return;
       const now=new Date().toISOString();
       const scores=list.map((s,i)=>picked.has(i)?{area:s.area,score:picked.get(i),question:s.question,answeredAt:now}:prev.has(s.area)?Object.assign({},prev.get(s.area),{carried:true}):null).filter(Boolean);
       const all=readJson("evia7-confidence",[]);

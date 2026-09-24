@@ -61,8 +61,8 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.click("#x");await page.waitForTimeout(300);
 
     await page.evaluate(()=>window.eviaPractice.openConfidence());await page.waitForTimeout(300);
-    const skills=await page.$$eval(".pr-skill",x=>x.length);
-    for(let i=0;i<skills;i++)await page.click('.pr-skill[data-skill="'+i+'"] [data-rate="'+(i%4+1)+'"]');
+    await page.evaluate(()=>document.querySelectorAll(".cf-row input").forEach((inp,i)=>{inp.value=i%4+1;inp.dispatchEvent(new Event("input",{bubbles:true}))}));
+    check("Confidence sliders update the overall score",await page.evaluate(()=>/%/.test(document.getElementById("cf-score").textContent)));
     await page.click("#pr-save");await page.waitForTimeout(300);
     check("Confidence check saves and shows a training plan",await page.evaluate(()=>/training plan/i.test(document.getElementById("pr-title").textContent)));
     check("A college practice task is suggested",await page.$("[data-task]"));
