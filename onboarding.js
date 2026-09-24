@@ -195,6 +195,8 @@
       renderThumbs();step();
     };
     $("#ppe-camera").onchange=e=>{addFiles(e.target.files).finally(()=>e.target.value="")};
+    const camLabel=document.querySelector('label[for="ppe-camera"]');
+    if(camLabel&&window.eviaCamera&&window.eviaCamera.supported())camLabel.onclick=e=>{e.preventDefault();window.eviaCamera.open({title:"Personal protective equipment",prompts:["you wearing your PPE","hard hat","hi-vis","safety boots","gloves","eye protection","ear protection","dust mask (RPE)"],onDone:files=>addFiles(files)})};
     $("#ppe-gallery").onchange=e=>{addFiles(e.target.files).finally(()=>e.target.value="")};
     write.oninput=step;
     let saving=false;

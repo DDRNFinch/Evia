@@ -159,6 +159,9 @@
       }catch(err){console.error("Evia evidence photo save failed",err);alert("That photo could not be added. Please try again.")}
     };
     $("#evidence-camera").onchange=async e=>{await addFiles([...e.target.files]);e.target.value=""};
+    /* Camera opens Evia's own square camera (camera.js) with this unit's "Things to capture" as prompts. */
+    const camLabel=document.querySelector('label[for="evidence-camera"]');
+    if(camLabel&&window.eviaCamera&&window.eviaCamera.supported())camLabel.onclick=e=>{e.preventDefault();window.eviaCamera.open({title:u[0],prompts:String(prompts.photos||"").split("·"),onDone:files=>addFiles(files)})};
     $("#evidence-gallery").onchange=async e=>{await addFiles([...e.target.files]);e.target.value=""};
     $("#write").oninput=e=>{
       pack.write=e.target.value;savePack(pack);

@@ -164,6 +164,12 @@ function supportingPrepare(base,type){
      openSupportingEvidence();
    }catch(e){console.error("Supporting evidence save failed",e);showEvidenceToast("Couldn't save — please try again",true);}
  };
+ /* Video and voice notes use the full-screen recorder (camera.js); Keep saves the recording. */
+ if((type==="video"||type==="audio")&&window.eviaRecorder&&window.eviaRecorder.supported()){
+   close();
+   window.eviaRecorder.open({type,onDone:(b,m)=>save(b,m,(type==="video"?"Video_":"Audio_")+now()+"."+(String(m).includes("mp4")?(type==="video"?"mp4":"m4a"):"webm"))});
+   return;
+ }
  if(type==="photo"){
    area.innerHTML='<div class="evidence-capture-tile"><div class="section-title">CAPTURE PHOTO</div><div class="evidence-photo-actions"><button type="button" class="primary" id="supporting-take-photo">Camera</button><button type="button" class="secondary" id="supporting-choose-photo">Gallery</button><input id="supporting-camera" type="file" accept="image/*" capture="environment" hidden><input id="supporting-gallery" type="file" accept="image/*" hidden></div><div id="supporting-photo-preview" class="photo-grid"></div><button type="button" class="primary" id="supporting-save-photo" disabled>Save photo</button></div>';
    const camera=$("#supporting-camera"),gallery=$("#supporting-gallery"),preview=$("#supporting-photo-preview"),saveBtn=$("#supporting-save-photo");
@@ -172,7 +178,19 @@ function supportingPrepare(base,type){
      if(!/^image\//i.test(f.type)){alert("Please choose an image.");return}
      blob=f;mime=f.type;preview.innerHTML='<img class="thumb" src="'+URL.createObjectURL(f)+'" alt="Photo preview">';saveBtn.disabled=false;
    };
-   $("#supporting-take-photo").onclick=()=>camera.click();
+   /* The camera stays open for several photos; each one is saved as its own supporting photo. */
+   $("#supporting-take-photo").onclick=()=>{
+     if(!(window.eviaCamera&&window.eviaCamera.supported())){camera.click();return}
+     window.eviaCamera.open({title:"Supporting photos",onDone:async files=>{
+       try{
+         for(const f of files){
+           const id="support-"+Date.now()+"-"+Math.random().toString(36).slice(2,9),name="Photo_"+now()+"_"+id.slice(-4)+".jpg";
+           await supportingSaveRecord({id,course,title:name,type,mime:f.type||"image/jpeg",filename:name,addedAt:new Date().toISOString(),size:f.size},f);
+         }
+         close();showEvidenceToast(files.length===1?"Added to Portfolio":files.length+" photos added to Portfolio");openSupportingEvidence();
+       }catch(e){console.error("Supporting photos save failed",e);showEvidenceToast("Couldn't save — please try again",true)}
+     }});
+   };
    $("#supporting-choose-photo").onclick=()=>gallery.click();
    camera.onchange=()=>{add(camera.files[0]);camera.value=""};
    gallery.onchange=()=>{add(gallery.files[0]);gallery.value=""};

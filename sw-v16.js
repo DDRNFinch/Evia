@@ -1,4 +1,4 @@
-const VERSION = "2026-09-23-evia7-v53";
+const VERSION = "2026-09-23-evia7-v54";
 const CACHE_NAME = "evia7-offline-" + VERSION;
 
 const APP_SHELL = [
@@ -29,6 +29,7 @@ const APP_SHELL = [
   "./stats.js",
   "./practice.js",
   "./reviews.js",
+  "./camera.js",
   "./evia-alive.js",
   "./manifest.json",
   "./icon.svg",
