@@ -312,7 +312,8 @@
   const readOptional=root=>[...root.querySelectorAll(".nvq-opt input:checked")].map(i=>i.value);
 
   /* While the NVQ course is on, on-screen "KSB" wording (Home, stats, targets, chat) reads "criterion"/"criteria". */
-  const swap=node=>{if(!on())return;const walk=document.createTreeWalker(node,NodeFilter.SHOW_TEXT);let t;while((t=walk.nextNode()))if(t.nodeValue.indexOf("KSB")>=0)t.nodeValue=t.nodeValue.replace(/\bKSBs\b/g,"criteria").replace(/\bKSB\b/g,"criterion")};
+  const SWAPS=[[/\bEPA full mock\b/g,"Full knowledge test"],[/\bEPA quick quiz\b/g,"Quick quiz"],[/\bEPA MCQ\b/g,"Knowledge test"],[/\bEPA mocks?\b/g,"knowledge test"],[/\bKSBS\b/g,"CRITERIA"],[/\bKSBs\b/g,"criteria"],[/\bKSB\b/g,"criterion"],[/\b1 unit not started yet\b/g,"1 site job not started yet"],[/\b(\d+) units not started yet\b/g,"$1 site jobs not started yet"]];
+  const swap=node=>{if(!on())return;const walk=document.createTreeWalker(node,NodeFilter.SHOW_TEXT);let t;while((t=walk.nextNode())){const v=t.nodeValue;if(!/KSB|EPA|not started/.test(v))continue;let n=v;SWAPS.forEach(([re,to])=>{n=n.replace(re,to)});if(n!==v)t.nodeValue=n}};
   const watch=()=>new MutationObserver(ms=>{if(on())ms.forEach(m=>m.addedNodes.forEach(n=>{if(n.nodeType===1)swap(n);else if(n.nodeType===3&&n.parentNode)swap(n.parentNode)}))}).observe(document.body,{childList:true,subtree:true});
   if(document.body)watch();else document.addEventListener("DOMContentLoaded",watch);
   window.eviaTerm=()=>on()?{one:"criterion",many:"criteria",Many:"Criteria"}:{one:"KSB",many:"KSBs",Many:"KSBs"};

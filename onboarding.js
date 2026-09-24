@@ -102,7 +102,7 @@
     root.innerHTML='<div class="evia-onboard-inner">'+
       '<div class="evia-onboard-kicker">WELCOME TO EVIA</div>'+
       '<h2>Which course are you on?</h2>'+
-      '<p>Evia will set up your units and KSBs for your apprenticeship.</p>'+
+      '<p>Evia will set up your units and everything you need to evidence for your course.</p>'+
       '<div class="evia-onboard-courses">'+COURSES.filter(c=>C[c.key]).map(c=>
         '<button type="button" class="evia-onboard-course" data-onboard-course="'+c.key+'"><span class="evia-onboard-course-dot" aria-hidden="true"></span><span class="evia-onboard-course-copy"><strong>'+escHtml(c.label)+'</strong><small>'+escHtml(c.sub)+'</small></span><span class="evia-onboard-course-arrow" aria-hidden="true">›</span></button>'
       ).join("")+'</div></div>';

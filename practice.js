@@ -50,7 +50,10 @@
     row("discussion","discussion",nvq?"Discussion practice":"Professional discussion","5 questions · type your answers",summary("discussion").text,false);
     if(p.mathsEnabled)row("maths","maths","Maths","5 questions with worked answers",summary("maths").text,daysAgo(summary("maths").last)>14);
     if(p.englishEnabled)row("english","english","English","5 questions with worked answers",summary("english").text,daysAgo(summary("english").last)>14);
-    const banner=tp!=null&&tp>=75
+    const nq=nvq&&window.eviaNvq.myQuestions?window.eviaNvq.myQuestions():[],na=nvq?nq.filter(q=>{const a=window.eviaNvq.answers()[q];return a&&String(a.t).trim().split(/\s+/).length>=12}).length:0;
+    const banner=nvq
+      ?'<button type="button" class="pr-banner nvq-hub-knowledge" id="pr-knowledge"><strong>Knowledge questions: '+na+' of '+nq.length+' answered.</strong> These are the questions your assessor will ask. Answer a few each week.</button>'
+      :tp!=null&&tp>=75
       ?'<div class="pr-banner"><strong>You’re '+tp+'% through your course.</strong> Time to get ready for your end-point assessment. Try a full EPA mock every '+(tp>=90?"week":"couple of weeks")+'.</div>'
       :'<p class="pr-note">'+(tp!=null?"You’re "+tp+"% through your course. Evia will remind you about EPA mocks from 75%.":"Add your course dates in Profile and Evia will remind you when it’s time for EPA mocks.")+'</p>';
     const body=banner+
@@ -61,6 +64,7 @@
     const sp=window.eviaScenarios?window.eviaScenarios.progress():null;
     const scen=sp?'<h3 class="pr-h">Real-life scenarios</h3><div class="pr-list"><button type="button" class="pr-row" data-pr="scenarios"><span class="pr-icon">'+icon(ICONS.scenarios)+'</span><span class="pr-copy"><strong>What would you do?</strong><small>Safeguarding, Prevent, British values and equality</small><small class="pr-sum">'+sp.done+' of '+sp.total+' done</small></span></button></div>':"";
     const el=sheet("PRACTICE","Tests and checks",body+scen);
+    const kb=el.querySelector("#pr-knowledge");if(kb)kb.onclick=()=>window.eviaNvq.openKnowledge();
     el.querySelectorAll("[data-pr]").forEach(b=>b.onclick=()=>{
       const id=b.dataset.pr;closeSheet();
       if(id==="confidence"){openConfidence();return}

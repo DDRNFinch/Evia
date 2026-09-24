@@ -30,11 +30,15 @@
     const msg="Evia couldn't save — your phone may be low on storage";
     if(typeof showEvidenceToast==="function")showEvidenceToast(msg,true);else alert(msg);
   }
+  /* Writes happen in the background; flush() waits for them all, e.g. before a reload after restoring a backup. */
+  const pendingWrites=new Set();
   function write(key,value){
     const tx=db.transaction(STORE,"readwrite"),store=tx.objectStore(STORE);
     if(value===null)store.delete(key);else store.put(value,key);
-    txDone(tx).catch(reportWriteError);
+    const done=txDone(tx).catch(reportWriteError);
+    pendingWrites.add(done);done.finally(()=>pendingWrites.delete(done));
   }
+  const flush=()=>Promise.all([...pendingWrites]);
   function patchLocalStorage(){
     proto.getItem=function(k){if(this===window.localStorage&&moved(k))return cache.has(k)?cache.get(k):null;return orig.getItem.call(this,k)};
     proto.setItem=function(k,v){if(this===window.localStorage&&moved(k)){v=String(v);cache.set(k,v);write(k,v);return}return orig.setItem.call(this,k,v)};
@@ -238,6 +242,7 @@
     Object.keys(manifest.data||{}).forEach(k=>{if(moved(k))localStorage.setItem(k,manifest.data[k])});
     Object.keys(manifest.settings||{}).forEach(k=>{if(KEEP.has(k))orig.setItem.call(localStorage,k,manifest.settings[k])});
     localStorage.setItem(LAST_BACKUP_KEY,manifest.createdAt||new Date().toISOString());
+    await flush(); /* everything must be on disk before Evia reloads */
     return manifest;
   }
 
@@ -271,7 +276,7 @@
     };
   }
 
-  window.eviaStorage={backup,restore,estimate,persisted,requestPersist,bindProfileCard,formatBytes};
+  window.eviaStorage={flush,backup,restore,estimate,persisted,requestPersist,bindProfileCard,formatBytes};
 
   /* ---------- Boot: load data, then the app scripts in order ---------- */
   function loadScripts(me){

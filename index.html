@@ -12,8 +12,8 @@
 <title>Evia</title>
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="polish.css">
-<link rel="stylesheet" href="ui.css?v=ui-v21">
-<link rel="stylesheet" href="accessibility.css?v=a11y-v1">
+<link rel="stylesheet" href="ui.css?v=ui-v22">
+<link rel="stylesheet" href="accessibility.css?v=a11y-v2">
 <style>
 html.evia-booting body{visibility:hidden}
 .evia-storage-block p{margin:6px 0;font-size:12.5px;line-height:1.5;color:#667085}.evia-storage-block .evia-storage-last{font-weight:700;color:#344054}.evia-storage-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.evia-storage-actions .secondary{display:flex;align-items:center;justify-content:center;min-height:44px;text-align:center;cursor:pointer}
@@ -73,7 +73,7 @@ html.evia-booting body{visibility:hidden}
 </nav>
 </div>
 <div id="modal-root"></div>
-<script src="storage.js?v=storage-v2" data-app-scripts="nvq-data.js?v=nvq-data-v1 nvq.js?v=nvq-v3 app.js polish.js theme.js?v=evia-theme-v4 accessibility.js?v=a11y-v1 onboarding.js?v=onboarding-v7 profile.js?v=profile-v4 eportfolio.js?v=eport-v6 test-banks.js review.js?v=tests-v4 repair.js?v=a11y-v1 provider.js?v=provider-v2 practice-tasks.js?v=tasks-v1 scenarios.js?v=scenarios-v2 stats.js?v=stats-v7 practice.js?v=practice-v5 reviews.js?v=reviews-v3 ui.js?v=ui-v15 camera.js?v=camera-v1 writing.js?v=writing-v2 evia-alive.js?v=alive-v3"></script>
+<script src="storage.js?v=storage-v3" data-app-scripts="nvq-data.js?v=nvq-data-v1 nvq.js?v=nvq-v4 app.js polish.js theme.js?v=evia-theme-v4 accessibility.js?v=a11y-v1 onboarding.js?v=onboarding-v8 profile.js?v=profile-v4 eportfolio.js?v=eport-v6 test-banks.js review.js?v=tests-v4 repair.js?v=a11y-v1 provider.js?v=provider-v2 practice-tasks.js?v=tasks-v1 scenarios.js?v=scenarios-v2 stats.js?v=stats-v7 practice.js?v=practice-v6 reviews.js?v=reviews-v3 ui.js?v=ui-v16 camera.js?v=camera-v1 writing.js?v=writing-v2 evia-alive.js?v=alive-v3"></script>
 <script>
 (function(){
   if (!("serviceWorker" in navigator)) return;
@@ -83,7 +83,7 @@ html.evia-booting body{visibility:hidden}
   navigator.serviceWorker.addEventListener("controllerchange",function(){if(reloading||!hadController||Date.now()-openedAt>8000)return;reloading=true;window.location.reload();});
   window.addEventListener("load", async function(){
     try {
-      const registration=await navigator.serviceWorker.register("./sw-v16.js?v=evia7-v60",{updateViaCache:"none"});
+      const registration=await navigator.serviceWorker.register("./sw-v16.js?v=evia7-v61",{updateViaCache:"none"});
       await registration.update().catch(()=>{}); /* fails harmlessly with no signal */
       const activateWaiting=worker=>{if(!worker)return;worker.postMessage({type:"SKIP_WAITING"});};
       if(registration.waiting) activateWaiting(registration.waiting);

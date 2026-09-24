@@ -119,13 +119,15 @@
     const today=new Date().toDateString(),seen=readJson(TIP_KEY,{});
     if(seen.day===today&&(!n.celebrate||seen.id===n.id))return;
     const name=firstName();
-    bubbleTimer=setTimeout(()=>{
+    const fire=()=>{
       if(screen!=="home"||document.querySelector(".chat-sheet"))return;
+      if(document.querySelector(".evidence-toast")){bubbleTimer=setTimeout(fire,2400);return} /* wait for "Saved"-style messages to clear */
       const dismiss=()=>{localStorage.setItem(TIP_KEY,JSON.stringify({day:today,id:n.id}));if(n.achievements)window.eviaStats.markSeen(n.achievements)};
       const lead=n.celebrate?(name?"Well done "+escHtml(name)+"! ":"Well done! "):partOfDay()+(name?" "+escHtml(name):"")+". ";
       eviaSay(lead+n.text,[{label:n.action.label,primary:true,run:()=>{dismiss();runNudge(n)}},{label:"Not now",run:dismiss}]);
       if(n.celebrate&&window.eviaMood)window.eviaMood("happy");
-    },900);
+    };
+    bubbleTimer=setTimeout(fire,900);
   }
   /* Carries out a nudge's action from Home or the chat. */
   function runNudge(n){
@@ -232,7 +234,8 @@
     }));
     return queue;
   }
-  function userSays(text){const c=chatBox();if(!c)return;const d=document.createElement("div");d.className="bubble user";d.textContent=text;c.appendChild(d);scrollChat()}
+  let userTurns=0; /* counts the learner's choices, so a late suggestion doesn't land after one */
+  function userSays(text){userTurns++;const c=chatBox();if(!c)return;const d=document.createElement("div");d.className="bubble user";d.textContent=text;c.appendChild(d);scrollChat()}
   function replies(list){
     const gen=chatGen;
     queue=queue.then(()=>{
@@ -432,9 +435,9 @@
     if(n.celebrate&&window.eviaMood)window.eviaMood("happy");
     say(n.celebrate?n.text:"Here’s what I’d do today: "+n.text);
     if(n.achievements)S.markSeen(n.achievements);
-    const gen=chatGen;
+    const gen=chatGen,turns=userTurns;
     queue=queue.then(()=>{
-      const c=chatBox();if(!c||gen!==chatGen)return;
+      const c=chatBox();if(!c||gen!==chatGen||turns!==userTurns)return; /* they've already picked something else */
       const box=document.createElement("div");box.className="chat-options ui-replies";
       const b=document.createElement("button");b.type="button";b.className="chat-pill ui-pill-primary";b.innerHTML="<strong>"+escHtml(n.action.label)+"</strong>";
       b.onclick=()=>{box.remove();if(!["test","confidence","targets","review"].includes(n.action.kind))userSays(n.action.label);runNudge(n)};
@@ -493,7 +496,7 @@
         :{label,run:()=>original&&original.call(b)};
       menuItems.push(item);
       b.innerHTML="<strong>"+escHtml(item.label)+"</strong>";
-      b.onclick=()=>{const box=b.closest(".chat-options");if(box)box.remove();item.run()};
+      b.onclick=()=>{userTurns++;const box=b.closest(".chat-options");if(box)box.remove();item.run()};
     });
     /* app.js only brings the profile button back on some screens when the chat closes; Home needs it too. */
     const x=document.getElementById("x");

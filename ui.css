@@ -609,3 +609,7 @@ html body .nvq-knowledge{justify-content:flex-start;gap:12px}
 .nvq-topic .pr-copy strong{font-size:14.5px}
 .nvq-q-unit{display:block;font-style:normal;font-size:11.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--yellow-ink,#6e5c00);margin-bottom:2px}
 .nvq-q-for{margin:0 0 -4px;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--yellow-ink,#6e5c00)}
+html body .nvq-hub-knowledge{display:block;width:100%;text-align:left;font:inherit;cursor:pointer}
+.nvq-units{padding:14px;display:flex;flex-direction:column;gap:12px}
+.nvq-units .ui-divider{margin:0}
+.nvq-units-head{margin:2px 2px 0;gap:10px;flex-wrap:wrap}

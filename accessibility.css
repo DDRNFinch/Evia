@@ -86,3 +86,7 @@ html body .chat-sheet .chat{flex:1 1 auto;height:auto!important;min-height:0}
 .a11y-note{margin:6px 0 0;font-size:12px;line-height:1.45;color:var(--yellow-ink,#6e5c00)}
 .a11y-actions{display:flex;justify-content:space-between;gap:10px;margin-top:16px}
 .a11y-actions button{min-height:46px;padding:10px 16px;border-radius:14px}
+/* The bottom bar stays a fixed size: its icons carry the meaning, and bigger labels would push "Portfolio" off small phones. */
+html[data-a11y-scale] .bottom-nav{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html[data-a11y-letter] body .bottom-nav button,html[data-a11y-letter] body .bottom-nav button *,html body .bottom-nav button{letter-spacing:0!important;word-spacing:0!important;white-space:nowrap}
+@media (max-width:360px){html body .bottom-nav button{font-size:11px}}

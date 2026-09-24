@@ -105,6 +105,14 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("NVQ Progress shows unit rings and says criteria, not KSBs",await page.evaluate(()=>!!document.querySelector("[data-nvq-unit='313']")&&!/KSB/.test(document.getElementById("screen").innerText)));
     await page.evaluate(()=>{course="bricklayer";persist();nav("home")});await page.waitForTimeout(450);
 
+    // Backup and restore: a learner's portfolio survives being restored and the app reloading.
+    const keep=await page.evaluate(()=>evidence.length);
+    const [bk]=await Promise.all([page.waitForEvent("download",{timeout:20000}),page.evaluate(()=>window.eviaStorage.backup())]);
+    const b64=fs.readFileSync(await bk.path()).toString("base64");
+    await page.evaluate(async b64=>{evidence.length=0;persist();const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));await window.eviaStorage.restore(new File([bytes],"backup.zip"))},b64);
+    await page.reload();await page.waitForTimeout(2500);
+    check("Backup and restore brings the portfolio back after a reload",await page.evaluate(n=>evidence.length===n&&n>0,keep));
+
     // Offline: once everything is saved, Evia opens with no connection.
     await page.evaluate(()=>navigator.serviceWorker.ready);await page.waitForTimeout(1500);
     await ctx.setOffline(true);await page.reload();await page.waitForTimeout(2500);
