@@ -105,6 +105,18 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("NVQ Progress shows unit rings and says criteria, not KSBs",await page.evaluate(()=>!!document.querySelector("[data-nvq-unit='313']")&&!/KSB/.test(document.getElementById("screen").innerText)));
     await page.evaluate(()=>{course="bricklayer";persist();nav("home")});await page.waitForTimeout(450);
 
+    // Page headings, draft tags, the strength key, the backup reminder, clean test screens and the OTJ PDF.
+    await page.evaluate(()=>{localStorage.setItem("evia7-working-evidence-packs",JSON.stringify({["bricklayer|"+data().u[5][0]]:{course:"bricklayer",unit:data().u[5][0],photos:[],write:"Started"}}));nav("course")});await page.waitForTimeout(450);
+    check("Course has a heading, the strength key and a Draft tag",await page.evaluate(()=>/Course/.test(document.querySelector(".ui-page-head h1").textContent)&&!!document.querySelector(".ui-bars-key")&&document.querySelectorAll(".draft-chip").length===1));
+    check("Evia reminds learners to back up once they have a few packs",await page.evaluate(()=>{localStorage.removeItem("evia7-last-backup");return window.eviaStats.nudges(window.eviaStats.compute()).some(n=>n.id==="backup")}));
+    await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";window.eviaStartTest("maths",5,"Maths")});await page.waitForSelector("[data-test-answer]",{state:"visible",timeout:12000});
+    check("A test from Practice opens on its own screen, without the chat menu",await page.evaluate(()=>/Maths/.test(document.querySelector(".chat-sheet h2").textContent)&&!document.querySelector("#chat [data-chat-option]")));
+    await page.click("#x");await page.waitForTimeout(300);
+    await page.evaluate(()=>{nav("learning")});await page.waitForTimeout(500);
+    await page.evaluate(()=>{const b=document.getElementById("download-otj")||document.getElementById("download-last-otj");b.click()});await page.waitForSelector("#eport-save",{timeout:15000});
+    check("The OTJ log downloads as a PDF with a preview",await page.evaluate(()=>!!document.getElementById("eport-preview")&&/OTJ PDF/.test(document.querySelector(".eport-status").textContent)));
+    await page.evaluate(()=>nav("home"));await page.waitForTimeout(400);
+
     // Backup and restore: a learner's portfolio survives being restored and the app reloading.
     const keep=await page.evaluate(()=>evidence.length);
     const [bk]=await Promise.all([page.waitForEvent("download",{timeout:20000}),page.evaluate(()=>window.eviaStorage.backup())]);

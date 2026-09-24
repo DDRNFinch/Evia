@@ -113,7 +113,7 @@
       const nvq=nvqOn();
       writeState(nvq?"optional":"unit");
       root.classList.add("leaving");
-      setTimeout(()=>{root.remove();nvq?showOptionalPicker():showPpeUnit()},320);
+      setTimeout(()=>{root.remove();nvq?showOptionalPicker():pickersThen(showPpeUnit)},320);
     });
   }
 
@@ -152,8 +152,14 @@
       window.eviaNvq.setOptional(window.eviaNvq.readOptional(root));
       writeState("unit");
       root.classList.add("leaving");
-      setTimeout(()=>{root.remove();showPpeUnit()},320);
+      setTimeout(()=>{root.remove();pickersThen(showPpeUnit)},320);
     };
+  }
+  /* After the course: Evia's shape and colour, if not chosen yet, then carry on. */
+  function pickersThen(next){
+    const shape=window.eviaShapeHasBeenPicked&&window.eviaShapeHasBeenPicked(),colour=window.eviaThemeHasBeenPicked&&window.eviaThemeHasBeenPicked();
+    const doColour=()=>{if(!colour&&window.eviaShowThemePicker)window.eviaShowThemePicker(next);else next()};
+    if(!shape&&window.eviaShowShapePicker)window.eviaShowShapePicker(doColour);else doColour();
   }
 
   function showPpeUnit(){

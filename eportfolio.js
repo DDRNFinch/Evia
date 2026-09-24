@@ -307,5 +307,88 @@
     };
   }
 
+  /* ---------- Off-the-job learning log as a proper PDF, with the same preview, Share and Save ---------- */
+  async function buildOtjPdf(entries,createdAt){
+    const {jsPDF}=await loadJsPdf();
+    const doc=new jsPDF({unit:"mm",format:"a4",compress:true});
+    const profile=readJson("evia7-profile",{}),learner=profile.name||"Apprentice";
+    const W=210,H=297,M=16,CW=W-2*M,BOTTOM=H-M-8,ink=[23,32,51],muted=[102,112,133],accent=accentRgb();
+    const total=entries.reduce((n,x)=>n+Number(x.n||0),0);
+    let y=M;
+    const label=(t,x,yy)=>{doc.setFont("helvetica","bold");doc.setFontSize(7.5);doc.setTextColor(...muted);doc.setCharSpace(.35);doc.text(pdfText(t).toUpperCase(),x,yy);doc.setCharSpace(0)};
+    label("Evia · Off-the-job learning",M,y+3);y+=6;
+    doc.setFont("helvetica","bold");doc.setFontSize(21);doc.setTextColor(...ink);doc.text(pdfText(learner),M,y+7);y+=11;
+    const details=[["Course",data().name],["Standard",data().std],["Entries",String(entries.length)],["Total hours",total.toFixed(2)]];
+    if(profile.start)details.push(["Start date",ukDate(profile.start)]);
+    if(profile.end)details.push(["End date",ukDate(profile.end)]);
+    details.push(["PDF created",ukDate(createdAt)]);
+    doc.setFontSize(9);
+    details.forEach((d,i)=>{const x=M+(i%2)*(CW/2),yy=y+Math.floor(i/2)*5.2;doc.setFont("helvetica","bold");doc.setTextColor(...ink);doc.text(pdfText(d[0])+":",x,yy+3.5);const lw=doc.getTextWidth(pdfText(d[0])+": ");doc.setFont("helvetica","normal");doc.setTextColor(71,84,103);doc.text(pdfText(d[1]),x+lw,yy+3.5)});
+    y+=Math.ceil(details.length/2)*5.2+3;
+    doc.setDrawColor(...accent);doc.setLineWidth(.8);doc.line(M,y,W-M,y);y+=8;
+    /* One outlined tile per entry: date and hours on top, what they did underneath. */
+    const PAD=4.5,size=10.5,lh=size*.3528*1.45;
+    entries.slice().sort((a,b)=>Number(a.createdAt)-Number(b.createdAt)).forEach(x=>{
+      doc.setFont("helvetica","normal");doc.setFontSize(size);
+      const lines=doc.splitTextToSize(pdfText(x.description||"No description recorded."),CW-PAD*2);
+      const h=PAD*2+5+lines.length*lh;
+      if(y+Math.min(h,60)>BOTTOM){doc.addPage();y=M}
+      let rest=lines.slice(),first=true;
+      while(rest.length||first){
+        const room=Math.max(1,Math.floor((BOTTOM-y-PAD*2-(first?5:0))/lh)),chunk=rest.splice(0,room),hh=PAD*2+(first?5:0)+chunk.length*lh-1;
+        doc.setFillColor(250,251,252);doc.setDrawColor(223,227,233);doc.setLineWidth(.3);doc.roundedRect(M,y,CW,hh,2.5,2.5,"FD");
+        let ty=y+PAD;
+        if(first){doc.setFont("helvetica","bold");doc.setFontSize(10);doc.setTextColor(...ink);doc.text(pdfText(ukDate(Number(x.createdAt)||x.savedAt)),M+PAD,ty+3);doc.text(Number(x.n||0).toFixed(2)+" hours",W-M-PAD,ty+3,{align:"right"});ty+=5}
+        doc.setFont("helvetica","normal");doc.setFontSize(size);doc.setTextColor(52,64,84);
+        chunk.forEach((l,n)=>doc.text(l,M+PAD,ty+lh*.75+n*lh));
+        y+=hh+4;first=false;
+        if(rest.length){doc.addPage();y=M}
+      }
+    });
+    const pages=doc.getNumberOfPages();
+    for(let n=1;n<=pages;n++){
+      doc.setPage(n);doc.setFont("helvetica","normal");doc.setFontSize(7.5);doc.setTextColor(...muted);
+      doc.text(pdfText(learner+" · Off-the-job learning"),M,H-9);
+      doc.text("Page "+n+" of "+pages,W-M,H-9,{align:"right"});
+      const brand="Created using Evia",bw=doc.getTextWidth(brand),sq=3.4,bx=W/2-(sq+1.6+bw)/2,by=H-9-2.6;
+      doc.setFillColor(229,188,2);doc.roundedRect(bx,by,sq,sq,.7,.7,"F");
+      doc.setFillColor(255,255,255);doc.ellipse(bx+sq*.2835,by+sq*.49,sq*.111,sq*.168,"F");doc.ellipse(bx+sq*.7165,by+sq*.49,sq*.111,sq*.168,"F");
+      doc.setTextColor(...muted);doc.text(brand,bx+sq+1.6,H-9);
+    }
+    const out=doc.output("blob");out.evPages=pages;return out;
+  }
+  async function openOtjPdf(entries,createdAt,onReady){
+    injectStyles();
+    const profileBtn=document.getElementById("profile-btn");if(profileBtn)profileBtn.style.display="none";
+    const learner=readJson("evia7-profile",{}).name||"Apprentice",total=entries.reduce((n,x)=>n+Number(x.n||0),0);
+    const sorted=entries.slice().sort((a,b)=>Number(a.createdAt)-Number(b.createdAt));
+    $("#page-title").textContent="Off-the-job PDF";
+    $("#screen").innerHTML='<button class="secondary" id="eport-back" type="button">‹ Back to learning</button>'+
+      '<div class="eport-page"><div class="card eport-intro"><div class="section-title">OFF-THE-JOB LEARNING</div><h2>Your OTJ log</h2><p>'+entries.length+' entr'+(entries.length===1?"y":"ies")+' · '+total.toFixed(2)+' hours. Upload this PDF to Aptem or your e-portfolio so your hours are counted.</p></div>'+
+      '<div class="eport-files" id="eport-files"><div class="card eport-pdf"><div class="eport-sheet is-loading" aria-hidden="true"><span></span><span></span><span></span></div><p class="eport-status">Preparing your OTJ PDF…</p></div></div></div>';
+    $("#eport-back").onclick=()=>nav("learning");
+    let pdf;
+    try{const blob=await buildOtjPdf(sorted,createdAt);pdf={pages:blob.evPages,file:new File([blob],slug(learner)+"_OTJ-log_"+isoDate(createdAt)+".pdf",{type:"application/pdf"})}}
+    catch(err){console.error("Evia OTJ PDF failed",err);const l=$("#eport-files");if(l)l.innerHTML='<div class="card"><p>'+(/PDF library/.test(err&&err.message)?"The PDF couldn’t be made because part of Evia hasn’t downloaded yet. Open Evia once with signal, then try again.":"Evia couldn’t make the PDF. Please try again.")+'</p></div>';return}
+    if(!document.getElementById("eport-files"))return;
+    if(onReady)onReady();
+    const shareOk=canShareFiles([pdf.file]);
+    $("#eport-files").innerHTML='<div class="card eport-pdf">'+
+      '<button type="button" class="eport-sheet" id="eport-preview" aria-label="Open the full OTJ PDF">'+
+        '<span class="eport-sheet-kicker">EVIA · OFF-THE-JOB LEARNING</span>'+
+        '<strong class="eport-sheet-title">'+escHtml(learner)+'</strong>'+
+        '<span class="eport-sheet-sub">'+entries.length+' entr'+(entries.length===1?"y":"ies")+' · '+total.toFixed(2)+' hours</span>'+
+        '<span class="eport-sheet-rule"></span>'+
+        sorted.slice(0,3).map(x=>'<span class="eport-sheet-text"><b>'+escHtml(ukDate(Number(x.createdAt)))+' · '+Number(x.n||0).toFixed(2)+' h</b> '+escHtml(String(x.description||"").slice(0,70))+'</span>').join("")+
+        '<span class="eport-sheet-open">Tap to open the full PDF</span>'+
+      '</button>'+
+      '<p class="eport-status"><strong>OTJ PDF</strong> · '+pdf.pages+' page'+(pdf.pages===1?"":"s")+' · '+formatBytes(pdf.file.size)+'</p>'+
+      '<div class="eport-main'+(shareOk?"":" single")+'">'+(shareOk?'<button type="button" class="primary" id="eport-share">'+icon.share+'Share PDF</button>':"")+'<button type="button" class="'+(shareOk?"secondary":"primary")+'" id="eport-save">'+icon.save+'Save PDF</button></div></div>';
+    const url=URL.createObjectURL(pdf.file);
+    $("#eport-preview").onclick=()=>{const w=window.open(url,"_blank");if(!w)saveFile(pdf.file)};
+    const sb=$("#eport-share");if(sb)sb.onclick=()=>shareFiles([pdf.file]);
+    $("#eport-save").onclick=()=>saveFile(pdf.file);
+  }
+  window.eviaOpenOtjPdf=openOtjPdf;
   window.eviaOpenSendToPortfolio=openSendToPortfolio;
 })();

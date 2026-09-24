@@ -90,6 +90,7 @@ function downloadOTJPDF(mode){
    batch=otjBatches[otjBatches.length-1];
    entries=otjEntriesForBatch(batch);
    if(!entries.length){alert("There is no saved OTJ PDF to download again.");return}
+   if(window.eviaOpenOtjPdf){window.eviaOpenOtjPdf(entries,batch.downloadedAt||now);return}
    buildOTJPrintWindow(entries,"Evia OTJ evidence · "+(batch.downloadedAt?formatDateTime(batch.downloadedAt):""),batch.downloadedAt||now);
    return;
  }
@@ -98,6 +99,8 @@ function downloadOTJPDF(mode){
  entries=hours.filter(x=>Number(x.createdAt)>lastCutoff);
  if(!entries.length){alert("There is no new off-the-job learning to include in a new PDF. Add more learning entries first.");return}
  batch={id:"otj-"+now+"-"+Math.random().toString(36).slice(2,8),downloadedAt:now,cutoff:now,entryIds:entries.map(x=>x.id)};
+ /* The batch is recorded once the PDF is ready, so the next download starts after these entries. */
+ if(window.eviaOpenOtjPdf){window.eviaOpenOtjPdf(entries,now,()=>{otjBatches.push(batch);persist()});return}
  if(!buildOTJPrintWindow(entries,"Evia OTJ evidence · "+formatDateTime(now),now))return;
  otjBatches.push(batch);persist();learning();
 }
@@ -301,12 +304,15 @@ function strengthBars(level){
  const n=level==="strong"?3:level==="good"?2:level==="weak"?1:0;
  return '<span class="unit-strength-bars" aria-label="'+(level?esc(level):"No evidence")+'">'+[0,1,2].map(i=>'<i class="signal-bar signal-bar-'+(i+1)+(i<n?" filled":"")+'"></i>').join("")+'</span>';
 }
+/* A pack that's been started (photos or a write-up) but not submitted yet. */
+function isDraft(unitName){try{const p=JSON.parse(localStorage.getItem("evia7-working-evidence-packs")||"{}")[course+"|"+unitName];return !!p&&((p.photos||[]).length>0||String(p.write||"").trim().length>0)}catch(_){return false}}
+const draftChip=unitName=>isDraft(unitName)?'<span class="draft-chip">Draft</span>':"";
 function courses(){
  if(window.eviaNvq&&window.eviaNvq.on())return window.eviaNvq.courseScreen();
  $("#page-title").textContent="Course";
  $("#screen").innerHTML='<div class="card"><div class="section-title">'+esc(data().std)+'</div><h2>'+esc(data().name)+'</h2><p>'+data().u.length+' units. Open a unit to capture evidence.</p></div>'+data().u.map((u,i)=>{
    const level=unitStrengthForCourse(u[0]);
-   return '<div class="card unit-card" data-u="'+i+'"><div class="unit-title">'+esc(u[0])+'</div>'+strengthBars(level)+'</div>';
+   return '<div class="card unit-card" data-u="'+i+'"><div class="unit-title">'+esc(u[0])+draftChip(u[0])+'</div>'+strengthBars(level)+'</div>';
  }).join("")+'<div class="card unit-card supporting-course-card" data-supporting-evidence><div class="unit-title">Supporting Evidence</div><small>Additional portfolio material.</small><span class="supporting-course-arrow">›</span></div>';
  bindCourses();document.querySelectorAll("[data-u]").forEach(b=>b.onclick=()=>openUnit(+b.dataset.u));const supportingCard=document.querySelector("[data-supporting-evidence]");if(supportingCard)supportingCard.onclick=()=>openSupportingEvidence();
 }
@@ -326,12 +332,12 @@ function ksbDetail(codeValue,wording,mapped){
  const units=[...new Set(mappedEntries.map(e=>e.u))];
  const supporting=supportingMeta().filter(x=>x.course===course&&Array.isArray(x.ksbs)&&x.ksbs.includes(codeValue));
  const evidenceHtml=mappedEntries.length
-   ? mappedEntries.map(e=>'<div class="ksb-evidence-item"><strong>'+esc(e.u)+'</strong><span>'+esc(e.d||e.savedAt||"Saved evidence")+'</span></div>').join("")
+   ? mappedEntries.map(e=>'<div class="ksb-evidence-item"><strong>'+esc(e.u)+'</strong><span>'+esc(e.d||(e.savedAt?formatDateTime(e.savedAt):"Saved evidence"))+'</span></div>').join("")
    : '<p class="ksb-empty">No saved course evidence is currently mapped to this KSB.</p>';
  const supportingHtml=supporting.length?'<div class="ksb-modal-section"><div class="section-title">Supporting evidence</div>'+supporting.map(x=>'<div class="ksb-evidence-item"><strong>'+esc(x.title)+'</strong><span>'+esc(x.behaviourTitle)+' · '+esc(supportingTypeLabel(x.type))+'</span></div>').join("")+'</div>':"";
  document.getElementById("modal-root").innerHTML=
    '<div class="ksb-modal-overlay"><section class="ksb-modal">'+
-   '<div class="ksb-modal-head"><div><div class="code">'+esc(codeValue)+'</div><h2>'+esc(codeValue)+'</h2></div><button class="close" id="ksb-close" aria-label="Close">×</button></div>'+
+   '<div class="ksb-modal-head"><div><div class="code">'+esc({K:"Knowledge",S:"Skill",B:"Behaviour"}[String(codeValue).charAt(0)]||"KSB")+'</div><h2>'+esc(codeValue)+'</h2></div><button class="close" id="ksb-close" aria-label="Close">×</button></div>'+
    '<div class="ksb-modal-section"><div class="section-title">KSB wording</div><p>'+esc(wording)+'</p></div>'+
    '<div class="ksb-modal-section"><div class="section-title">Evidence mapped</div>'+evidenceHtml+'</div>'+
    supportingHtml+

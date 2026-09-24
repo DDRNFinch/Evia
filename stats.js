@@ -110,6 +110,11 @@
       const x=ach.fresh[0];
       list.push({id:"ach-"+x.id,celebrate:true,achievements:ach.fresh.map(f=>f.id),text:"You’ve earned a new achievement: <strong>"+x.label+"</strong>. "+x.desc+".",action:{label:"See my stats",kind:"stats"}});
     }
+    /* Backups: everything lives on this phone, so remind learners before there's a lot to lose. */
+    const packsAll=(typeof evidence!=="undefined"?evidence:[]).filter(e=>e&&!e.induction),lastBackup=Date.parse(localStorage.getItem("evia7-last-backup")||"")||null;
+    const since=lastBackup?packsAll.filter(e=>(Date.parse(e.savedAt||"")||0)>lastBackup).length:packsAll.length;
+    if(!lastBackup&&packsAll.length>=3)list.push({id:"backup",text:"Your portfolio is only saved on this phone. Back it up now so you don’t lose it if your phone breaks or goes missing.",action:{label:"Back up now",kind:"backup"}});
+    else if(lastBackup&&(since>=5||(since>=1&&daysAgo(lastBackup)>30)))list.push({id:"backup",text:"You’ve added "+since+" evidence pack"+(since===1?"":"s")+" since your last backup "+Math.round(daysAgo(lastBackup))+" days ago. Back up now so "+(since===1?"it’s":"they’re")+" safe.",action:{label:"Back up now",kind:"backup"}});
     if(s.daysSince==null&&s.a.units.length)list.push({id:"first-evidence",text:"Ready for your first unit? Any job from site can be evidence. Take photos and write up what you did.",action:{label:"Go to Course",kind:"course"}});
     else if(s.daysSince!=null&&s.daysSince>=14)list.push({id:"quiet",text:"It’s been "+s.daysSince+" days since your last evidence. Anything from site this week worth capturing?",action:{label:"Go to Course",kind:"course"}});
     /* Targets and reviews */

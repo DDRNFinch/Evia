@@ -154,7 +154,7 @@
       return '<div class="section-title nvq-section">'+escH(gname)+'</div>'+units.map(u=>{
         const mine=packs.filter(p=>p.meta.unit===u.n);if(!mine.length)return"";
         return '<p class="nvq-min">'+(units.length>1?'<strong>'+escH(u.short)+'</strong> · ':"")+ruleText(u,ev)+'</p>'+
-          mine.map(p=>'<div class="card unit-card" data-u="'+p.i+'"><div class="unit-title">'+escH(p.u[0])+'<small class="nvq-job-unit">Unit '+u.n+'</small></div>'+(typeof strengthBars==="function"?strengthBars(unitStrengthForCourse(p.u[0])):"")+'</div>').join("");
+          mine.map(p=>'<div class="card unit-card" data-u="'+p.i+'"><div class="unit-title">'+escH(p.u[0])+(typeof draftChip==="function"?draftChip(p.u[0]):"")+'<small class="nvq-job-unit">Unit '+u.n+'</small></div>'+(typeof strengthBars==="function"?strengthBars(unitStrengthForCourse(p.u[0])):"")+'</div>').join("");
       }).join("");
     }).join("");
     document.getElementById("screen").innerHTML=

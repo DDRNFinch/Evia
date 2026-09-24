@@ -136,6 +136,7 @@
     if(kind==="stats")go(showStats);
     else if(kind==="course")go(()=>nav("course"));
     else if(kind==="learning")go(()=>nav("learning"));
+    else if(kind==="backup")go(async()=>{try{await window.eviaStorage.backup();if(typeof showEvidenceToast==="function")showEvidenceToast("Backup saved to your downloads. Keep a copy somewhere safe, like your email")}catch(e){console.error(e);if(typeof showEvidenceToast==="function")showEvidenceToast("Couldn’t make the backup. Try again from Profile",true)}});
     else if(kind==="targets"||kind==="review"){
       const label=kind==="targets"?"My targets":"Progress review";
       const run=()=>{const item=menuItems.find(x=>x.label===label);if(item)item.run()};
@@ -152,7 +153,16 @@
   function startTest(type,count,label){
     const run=()=>{userSays(label);window.eviaTestMe&&window.eviaTestMe({type,count})};
     if(chatBox())queue=queue.then(run);
-    else{window.chat({quiet:true});setTimeout(run,50)}
+    else{
+      /* Started from Practice, a target or a suggestion: a clean test screen, without the chat greeting and menu. */
+      window.chat({quiet:true});
+      setTimeout(()=>{
+        const c=chatBox();if(c)c.innerHTML="";
+        const sh=document.querySelector(".chat-sheet"),h=sh&&sh.querySelector("h2"),k=sh&&sh.querySelector(".chat-kicker");
+        if(sh)sh.classList.add("ui-test-mode");if(h)h.textContent=label;if(k)k.textContent="PRACTICE TEST";
+        window.eviaTestMe&&window.eviaTestMe({type,count});
+      },50);
+    }
   }
   function showStats(){
     if(screen!=="progress")nav("progress");
@@ -166,7 +176,7 @@
     const a=analyse(),all=allK(),supporting=supportingMeta().filter(s=>s.course===course);
     const hasSupport=c=>supporting.some(s=>Array.isArray(s.ksbs)&&s.ksbs.includes(c));
     const S=window.eviaStats,st=(()=>{try{return S?S.compute():null}catch(_){return null}})();
-    $("#screen").innerHTML=
+    $("#screen").innerHTML=pageHead("Progress")+
       '<div class="ui-page">'+
         (st?S.heroHtml(st):"")+
         (window.eviaTargets?(window.eviaTargets.check(false),window.eviaTargets.cardHtml()):"")+
@@ -197,7 +207,7 @@
     if(ppe.length)tiles.unshift({name:PPE_UNIT,index:-1,entries:ppe});
     const shown=tiles.filter(t=>t.entries.length),notStarted=a.units.filter(u=>!u.started).length;
     const bars=level=>{const n={strong:3,good:2,weak:1}[level]||0;return '<span class="ui-bars" aria-label="Evidence strength: '+(level||"none")+'">'+[0,1,2].map(i=>'<i class="'+(i<n?"on":"")+'" style="height:'+(5+i*3)+'px"></i>').join("")+'</span>'};
-    $("#screen").innerHTML=
+    $("#screen").innerHTML=pageHead("Portfolio")+
       '<div class="ui-page">'+
         '<div class="ui-tabs" role="tablist"><button type="button" class="on" aria-selected="true">Units</button><button type="button" id="ui-tab-supporting">Supporting <span>'+supporting.length+'</span></button><button type="button" id="ui-tab-reviews">Reviews <span>'+reviews.length+'</span></button><button type="button" id="ui-tab-logs">Logs <span>'+hours.length+'</span></button></div>'+
         (shown.length?'<div class="ui-gallery">'+shown.map((t,i)=>'<button type="button" class="ui-tile" data-unit-open="'+escHtml(t.name)+'"><span class="ui-tile-photo" data-cover="'+i+'">'+icon(ICONS.camera,26)+'</span><span class="ui-tile-scrim"><strong>'+escHtml(t.name)+'</strong><span class="ui-tile-meta"><small>'+t.entries.length+' saved</small>'+bars(t.index>=0?unitStrengthForCourse(t.name):"good")+'</span></span></button>'
@@ -515,6 +525,9 @@
     replies(opts);
   });
 
+  /* Page heading in the strip beside the profile button: where you are, and which course. */
+  const pageHead=title=>'<header class="ui-page-head"><h1>'+escHtml(title)+'</h1><span>'+escHtml(data().name)+'</span></header>';
+
   /* ---------- Wire into the app ---------- */
   const originalRender=window.render,originalChat=window.chat,originalLearning=window.learning;
   const TOP_SCREENS=["home","course","progress","portfolio"];
@@ -534,6 +547,9 @@
     originalCourses();
     const head=document.querySelector("#screen > .card:not(.unit-card)");
     if(head)head.remove();
+    const firstCard=document.querySelector("#screen .unit-card[data-u]");
+    if(firstCard&&typeof strengthBars==="function")document.getElementById("screen").insertAdjacentHTML("afterbegin",'<p class="ui-bars-key"><span>Evidence strength</span>'+[["weak","Weak"],["good","Good"],["strong","Strong"]].map(([l,t])=>'<span class="ui-bars-key-item">'+strengthBars(l)+t+'</span>').join("")+'</p>');
+    document.getElementById("screen").insertAdjacentHTML("afterbegin",pageHead("Course"));
   };
   window.portfolio=portfolioScreen;
   window.learning=function(){

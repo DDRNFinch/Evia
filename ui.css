@@ -613,3 +613,14 @@ html body .nvq-hub-knowledge{display:block;width:100%;text-align:left;font:inher
 .nvq-units{padding:14px;display:flex;flex-direction:column;gap:12px}
 .nvq-units .ui-divider{margin:0}
 .nvq-units-head{margin:2px 2px 0;gap:10px;flex-wrap:wrap}
+/* Page headings (Course, Progress, Portfolio) sit beside the profile button */
+.ui-page-head{margin:-56px 62px 16px 4px;min-height:44px;display:flex;flex-direction:column;justify-content:center;gap:1px}
+.ui-page-head h1{margin:0;font-size:24px;line-height:1.1;font-weight:800;letter-spacing:-.02em;color:var(--ui-ink)}
+.ui-page-head span{font-size:12.5px;font-weight:650;color:var(--ui-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body:has(#a11y-speak) .ui-page-head{margin-left:56px}
+.draft-chip{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.03em;vertical-align:3px;background:var(--soft,#fff7d6);border:1px solid var(--yellow-line,#f1d878);color:var(--yellow-ink,#6e5c00)}
+/* Key for the evidence strength bars on the Course page */
+.ui-bars-key{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:0 4px 12px;font-size:12px;color:var(--ui-muted)}
+.ui-bars-key>span:first-child{font-weight:750;color:var(--ui-text)}
+.ui-bars-key-item{display:inline-flex;align-items:center;gap:6px}
+.ui-bars-key .unit-strength-bars{transform:scale(.8);transform-origin:left center}
