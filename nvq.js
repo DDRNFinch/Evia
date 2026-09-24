@@ -20,7 +20,7 @@
   const CRIT={};
   UNITS.forEach(u=>u.o.forEach(o=>o.c.forEach(c=>{CRIT[u.n+"."+c.n]={u,o,c}})));
   const subOf=code=>{const m=/^(\d+\.\d+\.\d+)([a-z]+)$/.exec(code);if(!m||!CRIT[m[1]])return null;const c=CRIT[m[1]].c,i=[...Array((c.s||[]).length).keys()].find(j=>subLetter(j)===m[2]);return i==null?null:{parent:m[1],text:c.s[i]}};
-  const critText=code=>CRIT[code]?CRIT[code].c.t:(subOf(code)||{}).text||"";
+  const critText=code=>{if(CRIT[code])return CRIT[code].c.t;const m=/^(\d+\.\d+\.\d+)x$/.exec(code);if(m&&CRIT[m[1]]&&CRIT[m[1]].c.needText)return CRIT[m[1]].c.needText;return (subOf(code)||{}).text||""};
   const label=code=>{const p=code.split(".");return "Unit "+p[0]+" · "+p.slice(1).join(".")};
 
   /* ---------- Evidence packs: one per real site job ---------- */
@@ -32,13 +32,51 @@
     {unit:"313",sub:"d",title:"Decorative features",capture:"setting out · flush or projecting features (corbels, plinths, string courses, dentil courses, panels) · special bricks · joint finish · finished feature",mention:"the feature you built and why · special bricks · keeping the bond and gauge · "+COMMON},
     {unit:"313",sub:"e",title:"Curved wall (on plan)",capture:"setting out the radius · trammel or template · bond on the curve · checking with the template · finished curve",mention:"the radius and how you set it out · how you kept the curve true · cutting · "+COMMON},
     {unit:"313",sub:"f",title:"Curved wall (in elevation)",capture:"setting out the curve · template or rod · curved cuts · coping or capping · finished wall",mention:"how you set out and checked the curve · cutting · coping · "+COMMON},
-    {unit:"313",sub:"g",title:"Splayed wall",capture:"setting out the angle · squint bricks or cuts at the splay · bond at the angle · finished wall",mention:"the angle and how you set it out · squint bricks or cuts · keeping the bond · "+COMMON}
+    {unit:"313",sub:"g",title:"Splayed wall",capture:"setting out the angle · squint bricks or cuts at the splay · bond at the angle · finished wall",mention:"the angle and how you set it out · squint bricks or cuts · keeping the bond · "+COMMON},
+    // Setting out (701: at least four kinds of line)
+    {unit:"701",sub:"ab",title:"Setting out a building",capture:"datum and levels · profiles and lines · checking square (3-4-5 or diagonals) · straight runs · corner pegs · finished setting out",mention:"the drawings you worked from · datum point · how you checked it was square · measuring and transferring positions · "+COMMON},
+    {unit:"701",sub:"cd",title:"Setting out angles and batters",capture:"obtuse or acute angle · batter or splay · angle checks · lines and pegs · finished setting out",mention:"the angles and how you set them out · checking them · "+COMMON},
+    {unit:"701",sub:"ef",title:"Setting out curves",capture:"centre point and radius · trammel or template · curve on plan or in elevation · checking the curve · finished setting out",mention:"the radius · how you set out and checked the curve · "+COMMON},
+    {unit:"701",sub:"g",title:"Setting out openings",capture:"opening positions · reveal lines · gauge rod · checking sizes · finished setting out",mention:"opening sizes from the drawings · how you transferred and checked them · "+COMMON},
+    // Walls and structures (235: all six; 238: at least three; 234: at least one)
+    {unit:"235",sub:"ae",title:"Cavity wall",capture:"setting out · both leaves · wall ties · insulation · cavity trays and DPC · joint finish · finished wall",mention:"bond and gauge · wall ties and insulation · keeping the cavity clean · joint finish · "+COMMON},
+    {unit:"235",sub:"be",title:"Blockwork",capture:"setting out · block bond · cuts · reinforcement or ties · joint finish · finished blockwork",mention:"block type and bond · cutting · joint finish · "+COMMON},
+    {unit:"235",sub:"ce",title:"Solid wall",capture:"setting out · bond (English, Flemish or other) · returns or piers · joint finish · finished wall",mention:"the bond and why · keeping gauge and plumb · joint finish · "+COMMON},
+    {unit:"235",sub:"d",title:"Openings",capture:"reveals · closers · cavity trays · lintel · DPCs · finished opening",mention:"opening size and position · lintel and bearing · closing the cavity · "+COMMON},
+    {unit:"235",sub:"f",title:"Cills, cappings and copings",capture:"setting out · cill, capping or coping bricks · DPC under the coping · joint finish · finished detail",mention:"the detail and what it does · DPC position · "+COMMON},
+    {unit:"238",sub:"ad",title:"Thin joint cavity wall",capture:"levelling the base course · mixing jointing compound · thin joint blocks · ties · finished wall",mention:"the thin joint system · mixing the compound · levelling · "+COMMON},
+    {unit:"238",sub:"bd",title:"Thin joint solid wall",capture:"levelling the base course · mixing jointing compound · cutting blocks · finished wall",mention:"the thin joint system · cutting · keeping it level and plumb · "+COMMON},
+    {unit:"238",sub:"c",title:"Thin joint openings",capture:"opening position · cut blocks · lintel · finished opening",mention:"opening size · lintel and bearing · "+COMMON},
+    {unit:"234",sub:"a",title:"Cladding a timber frame",capture:"frame and breather membrane · wall ties fixed to studs · cavity barriers · cavity trays · openings · finished cladding",mention:"tie spacings · movement between frame and masonry · fire barriers · "+COMMON},
+    {unit:"234",sub:"b",title:"Cladding a concrete frame",capture:"support angles · ties or channels · cavity barriers · openings · finished cladding",mention:"support angles and movement joints · ties · fire barriers · "+COMMON},
+    {unit:"234",sub:"c",title:"Cladding a steel frame",capture:"support angles · wind posts or restraints · ties · cavity barriers · finished cladding",mention:"support angles and restraints · ties · fire barriers · "+COMMON},
+    {unit:"234",sub:"d",title:"Cladding existing masonry",capture:"the existing wall · ties or fixings · cavity trays · openings · finished cladding",mention:"fixing to the existing structure · ties · weathering details · "+COMMON},
+    // Specialist elements (828: fire barriers and support angles, plus at least two others)
+    {unit:"828",sub:"x",title:"Fire barriers and support angles",capture:"support angle fixings · fire barriers or breaks in the cavity · movement joints · finished detail",mention:"why fire barriers go where they do · fixing and levelling support angles · "+COMMON},
+    {unit:"828",sub:"a",title:"Brick soffit system",capture:"soffit system components · positioning and levelling · bricks or slips fitted · finished soffit",mention:"the system you used · fixing and adjusting · "+COMMON},
+    {unit:"828",sub:"b",title:"Channel systems",capture:"channel positions · fixings · ties into the channel · finished work",mention:"the channel system · fixing it plumb and level · "+COMMON},
+    {unit:"828",sub:"c",title:"Wind posts",capture:"wind post positions · fixings top and bottom · ties into the masonry · finished work",mention:"why wind posts are needed · fixing them · "+COMMON},
+    {unit:"828",sub:"d",title:"Vapour and moisture barriers",capture:"barrier position · laps and taping · seals at openings · finished work",mention:"which side the barrier goes and why · laps and seals · "+COMMON},
+    {unit:"828",sub:"e",title:"Wall starter kits",capture:"starter positions · fixings to the existing wall · ties into the new wall · finished work",mention:"fixing to the existing structure · spacing · "+COMMON},
+    // Repairs (690: at least three)
+    {unit:"690",sub:"ac",title:"Replacing damaged brickwork",capture:"the damage · cutting out safely · matching bricks and mortar · new work in · finished repair",mention:"what caused the damage · matching materials, colour and joint · "+COMMON},
+    {unit:"690",sub:"bf",title:"Extending or tying into existing walls",capture:"the existing wall · toothing or tying in · continuing the bond · angles · finished work",mention:"how you matched and continued the bond · internal and external angles · "+COMMON},
+    {unit:"690",sub:"de",title:"New opening in an existing wall",capture:"propping (needles and props) · cutting out · lintel in · making good · finished opening",mention:"the propping and who approved it · lintel and bearing · "+COMMON},
+    // Drainage (837: at least two)
+    {unit:"837",sub:"a",title:"Drainage pipework",capture:"trench and bedding · pipe laying and fall · joints · testing · backfill",mention:"pipe type · fall and levels · how you tested it · trench safety · "+COMMON},
+    {unit:"837",sub:"b",title:"Inspection chamber",capture:"base and benching · chamber walls or units · connections · cover and frame · testing",mention:"chamber type · benching and connections · "+COMMON},
+    {unit:"837",sub:"c",title:"Surface water system",capture:"gullies, channels or soakaway · pipework · connections · testing · finished system",mention:"where the water goes · falls · "+COMMON},
+    {unit:"837",sub:"d",title:"Foul water system",capture:"tank or treatment plant · inlet and outlet pipework · connections · testing · finished system",mention:"the system type · falls · testing · "+COMMON}
   ];
+  /* Special rules: 235 needs every option, 828 needs fire barriers and support angles plus at least two others. */
+  (function(){const c235=(BY["235"].o.find(o=>o.n===7)||{c:[]}).c.find(c=>c.n==="7.3");if(c235&&c235.s){c235.min=c235.s.length;c235.all=true}
+    const c828=(BY["828"].o.find(o=>o.n===7)||{c:[]}).c.find(c=>c.n==="7.3");if(c828){c828.need="x";c828.needText="Fire barriers and/or breaks and support angles"}})();
+  const GROUPS=[["setting","Setting out",["701"]],["walls","Walls and structures",["235","238","234"]],["features","Features and specialist work",["313","828"]],["repairs","Repairs and maintenance",["690"]],["drainage","Drainage",["837"]]];
   const doCodes=u=>u.o.flatMap(o=>o.c.filter(c=>!c.q&&!c.min).map(c=>u.n+"."+c.n));
   const minCrit=u=>{for(const o of u.o)for(const c of o.c)if(c.min)return c;return null};
   function packCodes(p){
     const u=BY[p.unit],m=minCrit(u),codes=doCodes(u);
-    if(m&&p.sub)codes.push(u.n+"."+m.n+p.sub);
+    if(m&&p.sub)p.sub.split("").forEach(l=>codes.push(u.n+"."+m.n+l));
     codes.push("102.1.2"); // every site job shows health and safety control equipment in use
     return codes;
   }
@@ -64,7 +102,7 @@
     (typeof evidence!=="undefined"?evidence:[]).filter(e=>e.c===ID).forEach(e=>(e.k||[]).forEach(k=>s.add(k)));
     Object.keys(CRIT).forEach(code=>{const q=CRIT[code].c.q;if(q&&answered(q,a))s.add(code)});
     supportingFor().forEach(x=>x.ksbs.forEach(k=>s.add(k)));
-    Object.keys(CRIT).forEach(code=>{const c=CRIT[code].c;if(c.min&&(c.s||[]).filter((_,i)=>s.has(code+subLetter(i))).length>=c.min)s.add(code)});
+    Object.keys(CRIT).forEach(code=>{const c=CRIT[code].c;if(c.min&&(c.s||[]).filter((_,i)=>s.has(code+subLetter(i))).length>=c.min&&(!c.need||s.has(code+c.need)))s.add(code)});
     return s;
   }
   const unitsAsking=q=>selected().filter(u=>u.o.some(o=>o.c.some(c=>c.q===q)));
@@ -96,23 +134,32 @@
   const topicQuestions=t=>{const qs=myQuestions().filter(q=>Q_TOPIC[q]===t);return TOPICS.findIndex(x=>x[0]===t)===5?qs.sort((a,b)=>+unitsAsking(a)[0].n-+unitsAsking(b)[0].n):qs};
   const topicOf=q=>Q_TOPIC[q];
 
-  /* ---------- Course screen: site jobs, one knowledge pack, workplace evidence ---------- */
+  /* What each unit needs from its site jobs, e.g. "Do at least 3 · 1 done". */
+  function ruleText(u,ev){
+    const m=minCrit(u);if(!m)return"";
+    const code=u.n+"."+m.n,total=(m.s||[]).length,got=(m.s||[]).filter((_,i)=>ev.has(code+subLetter(i))).length;
+    if(ev.has(code))return '<span class="nvq-ok">✓ Complete</span>';
+    const ask=m.all?"Needs all "+total:(m.need?"Needs fire barriers and support angles"+(ev.has(code+m.need)?" ✓":"")+", plus at least ":"Needs at least ")+m.min+" of "+total;
+    return ask+" · "+got+" covered";
+  }
+
+  /* ---------- Course screen: site jobs by type of work, one knowledge pack, workplace evidence ---------- */
   function courseScreen(){
     document.getElementById("page-title").textContent="Course";
     const ev=evidenced(),a=answers(),packs=data().u.map((u,i)=>({u,i,meta:u[2]||{}}));
     const qs=myQuestions(),qDone=qs.filter(q=>answered(q,a)).length,qPct=qs.length?Math.round(qDone/qs.length*100):0;
-    const jobUnits=selected().filter(u=>packs.some(p=>p.meta.unit===u.n));
-    const waiting=selected().filter(u=>!BEHAVIOUR.includes(u.n)&&!packs.some(p=>p.meta.unit===u.n));
-    const jobs=jobUnits.map(u=>{
-      const mine=packs.filter(p=>p.meta.unit===u.n),m=minCrit(u);
-      const got=m?(m.s||[]).filter((_,i)=>ev.has(u.n+"."+m.n+subLetter(i))).length:0;
-      return (m?'<p class="nvq-min">Do at least <strong>'+m.min+'</strong> of these '+mine.length+' jobs · '+(got>=m.min?'<span class="nvq-ok">✓ '+got+' done</span>':got+' done')+'</p>':"")+
-        mine.map(p=>'<div class="card unit-card" data-u="'+p.i+'"><div class="unit-title">'+escH(p.u[0])+'<small class="nvq-job-unit">Unit '+u.n+'</small></div>'+(typeof strengthBars==="function"?strengthBars(unitStrengthForCourse(p.u[0])):"")+'</div>').join("");
+    const sel=selected().map(u=>u.n);
+    const jobs=GROUPS.map(([gid,gname,nums])=>{
+      const units=nums.filter(n=>sel.includes(n)).map(n=>BY[n]);if(!units.length)return"";
+      return '<div class="section-title nvq-section">'+escH(gname)+'</div>'+units.map(u=>{
+        const mine=packs.filter(p=>p.meta.unit===u.n);if(!mine.length)return"";
+        return '<p class="nvq-min">'+(units.length>1?'<strong>'+escH(u.short)+'</strong> · ':"")+ruleText(u,ev)+'</p>'+
+          mine.map(p=>'<div class="card unit-card" data-u="'+p.i+'"><div class="unit-title">'+escH(p.u[0])+'<small class="nvq-job-unit">Unit '+u.n+'</small></div>'+(typeof strengthBars==="function"?strengthBars(unitStrengthForCourse(p.u[0])):"")+'</div>').join("");
+      }).join("");
     }).join("");
     document.getElementById("screen").innerHTML=
       '<div class="card"><div class="section-title">'+escH(data().std)+'</div><h2>'+escH(data().name)+'</h2><p>Capture your site jobs, answer the knowledge questions and add witness testimony. Evia maps everything to your units for you.</p></div>'+
-      '<div class="section-title nvq-section">Site jobs</div>'+jobs+
-      (waiting.length?'<div class="card nvq-soon"><small>Site jobs for '+waiting.map(u=>escH(u.short.toLowerCase())).join(", ").replace(/, ([^,]*)$/," and $1")+' are coming next. Until then, add that evidence in Supporting evidence and link it to the unit.</small></div>':"")+
+      jobs+
       '<div class="section-title nvq-section">Knowledge</div>'+
       '<button type="button" class="card unit-card nvq-link-card nvq-knowledge" data-nvq-knowledge>'+miniRing(qPct,40)+'<span class="nvq-knowledge-copy"><span class="unit-title">Knowledge questions</span><small>'+qDone+' of '+qs.length+' answered · counts across all your units</small></span><span class="supporting-course-arrow">›</span></button>'+
       '<div class="section-title nvq-section">Workplace evidence</div>'+
@@ -246,12 +293,12 @@
       support.map(s=>'<div class="ksb-evidence-item"><strong>'+escH(s.title)+'</strong><span>'+escH(s.witness?"Witness testimony · "+s.witness.name:(s.type||"Supporting evidence"))+'</span></div>').join("")+
       (c.q&&answered(c.q,a)?'<div class="ksb-evidence-item"><strong>Your answer</strong><span>'+escH(a[c.q].t.slice(0,140))+(a[c.q].t.length>140?"…":"")+'</span></div>':"");
     const how=c.q?'<button type="button" class="primary" id="nvq-answer-q">'+(a[c.q]?"Edit your answer":"Answer this question")+'</button>'
-      :c.min?'<p class="pr-intro">Do at least '+c.min+' of these as evidence packs from the Course page.</p>'
+      :c.min?'<p class="pr-intro">'+(c.all?"Do all of these":"Do at least "+c.min+" of these"+(c.need?", plus fire barriers and support angles,":""))+' as site jobs from the Course page.</p>'
       :BEHAVIOUR.includes(u.n)?'<p class="pr-intro">Ask your supervisor for witness testimony, or add a document that shows this, in Supporting evidence. Link it to Unit '+u.n+'.</p>'
       :'<p class="pr-intro">Any evidence pack for this unit covers this.</p>';
     sheet(escH(label(code)).toUpperCase(),met?"Evidence captured":"Not yet evidenced",
       '<p class="nvq-question">'+escH(c.t)+'</p>'+(subs?'<ul class="nvq-subs'+(c.min?" min":"")+'">'+subs+'</ul>':"")+
-      (c.min?'<p class="nvq-min">At least <strong>'+c.min+'</strong> needed · '+(c.s||[]).filter((_,i)=>ev.has(code+subLetter(i))).length+' done</p>':"")+
+      (c.min?'<p class="nvq-min">'+(c.all?"All <strong>"+c.min+"</strong> needed":"At least <strong>"+c.min+"</strong> needed"+(c.need?" plus "+(ev.has(code+c.need)?"✓ ":"")+escH(c.needText.toLowerCase()):""))+' · '+(c.s||[]).filter((_,i)=>ev.has(code+subLetter(i))).length+' done</p>':"")+
       '<div class="pr-h">Outcome '+o.n+'</div><p class="pr-intro">'+escH(o.t)+'</p>'+
       '<div class="pr-h">Evidence</div>'+(evidenceRows||'<p class="pr-intro">Nothing yet.</p>')+how);
     const b=document.getElementById("nvq-answer-q");if(b)b.onclick=()=>openQuestion(c.q);
@@ -269,6 +316,7 @@
   const watch=()=>new MutationObserver(ms=>{if(on())ms.forEach(m=>m.addedNodes.forEach(n=>{if(n.nodeType===1)swap(n);else if(n.nodeType===3&&n.parentNode)swap(n.parentNode)}))}).observe(document.body,{childList:true,subtree:true});
   if(document.body)watch();else document.addEventListener("DOMContentLoaded",watch);
   window.eviaTerm=()=>on()?{one:"criterion",many:"criteria",Many:"Criteria"}:{one:"KSB",many:"KSBs",Many:"KSBs"};
-  window.eviaNvq={on,id:ID,allK,evidenced,courseScreen,progressHtml,bindProgress,criterion,openKnowledge,openTopic,openQuestion,myQuestions,optionalHtml,readOptional,setOptional,optionalChosen,selected,label,critText,units:UNITS,behaviour:BEHAVIOUR,
+  const packShown=i=>{const u=(data().u[i]||[])[2];return !u||selected().some(x=>x.n===u.unit)};
+  window.eviaNvq={on,packShown,id:ID,allK,evidenced,courseScreen,progressHtml,bindProgress,criterion,openKnowledge,openTopic,openQuestion,myQuestions,optionalHtml,readOptional,setOptional,optionalChosen,selected,label,critText,units:UNITS,behaviour:BEHAVIOUR,
     unitCodes:n=>BY[n]?unitCodes(BY[n]):[],doCodesFor:n=>BY[n]?BY[n].o.flatMap(o=>o.c.filter(c=>!c.q).map(c=>[n+"."+c.n,c.t])):[],answers};
 })();

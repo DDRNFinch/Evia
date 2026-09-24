@@ -35,7 +35,7 @@
       const codes=[...new Set(u[1].map(code))];
       const es=entries.filter(e=>e.u===u[0]);
       return {index:i,name:u[0],codes,missing:codes.filter(c=>!evidenced.has(c)),entries:es,started:es.length>0};
-    });
+    }).filter(x=>!(window.eviaNvq&&window.eviaNvq.on())||window.eviaNvq.packShown(x.index)); /* NVQ: only jobs for the learner's units */
     const quickest=unitInfo.filter(u=>u.missing.length).sort((a,b)=>b.missing.length-a.missing.length||(a.started-b.started)||a.index-b.index)[0]||null;
     const packs=readJson("evia7-working-evidence-packs",{});
     const drafts=Object.values(packs).filter(p=>p&&p.course===course&&((p.photos||[]).length||String(p.write||"").trim())).map(p=>unitInfo.find(u=>u.name===p.unit)).filter(Boolean);

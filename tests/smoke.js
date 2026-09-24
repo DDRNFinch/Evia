@@ -90,12 +90,14 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
 
     // Trowel Occupations L3 (NVQ): packs and questions by unit, shared answers, witness testimony.
     await page.evaluate(()=>{course="trowel3";persist();nav("course")});await page.waitForTimeout(450);
-    check("The NVQ course shows site jobs, one knowledge pack and workplace evidence",await page.evaluate(()=>document.querySelectorAll("[data-u]").length===7&&document.querySelectorAll("[data-nvq-knowledge]").length===1));
+    check("The NVQ course groups site jobs by type of work, with one knowledge pack",await page.evaluate(()=>{const g=[...document.querySelectorAll(".nvq-section")].map(x=>x.textContent);return ["Setting out","Walls and structures","Features and specialist work","Repairs and maintenance","Knowledge"].every(t=>g.includes(t))&&!g.includes("Drainage")&&document.querySelectorAll("[data-u]").length===23&&document.querySelectorAll("[data-nvq-knowledge]").length===1}));
     await page.click("[data-nvq-knowledge]");await page.click('[data-topic="info"]');await page.click("[data-q]");
     await page.fill("#nvq-answer","I would stop work and report it to my supervisor straight away, then wait until the drawings or materials are put right.");await page.click("#nvq-save");
     check("One answer ticks the same question in every unit that asks it",await page.evaluate(()=>["234.1.3","235.1.3","313.1.3","701.1.3","690.1.3"].every(c=>window.eviaNvq.evidenced().has(c))));
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";const e=data().u;["Arches","Chimney stack","Fireplace"].forEach((t,i)=>{const u=e.find(x=>x[0]===t);evidence.push({id:"n"+i,c:course,u:t,k:u[1].map(code),w:"x",p:[],savedAt:new Date().toISOString()})});persist()});
     check("Three different 313 jobs complete the at-least-three criterion",await page.evaluate(()=>window.eviaNvq.evidenced().has("313.7.3")));
+    await page.evaluate(()=>{const e=data().u;["Cavity wall","Blockwork","Solid wall","Openings"].forEach((t,i)=>{const u=e.find(x=>x[0]===t);evidence.push({id:"w"+i,c:course,u:t,k:u[1].map(code),w:"x",p:[],savedAt:new Date().toISOString()})});persist()});
+    check("Unit 235 needs all six of its jobs, not just some",await page.evaluate(()=>{const before=window.eviaNvq.evidenced().has("235.7.3");const u=data().u.find(x=>x[0]==="Cills, cappings and copings");evidence.push({id:"w9",c:course,u:u[0],k:u[1].map(code),w:"x",p:[],savedAt:new Date().toISOString()});return !before&&window.eviaNvq.evidenced().has("235.7.3")}));
     await page.evaluate(()=>nav("progress"));await page.waitForTimeout(450);
     check("NVQ Progress shows unit rings and says criteria, not KSBs",await page.evaluate(()=>!!document.querySelector("[data-nvq-unit='313']")&&!/KSB/.test(document.getElementById("screen").innerText)));
     await page.evaluate(()=>{course="bricklayer";persist();nav("home")});await page.waitForTimeout(450);
