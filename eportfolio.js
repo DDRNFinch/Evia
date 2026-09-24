@@ -21,6 +21,16 @@
     }));
   }
   const loadImage=src=>new Promise(resolve=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>resolve(null);img.src=src});
+  /* Crops a photo to a centred square that fills the tile, with softly rounded corners (white, to match the page). */
+  async function squareTile(src,px=640){
+    const img=await loadImage(src);if(!img||!img.naturalWidth)return null;
+    const side=Math.min(img.naturalWidth,img.naturalHeight),sx=(img.naturalWidth-side)/2,sy=(img.naturalHeight-side)/2;
+    const c=document.createElement("canvas");c.width=c.height=px;const g=c.getContext("2d");
+    g.fillStyle="#fff";g.fillRect(0,0,px,px);
+    const r=px*.05;g.beginPath();g.moveTo(r,0);g.arcTo(px,0,px,px,r);g.arcTo(px,px,0,px,r);g.arcTo(0,px,0,0,r);g.arcTo(0,0,px,0,r);g.closePath();g.clip();
+    g.drawImage(img,sx,sy,side,side,0,0,px,px);
+    return c.toDataURL("image/jpeg",.85);
+  }
   /* The built-in PDF fonts only cover Latin-1, so swap smart punctuation and drop anything else (e.g. emoji). */
   const pdfText=s=>String(s||"").replace(/[‘’′]/g,"'").replace(/[“”″]/g,'"').replace(/[–—−]/g,"-").replace(/…/g,"...").replace(/•/g,"-").replace(/[^\n\x20-\x7E\u00A0-\u00FF]/g,"").replace(/[ \t]{2,}/g," ");
   function accentRgb(){
@@ -34,7 +44,7 @@
     const doc=new jsPDF({unit:"mm",format:"a4",compress:true});
     const profile=readJson("evia7-profile",{}),learner=profile.name||"Apprentice";
     const W=210,H=297,M=16,CW=W-2*M,BOTTOM=H-M-8;
-    const ink=[23,32,51],muted=[102,112,133],line=[228,231,236],accent=accentRgb();
+    const ink=[23,32,51],muted=[102,112,133],accent=accentRgb();
     const wording=new Map(allK());
     let y=M;
     const need=h=>{if(y+h>BOTTOM){doc.addPage();y=M;return true}return false};
@@ -59,23 +69,23 @@
 
     for(let i=0;i<entries.length;i++){
       const e=entries[i],photos=photosByEntry[i]||[];
+      if(i>0){doc.addPage();y=M} /* each evidence occasion starts on its own page */
       need(20);
       label("Evidence "+(i+1)+" of "+entries.length+" · "+ukDate(entryTime(e)||e.d),M,y+3);y+=7;
-      // Photos, two per row, keeping their shape.
-      const colW=(CW-6)/2;
-      for(let p=0;p<photos.length;p+=2){
+      // Photos: four square tiles per row, each cropped from the centre to fill its tile.
+      const cols=4,gap=3,tile=(CW-gap*(cols-1))/cols;
+      for(let p=0;p<photos.length;p+=cols){
         const row=[];
-        for(const src of photos.slice(p,p+2)){const img=await loadImage(src);if(img&&img.naturalWidth)row.push({src,img})}
+        for(const src of photos.slice(p,p+cols)){const t=await squareTile(src);if(t)row.push(t)}
         if(!row.length)continue;
-        const h=Math.min(95,Math.max(...row.map(r=>colW*r.img.naturalHeight/r.img.naturalWidth)));
-        need(h+4);
-        row.forEach((r,j)=>{
-          const ratio=r.img.naturalWidth/r.img.naturalHeight;let w=colW,ih=w/ratio;if(ih>h){ih=h;w=h*ratio}
-          const x=M+j*(colW+6)+(colW-w)/2;
-          try{doc.addImage(r.src,/^data:image\/png/i.test(r.src)?"PNG":"JPEG",x,y,w,ih,undefined,"FAST")}catch(err){console.warn("Evia PDF photo skipped",err)}
+        need(tile+gap);
+        row.forEach((t,j)=>{
+          const x=M+j*(tile+gap);
+          try{doc.addImage(t,"JPEG",x,y,tile,tile,undefined,"FAST");doc.setDrawColor(234,236,240);doc.setLineWidth(.25);doc.roundedRect(x,y,tile,tile,tile*.05,tile*.05,"S")}catch(err){console.warn("Evia PDF photo skipped",err)}
         });
-        y+=h+4;
+        y+=tile+gap;
       }
+      y+=1;
       if(e.w){need(10);label("Write-up",M,y+3);y+=5;para(e.w,10.5,[52,64,84]);y+=3}
       const ksbs=(e.k||[]).filter(Boolean);
       if(ksbs.length){
@@ -98,7 +108,6 @@
         doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(...muted);
         doc.text(pdfText("Signed by "+((e.learnerProfile&&e.learnerProfile.name)||learner)+" · "+ukDate(entryTime(e)||e.d)),M,y+2.5);y+=5;
       }
-      if(i<entries.length-1){need(8);doc.setDrawColor(...line);doc.setLineWidth(.3);doc.line(M,y+3,W-M,y+3);y+=9}
     }
 
     const pages=doc.getNumberOfPages();
@@ -157,8 +166,8 @@
       .eport-sheet-title{font-size:14px;line-height:1.15;font-weight:800}
       .eport-sheet-sub{font-size:7.5px;color:#667085}
       .eport-sheet-rule{height:2px;background:var(--yellow);border-radius:2px;margin:2px 0}
-      .eport-sheet-photos{display:grid;grid-template-columns:1fr 1fr;gap:5px}
-      .eport-sheet-photos img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:3px;background:#f2f4f7}
+      .eport-sheet-photos{display:grid;grid-template-columns:repeat(4,1fr);gap:3px}
+      .eport-sheet-photos img{width:100%;aspect-ratio:1/1;object-fit:cover;object-position:center;border-radius:2px;background:#f2f4f7}
       .eport-sheet-text{font-size:7.5px;line-height:1.45;color:#344054;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
       .eport-sheet-ksbs{display:flex;flex-wrap:wrap;gap:3px}
       .eport-sheet-ksbs i{font-style:normal;font-size:6.5px;font-weight:800;padding:1.5px 4px;border-radius:3px;background:var(--soft);color:var(--yellow-ink)}
@@ -247,7 +256,7 @@
     /* The PDF is the main download, with a preview of its first page; the zip (PDF plus every photo) is there just in case. */
     const pdf=files.find(f=>f.kind==="pdf"),photos=files.filter(f=>f.kind==="photo");
     const shareOk=pdf&&canShareFiles([pdf.file]);
-    const first=entries[0]||{},firstPhotos=(photosByEntry[0]||[]).slice(0,2);
+    const first=entries[0]||{},firstPhotos=(photosByEntry[0]||[]).slice(0,4);
     const excerpt=String(first.w||"").trim();
     const preview=pdf?'<button type="button" class="eport-sheet" id="eport-preview" aria-label="Open the full evidence PDF">'+
         '<span class="eport-sheet-kicker">EVIA · EVIDENCE PACK</span>'+
