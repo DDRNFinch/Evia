@@ -215,14 +215,22 @@
     const i=Math.min(index||0,list.length-1);
     viewTask(list[i].task,list[i].covers,list.length>1?()=>openTask((i+1)%list.length):null);
   }
+  /* Drawings to build from (elevation, plans, section, isometric, spec), when the task has them. */
+  function drawingRows(t){
+    const list=window.EviaDraw?window.EviaDraw.forTask(t.id):[];
+    if(!list.length)return"";
+    return '<h3 class="pr-h">Drawings</h3><div class="pr-draw">'+list.map((d,i)=>'<button type="button" class="pr-draw-row" data-draw="'+i+'"><span class="pr-draw-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M3 14h18M9 4v5M15 9v5M9 14v6"/></svg></span><span><strong>'+escHtml(d.title)+'</strong><small>Elevation, plans, section, 3D view and spec</small></span><span class="pr-draw-chev" aria-hidden="true">›</span></button>').join("")+'</div>';
+  }
   function viewTask(t,covers,another){
     const body='<p class="pr-intro">'+escHtml(t.brief)+'</p>'+
       '<div class="pr-chips">'+t.skills.map(k=>'<span class="pr-chip '+(covers.includes(k)?"low":"")+'">'+escHtml(k)+'</span>').join("")+'</div>'+
       '<p class="pr-note">'+(covers.length?"Highlighted skills are ones you rated low. ":"")+'Time: about '+escHtml(t.time)+'.</p>'+
       '<h3 class="pr-h">Steps</h3><ol class="pr-steps">'+t.steps.map(st=>'<li>'+escHtml(st)+'</li>').join("")+'</ol>'+
+      drawingRows(t)+
       '<div class="pr-banner">'+escHtml(t.check)+' Take photos as you go: you can add them to your portfolio as supporting evidence.</div>'+
       '<div class="pr-actions">'+(another?'<button type="button" class="secondary" id="pr-other">Another idea</button>':'<button type="button" class="secondary" id="pr-other">All tasks</button>')+'<button type="button" class="secondary" id="pr-share">Show my tutor</button><button type="button" class="primary" id="pr-ok">Got it</button></div><p class="pr-note" id="pr-sent" role="status"></p>';
     const el=sheet("COLLEGE TASK",escHtml(t.title),body);
+    el.querySelectorAll("[data-draw]").forEach(b=>b.onclick=()=>{const d=window.EviaDraw.forTask(t.id)[+b.dataset.draw];window.EviaDraw.open(d.cfg,{title:d.title,job:d.job})});
     el.querySelector("#pr-ok").onclick=closeSheet;
     el.querySelector("#pr-other").onclick=another||openAllTasks;
     el.querySelector("#pr-share").onclick=()=>share("College task: "+t.title,"College task: "+t.title+"\n"+t.brief+(covers.length?"\n\nPractises: "+covers.join(", "):"")+"\n\n"+t.steps.map((st,n)=>(n+1)+". "+st).join("\n")+"\n\n"+t.check,el);

@@ -145,6 +145,7 @@
     k.say(k.pick(["Love it. What do you fancy?","Let’s get you better at something. Pick one:"]));
     const list=[{label:"A college task",primary:true,run:upskillTask}];
     if(sp&&sp.total)list.push({label:"A real-life scenario",run:scenario});
+    if(window.EviaDraw&&window.EviaDraw.available())list.push({label:"A drawing to build from",run:drawing});
     list.push({label:"A quick question",run:()=>window.eviaTestMe&&window.eviaTestMe({type:"epa",count:1})},{label:"Something else",run:k.somethingElse});
     k.replies(list);
   }
@@ -154,10 +155,19 @@
     if(!P||!all.length){k.say("I don’t have college tasks for your course yet. Ask your tutor which jobs to practise in the workshop.");k.replies([{label:"Something else",run:k.somethingElse}]);return}
     const picks=P.suggestTasks(3),pick=picks[0]||{task:all[Math.floor(Math.random()*all.length)],covers:[]},t=pick.task;
     k.say(pick.covers.length?"Try this in the workshop. It works on <strong>"+esc(k.listText(pick.covers))+"</strong>, which you rated low.":"Here’s a good one to try in the workshop.");
-    k.widget('<div class="ut"><span class="ut-kicker">College task · about '+esc(t.time)+'</span><strong>'+esc(t.title)+'</strong><p>'+esc(t.brief)+'</p><ol>'+t.steps.slice(0,3).map(s=>'<li>'+esc(s)+'</li>').join("")+'</ol>'+(t.steps.length>3?'<button type="button" class="ut-more">All '+t.steps.length+' steps ›</button>':"")+'</div>',el=>{
-      const m=el.querySelector(".ut-more");if(m)m.onclick=()=>{k.closeChat();setTimeout(()=>picks.length?P.openTask(0):P.openAllTasks(),80)};
+    const D=window.EviaDraw,draws=D?D.forTask(t.id):[];
+    k.widget('<div class="ut"><span class="ut-kicker">College task · about '+esc(t.time)+'</span><strong>'+esc(t.title)+'</strong><p>'+esc(t.brief)+'</p><ol>'+t.steps.slice(0,3).map(s=>'<li>'+esc(s)+'</li>').join("")+'</ol>'+(t.steps.length>3?'<button type="button" class="ut-more">All '+t.steps.length+' steps ›</button>':"")+draws.map((d,i)=>'<button type="button" class="ut-more ut-draw" data-draw="'+i+'">Drawing: '+esc(d.title)+' ›</button>').join("")+'</div>',el=>{
+      const m=el.querySelector(".ut-more:not(.ut-draw)");if(m)m.onclick=()=>{k.closeChat();setTimeout(()=>picks.length?P.openTask(0):P.openAllTasks(),80)};
+      el.querySelectorAll("[data-draw]").forEach(b=>b.onclick=()=>{const d=draws[+b.dataset.draw];D.open(d.cfg,{title:d.title,job:d.job})});
     });
     k.replies([{label:"Another idea",run:upskillTask},{label:"All college tasks",run:()=>{k.closeChat();setTimeout(P.openAllTasks,80)}},{label:"Something else",run:k.somethingElse}]);
+  }
+
+  /* A drawing to build from: Evia's generator (wall, corner, opening, arch, gable, pier; any valid bond). */
+  function drawing(){
+    const k=K();
+    k.say("I’ll draw it for you: elevation, plans of each course, a section, a 3D view, the spec and how many bricks. Pick the job.");
+    k.replies([{label:"Draw me a job",primary:true,run:()=>{k.closeChat();setTimeout(window.EviaDraw.generator,80)}},{label:"Something else",run:k.somethingElse}]);
   }
 
   /* ---------- Real-life scenarios, told by Evia ---------- */

@@ -770,7 +770,7 @@
     });
   }
   /* Evia steps aside while any panel other than her chat is open. */
-  const panelWatch=()=>{const m=document.getElementById("modal-root");const open=!!(m&&m.querySelector(".overlay,.profile-overlay,.ksb-modal-overlay")&&!m.querySelector(".chat-sheet"))||!!document.querySelector(".dw-overlay");document.body.classList.toggle("ui-panel-open",open)};
+  const panelWatch=()=>{const m=document.getElementById("modal-root");const open=!!(m&&m.querySelector(".overlay,.profile-overlay,.ksb-modal-overlay")&&!m.querySelector(".chat-sheet"))||!!document.querySelector(".dw-overlay,.dv-overlay");document.body.classList.toggle("ui-panel-open",open)};
   new MutationObserver(()=>{enhanceDates();panelWatch()}).observe(document.getElementById("modal-root")||document.body,{childList:true,subtree:true});
   new MutationObserver(panelWatch).observe(document.body,{childList:true});
   window.eviaDateWheel=openDateWheel;
