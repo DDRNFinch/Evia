@@ -1,9 +1,9 @@
 /* Teach me: Bricklayer (ST0095). Lessons for every unit that between them cover the unit's KSBs.
    Mixing mortar is the first unit in the new style: short lessons where Evia teaches a bit, you try it, get
    feedback, learn something new, try again, then a quick challenge and a second go at anything you missed. It ends
-   with a unit challenge. The other units still use the first, simpler style. */
+   with a unit challenge. Every other unit follows the same pattern: two lessons and a unit challenge. */
 (function(){
-  const {L,Q,T,M,O,lesson,unit,add}=window.EVIA_TEACH;
+  const {L,TE,EX,W,CD,Q,T,M,O,G,B,TAP,S,J,SP,N,SC,HOT,LB,LD,QF,TROPHY,lesson,unit,add}=window.EVIA_TEACH;
   const bk=k=>({key:k,label:k[0].toUpperCase()+k.slice(1),pic:"bucket-"+k});
   const CHALLENGE={t:"banner",kind:"challenge",title:"Quick challenge",text:"A couple of harder ones to finish. Show what you’ve got!"};
   /* Mixing mortar: S14, K20 (ratios, silos, pre-mixed, gauging, hand and machine mixing), S1 and K1 (safety signs),
@@ -186,159 +186,263 @@
   add("bricklayer",[
     unit("Jointing Styles",["Jointing styles","Joint protection"],[
       lesson("bk-joint1","Joint finishes","Flush, half round, weather struck and recessed",[
-        L("Four common finishes","Flush: rubbed flat with the face. Half round (bucket handle): a curved hollow pressed in with a jointer. Weather struck: slopes in at the top so rain runs off. Recessed: raked back a few millimetres, square, for a shadow effect.","joints"),
-        M("Match the finish to its description",[["Flush","Flat with the brick face"],["Half round","A curved hollow made with a jointer"],["Weather struck","Slopes so rain runs off"],["Recessed","Raked back square, leaving a shadow"]]),
-        Q("Which finish is designed to shed rain on an exposed wall?",["Weather struck","Recessed","A joint left raked out","An unfinished joint"],"The slope throws water off the brick below."),
-        Q("When do you tool the joints?",["When the mortar is thumbprint hard","Straight away while it’s very wet","The next day","Once it’s fully set"],"Too wet and it smears; too hard and it won’t take the shape."),
-        T("Recessed joints are a good choice for walls in very exposed, wet places.",false,"The ledge they leave can hold water and frost. Use them where the specification allows."),
-        O("Put the finishing steps in order",["Let the mortar go thumbprint hard","Tool the joints with the jointer","Lightly brush off loose mortar","Check the finish is even along the wall"],"Tool at the right time, then tidy and check.")
+        EX("Four finishes","The joint finish changes how the wall looks and how well it sheds rain. Each picture is cut through the wall, with the face on the left. Tap each one.","joints",[
+          [42,60,"Flush","Rubbed flat with the face. Plain and neat, often used where the wall will be painted or rendered."],
+          [120,60,"Half round","Also called bucket handle. Pressed in with a round jointer: the most common finish, and it sheds rain well."],
+          [198,60,"Weather struck","Pressed in at the top and flush at the bottom, so it slopes out and rain runs off."],
+          [276,60,"Recessed","Raked back a few millimetres, square. A strong shadow, but it holds water, so it isn’t for exposed walls."]]),
+        HOT("Tap the finish that’s pressed in at the top, so rain runs off","joints",[[42,30,30,"Flush"],[120,30,30,"Half round"],[198,30,30,"Weather struck"],[276,30,30,"Recessed"]],2,"Weather struck: in at the top, flush at the bottom, so water runs off the brick below."),
+        TE("Joint when it’s ready","Joint when the mortar is *thumbprint hard*: firm, but still takes a print. Too soon and it smears; too late and it won’t compress. Joint each section at the same stage so the colour stays even.",null,"Thumbprint hard"),
+        J("Good jointing, or not?",[["Jointing each panel at the same stage of drying",true,"Same timing, same colour."],["Jointing straight after laying, while it’s wet",false,"Wet mortar smears across the face."],["Using a recessed joint on an exposed seafront wall",false,"Recessed joints hold water. Exposed walls need a weather-resisting finish."],["Brushing off the face once the joint is firm",true,"A soft brush lifts the crumbs without smearing."]]),
+        SC("Your supervisor","The client wants the new extension to match the house, which has a bucket handle finish.","What do you use?",[["A round jointer, for a half round finish",""+"Half round is the same as bucket handle."],["A flat trowel, for flush joints","That gives a flush finish, which won’t match."],["A raking tool, for recessed joints","That gives a recessed finish, which won’t match."]]),
+        G("A [half] round joint is also called a bucket [handle] joint.",["full","bucket"],"Half round and bucket handle are the same finish.")
       ]),
-      lesson("bk-joint2","Protection, PPE and teamwork","Protecting work and each other",[
-        L("Protect new work","New brickwork can be damaged by frost, rain and other trades. Cover it with hessian and polythene or frost covers, don’t lay bricks at about 3 °C and falling, and protect corners, reveals and sills from barrows and deliveries."),
-        Q("Frost is forecast overnight. What do you do with today’s brickwork?",["Cover it with frost covers or hessian and polythene","Leave it: it’ll be fine","Wet it down","Rake out the joints"],"Frost can damage mortar that hasn’t gained strength."),
-        Q("Why protect finished corners and reveals?",["Barrows and materials can chip them","It looks tidy","To keep them warm","It isn’t needed"],"Damage costs time to put right and spoils the finish."),
-        M("Match the PPE to what it protects against",[["Gloves","Cement burns and cuts"],["Eye protection","Chips and splashes"],["Hard hat","Falling objects"],["Safety boots","Heavy things landing on your feet"]]),
-        Q("Your labourer can’t keep up with two bricklayers. What’s a good team response?",["Help out or raise it so the work can be reorganised","Complain to others","Slow down on purpose","Ignore it"],"Good teams sort problems out together."),
-        T("Good teamwork includes thinking about the trades who come after you.",true,"Leave work clean, protected and accurate for the next trade.")
-      ])
+      lesson("bk-joint2","Protecting the work","Frost, rain, damage, PPE and the team",[
+        SC("A frosty morning","It’s 2°C and still dropping. The gang wants to crack on with the wall.","What’s the right call?",[["Don’t lay bricks: it’s 3°C and falling, and new mortar can freeze","Frozen mortar loses its strength and bond. Wait until it’s above 1°C and rising, and protect yesterday’s work."],["Lay them, but add extra cement","Extra cement doesn’t stop mortar freezing."],["Lay them and cover them tonight","The damage can happen before tonight, as the mortar freezes."]]),
+        TE("Cover it up","Protect new work from rain and frost: cover the top with a waterproof sheet, held clear of the face so it doesn’t mark it, and weight it down. Keep stacked bricks and blocks covered and off the ground too.","protect"),
+        S("What does each one protect against?",["Frost","Rain","Damage"],[["Insulated covers overnight in winter",0,"Keeps frost off new mortar."],["Sheet over the top of the wall",1,"Stops rain washing out the joints."],["Boards over finished sills and reveals",2,"Stops knocks from barrows and other trades."],["Stacking bricks off the ground and covered",1,"Wet bricks can cause staining and efflorescence."],["Stopping work at 3°C and falling",0,"Mortar can freeze before it sets."]]),
+        LB("Label the PPE for jointing and cleaning down","ppe-person",[[48,30,142,32,"Hard hat"],[48,70,145,50,"Goggles"],[48,140,114,137,"Gloves"],[272,112,185,112,"Hi-vis"],[272,180,180,194,"Boots"]],"Goggles for splashes and grit, gloves for cement, boots, hard hat and hi-vis."),
+        J("Good teamwork?",[["Leaving your finished wall covered for the next trade",true,"Protected work saves someone else a repair."],["Pushing a barrow into someone else’s fresh brickwork",false,"Take care around other people’s work."],["Telling the scaffolders a sheet is weighted on the lift",true,"Everyone knows what’s up there."],["Leaving mortar smears for the cleaners",false,"Clean as you go."]],["Good","Not good"]),
+        QF([["Weather struck joints shed rain",true],["Recessed joints suit exposed walls",false],["Joint when thumbprint hard",true],["Lay bricks at 2°C and falling",false]])
+      ]),
+      lesson("bk-joint3","Unit challenge","Jointing and protecting the work",[
+        TROPHY(6),
+        Q("A recessed joint was used on a wall facing the sea. What’s the likely problem?",["Rain sits on the ledge and gets into the joint","It dries too fast","It looks too plain","Nothing"],"Recessed joints hold water, so they suit sheltered walls."),
+        T("Flush joints are rubbed flat with the face of the wall.",true,"That’s flush: level with the brick face."),
+        N(["Lay the bricks","Wait until thumbprint hard"],["Joint to the finish, then brush off","Brush straight away","Leave it for tomorrow"],"Joint at thumbprint hard, then lightly brush off."),
+        SC("Kai","The sheet on our wall keeps blowing into the fresh joints.","What’s the fix?",[["Hold it clear of the face and weight it down with boards","A sheet touching fresh joints marks them."],["Take it off: it’s doing more harm","Then rain and frost get in."],["Tape it to the bricks","Tape can mark the face and won’t hold."]]),
+        SP("Sam’s end-of-day checklist. Tap the mistake.",["Covered the top of the wall","Weighted the sheet down","Left the bricks unwrapped on the ground","Cleaned the tools"],2,"Bricks should be stacked off the ground and covered."),
+        B("Build the rule for cold weather","Stop at 3 degrees and falling",["rising","5","start"],"Stop laying at 3°C and falling.")
+      ],{challenge:true})
     ]),
     unit("Repair brick walling","Brick repairs",[
-      lesson("bk-repair1","Spotting defects and repairing","What’s wrong and how to put it right",[
-        L("Common defects","Spalled or cracked faces (usually frost), white salts (efflorescence), crumbling joints (weathering) and cracks through the joints (movement or settlement). Some cracks point to structural problems: report them."),
-        M("Match the defect to its likely cause",[["Spalled brick face","Frost and water getting in"],["White salt deposits","Efflorescence as the wall dries"],["Stepped crack through joints","Movement or settlement"],["Crumbling joints","Weathered mortar needing repointing"]]),
-        O("Put the steps for replacing a brick in order",["Check it’s safe and set up the work area","Cut out the brick and mortar with a plugging chisel and club hammer","Clean out and dampen the hole","Butter the new brick and bed it in","Point the joints to match"],"Clean, damp and well-filled joints give a sound repair."),
-        Q("What should you match when repairing?",["Brick colour, size and texture, the mortar and the joint finish","Just the size","Nothing: it’s only a repair","Only the joint finish"],"A good repair is hard to spot."),
-        T("A long stepped crack can be patched without telling anyone.",false,"It may be a structural problem. Report it so it can be checked.")
+      lesson("bk-repair1","Spotting defects","What’s wrong with the wall, and why",[
+        EX("What’s wrong here?","Before you repair anything, work out what’s caused it. Tap each problem on this wall.","defects",[
+          [54,12,"Spalling","The face has broken off, usually because water got in and froze."],
+          [145,55,"Efflorescence","White salts left as the wall dries out. It usually brushes off once dry."],
+          [232,40,"Stepped crack","A crack following the joints: the wall has moved or settled. Report it."],
+          [80,86,"Crumbling joints","Weathered mortar that needs raking out and repointing."]]),
+        M("Match the defect to its likely cause",[["Spalled brick face","Frost and water getting in"],["White salt deposits","Salts drying out of the wall"],["Stepped crack","Movement or settlement"],["Crumbling joints","Old, weathered mortar"]],"Find the cause, or the problem comes back."),
+        TE("When to shout","Small defects you can repair. A long or widening crack, a bulging wall or a lintel that’s dropped can mean a structural problem. Stop and report it before anyone patches it."),
+        J("Repair it, or report it?",[["A single spalled brick",true,"Cut it out and replace it."],["A stepped crack running up two storeys",false,"That could be structural. Report it."],["Crumbling joints on a garden wall",true,"Rake out and repoint."],["A bulge in the middle of a wall",false,"Report it: the wall may be unstable."]],["Repair it","Report it"]),
+        TAP("Tap the word for the white salts on a new wall","Brush off the {efflorescence} once the wall is dry",'It’s called efflorescence.'),
+        SC("Your supervisor","There’s white powder all over the new garden wall.","What do you do?",[["Let it dry out, then brush it off dry","Efflorescence usually disappears as the wall dries. Washing adds more water and salts."],["Scrub it with water","Water brings more salts to the surface."],["Paint over it","It’ll push through the paint."]])
       ]),
-      lesson("bk-repair2","Safe systems, asbestos and the environment","Working safely on existing buildings",[
-        M("Match each document to what it does",[["Risk assessment","Finds the hazards and how to control them"],["Method statement","Sets out the safe way to do the job, step by step"],["Toolbox talk","A short safety briefing"],["Site induction","The site rules when you start"]]),
-        L("Asbestos","Buildings built or refurbished before 2000 may contain asbestos, for example in old boards, pipe lagging, flues and cement sheets. Breathing in the fibres can cause fatal diseases years later. If you suspect it: stop, don’t disturb it, keep others away and tell your supervisor."),
-        Q("You uncover an old grey flue pipe that might contain asbestos. What do you do?",["Stop, leave it alone and tell your supervisor","Cut it out carefully","Sweep up the dust","Carry on wearing a dust mask"],"Only trained, licensed people deal with it."),
-        Q("What does “perp” mean?",["The vertical joint between bricks","A type of brick","A spirit level","The top course"],"Short for perpendicular joint. Using trade words helps you communicate clearly."),
-        Q("Sound bricks come out during a repair. What’s best?",["Clean and reuse them, or recycle","Put them all in the skip","Leave them on site","Bury them"],"Reusing materials cuts waste and cost."),
-        T("Keeping a safe, tidy work area is part of every repair job.",true,"Barrier off the area below work, keep walkways clear and clean up as you go.")
-      ])
+      lesson("bk-repair2","Replacing a brick safely","Cutting out, bedding in, asbestos and waste",[
+        O("Put replacing a brick in order",["Check it’s safe and set up the work area","Cut out the brick and mortar with a plugging chisel and club hammer","Clean out and dampen the hole","Butter the new brick and bed it in","Point the joints to match"],"Clean, damp and well-filled joints give a sound repair.",
+          {again:N(["Cut out the old brick","Clean out the hole"],["Dampen it, then butter and bed the new brick","Paint the hole","Leave it overnight"],"A damp hole stops the new mortar drying out too fast.")}),
+        Q("What should a good repair match?",["Brick colour, size and texture, the mortar and the joint finish","Just the size","Only the joint","Nothing: it’s just a repair"],"A good repair is hard to spot."),
+        TE("Asbestos","Buildings from before 2000 can contain asbestos: old boards, flue pipes, cement sheets. The fibres can cause fatal disease years later. If you suspect it: stop, don’t disturb it, keep people away and tell your supervisor.","sign-warn"),
+        SC("On a repair job","You uncover an old grey flue pipe behind the brickwork.","What do you do?",[["Stop, leave it alone and tell your supervisor","It could be asbestos. Only licensed people deal with it."],["Cut it out carefully","Cutting releases fibres."],["Sweep up the dust and carry on","Sweeping spreads fibres."]]),
+        M("Match the document to what it does",[["Risk assessment","The hazards and how to control them"],["Method statement","The safe way to do the job, step by step"],["Toolbox talk","A short safety briefing"],["Site induction","The site rules when you start"]],"Read them before you start."),
+        J("Good for the environment?",[["Cleaning and reusing sound bricks",true,"Less waste, less cost."],["Washing mortar into the drain",false,"It pollutes water."],["Separating waste into the right skips",true,"So it can be recycled."],["Burning plastic wrap",false,"Never burn waste on site."]])
+      ]),
+      lesson("bk-repair3","Unit challenge","Defects and repairs",[
+        TROPHY(6),
+        HOT("Tap the defect you should report rather than patch","defects",[[54,12,20,"Spalled brick"],[145,55,26,"White salts"],[232,40,30,"Stepped crack"],[80,86,24,"Crumbling joints"]],2,"A stepped crack means movement. Report it so it can be checked."),
+        Q("Why dampen the hole before bedding a new brick?",["So the old brickwork doesn’t suck the water out of the new mortar","To clean it","To make it set faster","To cool it"],"Dry brickwork draws water out and weakens the bond."),
+        T("You should wear a dust mask and carry on if you disturb possible asbestos.",false,"Stop, leave it and report it."),
+        Q("What does “perp” mean?",["The vertical joint between bricks","A type of brick","The top course","A level"],"Short for perpendicular joint."),
+        SP("Jay’s repair. Tap the mistake.",["Set up a barrier below the work","Cut out the brick with a plugging chisel","Bedded the new brick into the dry, dusty hole","Pointed the joints to match"],2,"The hole should be cleaned out and dampened first."),
+        B("Build the golden rule for defects","Find the cause before you repair",["hide","paint"],"Or the problem comes back.")
+      ],{challenge:true})
     ]),
     unit("Basic Brick wall","Setting out a solid wall",[
-      lesson("bk-basic1","Building a simple wall","Ends first, line, gauge and capping",[
-        L("The basics","Build on a clean, level base. Dry-bond the first course, build the ends first, then run in the middle to a line. Keep courses level, perps plumb, and gauge at 75 mm a course (65 mm brick plus a 10 mm joint)."),
-        Q("What is the standard gauge for one brick course?",["75 mm","65 mm","100 mm","85 mm"],"A 65 mm brick plus a 10 mm bed joint."),
-        O("Put building a simple wall in order",["Check the base is clean and level","Dry-bond the first course","Build up the ends","Run in the courses to the line","Finish with a capping or coping"],"The ends control the line, so they go up first."),
-        Q("Why build the ends first?",["They hold the line so the middle comes out straight and level","It’s quicker to finish","So the middle can be skipped","It uses less mortar"],"Line and pins stretched between the ends guide every course."),
-        L("Capping and coping","The top of a wall needs protecting from rain. Brick-on-edge capping or a coping stone with a drip does the job, often with a DPC under it to stop water soaking down."),
+      lesson("bk-basic1","Building a simple wall","Gauge, ends first and a line",[
+        TE("Gauge","Every course is *75 mm*: a 65 mm brick plus a 10 mm bed joint. Keep to gauge and your courses line up with openings, DPCs and the next wall.","course75","Gauge"),
+        G("A 65 mm brick plus a 10 mm joint makes a [75] mm course.",["65","85"],"65 + 10 = 75 mm."),
+        Q("How many courses make a wall 300 mm high?",["4","3","5","30"],"300 ÷ 75 = 4 courses."),
+        TE("Ends first","Build the ends (corners) first, checking level and plumb. Then run a line between them with line and pins, and lay the middle to the line so it comes out straight and level."),
+        O("Put building a simple wall in order",["Check the base is clean and level","Dry-bond the first course","Build up the ends","Run in the courses to the line","Finish with a capping or coping"],"The ends control the line, so they go up first.",
+          {again:Q("Why build the ends first?",["They hold the line so the middle comes out straight and level","It’s quicker","So the middle can be skipped","It uses less mortar"],"Line and pins between the ends guide every course.")}),
+        TE("Top it off","A wall’s top needs protecting from rain. A coping with a drip under each overhang throws water clear, usually with a DPC underneath to stop water soaking down.","coping"),
         T("A coping with a drip throws water clear of the wall face.",true,"The drip stops water running back and staining the wall.")
       ]),
-      lesson("bk-basic2","Tools, buildings and safety","Using and caring for your tools",[
-        M("Match the tool to its job",[["Spirit level","Checking level and plumb"],["Line and pins","Keeping courses straight"],["Bolster and club hammer","Cutting bricks"],["Brick jointer","Finishing joints"]]),
-        Q("How should you look after your trowel at the end of the day?",["Clean off the mortar and store it dry","Leave mortar on it to protect it","Leave it in water overnight","Throw it in the van"],"Clean, dry tools last longer and work better."),
-        Q("The head of your club hammer is loose. What do you do?",["Stop using it and get it repaired or replaced","Tape it","Carry on carefully","Use it for light work only"],"A flying hammer head can seriously injure someone."),
-        L("How a building works","Foundations spread the load into the ground. Walls carry floors and roofs. A DPC stops damp rising. Insulation keeps heat in, and cavity trays direct water out."),
-        M("Match the part to what it does",[["Foundation","Spreads the load into the ground"],["DPC","Stops damp rising"],["Insulation","Keeps the heat in"],["Cavity tray","Directs water out of the cavity"]]),
-        T("Putting health and safety first means stopping work if something is unsafe.",true,"No job is worth an injury. Stop and report it.")
-      ])
+      lesson("bk-basic2","Tools and how buildings work","Using and caring for your tools",[
+        EX("Your hand tools","Tap each tool.","tools",[[34,36,"Trowel","Spreads and cuts mortar. Clean it off before it sets."],[142,30,"Spirit level","Checks level and plumb. Check it’s accurate by reversing it."],[250,32,"Line and pins","Stretched between the ends to keep courses straight."],[45,82,"Bolster","With a club hammer, cuts bricks cleanly."],[149,85,"Club hammer","Heavy hammer for the bolster and plugging chisel."],[254,86,"Jointer","Presses in the joint finish."]]),
+        M("Match the tool to its job",[["Spirit level","Level and plumb"],["Line and pins","Straight courses"],["Bolster and club hammer","Cutting bricks"],["Jointer","Finishing joints"]],"The right tool for each job."),
+        SC("Kai","The head of my club hammer’s loose. I’ll tape it.","What do you say?",[["Stop using it and get it repaired or replaced","A flying hammer head can seriously hurt someone."],["Tape’s fine for light work","It can still come off."],["Just be careful","Care doesn’t stop it flying off."]]),
+        J("Looking after your tools",[["Cleaning your trowel before the mortar sets",true,"Hard mortar ruins the blade."],["Leaving your level in the back of the van loose",false,"Knocks put it out of true."],["Storing tools dry at the end of the day",true,"Dry tools don’t rust."],["Using a level as a straight edge to tap bricks",false,"Hitting it knocks it out."]]),
+        TE("How a building works","Foundations spread the load into the ground. Walls carry floors and roofs. A DPC stops damp rising, insulation keeps heat in, and cavity trays send water out."),
+        M("Match the part to what it does",[["Foundation","Spreads the load into the ground"],["DPC","Stops damp rising"],["Insulation","Keeps the heat in"],["Cavity tray","Sends water out of the cavity"]],"Every part has a job."),
+        QF([["A course is 75 mm",true],["Build the middle before the ends",false],["A DPC stops damp rising",true],["A loose hammer head is fine for light work",false]])
+      ]),
+      lesson("bk-basic3","Unit challenge","Building a simple wall",[
+        TROPHY(6),
+        Q("A wall needs to be 900 mm high to the top of a course. How many courses?",["12","9","10","15"],"900 ÷ 75 = 12."),
+        HOT("Tap the tool that keeps your courses straight between the ends","tools",[[34,36,22,"Trowel"],[142,30,30,"Spirit level"],[250,32,30,"Line and pins"],[45,84,18,"Bolster"],[149,85,26,"Club hammer"],[254,86,26,"Jointer"]],2,"Line and pins, stretched between the ends."),
+        SP("Sam’s wall. Tap the mistake.",["Checked the base was level","Built both ends first","Laid the middle without a line","Finished with a coping"],2,"Without a line, the middle won’t be straight or level."),
+        T("Putting health and safety first means stopping work if something is unsafe.",true,"No job is worth an injury."),
+        Q("What’s the drip under a coping for?",["To make rain drop clear of the wall face","To hold the coping on","To let air in","Decoration"],"Water falls off the drip instead of running down the face."),
+        B("Build the gauge rule","One course is 75 mm",["65","two"],"65 mm brick plus a 10 mm joint.")
+      ],{challenge:true})
     ]),
     unit("Set out solid walling","Setting out a solid wall",[
-      lesson("bk-setout1","Setting out from drawings","Reading the drawing and getting it square",[
-        L("Setting out","Read the drawing for dimensions, bond and levels. Transfer them to the base with a tape, line and pins and a square. Dry-bond the first course to check the bond and plan any cuts."),
-        Q("Why dry-bond the first course?",["To check the bond and plan cuts before using mortar","To save mortar","It’s quicker","To test the bricks"],"It shows how the bond works over the length."),
-        Q("How can you check a corner is square?",["Measure 3, 4 and 5 (or compare the diagonals)","Look at it","Use a level","Count the bricks"],"A 3-4-5 triangle always has a right angle."),
-        M("Match the feature to its description",[["Attached pier","Bonded into a wall to strengthen it"],["Isolated pier","Stands on its own"],["Banding","A course of contrasting brick"],["Projecting course","Bricks set out from the face"]]),
-        L("Digital drawings","Some sites use digital models (BIM), tablets and lasers for setting out. The principle is the same: accurate information, checked before you build."),
-        T("If the drawing and the site don’t match, build what looks right.",false,"Stop and ask. Building to a guess can be costly to put right.")
+      lesson("bk-setout1","Setting out from drawings","Square corners and dry bonding",[
+        TE("From drawing to ground","Read the drawing for sizes, bond and levels. Mark them on the base with a tape, lines and pins and a square. Then dry-bond the first course to check the bond and plan any cuts."),
+        TE("Is it square?","Measure 3 m along one side and 4 m along the other. If the distance between them is exactly 5 m, the corner is square. You can also check the two diagonals are equal.","square345","3-4-5"),
+        G("If one side is 3 m and the other 4 m, the diagonal should be [5] m.",["7","6"],"3, 4, 5 means a right angle."),
+        Q("You set out 6 m and 8 m along two sides. What should the diagonal be for a square corner?",["10 m","14 m","12 m","9 m"],"Double 3, 4, 5 is 6, 8, 10.",{again:T("Checking the diagonals are equal is another way to check a rectangle is square.",true,"Equal diagonals mean square corners.")}),
+        TE("Piers","A pier strengthens a wall. An *attached pier* is bonded into the wall; an *isolated pier* stands on its own, like a gate pier.","piers"),
+        M("Match the feature",[["Attached pier","Bonded into a wall"],["Isolated pier","Stands on its own"],["Banding","A course of contrasting brick"],["Projecting course","Bricks set out from the face"]],"Decorative and structural features."),
+        SC("Your supervisor","The drawing says the wall is 4.5 m long, but the site pegs are at 4.3 m.","What do you do?",[["Stop and ask before building","A mistake built in is costly to put right."],["Build to the pegs","They might be wrong."],["Split the difference","That’s still a guess."]])
       ]),
-      lesson("bk-setout2","Safe, clear and owning your work","Slips, communication and responsibility",[
-        Q("What causes most slips and trips on site?",["Untidy work areas and trailing materials","Wearing boots","Good lighting","Signs"],"Keep walkways clear and stack materials tidily."),
+      lesson("bk-setout2","Safe, clear and owning it","Slips, trade words and responsibility",[
+        J("Safe site, or trip hazard?",[["Bricks stacked tidily off the walkway",true,"Clear walkways, fewer trips."],["Line and pins left across a path",false,"A tight line at ankle height trips people."],["Offcuts cleared as you go",true,"Tidy as you work."],["Hose across the scaffold boards",false,"Route it out of the way."]],["Safe","Hazard"]),
+        M("Match the trade word",[["Perp","Vertical joint"],["Bed joint","Horizontal joint"],["Stretcher","Long face of a brick"],["Header","Short end of a brick"]],"Using trade words keeps things clear."),
         Q("Which is the clearest message to your labourer?",["Can I have two spots of mortar on the left-hand corner, please?","Get me some stuff","More!","You know what I need"],"Say what, how much and where."),
-        M("Match the trade word to its meaning",[["Perp","Vertical joint"],["Bed joint","Horizontal joint"],["Stretcher","Long face of a brick"],["Header","Short end of a brick"]]),
-        Q("A few courses up, you notice your wall is 10 mm out of gauge. What do you do?",["Own it: correct it now or tell your supervisor","Hide it in the joints","Blame the bricks","Carry on"],"Taking ownership means putting it right early."),
-        T("Situational awareness means keeping an eye on what’s going on around you.",true,"Watch for plant, edges, trenches and people.")
-      ])
+        TE("Own it","Taking ownership means checking your own work, and putting it right or speaking up as soon as something’s wrong."),
+        SC("A few courses up","You notice your wall is 10 mm out of gauge.","What now?",[["Correct it now, or tell your supervisor","The earlier it’s fixed, the easier it is."],["Hide it in the joints higher up","That makes thick, uneven joints."],["Blame the bricks","Owning it is part of the job."]]),
+        TE("Digital tools","Some sites use digital models, tablets and lasers for setting out. The idea’s the same: accurate information, checked before you build.")
+      ]),
+      lesson("bk-setout3","Unit challenge","Setting out solid walls",[
+        TROPHY(6),
+        Q("Why dry-bond the first course?",["To check the bond and plan cuts before using mortar","To save mortar","To test the bricks","It’s quicker"],"It shows how the bond works over the length."),
+        T("An isolated pier is bonded into a wall.",false,"That’s an attached pier. Isolated piers stand alone."),
+        Q("A corner measures 3 m and 4 m, and the diagonal is 5.1 m. What does that mean?",["The corner isn’t square yet","It’s square","The tape is wrong","It’s close enough"],"For a square corner it must be exactly 5 m."),
+        SP("Jay’s setting out. Tap the mistake.",["Read the drawing first","Checked the corner with 3, 4, 5","Guessed the length where the drawing was unclear","Dry-bonded the first course"],2,"If it’s unclear, ask. Don’t guess."),
+        TAP("Tap the trade word for the vertical joint","Keep every {perp} plumb and full",'The perp is the vertical joint.'),
+        B("Build the rule","If in doubt ask before you build",["guess","then"],"Asking is cheaper than rebuilding.")
+      ],{challenge:true})
     ]),
     unit("Build solid walling","Brick bonds",[
       lesson("bk-bond1","Brick bonds","Stretcher, English, Flemish and garden wall",[
-        L("Why bond?","Bond is the pattern of bricks that stops vertical joints lining up, spreading the load and making the wall strong. Half-brick walls use stretcher bond. One-brick walls use English, Flemish or garden wall bonds.","bonds"),
-        M("Match the bond to its pattern",[["Stretcher bond","All stretchers, half lap"],["English bond","Alternate courses of headers and stretchers"],["Flemish bond","Headers and stretchers alternate in every course"],["English garden wall","Three stretcher courses to one header course"]]),
-        Q("What does a queen closer do in English or Flemish bond?",["Sets up the quarter lap next to the quoin header","Finishes the coping","Fills the cavity","Replaces a damaged brick"],"It’s a brick cut in half along its length."),
-        Q("What is broken bond?",["Using cut bricks where the length doesn’t fit whole bricks","A bond that has fallen down","Mixing colours","Leaving out headers"],"Place the broken bond in the middle or under an opening where it’s least seen."),
-        L("Soldiers and brick-on-edge","A soldier course is bricks stood on end. Brick-on-edge is bricks laid on their edge, often as a capping. Set them out from the centre so any cuts are equal."),
-        T("Soldier courses need careful gauge so the perps stay plumb and even.",true,"Any error shows straight away in a soldier course.")
+        TE("Why bond?","*Bond* is the pattern that stops the vertical joints lining up, so the load spreads and the wall is strong. Half-brick walls use stretcher bond; one-brick walls use English, Flemish or garden wall bonds. Headers are shaded darker here.","bonds","Bond"),
+        M("Match the bond to its pattern",[["Stretcher bond","All stretchers, half lap"],["English bond","Courses of headers, then courses of stretchers"],["Flemish bond","Headers and stretchers alternate in each course"],["English garden wall","Three stretcher courses to one header course"]],"Each bond has its own pattern."),
+        HOT("Tap the English bond","bonds",[[56,40,48,"First panel"],[160,40,48,"Middle panel"],[264,40,48,"Last panel"]],1,"English bond: a course of headers, then a course of stretchers."),
+        TE("Closers","In English and Flemish bond a *queen closer* (a brick cut in half along its length, shown lighter) goes next to the corner header. It sets up the quarter lap so the joints don’t line up.",null,"Queen closer"),
+        TE("Garden wall bond","English garden wall bond has three courses of stretchers, then a course of headers. It’s quicker to lay and looks good on both faces.","garden-bond"),
+        Q("What is broken bond?",["Cut bricks used where the length doesn’t fit whole bricks","A wall that’s fallen down","Mixing brick colours","Leaving out headers"],"Put it in the middle or under an opening, where it’s least seen."),
+        T("In stretcher bond, each brick sits halfway over the two below it.",true,"That’s a half lap.")
       ]),
-      lesson("bk-bond2","Drawings and the environment","Information and waste",[
-        L("Drawings and specifications","Drawings show plans, elevations and sections at a scale, with a key. The specification says the materials and standards: brick type, mortar mix and joint finish."),
-        Q("Where would you find the mortar mix and joint finish?",["In the specification","On the site hoarding","On the delivery note","Nowhere: choose yourself"],"The spec sets the standard for the job."),
-        Q("On a 1:20 drawing, a pier measures 22 mm wide. What is its real width?",["440 mm","220 mm","22 mm","2.2 m"],"22 × 20 = 440 mm."),
-        L("Look after the environment","Order the right amount, cut carefully, reuse offcuts, separate waste into the right skips and never wash cement or mortar into drains or watercourses."),
-        M("Match the waste to the right action",[["Timber pallets","Return to the supplier or recycle"],["Mixer washout water","Let it settle; never pour it into drains"],["Brick offcuts","Reuse or recycle as hardcore"],["Plastic wrap","Separate for recycling"]]),
-        T("It’s fine to wash out the mixer into the nearest drain.",false,"Cement washout pollutes water. Use a washout area.")
-      ])
+      lesson("bk-bond2","Soldiers, drawings and waste","Special courses, information and the environment",[
+        TE("Soldiers and brick-on-edge","A *soldier course* is bricks stood on end. *Brick-on-edge* is bricks laid on their side across the wall, often as a capping. Set them out from the centre so any cuts are equal.","soldier"),
+        T("Soldier courses need careful gauge so the perps stay plumb and even.",true,"Any error shows straight away."),
+        TE("Drawings and specifications","Drawings show plans, elevations and sections at a scale. The specification says the materials and standards, like the brick, mortar mix and joint finish."),
+        Q("On a 1:20 drawing, a pier measures 22 mm wide. What is its real width?",["440 mm","220 mm","22 mm","2.2 m"],"22 × 20 = 440 mm.",{again:G("On a 1:50 drawing, 10 mm is [500] mm in real life.",["50","5,000"],"10 × 50 = 500 mm.")}),
+        S("Where does each waste go?",["Reuse","Recycle","Never"],[["Clean brick offcuts",0,"Use them as cuts elsewhere."],["Pallets",1,"Back to the supplier or recycled."],["Washout into the drain",2,"Cement pollutes water. Use a washout area."],["Plastic wrap",1,"Separate it for recycling."],["Burning waste",2,"Never burn waste on site."]]),
+        SC("Your labourer","The mixer needs washing out and the drain’s right there.","What do you say?",[["Use the washout area, never the drain","Cement washout pollutes water."],["The drain’s fine for a bit","Even a little pollutes."],["Tip it in the hedge","That pollutes the ground."]])
+      ]),
+      lesson("bk-bond3","Unit challenge","Bonds and special courses",[
+        TROPHY(7),
+        Q("Which bond has headers and stretchers alternating along every course?",["Flemish","English","Stretcher","English garden wall"],"Flemish: header, stretcher, header, stretcher."),
+        HOT("Tap the wall with only stretchers","bonds",[[56,40,48,"First panel"],[160,40,48,"Middle panel"],[264,40,48,"Last panel"]],0,"Stretcher bond is all stretchers, half lap."),
+        T("A queen closer is a brick cut in half across its length.",false,"It’s cut along its length, so it’s half as wide."),
+        Q("How many stretcher courses are there between header courses in English garden wall bond?",["3","1","5","2"],"Three stretcher courses, then one header course."),
+        SP("Kai’s soldier course. Tap the mistake.",["Set it out from the centre","Checked each perp was plumb","Put all the cuts at one end","Kept the joints even"],2,"Set out from the centre so cuts are equal at both ends."),
+        Q("Where should broken bond go?",["In the middle or under an opening","At the corners","At the top","Anywhere"],"Where it’s least seen."),
+        B("Why do we bond?","So the vertical joints never line up",["always","horizontal"],"Bonding spreads the load.")
+      ],{challenge:true})
     ]),
     unit("Set out Cavity Walling","Cavity wall setting out",[
       lesson("bk-cset1","Setting out a cavity wall","Profiles, gauge rods, DPCs and trays",[
-        L("Cavity walls","Two leaves, usually brick outside and block inside, with a cavity between them, tied together. Set out with profiles and lines, check square and level, and use a gauge rod for course heights and openings.","cavity"),
-        M("Match the item to its job",[["Profile","Holds the lines at corners"],["Gauge rod","Marks course heights and opening levels"],["DPC","Stops damp rising"],["Weep holes","Let water out above trays"]]),
-        Q("At least how far above ground level should the DPC be?",["150 mm","50 mm","75 mm","300 mm"],"At least 150 mm above finished ground level."),
-        Q("Where do cavity trays go?",["Over openings and where the cavity is bridged, with weep holes","At the bottom of the foundations","Inside the blockwork","Only at the roof"],"Trays catch water in the cavity and direct it out."),
-        O("Put setting out in order",["Check the drawings and levels","Set up profiles and lines","Check it’s square","Mark openings with the gauge rod","Lay the first courses and the DPC"],"Accurate setting out saves problems higher up.")
+        EX("A cavity wall","Two leaves, usually brick outside and block inside, with a cavity between, tied together. Tap each part.","cavity",[[91,28,"Brick","The outer leaf, the face you see."],[139,24,"Insulation","Keeps the heat in. Fitted tight to the inner leaf."],[193,28,"Block","The inner leaf, carrying the floors and roof."],[166,58,"Wall tie","Ties the two leaves together across the cavity."],[92,92,"DPC","Stops damp rising up the wall."]]),
+        TE("DPC height","The DPC goes in both leaves, at least *150 mm* above the finished ground level, so rain splashing off the ground can’t soak up the wall.","dpc150"),
+        G("The DPC must be at least [150] mm above ground level.",["50","75"],"At least 150 mm."),
+        TE("The gauge rod","A gauge rod is marked every 75 mm course, with the sill, lintel and floor heights. Check each corner against it so both leaves and the openings line up.","gaugerod","Gauge rod"),
+        O("Put setting out in order",["Check the drawings and levels","Set up profiles and lines","Check it’s square","Mark openings with the gauge rod","Lay the first courses and the DPC"],"Accurate setting out saves problems higher up.",
+          {again:Q("What does the gauge rod show?",["Course heights, and sill and lintel levels","The mortar mix","The wall length","The weather"],"Every course, plus the key heights.")}),
+        SC("Your supervisor","Where do the cavity trays go on this job?","You answer:",[["Over openings and wherever the cavity is bridged, with weep holes","Trays catch water in the cavity and send it out through weep holes."],["At the bottom of the foundation","That’s not where water needs to get out."],["Only at the roof","Water gets into the cavity all the way down."]])
       ]),
-      lesson("bk-cset2","Materials, quantities and safety","Estimating and the regulations",[
-        L("Materials","Bricks and blocks, mortar, DPC, wall ties, plasticisers, concrete and steel lintels. Efflorescence is white salts appearing as new brickwork dries; it usually brushes off."),
-        Q("A half-brick outer leaf needs about 60 bricks per m². How many for 12 m²?",["720","600","60","1,200"],"60 × 12 = 720, then add a little for waste."),
-        Q("Blocks need about 10 per m². How many for 12 m²?",["120","12","60","240"],"10 × 12 = 120."),
-        Q("Wall ties are normally spaced at about…",["900 mm across and 450 mm up, closer at openings","100 mm apart","Only at corners","2 m apart"],"Extra ties go within 225 mm of openings."),
-        M("Match the regulation to what it covers",[["COSHH","Hazardous substances like cement"],["PUWER","Work equipment is safe and maintained"],["Electrical safety","Checked leads and 110 V tools on site"],["RIDDOR","Reporting serious accidents"]]),
-        T("Asking an experienced bricklayer to show you a technique is a good way to learn.",true,"Seeking learning and development is part of being a good apprentice.")
-      ])
+      lesson("bk-cset2","Materials, quantities and the rules","Estimating and keeping safe",[
+        Q("About how many bricks make 1 m² of half-brick wall?",["60","100","30","150"],"About 60 a square metre."),
+        Q("Blocks need about 10 a square metre. How many for 12 m²?",["120","12","60","240"],"10 × 12 = 120, plus a little for waste."),
+        Q("A half-brick outer leaf needs about 60 bricks a square metre. How many for 12 m²?",["720","600","60","1,200"],"60 × 12 = 720."),
+        TE("Wall ties","Ties usually go about 900 mm apart along and 450 mm up, with extra ties within 225 mm of openings."),
+        S("Which regulation covers it?",["COSHH","PUWER","RIDDOR"],[["Cement and other hazardous substances",0,"Control of Substances Hazardous to Health."],["A mixer being safe and maintained",1,"Provision and Use of Work Equipment."],["Reporting a serious accident",2,"Reporting of Injuries, Diseases and Dangerous Occurrences."],["Checking the disc cutter guard",1,"Work equipment must be safe."]]),
+        TE("Efflorescence","White salts can appear as new brickwork dries. It usually brushes off once dry. Keeping bricks covered on site helps prevent it."),
+        T("Asking an experienced bricklayer to show you a technique is a good way to learn.",true,"Seeking learning is part of being a good apprentice.")
+      ]),
+      lesson("bk-cset3","Unit challenge","Setting out cavity walls",[
+        TROPHY(6),
+        HOT("Tap the part that stops damp rising","cavity",[[91,40,20,"Brick"],[139,40,14,"Insulation"],[187,40,26,"Block"],[92,92,18,"DPC"]],3,"The DPC, in both leaves."),
+        Q("Ground level is at 0. What’s the lowest the DPC can be?",["150 mm above","At ground level","75 mm above","50 mm below"],"At least 150 mm above."),
+        T("Weep holes let water out above cavity trays.",true,"So water in the cavity drains to the outside."),
+        Q("Roughly how many bricks for 8 m² of half-brick wall?",["480","80","640","800"],"60 × 8 = 480."),
+        SP("Jay’s setting out. Tap the mistake.",["Checked the drawing","Set up the profiles","Put the DPC 75 mm above the ground","Checked the corners were square"],2,"It must be at least 150 mm above ground."),
+        B("Build the DPC rule","At least 150 above the ground",["below","75"],"150 mm minimum.")
+      ],{challenge:true})
     ]),
     unit("Construct Cavity Walling","Cavity wall construction",[
       lesson("bk-cbuild1","Building the cavity wall","Ties, insulation and a clean cavity",[
-        L("Building it","Build both leaves together and keep the cavity clean. Wall ties slope slightly down to the outer leaf with the drip in the middle. Fit insulation tight with no gaps. Cavity barriers and fire stopping close the cavity where needed."),
-        Q("Which way should wall ties slope?",["Slightly down towards the outer leaf","Up towards the inner leaf","Always perfectly level","It doesn’t matter"],"So any water runs to the outside, never inwards."),
-        Q("Why keep mortar droppings out of the cavity?",["They can bridge the cavity and let damp through","They weaken the ties","They block deliveries","It’s only for looks"],"A clean cavity keeps the inside dry."),
+        TE("Build it clean","Build both leaves together and keep the cavity clear of mortar. Wall ties lie level or slope slightly down to the outer leaf, with the drip in the middle, so water can’t run inwards.","cavity"),
+        Q("Which way can a wall tie slope?",["Level, or slightly down to the outer leaf","Down towards the inner leaf","Steeply up","It doesn’t matter"],"Never towards the inside, or water follows it in."),
+        J("Good cavity work?",[["Cleaning mortar off the ties as you go",true,"Mortar on a tie can carry water across."],["Leaving droppings at the bottom of the cavity",false,"They can bridge the cavity and let damp in."],["Fitting insulation boards tight together",true,"Gaps let heat out."],["Ties with the drip against the inner leaf",false,"The drip goes in the middle of the cavity."]]),
         O("Put building the leaves in order",["Lay the courses to the line","Place wall ties at the right spacing","Fit the insulation tight","Clean the ties and cavity as you go"],"Ties and insulation go in as the wall rises."),
-        T("Fire stopping closes the cavity so fire and smoke can’t travel through it.",true,"It’s required at openings and edges set by the regulations and drawings.")
+        TE("Fire stopping","Cavity barriers and fire stopping close the cavity where the drawings say, so fire and smoke can’t travel up inside the wall."),
+        T("Fire stopping stops fire and smoke travelling through the cavity.",true,"It closes the cavity at key points.")
       ]),
-      lesson("bk-cbuild2","Fire, wellbeing and warm buildings","Extinguishers, support and energy",[
-        M("Match the extinguisher to its use",[["Water (red)","Wood, paper and fabric"],["Foam (cream)","Flammable liquids like petrol"],["CO2 (black)","Electrical fires"],["Dry powder (blue)","Many types, including gas"]]),
-        Q("Which extinguisher must NOT be used on an electrical fire?",["Water","CO2","Dry powder","None of them"],"Water conducts electricity."),
-        L("Warm, dry buildings","Insulation keeps heat in, airtightness stops draughts and ventilation lets moist air out. Gaps in insulation or unfilled joints make cold spots where heat escapes."),
-        Q("What happens if insulation boards have gaps between them?",["Heat escapes and cold, damp spots can form","Nothing","The wall is stronger","The room is warmer"],"Tight joints matter."),
-        L("Wellbeing","Long hours, stress and heavy lifting take a toll. Talk to someone, use your employer’s support, a mental health first aider, or the Construction Industry Helpline run by the Lighthouse charity."),
-        Q("A workmate has seemed withdrawn for weeks. What’s a good step?",["Check in with them privately and point them to support","Joke about it","Ignore it","Tell everyone"],"A quiet word can make a big difference.")
-      ])
+      lesson("bk-cbuild2","Fire, warmth and wellbeing","Extinguishers, energy and support",[
+        EX("Fire extinguishers","All UK extinguishers are red, with a coloured band. Tap each one.","extinguishers",[[40,56,"Water","Wood, paper and fabric. Never on electrics."],[120,56,"Foam","Flammable liquids like petrol, and wood and paper."],[200,56,"CO2","Electrical fires. The horn gets very cold: don’t hold it."],[280,56,"Powder","Many types, including gas, but it makes a mess and can be hard to see through."]]),
+        HOT("Tap the extinguisher for an electrical fire","extinguishers",[[40,62,28,"Water"],[120,62,28,"Foam"],[200,62,28,"CO2"],[280,62,28,"Powder"]],2,"CO2, with the black band. Never water on electrics."),
+        TE("Warm, dry buildings","Insulation keeps heat in, airtightness stops draughts and ventilation lets moist air out. Gaps in insulation or open joints make cold spots where heat escapes."),
+        Q("What happens if insulation boards have gaps?",["Heat escapes and cold, damp spots can form","Nothing","The wall is stronger","The room is warmer"],"Tight joints matter."),
+        TE("Wellbeing","Long hours, stress and heavy work take a toll. Talk to someone, use your employer’s support or a mental health first aider, or call the Construction Industry Helpline."),
+        SC("On site","A workmate has been quiet and withdrawn for weeks.","What’s a good step?",[["Check in with them privately and point them to support","A quiet word can make a big difference."],["Joke about it to lighten the mood","It might make them feel worse."],["Ignore it: it’s not your business","Looking out for each other matters."]])
+      ]),
+      lesson("bk-cbuild3","Unit challenge","Building cavity walls",[
+        TROPHY(6),
+        Q("Mortar droppings have built up at the bottom of the cavity. What’s the risk?",["Damp can cross to the inner leaf","The ties rust","The wall sets too fast","None"],"Droppings bridge the cavity."),
+        T("Water extinguishers are safe on electrical fires.",false,"Water conducts electricity."),
+        SP("Sam’s cavity wall. Tap the mistake.",["Built both leaves together","Cleaned the ties as she went","Sloped the ties down to the inner leaf","Fitted the insulation tight"],2,"Ties must never slope down to the inner leaf."),
+        Q("What does fire stopping do?",["Closes the cavity so fire and smoke can’t travel through it","Puts out fires","Makes the wall stronger","Keeps rain out"],"It closes the cavity at key points."),
+        Q("Which extinguisher suits burning petrol?",["Foam","Water","CO2 only","None"],"Foam, with the cream band."),
+        B("Build the tie rule","Never slope ties to the inside",["always","outside"],"Water would follow them in.")
+      ],{challenge:true})
     ]),
     unit("Cavity opening","Lintels",[
       lesson("bk-open1","Forming an opening","Reveals, closers, lintels and trays",[
-        L("Openings","Set out with the gauge rod, build reveals plumb, close the cavity with an insulated cavity closer, and bed the lintel level with the right bearing. Fit the cavity tray with weep holes above it."),
-        Q("What is the usual minimum end bearing for a lintel?",["150 mm each end","25 mm","50 mm in total","It doesn’t matter"],"Check the lintel maker’s instructions and the drawing."),
-        M("Match the part to its job",[["Cavity closer","Closes and insulates the cavity at the reveal"],["Lintel","Carries the load over the opening"],["Brick-on-edge sill","Throws water off below the window"],["Soldier course","Bricks on end over the opening"]]),
-        O("Put forming an opening in order",["Set out the width and height","Build the reveals plumb with closers","Bed the lintel level with the right bearing","Fit the cavity tray and weep holes","Continue the courses above"],"Openings need to be exactly the size on the drawing."),
-        L("Movement joints","Long walls expand and shrink. Movement joints are left clear of mortar, filled with compressible filler and sealed, so the wall can move without cracking."),
+        TE("An opening","Set the opening out with the gauge rod, build the reveals plumb, close the cavity with an insulated closer, and bed the lintel level with at least *150 mm* bearing each end. The tray and weep holes go above the lintel.","opening"),
+        LB("Label the opening","opening",[[44,24,100,40,"Lintel"],[282,20,215,20,"Soldier course"],[44,120,108,112,"Sill"],[282,60,190,33,"Weep hole"]],"Lintel over the opening, soldiers above, weep holes to let water out, and the sill below."),
+        G("A lintel usually needs at least [150] mm bearing at each end.",["25","50"],"Check the maker’s instructions and the drawing."),
+        M("Match the part to its job",[["Cavity closer","Closes and insulates the cavity at the reveal"],["Lintel","Carries the load over the opening"],["Sill","Throws water off below the window"],["Cavity tray","Sends water out above the opening"]],"Each part keeps the opening strong and dry."),
+        O("Put forming an opening in order",["Set out the width and height","Build the reveals plumb with closers","Bed the lintel level with the right bearing","Fit the cavity tray and weep holes","Continue the courses above"],"Openings must be exactly the size on the drawing."),
+        TE("Movement joints","Long walls expand and shrink. Movement joints are left clear of mortar, filled with compressible filler and sealed, so the wall can move without cracking.","movement"),
         T("A movement joint should be filled solid with mortar.",false,"That stops it moving and defeats the point.")
       ]),
-      lesson("bk-open2","Standards, modern methods and inclusion","Rules, new ways of building and fairness",[
-        M("Match the standard to what it is",[["British Standards","Agreed ways to make and build things"],["Building Regulations","Legal rules for safe, warm buildings"],["Warranty standards","Quality rules new homes must meet"],["Specification","What this job must use"]]),
-        L("Modern methods of construction","Precast lintels and components, corner profiles, timber or steel frames clad in brick and masonry support systems speed up building. Accuracy still matters."),
+      lesson("bk-open2","Standards, modern methods and inclusion","Rules, new ways to build, and fairness",[
+        M("Match the standard",[["British Standards","Agreed ways to make and build things"],["Building Regulations","Legal rules for safe, warm buildings"],["Warranty standards","Quality rules for new homes"],["Specification","What this job must use"]],"Different rules for different things."),
+        TE("Modern methods","Precast lintels, corner profiles, timber or steel frames clad in brick and masonry support systems all speed up building. Accuracy still matters."),
         Q("What are corner profiles for?",["Holding the lines accurately at corners","Replacing bricklayers","Measuring mortar","Supporting the roof"],"You build to the line they hold."),
-        L("Equity, diversity and inclusion","Equity is fair treatment and access. Diversity is valuing differences. Inclusion means everyone feels part of the team. Banter aimed at someone’s background, gender, race, religion, disability or sexuality isn’t acceptable."),
-        Q("“Banter” is making a colleague uncomfortable. What should you do?",["Challenge it or report it, and check they’re OK","Join in","Ignore it","Laugh along"],"Everyone deserves to feel safe at work."),
-        T("Making new starters feel welcome helps build an inclusive culture.",true,"Small things, like introducing people, make a difference.")
-      ])
+        TE("Equity, diversity and inclusion","*Equity* is fair treatment and access. *Diversity* is valuing differences. *Inclusion* means everyone feels part of the team."),
+        J("Inclusive, or not?",[["Introducing a new starter to the gang",true,"Small things make people feel welcome."],["“Banter” about someone’s religion",false,"That isn’t acceptable."],["Explaining trade words to someone new",true,"Everyone learns faster."],["Leaving someone out of the brew round",false,"It’s a small thing that says a lot."]],["Inclusive","Not inclusive"]),
+        SC("On site","Someone’s “banter” about a colleague’s background is making them uncomfortable.","What do you do?",[["Challenge it or report it, and check they’re OK","Everyone deserves to feel safe at work."],["Laugh along so it blows over","That makes it worse."],["Ignore it","Saying nothing lets it carry on."]])
+      ]),
+      lesson("bk-open3","Unit challenge","Openings and standards",[
+        TROPHY(6),
+        HOT("Tap the part that carries the load over the opening","opening",[[160,40,28,"Lintel"],[160,20,22,"Soldier course"],[160,112,22,"Sill"],[160,80,26,"Opening"]],0,"The lintel."),
+        Q("Where do weep holes go at an opening?",["In the course just above the lintel and tray","Under the sill","In the inner leaf","At the corners"],"Just above the tray, so water drains out."),
+        T("Movement joints are filled with compressible filler and sealant.",true,"No mortar, so the wall can move."),
+        SP("Jay’s opening. Tap the mistake.",["Built the reveals plumb","Fitted insulated closers","Gave the lintel 50 mm bearing","Fitted the tray and weep holes"],2,"Lintels usually need at least 150 mm bearing."),
+        Q("Which sets the legal rules for safe, warm buildings?",["Building Regulations","The specification","Warranty standards","British Standards"],"Building Regulations are the law."),
+        B("Build the lintel rule","At least 150 bearing each end",["mm","25"],"Check the drawing too.")
+      ],{challenge:true})
     ]),
     unit("Gable end/Raked wall",["Raking cuts","Cutting bricks"],[
       lesson("bk-gable1","Raking walls and cuts","Setting out the rake and cutting to it",[
-        L("Raked walls","A gable or raked wall follows a slope. Set out the rake with a line or template at the angle on the drawing, then cut each brick to the line so the rake is straight and the joints stay even."),
-        O("Put cutting a brick by hand in order",["Measure and mark the cut on all faces","Put on eye protection and gloves","Score the line with a bolster and club hammer","Strike firmly to cut","Trim the edge with a brick hammer or scutch"],"Marking all faces keeps the cut square."),
-        Q("Which hand tools are used to cut a brick?",["Bolster and club hammer","Trowel and level","Line and pins","Jointer and brush"],"A brick hammer or scutch trims the cut edge."),
+        TE("The rake","A gable follows the slope of the roof. Set a line or template to the angle on the drawing, then cut each brick to the line, so the rake is straight and the joints stay even.","gable","Rake"),
+        TE("Cutting by hand","Mark the cut on all faces. With eye protection and gloves on, set the bolster on the line and strike firmly with the club hammer. Then trim the edge with a brick hammer or scutch.","bolster"),
+        O("Put cutting a brick by hand in order",["Mark the cut on all faces","Put on eye protection and gloves","Set the bolster on the line","Strike firmly with the club hammer","Trim the edge"],"Marking all faces keeps the cut square."),
         Q("How do you keep a raking cut line straight?",["Use a line or template set to the rake","Guess each brick","Follow the last brick","Use a level only"],"The line gives every cut the same angle."),
         T("Offer each brick up to the rake line and mark it before cutting.",true,"Measure twice, cut once.")
       ]),
-      lesson("bk-gable2","Power tools, height and ownership","Cutting safely and working at height",[
-        M("Match the power tool to a safe way to use it",[["Disc cutter","Trained operator, guard fitted, water or extraction"],["Mixer","Switched off before reaching in"],["Drill","Right bit and a secure grip"],["110 V tools","Safer voltage on site"]]),
-        Q("You need to cut a block with a disc cutter. What is essential?",["Training, the guard on, dust control and eye, ear and dust protection","Just gloves","Cut quickly to avoid dust","Remove the guard to see better"],"Silica dust from cutting can cause serious lung disease."),
-        L("Working at height and in confined spaces","Gables are built at height: use a proper scaffold with guard rails and toe boards, keep it clear and never overload it. Confined spaces like manholes need a permit and training: never go in without."),
-        Q("The scaffold is missing a guard rail. What do you do?",["Don’t use it and report it","Work carefully near the edge","Fix it yourself with timber","Tie a rope across"],"Only competent people alter scaffolding."),
+      lesson("bk-gable2","Power tools and height","Cutting safely and working up high",[
+        TE("Disc cutters","Cutting bricks and blocks makes silica dust, which can cause serious lung disease. Only use a disc cutter if you’re trained, with the guard on, water suppression or extraction, and eye, ear and dust protection (FFP3)."),
+        J("Safe with power tools?",[["Water suppression on the disc cutter",true,"It keeps the dust down."],["Taking the guard off to see the line",false,"Never remove the guard."],["Using 110 V tools on site",true,"Safer voltage."],["Cutting in a crowd without warning anyone",false,"Keep others clear of dust and debris."]]),
+        TE("Working at height","Gables are built at height: use a proper scaffold with guard rails and toe boards, keep it clear and never overload it. Confined spaces need a permit and training."),
+        SC("Up on the scaffold","A guard rail is missing on your lift.","What do you do?",[["Don’t use it, and report it","Only competent people alter scaffolding."],["Work carefully near the edge","One slip is all it takes."],["Tie a rope across","That isn’t a guard rail."]]),
+        M("Match the power tool to a safe way to use it",[["Disc cutter","Trained, guard on, dust control"],["Mixer","Switched off before reaching in"],["Drill","Right bit and a firm grip"],["110 V tools","Yellow leads and plugs"]],"Every tool has its rules."),
         T("Taking ownership means checking your own work and putting mistakes right.",true,"Your name is on your work.")
-      ])
+      ]),
+      lesson("bk-gable3","Unit challenge","Raking walls and cutting",[
+        TROPHY(6),
+        Q("What causes the dust from cutting bricks to be so harmful?",["Silica","Salt","Lime","Water"],"Silica dust can cause serious lung disease."),
+        N(["Mark the cut on all faces","Put on eye protection and gloves","Set the bolster on the line"],["Strike firmly with the club hammer","Soak the brick","Lay it"],"Then trim the edge."),
+        T("It’s fine to work from a scaffold with a missing guard rail if you’re careful.",false,"Don’t use it. Report it."),
+        SP("Kai’s gable. Tap the mistake.",["Set a line to the rake","Marked each brick against the line","Cut freehand by eye to save time","Wore eye protection"],2,"Cut to the line, or the rake won’t be straight."),
+        Q("Which protection is needed when using a disc cutter?",["Eye, ear and dust protection","Just gloves","None with water","Only a hard hat"],"All three, plus training."),
+        B("Build the cutting rule","Measure twice and cut once",["three","never"],"Offer it up, mark it, then cut.")
+      ],{challenge:true})
     ])
   ]);
 })();

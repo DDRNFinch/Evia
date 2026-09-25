@@ -222,7 +222,8 @@
   /* Tap the picture: tap the right part. Spots are the parts you might tap; s.a is the right one. */
   G.hot=c=>{
     const s=c.s;let misses=0,settled=false;
-    c.el.innerHTML='<span class="tm-kicker">Tap the picture</span>'+q(s)+c.pic(s.pic,{spots:s.spots,mode:"hot",maxH:260});
+    /* The picture's own words are hidden here, so they can't give the answer away. */
+    c.el.innerHTML='<span class="tm-kicker">Tap the picture</span>'+q(s)+c.pic(s.pic,{spots:s.spots,mode:"hot",maxH:260}).replace(/<text[^>]*>[\s\S]*?<\/text>/g,"");
     const art=c.el.querySelector(".tm-art");
     const mark=(x,y,cls)=>{const m=document.createElement("span");m.className="tm-mark "+cls;m.style.left=x;m.style.top=y;art.appendChild(m);return m};
     const at=i=>{const sp=s.spots[i],sz=T.picSize(s.pic);return [((sp.x-sz.x)/sz.w*100)+"%",((sp.y-sz.y)/sz.h*100)+"%"]};

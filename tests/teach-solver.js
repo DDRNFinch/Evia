@@ -12,7 +12,8 @@ window.__teachSolve=async function(o){
     case "cards":for(let k=0;k<s.cards.length;k++){$(".tm-flip").click();await w(60);if(s.recall){$$(".tm-btns .tm-go").pop().click();await w(90)}else await go()}if(s.recall)await go();break;
     case "choice":case "tf":case "next":case "scene":{
       const a=s.t==="tf"?(s.a?0:1):s.t==="scene"?s.opts.findIndex(x=>x.ok):s.a;
-      if(wrongFirst){const x=$$(".tm-opt").find(b=>+b.dataset.k!==a);x.click();await w(30);await go();await go()}
+      if(wrongFirst){const x=$$(".tm-opt").find(b=>+b.dataset.k!==a);x.click();await w(30);await go();
+        const last=/Continue/.test(($$(".tm-btns .tm-go").pop()||{}).textContent||"");await go();if(last)break}
       $('.tm-opt[data-k="'+a+'"]').click();await w(30);await go();await go();break}
     case "spot":if(wrongFirst){$$(".tm-lopt").find(b=>+b.dataset.k!==s.a).click();await w(60);await go()}$('.tm-lopt[data-k="'+s.a+'"]').click();await w(60);await go();break;
     case "tap":if(wrongFirst){$$(".tm-tok").find(b=>!b.dataset.ans).click();await w(60);await go()}$(".tm-tok[data-ans]").click();await w(60);await go();break;

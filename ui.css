@@ -1871,3 +1871,15 @@ html body .tp .tp-mid{font-size:24px;font-weight:800;fill:var(--ui-ink)}html bod
 .tm-load.mixer{background:linear-gradient(color-mix(in srgb,var(--yellow) 22%,#fff),color-mix(in srgb,var(--yellow) 40%,#fff));border-color:var(--yellow-ink)}
 .tm-load.mixer .tm-load-l,.tm-load.mixer .tm-load-hint{color:var(--yellow-ink)}
 .tm-node button{max-width:min(300px,82vw)}.tm-label small{white-space:normal}
+.tp-spall{fill:#e2a585;stroke:#9c4f35;stroke-width:.8}.tp-salt ellipse{fill:rgba(255,255,255,.78)}.tp-erode{fill:none;stroke:#5e4a3e;stroke-width:2.6}
+.tp-lvl{fill:var(--yellow);stroke:var(--ui-ink);stroke-width:1.4}.tp-vial{fill:#c9f0a8;stroke:#1f2530;stroke-width:1}.tp-bub{fill:#fff}
+.tp-string{fill:none;stroke:#e2483d;stroke-width:1.4}.tp-string2{fill:none;stroke:#e2483d;stroke-width:1.6;stroke-dasharray:4 3}.tp-grip2{fill:#e2483d}
+.tp-coping{fill:#c8c3b8;stroke:#1f2530;stroke-width:1.4;stroke-linejoin:round}.tp-dripg{fill:#fff;stroke:#1f2530;stroke-width:1}.tp-drop2 circle{fill:#7fb6e6}
+.tp-tri{fill:color-mix(in srgb,var(--yellow) 14%,transparent);stroke:var(--yellow-ink);stroke-width:2}.tp-peg{fill:#c8935a;stroke:#7a5230}
+.tp-plan{fill:#d98d6a;stroke:var(--ui-ink);stroke-width:1.6}.tp-conc{fill:#c3c7cc;stroke:#8a9098}.tp-ground{fill:none;stroke:#6b4f2a;stroke-width:3}
+.tp-mark{fill:none;stroke:var(--yellow-ink);stroke-width:2.2;stroke-dasharray:4 2}
+.tp-exbody{fill:#d52b1e;stroke:#1f2530;stroke-width:1.2}.tp-exhead{fill:#2b3240}.tp-exw{fill:#d52b1e;stroke:#fff;stroke-width:1.5}.tp-exf{fill:#f3e3b3}.tp-exc{fill:#111}.tp-exp{fill:#1c5ea8}
+.tp-horn{fill:none;stroke:#111;stroke-width:3;stroke-linejoin:round}.tp-hosex{fill:none;stroke:#111;stroke-width:2.4}
+.tp-hole2{fill:#dce8f2;stroke:var(--ui-ink);stroke-width:1}.tp-lintel{fill:#7c8591;stroke:#1f2530;stroke-width:1}.tp-sill{fill:#a9543a;stroke:#1f2530;stroke-width:1}.tp-weep{fill:#111}
+.tp-filler{fill:#f3d36b}.tp-seal{fill:#2b3240}.tp-rake{fill:none;stroke:var(--ui-ink);stroke-width:1.2}
+.tp-jointer{fill:none;stroke:#6b7280;stroke-width:4;stroke-linecap:round}
