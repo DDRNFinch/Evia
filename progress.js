@@ -160,6 +160,7 @@
     out.push(card("act","Activity",num(thisMonth)+'<small> this month</small>',"things added in "+new Date().toLocaleDateString("en-GB",{month:"long"})+" · "+yearTotal+" in "+yr+(S.streak?" · "+S.streak+"-week streak":""),yearTotal?'<span class="pv-year">'+yr+'</span>'+yearBars(D.counts,yr):empty("Each month you add evidence or hours shows as a bar here.")));
     // Evidence quality
     out.push(card("quality","Evidence quality",S.coverage==null?"–":num(S.coverage,"%"),S.coverage==null?"Submit a unit with a write-up first":"of the key points covered"+(S.avgPhotos!=null?" · "+(Math.round(S.avgPhotos*10)/10)+(Math.round(S.avgPhotos*10)/10===1?" photo":" photos")+" a pack":""),S.coverage==null?empty("Evia checks each write-up once it’s saved"):dial(S.coverage)));
+    if(window.eviaStrength)out.push('<button type="button" class="pv-guide" data-pv="guide" id="pv-guide"><span class="pv-guide-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2"/><path d="M8 7h6M8 11h6"/></svg></span><span><strong>How to build a strong portfolio</strong><small>What makes evidence Weak, Good or Strong</small></span><span class="pv-guide-chev" aria-hidden="true">›</span></button>');
     // Targets
     const T2=window.eviaTargets,tg=T2?T2.mine():[];
     if(T2&&tg.length){
@@ -190,6 +191,7 @@
   const stat=(label,value)=>'<div class="pv-stat"><span>'+label+'</span><strong>'+value+'</strong></div>';
 
   function deep(id,D){
+    if(id==="guide"){window.eviaStrength.guide();return}
     const {S,a,verdict}=D,T=term();
     if(id==="where"){
       const p=readJson("evia7-profile",{}),rd=window.eviaReviewDue&&window.eviaReviewDue();
@@ -262,7 +264,7 @@
       sheet("MY PROGRESS","Evidence quality",
         (S.coverage!=null?'<div class="pv-dial-big">'+dial(S.coverage)+'<div class="pv-dial-num">'+num(S.coverage,"%")+'<span>key points covered</span></div></div>':'<p class="pv-empty">Submit a unit with a write-up and Evia will score it.</p>')+
         (checks.length?'<div class="pv-rows">'+checks.map((c,i)=>{const p=Math.round(c.covered.length/c.terms.length*100);return '<span class="pv-row"><span class="pv-row-top"><span>'+esc(c.u.name)+'</span><strong>'+p+'%</strong></span>'+bar(p,p<50?"low":p>=80?"good":"",i*50)+'<small class="pv-row-note">'+c.photos+' photo'+(c.photos===1?"":"s")+' · '+c.words+' words'+(c.missing.length?' · missing: '+esc(c.missing.slice(0,4).join(", "))+(c.missing.length>4?"…":""):"")+'</small></span>'}).join("")+'</div>':"")+
-        note("Strong evidence has 5 or more photos and mentions each key point. Ask Evia to check your evidence and she’ll tell you exactly what to add."));
+        note("Strong evidence has 6 or more clear photos from the start, middle and end of the job, and a write-up that mentions each key point, explains the steps and says what you learned. Each evidence pack shows its strength as you work."));
     }
     else if(id==="targets"){
       const T2=window.eviaTargets,tg=T2?T2.mine():[];

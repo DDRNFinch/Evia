@@ -51,15 +51,16 @@
       const c=document.createElement("canvas");c.width=c.height=px;
       c.getContext("2d").drawImage(video,(video.videoWidth-side)/2,(video.videoHeight-side)/2,side,side,0,0,px,px);
       buzz(12);shutter.classList.add("snap");setTimeout(()=>shutter.classList.remove("snap"),160);
+      const tag=prompts[current];
       c.toBlob(b=>{
         if(!b)return;
-        shots.push({blob:b,url:URL.createObjectURL(b)});refresh();
+        shots.push({blob:b,url:URL.createObjectURL(b),prompt:tag});refresh();
         if(prompts.length){done.add(current);const b2=el.querySelector('[data-prompt="'+current+'"]');if(b2)b2.classList.add("got");const next=prompts.findIndex((_,i)=>!done.has(i));if(next>=0)selectPrompt(next)}
       },"image/jpeg",.88);
     };
     shutter.onclick=take;
     const finish=keep=>{
-      const files=keep?shots.map((s,i)=>new File([s.blob],"photo-"+stamp()+"-"+(i+1)+".jpg",{type:"image/jpeg"})):[];
+      const files=keep?shots.map((s,i)=>{const f=new File([s.blob],"photo-"+stamp()+"-"+(i+1)+".jpg",{type:"image/jpeg"});f.eviaPrompt=s.prompt;f.eviaTakenAt=Date.now();return f}):[];
       shots.forEach(s=>URL.revokeObjectURL(s.url));closeOverlay(el,stream);
       if(files.length&&opts.onDone)opts.onDone(files);
     };
