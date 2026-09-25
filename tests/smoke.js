@@ -267,18 +267,26 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       const box=async()=>{document.getElementById("rw-open").click();await w(1700);document.querySelectorAll(".rw-over").forEach(o=>o.remove())};
       Math.random=()=>0.01;await box();
       const s1=JSON.parse(localStorage.getItem("evia7-rewards"));
-      out.dupe=s1.owned.includes("shape-oval")||s1.owned.includes("colour-orange");
-      for(let k=0;k<3;k++)await box();
+      out.dupe=["shape-oval","colour-orange","expr-wink","expr-surprised"].some(id=>s1.owned.includes(id));
+      for(let k=0;k<5;k++)await box();
       const s2=JSON.parse(localStorage.getItem("evia7-rewards"));out.refund=s2.bank>1000;
       const st=JSON.parse(localStorage.getItem("evia7-rewards"));st.pity=9;localStorage.setItem("evia7-rewards",JSON.stringify(st));
       await box();const s3=JSON.parse(localStorage.getItem("evia7-rewards"));
       out.pity=s3.owned.some(id=>["hat-gold","shape-gear","shape-shield","colour-teal","colour-midnight"].includes(id))&&s3.pity===0;
+      const s4=JSON.parse(localStorage.getItem("evia7-rewards"));s4.owned.push("expr-wink");localStorage.setItem("evia7-rewards",JSON.stringify(s4));
+      nav("rewards");await w(400);document.querySelector('[data-tab="expr"]').click();await w(200);
+      out.faces=document.querySelectorAll(".rw-item").length===7&&/Loot box only/.test(document.getElementById("rw-expr-hearts").textContent);
+      document.querySelector('[data-use="expr-wink"]').click();await w(200);
+      out.expr=document.documentElement.getAttribute("data-evia-expr")==="wink";
+      document.querySelector('[data-use="expr-wink"]').click();await w(200);
+      out.exprOff=!document.documentElement.hasAttribute("data-evia-expr");
       Math.random=rnd;if(keep)localStorage.setItem("evia7-rewards",keep);else localStorage.removeItem("evia7-rewards");R.wearOn();
       return out;
     });
     check("Rewards: three shapes and colours are free, others are locked by rarity, and the glowing hat is loot box only",rw.free&&rw.page,JSON.stringify(rw));
     check("Buying a hard hat puts it on Evia",rw.bought);
     check("Loot boxes give items you don't have, refund tokens for duplicates, and guarantee an epic after 9 without one",rw.dupe&&rw.refund&&rw.pity,JSON.stringify(rw));
+    check("Expressions: seven faces (heart eyes loot box only); using one shows it on Evia, and tapping again goes back to classic",rw.faces&&rw.expr&&rw.exprOff,JSON.stringify(rw));
     await page.evaluate(()=>nav("teach"));await page.waitForTimeout(600);
     await page.evaluate(()=>document.querySelector('[data-go="course"]').click());await page.waitForTimeout(600);
     // Teach me: play the whole Mixing mortar unit (every kind of screen, a mistake to fix and a surprise question),

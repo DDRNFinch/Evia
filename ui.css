@@ -2091,3 +2091,23 @@ body.evia-epa .chat-sheet::after{background:#2b2f36!important;border-color:#2b2f
 @media (prefers-reduced-motion:reduce){.rw-reveal,.rw-burst,.rw-shake{animation:none}}
 html body .evia-fab:has(> .evia-kit){overflow:visible!important}
 html body .bottom-nav button[data-nav]{position:relative}
+
+/* ---------- Evia's expressions (rewards.js puts the one in use on <html>; previews use data-x) ---------- */
+html[data-evia-expr="wink"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i:nth-child(2),html body .evia-face[data-x="wink"] i:nth-child(2){border-top-color:transparent!important;border-left-color:transparent!important;border-right-color:transparent!important;translate:0 -22%!important;scale:1.15 1!important}
+html[data-evia-expr="surprised"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i,html body .evia-face[data-x="surprised"] i{scale:1.25 1.25;border-radius:50%!important;aspect-ratio:1;height:auto!important}
+html[data-evia-expr="surprised"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i:after,html body .evia-face[data-x="surprised"] i:after{content:""!important;display:block!important;position:absolute;left:32%!important;top:32%!important;width:36%!important;height:36%!important;translate:none!important;transform:none!important;animation:none!important;border-radius:50%;background:var(--yellow)!important}
+html[data-evia-expr="happy"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i,html body .evia-face[data-x="happy"] i{border-bottom-color:transparent!important;translate:0 -8%!important}
+html[data-evia-expr="sleepy"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i,html body .evia-face[data-x="sleepy"] i{clip-path:inset(42% -20% -20% -20%);translate:0 -6%!important}
+html[data-evia-expr="sleepy"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i:before,html body .evia-face[data-x="sleepy"] i:before{content:"";position:absolute;left:-18%;right:-18%;top:40%;height:max(1.5px,14%);border-radius:2px;background:var(--yellow)}
+html[data-evia-expr="focused"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i,html body .evia-face[data-x="focused"] i{scale:1 .72;overflow:visible}
+html[data-evia-expr="focused"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i:before,html body .evia-face[data-x="focused"] i:before{content:"";position:absolute;left:-20%;right:-20%;top:-70%;height:max(2px,20%);border-radius:2px;background:var(--yellow)}
+html[data-evia-expr="focused"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i:first-child:before,html body .evia-face[data-x="focused"] i:first-child:before{rotate:22deg}
+html[data-evia-expr="focused"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i:nth-child(2):before,html body .evia-face[data-x="focused"] i:nth-child(2):before{rotate:-22deg}
+html[data-evia-expr="stars"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i,html body .evia-face[data-x="stars"] i{border-color:transparent!important;background:var(--yellow)!important;clip-path:polygon(50% 0%,61.8% 34.5%,98% 35%,69% 57%,79.4% 92%,50% 71%,20.6% 92%,31% 57%,2% 35%,38.2% 34.5%);border-radius:0!important;scale:1.35 1.2}
+html[data-evia-expr="stars"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i:after,html body .evia-face[data-x="stars"] i:after{display:none!important}
+html[data-evia-expr="hearts"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i,html body .evia-face[data-x="hearts"] i{border-color:transparent!important;background:#f0445f!important;clip-path:polygon(50% 96%,14% 60%,4% 44%,2% 28%,8% 13%,21% 4%,35% 5%,45% 13%,50% 22%,55% 13%,65% 5%,79% 4%,92% 13%,98% 28%,96% 44%,86% 60%);border-radius:0!important;scale:1.35 1.15;animation:eviaHeart 1.2s ease-in-out infinite!important}
+html[data-evia-expr="hearts"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i:after,html body .evia-face[data-x="hearts"] i:after{display:none!important}
+@keyframes eviaHeart{0%,100%{scale:1.3 1.1}40%{scale:1.5 1.3}60%{scale:1.35 1.15}}
+@media (prefers-reduced-motion:reduce){html[data-evia-expr="hearts"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i,html body .evia-face[data-x="hearts"] i{animation:none!important}}
+.evia-face i{position:relative}
+.rw-tabs{grid-template-columns:repeat(4,1fr)!important}.rw-tabs button{font-size:13.5px}

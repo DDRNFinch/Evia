@@ -4,7 +4,7 @@
    bought with tokens (common to epic) or won in a loot box (legendary only comes from boxes).
    Loot boxes cost tokens only, show their odds, refund tokens for a duplicate, and guarantee an epic or better
    after 9 boxes without one.
-   Store "evia7-rewards": {bank, spent, lastXp, day, dayEarned, owned[], hat, pity, seenAch[]}.
+   Store "evia7-rewards": {bank, spent, lastXp, day, dayEarned, owned[], hat, expr, pity, seenAch[]}.
    window.eviaRewards: page(), locked(kind,name), openItem(id), hatHtml(shape,hat), wearOn(), sync(), balance(). */
 (function(){
   const KEY="evia7-rewards",DAILY=60,ACH_TOKENS=25,BOX=60;
@@ -24,10 +24,22 @@
     "hat-glow":{label:"Glowing hard hat",rarity:"legendary",about:"Legendary. Only from a loot box."}
   };
   const SHAPE_R={oval:"common",splat:"rare",hex:"rare",gear:"epic",shield:"epic"};
+  /* Expressions: Evia's resting look. Her moods (happy when you save something, sleepy when idle) still take over
+     for a moment. "classic" is the free default. */
+  const EXPR={
+    wink:{label:"Wink",rarity:"common",about:"A cheeky wink."},
+    surprised:{label:"Surprised",rarity:"common",about:"Wide-eyed and amazed."},
+    happy:{label:"Happy",rarity:"rare",about:"Always smiling."},
+    sleepy:{label:"Sleepy",rarity:"rare",about:"Early start on site."},
+    focused:{label:"Focused",rarity:"epic",about:"Locked in and ready to learn."},
+    stars:{label:"Star eyes",rarity:"epic",about:"Star struck."},
+    hearts:{label:"Heart eyes",rarity:"legendary",about:"Legendary. Only from a loot box."}
+  };
   const COLOUR_R={orange:"common",purple:"rare",pink:"rare",red:"rare",teal:"epic",midnight:"epic"};
   function catalogue(){
     const out=[],S=window.eviaShapes||{},T=window.eviaThemes||{};
     Object.keys(HATS).forEach(id=>out.push(Object.assign({id,kind:"hat"},HATS[id])));
+    Object.keys(EXPR).forEach(k=>out.push({id:"expr-"+k,kind:"expr",key:k,label:EXPR[k].label,rarity:EXPR[k].rarity,about:EXPR[k].about}));
     Object.keys(SHAPE_R).forEach(k=>S[k]&&out.push({id:"shape-"+k,kind:"shape",key:k,label:S[k].label+" Evia",rarity:SHAPE_R[k],about:"A new shape for Evia."}));
     Object.keys(COLOUR_R).forEach(k=>T[k]&&out.push({id:"colour-"+k,kind:"colour",key:k,label:T[k].label,rarity:COLOUR_R[k],about:"Evia and the app in "+T[k].label.toLowerCase()+"."}));
     return out;
@@ -110,11 +122,12 @@
   function use(id){
     const it=item(id);if(!it||!owns(id))return;
     if(it.kind==="hat"){const r=read();r.hat=r.hat===id?"":id;write(r);wearOn()}
+    else if(it.kind==="expr"){const r=read();r.expr=r.expr===it.key?"":it.key;write(r);applyExpr()}
     else if(it.kind==="shape"&&window.eviaSetShape){window.eviaSetShape(it.key);wearOn()}
     else if(it.kind==="colour"&&window.eviaSetTheme)window.eviaSetTheme(it.key);
     if(isOpen())page();
   }
-  const inUse=it=>it.kind==="hat"?read().hat===it.id:it.kind==="shape"?window.eviaCurrentShape&&window.eviaCurrentShape()===it.key:window.eviaCurrentTheme&&window.eviaCurrentTheme()===it.key;
+  const inUse=it=>it.kind==="expr"?read().expr===it.key:it.kind==="hat"?read().hat===it.id:it.kind==="shape"?window.eviaCurrentShape&&window.eviaCurrentShape()===it.key:window.eviaCurrentTheme&&window.eviaCurrentTheme()===it.key;
   /* A loot box: roll a rarity from the odds (an epic or better is guaranteed after 9 without one), then an item of
      that rarity the learner doesn't have yet. If they have them all, they get tokens back instead. */
   function openBox(){
@@ -140,8 +153,9 @@
   /* A small Evia showing the item: the learner's own shape and colour, with the item on. */
   function preview(it){
     const T=window.eviaThemes||{},shape=it.kind==="shape"?it.key:(window.eviaCurrentShape?window.eviaCurrentShape():"circle");
+    const x=it.kind==="expr"?' data-x="'+it.key+'"':"";
     const hat=it.kind==="hat"?it.id:"",col=it.kind==="colour"?' style="--yellow:'+T[it.key].accent+';--evia-shape-stroke:'+T[it.key].accent+'"':"";
-    return '<span class="rw-evia evia-shape-avatar shape-'+shape+'"'+col+'>'+face+hatHtml(shape,hat)+'</span>';
+    return '<span class="rw-evia evia-shape-avatar shape-'+shape+'"'+col+'><span class="evia-face"'+x+'><i></i><i></i></span>'+hatHtml(shape,hat)+'</span>';
   }
   const tag=r=>'<span class="rw-tag r-'+r+'">'+RARITY[r].label+'</span>';
   let tab="hat";
@@ -153,12 +167,12 @@
       '<section class="rw-box"><div class="rw-box-art" aria-hidden="true">'+GIFT+'</div><div class="rw-box-copy"><strong>Loot box</strong><small>Win something you don’t have yet. Duplicates give tokens back, and 10 boxes always include an Epic or better.</small>'+
         '<div class="rw-odds">'+ORDER.map(k=>'<span class="r-'+k+'">'+RARITY[k].label+' '+RARITY[k].odds+'%</span>').join("")+'</div>'+
         '<button type="button" class="rw-btn buy" id="rw-open"'+(bal>=BOX?"":" disabled")+'>'+coin+BOX+' · Open</button></div></section>'+
-      '<div class="rw-tabs" role="tablist">'+[["hat","Evia’s kit"],["shape","Shapes"],["colour","Colours"]].map(t=>'<button type="button" role="tab" aria-selected="'+(tab===t[0])+'" class="'+(tab===t[0]?"on":"")+'" data-tab="'+t[0]+'">'+t[1]+'</button>').join("")+'</div>'+
+      '<div class="rw-tabs" role="tablist">'+[["hat","Kit"],["expr","Faces"],["shape","Shapes"],["colour","Colours"]].map(t=>'<button type="button" role="tab" aria-selected="'+(tab===t[0])+'" class="'+(tab===t[0]?"on":"")+'" data-tab="'+t[0]+'">'+t[1]+'</button>').join("")+'</div>'+
       '<div class="rw-grid">'+list.map(it=>{const own=r.owned.includes(it.id),on=own&&inUse(it),price=RARITY[it.rarity].price;
         return '<div class="rw-item r-'+it.rarity+(own?" own":"")+(on?" on":"")+'" id="rw-'+it.id+'">'+tag(it.rarity)+preview(it)+'<strong>'+esc(it.label)+'</strong><small>'+esc(it.about)+'</small>'+
           (own?'<button type="button" class="rw-btn'+(on?" on":"")+'" data-use="'+it.id+'">'+(on?(it.kind==="hat"?"Wearing":"In use"):(it.kind==="hat"?"Wear":"Use"))+'</button>'
             :price?'<button type="button" class="rw-btn buy" data-buy="'+it.id+'"'+(bal>=price?"":" disabled")+'>'+coin+price+'</button>':'<span class="rw-only">Loot box only</span>')+'</div>'}).join("")+'</div>'+
-      (tab!=="hat"?'<p class="rw-note">Circle, Squircle and Cloud, and Yellow, Green and Blue, are always free.</p>':"")+'</div>';
+      (tab==="shape"||tab==="colour"?'<p class="rw-note">Circle, Squircle and Cloud, and Yellow, Green and Blue, are always free.</p>':tab==="expr"?'<p class="rw-note">Evia’s classic face is always free. Tap “In use” to go back to it.</p>':"")+'</div>';
     scr().querySelector("#rw-open").onclick=openBox;
     scr().querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{tab=b.dataset.tab;page()});
     scr().querySelectorAll("[data-buy]").forEach(b=>b.onclick=()=>buy(b.dataset.buy));
@@ -195,7 +209,10 @@
   /* A dot on the Rewards tab when a loot box can be opened. */
   function badge(){const b=document.querySelector('[data-nav="rewards"]');if(b)b.classList.toggle("rw-dot",balance()>=BOX)}
 
-  window.eviaRewards={page,locked,openItem,hatHtml,hatSvg,wearOn,sync,balance,catalogue,FIT};
+  /* The expression in use goes on <html>, so every Evia in the app shows it (moods still win for a moment). */
+  function applyExpr(){const r=read(),on=r.expr&&owns("expr-"+r.expr);if(on)document.documentElement.setAttribute("data-evia-expr",r.expr);else document.documentElement.removeAttribute("data-evia-expr")}
+  applyExpr();
+  window.eviaRewards={page,applyExpr,locked,openItem,hatHtml,hatSvg,wearOn,sync,balance,catalogue,FIT};
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)sync()});
   setTimeout(()=>{sync();wearOn()},500);
   /* Keep the hat on when Evia's shape changes. */
