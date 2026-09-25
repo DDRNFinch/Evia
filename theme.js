@@ -24,7 +24,14 @@
     gear:{label:"Gear",className:"gear",svg:true},
     oval:{label:"Oval",className:"oval",svg:true},
     hex:{label:"Hexagon",className:"hex",svg:true},
-    shield:{label:"Shield",className:"shield",svg:true}
+    shield:{label:"Shield",className:"shield",svg:true},
+    /* Advanced Evias (legendary): animated orbs, drawn by orbs.js. */
+    "particle-aqua":{label:"Aqua particle",className:"particle-aqua",svg:true,orb:{style:"particle",c:"#3ee6ff",d:"#04141d"}},
+    "particle-violet":{label:"Violet particle",className:"particle-violet",svg:true,orb:{style:"particle",c:"#b8a2ff",d:"#0f0a26"}},
+    "particle-ember":{label:"Ember particle",className:"particle-ember",svg:true,orb:{style:"particle",c:"#ff9d52",d:"#1f0c03"}},
+    "glass-aqua":{label:"Aqua glass",className:"glass-aqua",svg:true,orb:{style:"glass",c:"#4ff0e0",d:"#0a0b24"}},
+    "glass-violet":{label:"Violet glass",className:"glass-violet",svg:true,orb:{style:"glass",c:"#c4a8ff",d:"#120a2a"}},
+    "glass-ember":{label:"Ember glass",className:"glass-ember",svg:true,orb:{style:"glass",c:"#ffb066",d:"#1c0b06"}}
   };
   /* Outline shapes are drawn as SVG (0–100 box) behind Evia's eyes. "body" is filled and outlined. */
   const OUTLINES={
@@ -35,7 +42,25 @@
     hex:{body:["M30 9Q28 9 27 10.7L8.2 47.4Q7 50 8.2 52.6L27 89.3Q28 91 30 91H70Q72 91 73 89.3L91.8 52.6Q93 50 91.8 47.4L73 10.7Q72 9 70 9Z"]},
     shield:{body:["M50 7C62 12 75 13 88 11Q91 11 91 14V47C91 71 74 86 51.5 94.5Q50 95 48.5 94.5C26 86 9 71 9 47V14Q9 11 12 11C25 13 38 12 50 7Z"]}
   };
+  /* An advanced Evia's still picture: a dark sphere with a glowing rim, and either particle rings or a glass sheen and
+     a light line. orbs.js animates the larger ones (a canvas of particles, or the moving line). */
+  let orbId=0;
+  function orbSvg(name){
+    const o=SHAPES[name].orb,id="evo"+(++orbId),glass=o.style==="glass";
+    return '<span class="evia-outline evia-orb orb-'+o.style+'" data-orb="'+name+'" aria-hidden="true"><svg viewBox="0 0 100 100" focusable="false"><defs>'+
+      '<radialGradient id="'+id+'b" cx="50%" cy="46%" r="55%"><stop offset="0" stop-color="'+o.d+'" stop-opacity="'+(glass?.55:.9)+'"/><stop offset=".78" stop-color="'+o.d+'"/><stop offset="1" stop-color="'+o.c+'" stop-opacity=".55"/></radialGradient>'+
+      '<filter id="'+id+'g" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.4"/></filter></defs>'+
+      '<circle cx="50" cy="50" r="49" fill="url(#'+id+'b)"/>'+
+      '<circle cx="50" cy="50" r="47.5" fill="none" stroke="'+o.c+'" stroke-width="3" filter="url(#'+id+'g)" opacity=".9"/>'+
+      '<circle cx="50" cy="50" r="47.5" fill="none" stroke="'+o.c+'" stroke-width="1.4"/>'+
+      (glass?'<path d="M22 26 A34 34 0 0 1 60 12" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" opacity=".55"/><circle cx="72" cy="20" r="2" fill="#fff" opacity=".8"/>'+
+        '<path class="orb-line" d="M6 66 H94" fill="none" stroke="'+o.c+'" stroke-width="1.6" stroke-linecap="round"/><path class="orb-line-glow" d="M6 66 H94" fill="none" stroke="'+o.c+'" stroke-width="4" stroke-linecap="round" filter="url(#'+id+'g)" opacity=".7"/>'
+        :[20,34,48,62,76].map(y=>'<ellipse cx="50" cy="'+y+'" rx="'+Math.sqrt(Math.max(0,47*47-(y-50)*(y-50))).toFixed(1)+'" ry="'+(4+Math.abs(50-y)/9).toFixed(1)+'" fill="none" stroke="'+o.c+'" stroke-width=".9" stroke-dasharray=".6 2.4" stroke-linecap="round" opacity=".55"/>').join("")+
+          [0,36,72,108,144].map(a=>'<ellipse cx="50" cy="50" rx="'+(47*Math.abs(Math.cos(a*Math.PI/180))).toFixed(1)+'" ry="47" fill="none" stroke="'+o.c+'" stroke-width=".9" stroke-dasharray=".6 2.4" stroke-linecap="round" opacity=".4"/>').join(""))+
+      '</svg>'+(glass?"":'<canvas class="orb-cv"></canvas>')+'</span>';
+  }
   function outlineSvg(name){
+    if(SHAPES[name]&&SHAPES[name].orb)return orbSvg(name);
     const o=OUTLINES[name];if(!o)return"";
     return '<svg class="evia-outline" viewBox="0 0 100 100" aria-hidden="true" focusable="false">'+
       o.body.map(d=>'<path class="evia-outline-body" d="'+d+'"/>').join("")+
@@ -52,6 +77,8 @@
     const old=el.querySelector(":scope > .evia-outline");if(old)old.remove();
     [...el.classList].filter(c=>c.startsWith("evia-outline-")).forEach(c=>el.classList.remove(c));
     el.classList.toggle("evia-svg-shape",!!svg);
+    const orb=SHAPES[name]&&SHAPES[name].orb;el.classList.toggle("evia-orb-host",!!orb);
+    if(orb){el.style.setProperty("--orb",orb.c);el.style.setProperty("--evia-shape-stroke",orb.c)}else{el.style.removeProperty("--orb");el.style.removeProperty("--evia-shape-stroke")}
     el.dataset.eviaOutline=svg?name:"";
     if(svg){el.classList.add("evia-outline-"+name);el.insertAdjacentHTML("afterbegin",outlineSvg(name))}
   }

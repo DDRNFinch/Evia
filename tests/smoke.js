@@ -277,6 +277,12 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       nav("rewards");await w(400);for(const id of ["ppe-specs","ppe-ears","ppe-hivis"]){const b=document.querySelector('[data-use="'+id+'"]');if(b&&!b.classList.contains("on"))b.click();await w(150)}
       const fab=document.getElementById("evia-fab");
       out.ppe=fab.dataset.eyes==="ppe-specs"&&!!fab.querySelector(".ek-eyes .ek-lens")&&!!fab.querySelector(".evia-kit .ek-ears")&&!!fab.querySelector(".evia-kit .ek-vest");
+      out.orbLocked=R.locked("shape","particle-aqua")==="legendary"&&R.locked("shape","glass-ember")==="legendary";
+      const s6=JSON.parse(localStorage.getItem("evia7-rewards"));s6.owned.push("shape-particle-aqua");localStorage.setItem("evia7-rewards",JSON.stringify(s6));
+      const shapeBefore=window.eviaCurrentShape();window.eviaSetShape("particle-aqua");await w(400);
+      const fo=document.querySelector("#evia-fab > .evia-orb");
+      out.orb=!!fo&&fo.classList.contains("orb-particle")&&!!fo.querySelector("canvas")&&document.getElementById("evia-fab").classList.contains("evia-orb-host");
+      window.eviaSetShape(shapeBefore);await w(100);
       const s4=JSON.parse(localStorage.getItem("evia7-rewards"));s4.owned.push("expr-wink");localStorage.setItem("evia7-rewards",JSON.stringify(s4));
       nav("rewards");await w(400);document.querySelector('[data-tab="expr"]').click();await w(200);
       out.faces=document.querySelectorAll(".rw-item").length===7&&/Loot box only/.test(document.getElementById("rw-expr-hearts").textContent);
@@ -291,6 +297,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("Buying a hard hat puts it on Evia",rw.bought);
     check("PPE: specs, ear defenders and hi-vis can be worn together on Evia, with a hard hat",rw.ppe,JSON.stringify(rw));
     check("Loot boxes give items you don't have, refund tokens for duplicates, and guarantee an epic after 9 without one",rw.dupe&&rw.refund&&rw.pity,JSON.stringify(rw));
+    check("Advanced Evias: six legendary orbs, drawn on the Evia button with the particle sphere animated",rw.orbLocked&&rw.orb,JSON.stringify(rw));
     check("Expressions: seven faces (heart eyes loot box only); using one shows it on Evia, and tapping again goes back to classic",rw.faces&&rw.expr&&rw.exprOff,JSON.stringify(rw));
     await page.evaluate(()=>nav("teach"));await page.waitForTimeout(600);
     await page.evaluate(()=>document.querySelector('[data-go="course"]').click());await page.waitForTimeout(600);

@@ -32,7 +32,7 @@
     "ppe-hivis":{slot:"body",label:"Hi-vis vest",rarity:"common",about:"Be seen on site, every day."},
     "ppe-hivis-glow":{slot:"body",label:"Glowing hi-vis",rarity:"legendary",about:"Legendary. Only from a loot box."}
   };
-  const SHAPE_R={oval:"common",splat:"rare",hex:"rare",gear:"epic",shield:"epic"};
+  const SHAPE_R={oval:"common",splat:"rare",hex:"rare",gear:"epic",shield:"epic","particle-aqua":"legendary","particle-violet":"legendary","particle-ember":"legendary","glass-aqua":"legendary","glass-violet":"legendary","glass-ember":"legendary"};
   /* Expressions: Evia's resting look. Her moods (happy when you save something, sleepy when idle) still take over
      for a moment. "classic" is the free default. */
   const EXPR={
@@ -50,7 +50,7 @@
     Object.keys(HATS).forEach(id=>out.push(Object.assign({id,kind:"hat",slot:"hat"},HATS[id])));
     Object.keys(PPE).forEach(id=>out.push(Object.assign({id,kind:"hat"},PPE[id])));
     Object.keys(EXPR).forEach(k=>out.push({id:"expr-"+k,kind:"expr",key:k,label:EXPR[k].label,rarity:EXPR[k].rarity,about:EXPR[k].about}));
-    Object.keys(SHAPE_R).forEach(k=>S[k]&&out.push({id:"shape-"+k,kind:"shape",key:k,label:S[k].label+" Evia",rarity:SHAPE_R[k],about:"A new shape for Evia."}));
+    Object.keys(SHAPE_R).forEach(k=>S[k]&&out.push({id:"shape-"+k,kind:"shape",key:k,label:S[k].label+" Evia",rarity:SHAPE_R[k],about:S[k].orb?(S[k].orb.style==="glass"?"An advanced Evia: a glass orb whose light moves when she talks.":"An advanced Evia: a living sphere of light."):"A new shape for Evia."}));
     Object.keys(COLOUR_R).forEach(k=>T[k]&&out.push({id:"colour-"+k,kind:"colour",key:k,label:T[k].label,rarity:COLOUR_R[k],about:"Evia and the app in "+T[k].label.toLowerCase()+"."}));
     return out;
   }
