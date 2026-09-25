@@ -63,7 +63,8 @@
       start(b.dataset.testKind);
     });
     function start(kind){
-      if(kind==="discussion")runDiscussion();
+      if(kind==="discussion"&&window.eviaDiscussion){const x=document.getElementById("x");if(x)x.click();setTimeout(()=>window.eviaDiscussion.open({count:opts.count}),150)}
+      else if(kind==="discussion")runDiscussion();
       else if(kind==="epa-full")runChoiceTest("epa",20);
       else runChoiceTest(kind,opts.count||5);
     }

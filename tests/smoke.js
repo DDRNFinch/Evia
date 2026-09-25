@@ -114,8 +114,15 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>[...document.querySelectorAll("#chat .ui-replies button")].find(b=>/read it/.test(b.textContent)).click());
     await page.waitForSelector("#chat .dg-prompts",{timeout:15000});
     await page.fill("#chat .dg-answer","I would read the drawings, set out from the datum, wear PPE, mix the mortar and keep it to line and level.");
-    await page.click("#chat .dg-check");await page.waitForSelector("#chat .dg-result",{timeout:15000});
-    check("The discussion guide goes from a model answer to answering with prompts, and checks each area",await page.evaluate(()=>document.querySelectorAll("#chat .dg-result .ok").length===5));
+    await page.click("#chat .dg-check");await page.waitForFunction(()=>document.querySelectorAll("#chat .dg-model").length>=2,null,{timeout:15000});
+    check("The discussion guide goes from a model answer to answering with prompts, then compares (no marking)",await page.evaluate(()=>!document.querySelector("#chat .dg-result")&&[...document.querySelectorAll("#chat .ui-replies button")].some(b=>/Stage 3/.test(b.textContent))));
+    const disc=await page.evaluate(()=>{
+      const D=window.eviaDiscussion,q=EPA_DISCUSSIONS.bricklaying[0],m=window.EVIA_EPA_GUIDE.bricklaying[0].model;
+      const strong=D.grade(q,m,"").score,weak=D.grade(q,"I would build the wall and make it look nice.","").score;
+      const prompted=D.grade(q,"I would read the drawings, set out from the datum, mix the mortar and keep it level.","I’d wear gloves and boots and use a trowel.");
+      return {strong,weak,half:prompted.pts.find(p=>p.label==="Tools & PPE").follow&&prompted.prompted.includes("Tools & PPE")};
+    });
+    check("Recorded discussions are graded from the transcript: a model answer scores high, a vague one low, and follow-up answers count",disc.strong>=75&&disc.weak<30&&disc.half,JSON.stringify(disc));
     await page.click('#x');await page.waitForTimeout(400);
     check("EPA mode ends when the chat closes",await page.evaluate(()=>!document.body.classList.contains("evia-epa")));
     await page.evaluate(()=>window.chat());await page.waitForSelector("#chat .ui-action",{timeout:15000});
