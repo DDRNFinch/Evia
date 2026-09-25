@@ -93,6 +93,38 @@
     return {start(){on=true;start()},stop(){on=false;try{rec&&rec.stop()}catch(_){}return finalText.trim()},get text(){return finalText.trim()}};
   }
 
+  /* ---------- Answering out loud ----------
+     A microphone button, a listening animation and a timer: the words stay hidden. Stop, then Next (or Record again).
+     capture(el,{foot,onStart,onDone(text,secs),next}) draws into el (and the buttons into foot, if given). */
+  function capture(el,o){
+    const foot=o.foot||el;let on=false,live=null,t0=0,tick=null;
+    const draw=(state,msg)=>{
+      el.innerHTML='<div class="vc vc-'+state+'"><div class="vc-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div><p class="vc-msg" aria-live="polite">'+msg+'</p><span class="vc-time">'+(t0?time((Date.now()-t0)/1000):"")+'</span></div>';
+    };
+    const idle=msg=>{draw("idle",msg||"Tap the microphone and answer out loud.");foot.innerHTML='<button type="button" class="dr-mic" aria-label="Start answering"><span></span></button>';foot.querySelector(".dr-mic").onclick=start};
+    const start=()=>{
+      if(o.onStart)o.onStart();on=true;t0=Date.now();draw("on","Listening… speak naturally.");
+      foot.innerHTML='<button type="button" class="dr-mic on" aria-label="Stop"><span></span></button>';foot.querySelector(".dr-mic").onclick=stop;
+      tick=setInterval(()=>{const t=el.querySelector(".vc-time");if(t)t.textContent=time((Date.now()-t0)/1000)},500);
+      live=listener(()=>{},err=>{clearInterval(tick);on=false;t0=0;idle(err==="not-allowed"||err==="service-not-allowed"?"I can’t use the microphone. Allow it in your browser settings, then try again.":"I can’t hear the microphone. Check it and try again.")});
+      live.start();
+    };
+    const stop=()=>{
+      if(!on)return;on=false;clearInterval(tick);const secs=Math.round((Date.now()-t0)/1000);
+      draw("wait","One moment…");foot.innerHTML="";
+      setTimeout(()=>{
+        const txt=live?live.stop():"";live=null;
+        if(words(txt)<3){t0=0;return idle("I didn’t catch that. Check the microphone isn’t covered, then try again.")}
+        draw("done","Got it. "+time(secs)+" of speaking.");
+        foot.innerHTML='<button type="button" class="dr-btn" data-vc="again">Record again</button><button type="button" class="dr-btn dr-primary" data-vc="next">'+(o.next||"Next")+'</button>';
+        foot.querySelector('[data-vc="again"]').onclick=()=>{t0=0;idle()};
+        foot.querySelector('[data-vc="next"]').onclick=()=>o.onDone(txt,secs);
+      },700);
+    };
+    idle();
+    return {stop:()=>{clearInterval(tick);if(live)live.stop()}};
+  }
+
   /* ---------- The discussion room ---------- */
   let root=null,timer=null;
   function open(o){
@@ -100,7 +132,7 @@
     const all=bank();if(!all.length)return alert("There are no discussion questions for your course yet.");
     const qs=o.count&&o.count<all.length?all.slice().sort(()=>Math.random()-.5).slice(0,o.count):all.slice(0,5);
     const answers=qs.map(()=>({main:"",follow:"",followQ:"",secs:0}));
-    let i=0,phase="main",t0=0,speech=!!SR,live=null;
+    let i=0,phase="main",t0=0,live=null;
     if(root)root.remove();
     root=document.createElement("div");root.className="dr";root.setAttribute("role","dialog");root.setAttribute("aria-modal","true");root.setAttribute("aria-label","Professional discussion");
     document.body.appendChild(root);
@@ -112,53 +144,28 @@
     const face='<span class="dr-evia" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span>';
 
     const intro=()=>{
-      root.innerHTML=bar("Professional discussion")+'<div class="dr-body dr-intro">'+face+'<span class="dr-kicker">'+(qs.length>1?"Full discussion":"Quick practice")+'</span><h1>'+qs.length+' question'+(qs.length>1?"s":"")+', talked through</h1>'+
-        '<ul class="dr-rules"><li>I’ll ask each question, like your assessor would.</li><li>'+(speech?"Tap the microphone and talk. I’ll write down what you say.":"Type your answer, or tap the microphone on your keyboard and talk.")+'</li>'+
+      if(!SR){
+        root.innerHTML=bar("Professional discussion")+'<div class="dr-body dr-intro">'+face+'<span class="dr-kicker">Voice needed</span><h1>This one is spoken</h1>'+
+          '<p class="dr-lead">The discussion is answered out loud, like the real thing, and I turn what you say into text to grade it.</p>'+
+          '<ul class="dr-rules"><li>This browser can’t turn your voice into text.</li><li>Open Evia in <strong>Chrome</strong> on Android or <strong>Safari</strong> on iPhone.</li><li>When it asks, allow the microphone.</li></ul></div>'+
+          '<footer class="dr-foot"><button type="button" class="dr-btn dr-primary" id="dr-ok">OK</button></footer>';
+        wire();root.querySelector("#dr-ok").onclick=shut;return;
+      }
+      root.innerHTML=bar("Professional discussion")+'<div class="dr-body dr-intro">'+face+'<span class="dr-kicker">'+(qs.length>1?"Full discussion":"Quick practice")+'</span><h1>'+qs.length+' question'+(qs.length>1?"s":"")+', answered out loud</h1>'+
+        '<ul class="dr-rules"><li>I’ll ask each question, like your assessor would.</li><li>Tap the microphone and answer out loud. I’ll listen and turn it into text in the background.</li>'+
         '<li>If you miss something, I may ask a follow-up question.</li><li>At the end I’ll grade each answer from what you said, and show you how to improve it.</li></ul>'+
-        '<p class="dr-note">Find somewhere quiet. Take your time: a good answer usually takes a minute or two.</p></div>'+
+        '<p class="dr-note">Find somewhere quiet and allow the microphone when asked. Speak naturally: a good answer usually takes a minute or two.</p></div>'+
         '<footer class="dr-foot"><button type="button" class="dr-btn dr-primary" id="dr-go">Start</button></footer>';
       wire();root.querySelector("#dr-go").onclick=()=>ask();
     };
 
-    /* One question (or its follow-up): Evia asks, the learner answers, then can fix any misheard words. */
+    /* One question (or its follow-up): Evia asks, the learner answers out loud. The words aren't shown: it's spoken. */
     const ask=()=>{
       const q=qs[i],a=answers[i],follow=phase==="follow",text=follow?a.followQ:q.prompt;
       root.innerHTML=bar("Question "+(i+1)+" of "+qs.length+(follow?" · follow-up":""))+
-        '<div class="dr-body"><div class="dr-ask">'+face+'<p class="dr-q">'+esc(text)+'</p></div>'+
-        '<div class="dr-live" aria-live="polite"><span class="dr-ph">'+(speech?"Tap the microphone when you’re ready.":"Your answer…")+'</span></div>'+
-        (speech?'':'<textarea class="dr-type" rows="7" placeholder="Type your answer, or use the microphone on your keyboard"></textarea>')+
-        '<div class="dr-meta"><span class="dr-time">0:00</span><span class="dr-words">0 words</span></div></div>'+
-        '<footer class="dr-foot">'+(speech?'<button type="button" class="dr-mic" id="dr-mic" aria-label="Start answering"><span></span></button>':'<button type="button" class="dr-btn dr-primary" id="dr-done">Done</button>')+'</footer>';
+        '<div class="dr-body"><div class="dr-ask">'+face+'<p class="dr-q">'+esc(text)+'</p></div><div class="dr-cap"></div></div><footer class="dr-foot"></footer>';
       wire();say(text);
-      const liveEl=root.querySelector(".dr-live"),wEl=root.querySelector(".dr-words"),tEl=root.querySelector(".dr-time");
-      const tick=()=>{if(t0)tEl.textContent=time((Date.now()-t0)/1000)};
-      if(!speech){
-        liveEl.hidden=true;const ta=root.querySelector(".dr-type");t0=Date.now();clearInterval(timer);timer=setInterval(tick,1000);
-        ta.oninput=()=>{wEl.textContent=words(ta.value)+" words"};
-        root.querySelector("#dr-done").onclick=()=>{const v=ta.value.trim();if(!v){ta.focus();return}finishAnswer(v)};return;
-      }
-      const mic=root.querySelector("#dr-mic");let on=false;
-      mic.onclick=()=>{
-        if(!on){
-          hush();on=true;mic.classList.add("on");mic.setAttribute("aria-label","Stop");t0=Date.now();clearInterval(timer);timer=setInterval(tick,1000);
-          liveEl.innerHTML='<span class="dr-listen">Listening…</span>';
-          live=listener((fin,interim)=>{liveEl.innerHTML=esc(fin)+'<span class="dr-interim">'+esc(interim)+'</span>';wEl.textContent=words(fin+" "+interim)+" words";liveEl.scrollTop=liveEl.scrollHeight},
-            ()=>{speech=false;clearInterval(timer);live=null;ask()});
-          live.start();
-        }else{
-          on=false;const txt=live?live.stop():"";live=null;clearInterval(timer);
-          setTimeout(()=>review(txt),350);
-        }
-      };
-    };
-    /* Check the transcript: fix misheard words, record again, or carry on. */
-    const review=txt=>{
-      const q=qs[i],a=answers[i],follow=phase==="follow";
-      root.querySelector(".dr-body").innerHTML='<div class="dr-ask">'+face+'<p class="dr-q">'+esc(follow?a.followQ:q.prompt)+'</p></div>'+
-        '<label class="dr-lab" for="dr-fix">'+(txt?"What I heard. Fix any words I got wrong.":"I didn’t catch anything. Record again, or type your answer here.")+'</label><textarea id="dr-fix" class="dr-type" rows="8">'+esc(txt)+'</textarea>';
-      root.querySelector(".dr-foot").innerHTML='<button type="button" class="dr-btn" id="dr-again">Record again</button><button type="button" class="dr-btn dr-primary" id="dr-next">Next</button>';
-      root.querySelector("#dr-again").onclick=()=>ask();
-      root.querySelector("#dr-next").onclick=()=>{const v=root.querySelector("#dr-fix").value.trim();if(!v){root.querySelector("#dr-fix").focus();return}finishAnswer(v)};
+      capture(root.querySelector(".dr-cap"),{foot:root.querySelector(".dr-foot"),onStart:hush,onDone:(txt,secs)=>{t0=Date.now()-secs*1000;finishAnswer(txt)}});
     };
     const finishAnswer=text=>{
       const q=qs[i],a=answers[i],secs=Math.round((Date.now()-t0)/1000);a.secs+=secs;t0=0;
@@ -180,15 +187,15 @@
       const tipCount={};gs.forEach(g=>g.tips.forEach(t=>{tipCount[t]=(tipCount[t]||0)+1}));
       const top=Object.entries(tipCount).sort((x,y)=>y[1]-x[1]).slice(0,3).map(x=>x[0]);
       save(qs,answers,gs,pct);
-      const mark=(text,terms)=>{let h=esc(text);terms.slice().sort((x,y)=>y.length-x.length).forEach(t=>{h=h.replace(new RegExp("(^|[^a-z])("+esc(t).replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")(?=$|[^a-z])","gi"),"$1<mark>$2</mark>")});return h};
       root.innerHTML=bar("Your results")+'<div class="dr-body">'+
         '<div class="dr-score"><span class="dr-kicker">Practice grade</span><b>'+pct+'%</b><span class="dr-band '+b.c+'">'+b.t+'</span></div>'+
         '<div class="dr-parts">'+parts.map(p=>'<div class="dr-part"><span>'+esc(p.label)+'</span><i><i style="width:'+Math.round(p.v*100)+'%"></i></i></div>').join("")+'</div>'+
         (top.length?'<div class="dr-tips"><strong>To improve</strong><ul>'+top.map(t=>'<li>'+esc(t)+'</li>').join("")+'</ul></div>':"")+
         '<h3 class="dr-h">Each answer</h3>'+gs.map((g,k)=>{const a=answers[k],bb=band(g.score);return '<details class="dr-ans"'+(gs.length===1?" open":"")+'><summary><span>'+(k+1)+'. '+esc(qs[k].prompt.split(/(?<=\.)\s/)[0])+'</span><em class="dr-band '+bb.c+'">'+g.score+'%</em></summary>'+
           '<div class="dr-chips">'+g.pts.map(p=>'<span class="'+(p.main?"ok":p.follow?"half":"no")+'">'+(p.main?"✓ ":p.follow?"½ ":"✗ ")+esc(p.label)+'</span>').join("")+'</div>'+
-          '<p class="dr-tr">'+mark(a.main,g.trade)+'</p>'+(a.follow?'<p class="dr-fq">Follow-up: '+esc(a.followQ.replace(/^Thanks\. /,""))+'</p><p class="dr-tr">'+mark(a.follow,g.trade)+'</p>':"")+
-          '<p class="dr-stat">'+g.words+' words · '+time(a.secs)+(g.filler>2?' · '+g.filler+' “ums” and “ers”':"")+'</p>'+
+          (a.follow?'<p class="dr-fq">Follow-up: '+esc(a.followQ.replace(/^Thanks\. /,""))+'</p>':"")+
+          (g.trade.length?'<p class="dr-used">Key words you used</p><div class="dr-words-used">'+g.trade.slice(0,14).map(t=>'<span>'+esc(t)+'</span>').join("")+'</div>':"")+
+          '<p class="dr-stat">'+time(a.secs)+' of speaking · '+g.words+' words'+(g.filler>2?' · '+g.filler+' “ums” and “ers”':"")+'</p>'+
           (g.tips.length?'<ul class="dr-tip">'+g.tips.map(t=>'<li>'+esc(t)+'</li>').join("")+'</ul>':'<p class="dr-good">A strong answer.</p>')+'</details>'}).join("")+
         '<p class="dr-note">This is a practice grade worked out from your words: key areas, detail, reasons, checks, order, a real example and length. Your real assessment is graded by an assessor. Saved for your progress review.</p></div>'+
         '<footer class="dr-foot"><button type="button" class="dr-btn dr-primary" id="dr-end">Done</button></footer>';
@@ -204,5 +211,5 @@
     all.push(result);localStorage.setItem("evia7-test-results",JSON.stringify(all.slice(-50)));
     try{window.dispatchEvent(new CustomEvent("evia:test-saved",{detail:{type:"discussion",pct,score:result.score,total:result.total,full:gs.length>1,missed:[]}}))}catch(_){}
   }
-  window.eviaDiscussion={open,grade,supported:()=>!!SR};
+  window.eviaDiscussion={open,grade,capture,supported:()=>!!SR};
 })();

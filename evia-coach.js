@@ -261,7 +261,7 @@
   /* Open a My progress section: scroll to its card and open its detail. */
   function openProgress(id){
     K().closeChat();
-    setTimeout(()=>{nav("learning");setTimeout(()=>waitFor("#pv-"+id,el=>{flash(el);if(id==="review"){if(window.openSavedReviews)setTimeout(window.openSavedReviews,500)}else if(window.eviaProgressDeep)setTimeout(()=>window.eviaProgressDeep(id),500)}),350)},60);
+    setTimeout(()=>{nav("learning");setTimeout(()=>waitFor("#pv-"+id,el=>{flash(el);if(window.eviaProgressDeep)setTimeout(()=>window.eviaProgressDeep(id),500)}),350)},60);
   }
 
   /* ---------- Evidence check: one piece of evidence, its quality and what's still missing ---------- */
@@ -390,7 +390,7 @@
   function guide(){
     const k=K(),qs=discussions().filter(q=>q.model);
     if(!qs.length){k.say("I don’t have discussion questions for your course yet.");return epaMenu()}
-    k.say("I’ll teach you how to answer a discussion question in three stages: <strong>1</strong> read a strong answer, <strong>2</strong> answer it yourself with prompts, <strong>3</strong> answer it with no prompts.");
+    k.say("I’ll teach you how to answer a discussion question in three stages: <strong>1</strong> read a strong answer, <strong>2</strong> answer it out loud with prompts, <strong>3</strong> answer it out loud with no prompts.");
     k.say("Which question shall we practise?");
     k.replies(qs.map((q,i)=>({label:shortQ(q.prompt),primary:!i,run:()=>{stage1(q)}})).concat([{label:"Advice first",run:advice},{label:"Back",run:epaMenu}]));
   }
@@ -415,23 +415,28 @@
     if(!window.eviaDiscussion){window.eviaTestMe({type:"discussion",count});return}
     k.closeChat();setTimeout(()=>window.eviaDiscussion.open({count}),150);
   }
-  /* Stages 2 and 3: answer, then compare with the strong answer. No marking: it's for learning. */
+  /* Stages 2 and 3: answer out loud (the words stay hidden: it's spoken), then compare with the strong answer.
+     No marking: it's for learning. */
   function stage(q,n){
-    const k=K();
-    k.say(n===2?"Stage 2: now answer the same question yourself. Use the prompts to cover each area. Type, or use the microphone on your keyboard.":"Stage 3: answer it once more, with no prompts this time.");
+    const k=K(),D=window.eviaDiscussion;
+    if(!D||!D.supported()){
+      k.say("This part is spoken, like the real discussion, but this browser can’t turn your voice into text. Open Evia in <strong>Chrome</strong> on Android or <strong>Safari</strong> on iPhone, and allow the microphone.");
+      return k.replies([{label:"Pick another question",run:guide},{label:"Back to EPA mocks",run:epaMenu}]);
+    }
+    k.say(n===2?"Stage 2: now answer the same question out loud. Use the prompts to cover each area. Tap the microphone when you’re ready.":"Stage 3: answer it out loud once more, with no prompts this time.");
     k.widget(qCard(q,n)+(n===2?'<ol class="dg-prompts">'+(q.prompts||q.points.map(p=>p.label)).map(p=>'<li>'+esc(p)+'</li>').join("")+'</ol>':"")+
-      '<textarea class="test-response dg-answer" rows="6" placeholder="Your answer…"></textarea><button type="button" class="chat-pill dg-check"><strong>Compare with the strong answer</strong></button>',el=>{
-      const btn=el.querySelector(".dg-check"),ta=el.querySelector("textarea");
-      btn.onclick=()=>{
-        if(!ta.value.trim()){ta.focus();return}
-        ta.disabled=true;btn.remove();
-        k.say("Here’s the strong answer again. Read them side by side: did you cover each area, and say why?");
+      '<div class="vc-chat"><div class="vc-area"></div><div class="vc-foot"></div></div>',el=>{
+      setTimeout(()=>{const f=el.querySelector(".vc-foot");if(f)f.scrollIntoView({block:"end",behavior:reduced()?"auto":"smooth"})},120);
+      D.capture(el.querySelector(".vc-area"),{foot:el.querySelector(".vc-foot"),next:"Compare with the strong answer",onDone:()=>{
+        el.querySelector(".vc-foot").innerHTML="";
+        k.say("Here’s the strong answer again. Did you cover each area in order, and say why?");
         k.widget('<div class="dg-model"><p>'+esc(q.model)+'</p><div class="dg-chips">'+q.points.map(p=>'<span>'+esc(p.label)+'</span>').join("")+'</div></div>');
         if(n===2)k.replies([{label:"Stage 3: no prompts",primary:true,run:()=>stage(q,3)},{label:"Try stage 2 again",run:()=>stage(q,2)}]);
-        else k.replies([{label:"Try a recorded discussion",primary:true,run:()=>discuss(1)},{label:"Another question",run:guide},{label:"Back to EPA mocks",run:epaMenu},{label:"Something else",run:()=>{epaMode(false);k.somethingElse()}}]);
-      };
+        else k.replies([{label:"Try a graded discussion",primary:true,run:()=>discuss(1)},{label:"Another question",run:guide},{label:"Back to EPA mocks",run:epaMenu},{label:"Something else",run:()=>{epaMode(false);k.somethingElse()}}]);
+      }});
     });
   }
+
 
 
   /* EPA mode ends when the chat closes. */

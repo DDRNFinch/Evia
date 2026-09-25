@@ -38,7 +38,11 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("The app opens on My course; the nav is Course, Progress, Evia, Teach me and Rewards",await page.evaluate(()=>screen==="course"&&!!document.getElementById("ui-course-head")&&[...document.querySelectorAll("[data-nav]")].map(b=>b.textContent.trim()).join()==="Course,Progress,Teach me,Rewards"));
     for(const s of ["course","progress","portfolio","learning"]){await page.evaluate(s=>nav(s),s);await page.waitForTimeout(450)}
     await page.evaluate(()=>nav("progress"));await page.waitForTimeout(450);
-    check("My progress starts with the progress review, and each section has its way in",await page.evaluate(()=>{const first=document.querySelector(".pv-grid .pv-card");return first&&first.id==="pv-review"&&!!document.querySelector('[data-act="otj:0"]')&&!!document.querySelector('[data-act="conf:1"]')&&!!document.querySelector('[data-act="review:0"]')}));
+    check("My progress starts with the progress review, and each section has its way in",await page.evaluate(()=>{const first=document.querySelector(".pv-grid .pv-card");return first&&first.id==="pv-review"&&!document.querySelector(".pv-grid .pv-act")}));
+    const deepActs=await page.evaluate(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms)),out={};
+      for(const id of ["review","otj","conf"]){document.getElementById("pv-"+id).click();await w(250);out[id]=[...document.querySelectorAll("#modal-root .pv-deep-acts .pv-act")].map(b=>b.textContent);document.getElementById("modal-root").innerHTML="";await w(50)}
+      return out});
+    check("Each section's buttons are inside its deep dive",deepActs.review.includes("Start my review")&&deepActs.otj.includes("Log hours")&&deepActs.conf.includes("Find a college task"),JSON.stringify(deepActs));
     check("My progress shows a chart card for each area, with no action buttons",await page.evaluate(()=>screen==="learning"&&["where","ksb","otj","tests","conf","act","quality","targets","ach"].every(id=>document.getElementById("pv-"+id))&&!document.querySelector("#screen .primary,#screen .pg-action")));
     await page.click("#pv-otj");await page.waitForTimeout(500);
     check("Tapping a card opens its deep dive with a how-to note",await page.evaluate(()=>/Off-the-job hours/.test(document.getElementById("pv-sheet-title").textContent)&&!!document.querySelector(".pv-sheet .pv-note")&&!!document.querySelector(".pv-sheet .pv-cols")));
@@ -112,10 +116,8 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.waitForSelector("#chat .dg-model",{timeout:15000});
     await page.waitForFunction(()=>[...document.querySelectorAll("#chat .ui-replies button")].some(b=>/read it/.test(b.textContent)),null,{timeout:15000});
     await page.evaluate(()=>[...document.querySelectorAll("#chat .ui-replies button")].find(b=>/read it/.test(b.textContent)).click());
-    await page.waitForSelector("#chat .dg-prompts",{timeout:15000});
-    await page.fill("#chat .dg-answer","I would read the drawings, set out from the datum, wear PPE, mix the mortar and keep it to line and level.");
-    await page.click("#chat .dg-check");await page.waitForFunction(()=>document.querySelectorAll("#chat .dg-model").length>=2,null,{timeout:15000});
-    check("The discussion guide goes from a model answer to answering with prompts, then compares (no marking)",await page.evaluate(()=>!document.querySelector("#chat .dg-result")&&[...document.querySelectorAll("#chat .ui-replies button")].some(b=>/Stage 3/.test(b.textContent))));
+    await page.waitForFunction(()=>!!document.querySelector("#chat .dg-prompts")||/can’t turn your voice/.test(document.getElementById("chat").innerText),null,{timeout:15000});
+    check("The discussion guide goes from a model answer to answering out loud with prompts: a microphone, no typing, no transcript",await page.evaluate(()=>!document.querySelector("#chat textarea")&&(!!document.querySelector("#chat .vc-chat .dr-mic")||(!window.eviaDiscussion.supported()&&/Chrome/.test(document.getElementById("chat").innerText)))));
     const disc=await page.evaluate(()=>{
       const D=window.eviaDiscussion,q=EPA_DISCUSSIONS.bricklaying[0],m=window.EVIA_EPA_GUIDE.bricklaying[0].model;
       const strong=D.grade(q,m,"").score,weak=D.grade(q,"I would build the wall and make it look nice.","").score;

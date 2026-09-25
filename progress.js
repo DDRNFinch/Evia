@@ -141,8 +141,14 @@
     targets:[["Show my targets",coach("targets"),1]],
     scen:[["Next scenario",coach("scenario"),1]]
   };
-  const acts=id=>ACTS[id]?'<span class="pv-acts">'+ACTS[id].map((a,i)=>'<button type="button" class="pv-act'+(a[2]?" on":"")+'" data-act="'+id+":"+i+'">'+esc(typeof a[0]==="function"?a[0]():a[0])+'</button>').join("")+'</span>':"";
-  const card=(id,title,big,sub,chart,extra)=>'<div class="pv-cell">'+cardBtn(id,title,big,sub,chart,extra)+acts(id)+'</div>';
+  /* The ways in sit at the bottom of the section's deep dive; the sheet closes before each one runs. */
+  function addActs(id){
+    const body=document.querySelector("#modal-root .pv-sheet .pr-body");if(!body||!ACTS[id]||body.querySelector(".pv-deep-acts"))return;
+    body.insertAdjacentHTML("beforeend",'<div class="pv-deep-acts">'+ACTS[id].map((a,i)=>'<button type="button" class="pv-act'+(a[2]?" on":"")+'" data-act="'+i+'">'+esc(typeof a[0]==="function"?a[0]():a[0])+'</button>').join("")+'</div>');
+    body.querySelectorAll(".pv-deep-acts [data-act]").forEach(b=>b.onclick=()=>{const a=ACTS[id][+b.dataset.act];document.getElementById("modal-root").innerHTML="";a[1]()});
+  }
+  const openDeep=id=>{deep(id,gather());addActs(id)};
+  const card=(id,title,big,sub,chart,extra)=>cardBtn(id,title,big,sub,chart,extra);
   const cardBtn=(id,title,big,sub,chart,extra)=>'<button type="button" class="pv-card'+(extra||"")+'" data-pv="'+id+'" id="pv-'+id+'"><span class="pv-head"><span class="pv-title">'+title+'</span><span class="pv-chev">'+CHEV+'</span></span><span class="pv-big">'+big+'</span>'+(sub?'<span class="pv-sub">'+sub+'</span>':"")+(chart?'<span class="pv-chart">'+chart+'</span>':"")+'</button>';
   const empty=text=>'<span class="pv-empty">'+esc(text)+'</span>';
 
@@ -214,6 +220,14 @@
 
   function deep(id,D){
     if(id==="guide"){window.eviaStrength.guide();return}
+    if(id==="review"){
+      const rd=window.eviaReviewDue&&window.eviaReviewDue(),revs=window.eviaGetReviews?window.eviaGetReviews():[];
+      sheet("MY PROGRESS","Progress review",
+        '<div class="pv-deep-hero">'+(rd?(rd.days<0?'<span class="pv-due late">Overdue</span>':rd.days===0?'<span class="pv-due soon">Due today</span>':num(rd.days)+'<small> day'+(rd.days===1?"":"s")+'</small>'):"–")+'<span>'+(rd?(rd.days<0?"It was due "+longDate(rd.due):"until your next review, on "+longDate(rd.due)):"Add your start date in Profile to plan reviews")+'</span></div>'+
+        (revs.length?'<div class="pv-rows">'+revs.slice(0,5).map(r=>'<span class="pv-row"><span class="pv-row-top"><span>'+esc(longDate(r.date))+'</span><strong>'+(r.targets||[]).length+' target'+((r.targets||[]).length===1?"":"s")+'</strong></span></span>').join("")+'</div>':'<p class="pv-empty">No reviews yet.</p>')+
+        note("A review looks at where you are, your evidence, learning, tests, skills and staying safe, then sets new targets. It takes about 5 minutes."));
+      return;
+    }
     const {S,a,verdict}=D,T=term();
     if(id==="where"){
       const p=readJson("evia7-profile",{}),rd=window.eviaReviewDue&&window.eviaReviewDue();
@@ -233,7 +247,7 @@
     else if(id==="ksb"){
       if(nvqOn()){
         const el=sheet("MY PROGRESS","Your units",window.eviaNvq.progressHtml(a)+note("Answering the knowledge questions and completing site jobs ticks off criteria across all your units."));
-        if(window.eviaNvq.bindProgress)window.eviaNvq.bindProgress(()=>deep("ksb",gather()));
+        if(window.eviaNvq.bindProgress)window.eviaNvq.bindProgress(()=>openDeep("ksb"));
         return el;
       }
       const all=allK(),groups=[["K","Knowledge"],["S","Skills"],["B","Behaviours"]];
@@ -333,11 +347,10 @@
     let D;try{D=gather()}catch(err){console.error("My progress failed",err);$("#screen").innerHTML='<p class="pv-empty">Evia couldn’t work out your progress just now.</p>';return}
     const rd=window.eviaReviewDue&&window.eviaReviewDue();
     $("#screen").innerHTML='<header class="ui-page-head"><h1>My progress</h1><span>'+esc(typeof data==="function"?data().name:"")+'</span></header>'+'<div class="pv-grid">'+cards(D).join("")+'</div>';
-    document.querySelectorAll("[data-pv]").forEach(b=>b.onclick=()=>b.dataset.pv==="review"?window.openSavedReviews&&window.openSavedReviews():deep(b.dataset.pv,gather()));
-    document.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>{const [id,i]=b.dataset.act.split(":");const a=ACTS[id]&&ACTS[id][+i];if(a)a[1]()});
+    document.querySelectorAll("[data-pv]").forEach(b=>b.onclick=()=>openDeep(b.dataset.pv));
     observe(document.getElementById("screen"));
   }
   window.eviaProgressPage=page;
-  window.eviaProgressDeep=id=>deep(id,gather());
+  window.eviaProgressDeep=openDeep;
   window.eviaHM=hm;
 })();
