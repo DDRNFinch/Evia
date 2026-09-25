@@ -367,6 +367,65 @@
       '<g transform="rotate(20 200 26)"><rect class="tp-wood" x="176" y="22" width="80" height="8" rx="3"/><rect class="tp-steel" x="156" y="14" width="24" height="24" rx="3"/></g>'+
       t(60,40,"Mark all faces,","tp-xs")+t(60,52,"bolster on the line","tp-xs"),"A brick marked for cutting with a bolster held on the line and a club hammer ready to strike")
   });
+  /* ---------- Joinery and carpentry ---------- */
+  Object.assign(P,{
+    /* The four basic joints, pulled apart. */
+    joints4:()=>svg(320,122,
+      '<g><rect class="tp-tim" x="10" y="8" width="20" height="92"/><rect class="tp-slot" x="16.7" y="38" width="6.6" height="30"/><rect class="tp-tim" x="44" y="38" width="36" height="30"/><rect class="tp-tim" x="34" y="48" width="10" height="10"/></g>'+
+      '<g><rect class="tp-tim2" x="92" y="8" width="64" height="16"/><path class="tp-tim2" d="M98 24 L101 42 H111 L114 24 Z M126 24 L129 42 H139 L142 24 Z"/>'+
+        '<path class="tp-tim" d="M92 62 V92 H156 V62 H151 L148 46 H133 L130 62 H124 L121 46 H106 L103 62 Z"/></g>'+
+      '<g><path class="tp-tim" d="M172 100 V20 H196 V100 Z"/><rect class="tp-slot" x="180" y="20" width="8" height="30"/><rect class="tp-tim2" x="204" y="26" width="30" height="24"/><rect class="tp-tim2" x="196" y="30" width="8" height="16" opacity=".0"/></g>'+
+      '<g><rect class="tp-tim" x="250" y="46" width="64" height="18"/><rect class="tp-tim2" x="272" y="12" width="18" height="84"/><path class="tp-thin" d="M272 46 V64 M290 46 V64"/></g>'+
+      t2(45,108,"Mortise","and tenon","tp-xs")+t(124,108,"Dovetail","tp-xs")+t(203,108,"Bridle","tp-xs")+t(282,108,"Halving","tp-xs"),
+      "Four joints: a tenon a third of the timber's thickness beside its mortise, dovetail tails and pins, a bridle joint's open slot, and a cross halving"),
+    /* A casement window from the outside, and a section through the sill. */
+    window:()=>svg(320,140,'<rect class="tp-tim" x="20" y="10" width="160" height="112"/><rect class="tp-glass" x="30" y="20" width="60" height="90"/><rect class="tp-tim2" x="98" y="18" width="74" height="96"/><rect class="tp-glass" x="106" y="26" width="58" height="80"/>'+
+      '<path class="tp-tim" d="M14 122 H186 L184 132 H16 Z"/>'+
+      '<g transform="translate(220 40)"><path class="tp-tim" d="M0 40 V20 H30 V14 H44 V20 L80 30 V46 H6 V40 Z"/><path class="tp-dripg" d="M14 46 a4 4 0 0 0 8 0"/><path class="tp-arrow" d="M66 20 L78 24"/><g class="tp-drop2"><circle cx="18" cy="56" r="2"/><circle cx="18" cy="66" r="2"/></g></g>'+
+      t(100,6,"","tp-xs")+t(260,110,"Sill section","tp-xs")+t(255,26,"weathered","tp-xs"),
+      "A timber casement window from outside: frame with head, jambs and sill, an opening casement and glass, and a section through the sloping sill with a drip groove underneath"),
+    /* A straight flight: strings, treads, risers and nosings, with the rise and going. */
+    stair:()=>{let st="";for(let k=0;k<5;k++){const x=40+k*44,y=110-k*20;st+='<rect class="tp-tim" x="'+x+'" y="'+(y-20)+'" width="6" height="20"/><path class="tp-tim2" d="M'+(x-6)+' '+(y-24)+' H'+(x+44)+' V'+(y-20)+' H'+(x-6)+' Z"/>'}
+      return svg(320,130,'<path class="tp-string3" d="M14 106 L270 -10 L270 20 L14 136 Z"/>'+st+'<path class="tp-pitch" d="M34 86 L262 -18"/>'+
+        t(290,64,"String","tp-xs")+'<path class="tp-thin" d="M276 60 H250"/>'+t(96,52,"Tread","tp-xs")+'<path class="tp-thin" d="M104 56 L118 64"/>'+t(24,72,"Nosing","tp-xs")+'<path class="tp-thin" d="M28 76 L34 84"/>'+t(186,98,"Riser","tp-xs")+'<path class="tp-thin" d="M178 92 L174 76"/>',
+        "A straight stair from the side: the string carrying treads and risers, with a nosing at the front of each tread")},
+    /* Door frame (rebated, solid) and door lining (thin board with a planted stop), in section. */
+    framelining:()=>svg(320,120,'<path class="tp-tim" d="M40 20 H110 V80 H80 V60 H40 Z"/><rect class="tp-door2" x="40" y="62" width="38" height="46"/>'+
+      '<rect class="tp-tim" x="190" y="30" width="100" height="18"/><rect class="tp-tim2" x="224" y="48" width="12" height="12"/><rect class="tp-door2" x="190" y="60" width="32" height="46"/>'+
+      t(75,14,"Door frame","tp-sm")+t(75,118,"Rebate cut in","tp-xs")+t(240,24,"Door lining","tp-sm")+t(262,70,"Planted stop","tp-xs")+'<path class="tp-thin" d="M248 66 H236"/>',
+      "Sections through a solid door frame with a rebate cut into it, and a thin door lining with a separate stop fixed on"),
+    /* A four-panel door and a ledged and braced door (hinges on the left). */
+    doors:()=>svg(320,140,'<rect class="tp-tim" x="30" y="8" width="90" height="124"/><rect class="tp-panel" x="42" y="18" width="30" height="46"/><rect class="tp-panel" x="78" y="18" width="30" height="46"/><rect class="tp-panel" x="42" y="76" width="30" height="46"/><rect class="tp-panel" x="78" y="76" width="30" height="46"/>'+
+      '<rect class="tp-tim2" x="190" y="8" width="90" height="124"/>'+[0,1,2,3,4].map(k=>'<path class="tp-thin" d="M'+(208+k*18)+' 8 V132"/>').join("")+
+      '<rect class="tp-tim" x="190" y="18" width="90" height="12"/><rect class="tp-tim" x="190" y="64" width="90" height="12"/><rect class="tp-tim" x="190" y="110" width="90" height="12"/>'+
+      '<path class="tp-brace" d="M196 108 L274 32 M196 62 L274 32" opacity="0"/><path class="tp-brace" d="M198 108 L272 78 M198 62 L272 30"/>'+
+      '<rect class="tp-hinge" x="186" y="20" width="10" height="8"/><rect class="tp-hinge" x="186" y="112" width="10" height="8"/>'+
+      t(75,138,"Panelled","tp-xs")+t(235,138,"Ledged and braced","tp-xs"),
+      "A four-panel door with stiles, rails, a muntin and panels, and a ledged and braced door hung on the left, its braces rising away from the hinges"),
+    /* Chisel edge: ground at 25 degrees, honed at 30. */
+    chisel:()=>svg(320,110,'<path class="tp-steel" d="M20 50 H220 L250.4 63 L255.2 66 H20 Z"/><path class="tp-honed" d="M250.4 63 L255.2 66 H250.4 Z"/>'+
+      '<path class="tp-thin" d="M220 66 H290"/><path class="tp-dim" d="M236 66 A16 16 0 0 0 234.5 59.2"/>'+t(196,90,"Grinding bevel about 25°","tp-xs")+t(236,40,"Honing bevel about 30°","tp-xs")+t(90,90,"Flat back","tp-xs")+'<path class="tp-thin" d="M268 44 L253 63"/>',
+      "The end of a chisel from the side: a flat back, a grinding bevel at about 25 degrees and a small honing bevel at about 30 degrees"),
+    /* A room wall with the mouldings. */
+    mouldings:()=>svg(320,140,'<rect class="tp-wallp" x="10" y="8" width="300" height="124"/><rect class="tp-door3" x="204" y="42" width="50" height="90"/>'+
+      '<path class="tp-mould" d="M196 132 V34 H262 V132 H254 V42 H204 V132 Z"/>'+
+      '<rect class="tp-mould" x="10" y="22" width="300" height="4"/><rect class="tp-mould" x="10" y="80" width="186" height="5"/><rect class="tp-mould" x="10" y="122" width="186" height="10"/><rect class="tp-mould" x="262" y="122" width="48" height="10"/>',
+      "A wall with a picture rail near the top, a dado rail part way up, skirting along the bottom and architrave around the door"),
+    /* A balustrade: newel, handrail, spindles and baserail, with the 100 mm rule. */
+    balustrade:()=>{let sp="";for(let k=0;k<9;k++){const x=62+k*22,d=(x-46)*16/220;sp+='<path class="tp-spindle" d="M'+x+' '+r(104-d)+' V'+r(28-d)+'"/>'}
+      return svg(320,130,'<rect class="tp-tim" x="30" y="16" width="16" height="110"/><rect class="tp-tim" x="266" y="2" width="16" height="108"/>'+
+        '<path class="tp-rail" d="M46 26 L266 10"/><path class="tp-rail" d="M46 106 L266 90"/>'+sp+'<circle class="tp-sphere" cx="73" cy="64" r="9"/>'+t(110,124,"Gaps under 100 mm","tp-xs")+t(156,14,"Handrail","tp-xs")+t(18,10,"Newel","tp-xs"),
+        "A stair balustrade: newel posts, a handrail, a baserail and spindles close enough that a 100 millimetre sphere can't pass between them")},
+    /* Where hinges and the handle go on a door. */
+    hinges:()=>svg(320,140,'<rect class="tp-door3" x="110" y="6" width="80" height="130"/><rect class="tp-hinge" x="106" y="16" width="8" height="12"/><rect class="tp-hinge" x="106" y="108" width="8" height="12"/>'+
+      '<circle class="tp-knob" cx="180" cy="76" r="4"/><rect class="tp-knob" x="178" y="76" width="4" height="10"/>'+
+      dimV(90,6,22,"",0)+t(60,18,"150 mm","tp-xs")+dimV(90,114,136,"",0)+t(60,128,"225 mm","tp-xs")+dimV(214,76,136,"",0)+t(250,108,"about 1,000","tp-xs"),
+      "A door with the top hinge about 150 millimetres from the top, the bottom hinge about 225 millimetres from the bottom, and the handle about 1,000 millimetres from the floor"),
+    /* A band saw with its top guard set just above the work. */
+    bandsaw:()=>svg(320,140,'<path class="tp-mach" d="M110 128 V110 H210 V128 Z"/><path class="tp-mach" d="M140 110 V20 Q140 8 152 8 H196 Q208 8 208 20 V110"/><rect class="tp-table" x="96" y="70" width="128" height="8"/>'+
+      '<path class="tp-blade2" d="M168 20 V110"/><rect class="tp-guard" x="162" y="20" width="12" height="36"/><rect class="tp-tim2" x="120" y="58" width="80" height="12"/><path class="tp-thin" d="M230 52 H176"/>'+t(270,56,"Guard just","tp-xs")+t(270,68,"above the work","tp-xs"),
+      "A band saw with its top guard lowered to just above the piece of timber on the table")
+  });
   /* The old simple bucket, kept for any lesson that still uses it. */
   P.sbucket=()=>svg(120,100,sbucket(40,34,"tp-sand"),"A bucket");
   T.pics=Object.assign(T.pics||{},P);
