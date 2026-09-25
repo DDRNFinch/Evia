@@ -161,11 +161,16 @@
     // The phone's own spellcheck, in UK English.
     ta.spellcheck=true;ta.setAttribute("lang","en-GB");ta.setAttribute("autocapitalize","sentences");ta.setAttribute("autocorrect","on");
     if(!ta.matches(HELPED))return;
+    /* A small A✓ in the box's top-right corner; the suggestions open underneath. */
+    const field=document.createElement("div");field.className="wc-field";
+    ta.parentNode.insertBefore(field,ta);field.appendChild(ta);
+    const btn=document.createElement("button");btn.type="button";btn.className="wc-btn";btn.setAttribute("aria-label","Check my writing");btn.title="Check my writing";btn.innerHTML=ICON;
+    field.appendChild(btn);
     const wrap=document.createElement("div");wrap.className="wc";
-    wrap.innerHTML='<div class="wc-bar"><button type="button" class="wc-btn">'+ICON+'Check my writing</button></div><div class="wc-panel" hidden aria-live="polite"></div>';
-    ta.insertAdjacentElement("afterend",wrap);
+    wrap.innerHTML='<div class="wc-panel" hidden aria-live="polite"></div>';
+    field.insertAdjacentElement("afterend",wrap);
     const panel=wrap.querySelector(".wc-panel");
-    wrap.querySelector(".wc-btn").onclick=e=>{e.preventDefault();openPanel(ta,panel)};
+    btn.onclick=e=>{e.preventDefault();openPanel(ta,panel)};
     ta.addEventListener("input",()=>{if(!ta.dataset.wcApplying)panel.hidden=true});
   }
   const scan=()=>document.querySelectorAll("textarea:not([data-wc])").forEach(setUp);

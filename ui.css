@@ -1179,3 +1179,32 @@ body:has(#modal-root .overlay:not(:has(.chat-sheet))) .evia-fab{translate:0 160%
 .rvc textarea{width:100%;min-height:0}
 @media (prefers-reduced-motion:reduce){html body .evia-fab{transition:none}}
 .scc-opt:disabled{opacity:1;cursor:default;color:var(--ui-ink)}.scc-opt.other:not(.picked){opacity:.7}
+
+/* Check my writing: a small A✓ in the text box's top-right corner */
+.wc-field{position:relative;display:block}
+.wc-field>textarea{padding-right:46px!important}
+html body .wc-field>.wc-btn{position:absolute;top:8px;right:8px;width:34px;height:34px;min-height:0;padding:0;justify-content:center;border-radius:10px;background:var(--soft,#fff7d6);border:1px solid var(--yellow-line,#f1d878);color:var(--yellow-ink);z-index:1}
+html body .wc-field>.wc-btn svg{width:18px;height:18px}
+
+/* Evidence pack: slimmer Camera/Gallery buttons (same icons), and one Submit button now work saves itself */
+html body .evidence-photo-button{aspect-ratio:2/1;gap:6px;padding:8px}
+html body .pack-actions{grid-template-columns:1fr}
+
+/* Already shared: greyed out, with the date */
+.ev-tile.ev-shared{opacity:.55;box-shadow:none;background:#f8f9fb}
+.ev-shared-tag{font-weight:700;color:var(--ui-muted)}
+/* Video tiles show a frame with a play mark */
+.ev-tile-img{position:relative}
+.ev-tile-img video{width:100%;height:100%;object-fit:cover;pointer-events:none}
+.ev-play{position:absolute;inset:0;margin:auto;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.45)}
+.ev-play::after{content:"";position:absolute;left:8px;top:6px;border-left:8px solid #fff;border-top:5px solid transparent;border-bottom:5px solid transparent}
+/* Preview before sharing */
+.sp-preview{display:grid;place-items:center;min-height:120px;margin-bottom:12px;border-radius:16px;background:#f2f4f7;overflow:hidden}
+.sp-preview img,.sp-preview video{display:block;width:100%;max-height:52vh;object-fit:contain;background:#000}
+.sp-preview iframe{width:100%;height:52vh;border:0;background:#fff}
+.sp-audio{width:100%;padding:24px 16px}
+.sp-audio audio{width:100%}
+.sp-loading{padding:30px;font-size:13.5px;color:var(--ui-muted)}
+.sp-open{display:block;padding:12px;font-weight:800;color:var(--yellow-ink);text-align:center}
+.sp-open.big{padding:34px 16px;font-size:15px}
+.sp-meta{margin:0 2px 8px;font-size:13px;color:var(--ui-muted)}

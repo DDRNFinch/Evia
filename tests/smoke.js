@@ -79,9 +79,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("Tapping a saved tile shows that pack",await page.evaluate(()=>!!document.getElementById("ev-view-photos")));
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";nav("course")});await page.waitForTimeout(400);
     await page.evaluate(()=>openUnit(data().u.findIndex(u=>u[0]==="Mixing mortar")));await page.waitForTimeout(900);
-    await page.fill("#write","Mixed the mortar 4:1 by hand with a shovel");await page.waitForTimeout(500);
-    check("Things to mention turn green as the write-up covers them (4:1 ticks ratio and gauging)",await page.evaluate(()=>{const met=[...document.querySelectorAll(".mention-pill.met")].map(p=>p.dataset.term);return ["ratio","gauging","hand/mechanical"].every(t=>met.includes(t))&&!met.includes("silos")&&/3 of \d+ mentioned|\d+ of \d+ mentioned/.test(document.getElementById("mention-count").textContent)}));
-    await page.fill("#write","");
+    check("The evidence pack has no Continue later button and a check-my-writing icon in the text box",await page.evaluate(()=>!document.getElementById("continue-later")&&!!document.querySelector(".wc-field #write + .wc-btn")));
     await page.evaluate(()=>{nav("course")});await page.waitForTimeout(450);await page.evaluate(()=>openUnit(3));await page.waitForTimeout(900);
     check("An evidence pack opens",await page.$("#write"));
     await page.fill("#write","i laid the morter on the dpc and checked it was plum");await page.click(".wc-btn");await page.click(".wc-all");

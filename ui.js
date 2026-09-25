@@ -197,10 +197,14 @@
   }
 
   /* ---------- My course: saved evidence sits under the capture page ---------- */
+  /* What's been shared already (to Aptem, email…), so it can be greyed out. */
+  const SHARED_KEY="evia7-shared";
+  const sharedAt=key=>readJson(SHARED_KEY,{})[key]||null;
+  window.eviaMarkShared=key=>{const m=readJson(SHARED_KEY,{});m[key]=Date.now();localStorage.setItem(SHARED_KEY,JSON.stringify(m))};
   const SHARE_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3.5"/><path d="m7.5 8 4.5-4.5L16.5 8"/><path d="M5 12.5V19a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19v-6.5"/></svg>';
   const photoOf=async e=>{try{const p=window.eviaGetEvidencePhotoData?await window.eviaGetEvidencePhotoData(e):(e.p||[]);return p[0]||null}catch(_){return null}};
   const savedDay=t=>new Date(t).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
-  const tileHtml=(key,img,title,sub)=>'<div class="ev-tile"><button type="button" class="ev-tile-main" data-ev-open="'+key+'"><span class="ev-tile-img" data-ev-img="'+key+'">'+img+'</span><span class="ev-tile-copy"><strong>'+escHtml(title)+'</strong><small>'+escHtml(sub)+'</small></span></button><button type="button" class="ev-tile-share" data-ev-share="'+key+'" aria-label="Share">'+SHARE_ICON+'</button></div>';
+  const tileHtml=(key,img,title,sub,shared)=>'<div class="ev-tile'+(shared?" ev-shared":"")+'"><button type="button" class="ev-tile-main" data-ev-open="'+key+'"><span class="ev-tile-img" data-ev-img="'+key+'">'+img+'</span><span class="ev-tile-copy"><strong>'+escHtml(title)+'</strong><small>'+escHtml(sub)+(shared?' · <b class="ev-shared-tag">Shared '+escHtml(new Date(shared).toLocaleDateString("en-GB",{day:"numeric",month:"short"}))+'</b>':"")+'</small></span></button><button type="button" class="ev-tile-share" data-ev-share="'+key+'" aria-label="Share">'+SHARE_ICON+'</button></div>';
   /* Called by the evidence pack page (polish.js): a grey line, then one tile per saved pack. */
   function savedTiles(unitName,page){
     if(!page)return;
@@ -208,7 +212,7 @@
     if(!entries.length)return;
     const words=e=>String(e.w||"").trim()?String(e.w).trim().split(/\s+/).length:0,count=e=>(e.photoIds||e.p||[]).length;
     page.insertAdjacentHTML("beforeend",'<div class="ev-saved-line"></div><section class="ev-saved"><h3>Saved evidence</h3>'+
-      entries.map(e=>tileHtml(escHtml(e.id),icon(ICONS.camera,20),"Saved "+savedDay(entryTime(e)),count(e)+" photo"+(count(e)===1?"":"s")+" · "+words(e)+" words")).join("")+'</section>');
+      entries.map(e=>tileHtml(escHtml(e.id),icon(ICONS.camera,20),"Saved "+savedDay(entryTime(e)),count(e)+" photo"+(count(e)===1?"":"s")+" · "+words(e)+" words",sharedAt("pack:"+e.id))).join("")+'</section>');
     entries.forEach(async e=>{const src=await photoOf(e),el=page.querySelector('[data-ev-img="'+CSS.escape(String(e.id))+'"]');if(src&&el)el.innerHTML='<img src="'+src+'" alt="">'});
     page.querySelectorAll("[data-ev-open]").forEach(b=>b.onclick=()=>viewPack(entries.find(e=>String(e.id)===b.dataset.evOpen)));
     page.querySelectorAll("[data-ev-share]").forEach(b=>b.onclick=()=>{const e=entries.find(x=>String(x.id)===b.dataset.evShare);if(e&&window.eviaOpenSendToPortfolio)window.eviaOpenSendToPortfolio(unitName,e.id)});
@@ -224,26 +228,49 @@
     try{const photos=window.eviaGetEvidencePhotoData?await window.eviaGetEvidencePhotoData(e):(e.p||[]);const g=sh.el.querySelector("#ev-view-photos");if(g)g.innerHTML=photos.map(src=>'<img src="'+src+'" alt="Evidence photo">').join("")}catch(_){}
   }
   window.eviaSavedTiles=savedTiles;
-  /* Supporting evidence is its own unit: the same capture page, with its files as tiles underneath. */
+  /* Supporting evidence is its own unit: the same capture page, with its files as tiles underneath. Tap one to see
+     (or play) it before sharing; anything already shared is greyed out. */
   const originalSupporting=window.openSupportingEvidence;
+  const fileOf=async x=>{const rec=await window.eviaSupportingFileGet(x.id);if(!rec||!rec.blob)throw new Error("missing");return rec.blob};
+  const addedOf=x=>Date.parse(x.addedAt||x.createdAt||"")||Number(x.createdAt)||Date.now();
+  async function shareSupporting(x,after){
+    try{
+      const blob=await fileOf(x),file=new File([blob],x.filename||x.title||"supporting-evidence",{type:blob.type||x.mime||"application/octet-stream"});
+      if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:x.title||"Supporting evidence"})}
+      else{const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=file.name;document.body.appendChild(a);a.click();a.remove()}
+      window.eviaMarkShared("sup:"+x.id);if(after)after();
+    }catch(err){if(!(err&&err.name==="AbortError")&&typeof showEvidenceToast==="function")showEvidenceToast("Couldn’t share that file",true)}
+  }
+  async function previewSupporting(x){
+    const shared=sharedAt("sup:"+x.id);
+    const sh=uiSheet((x.type||"file").toUpperCase()+" · "+savedDay(addedOf(x)).toUpperCase(),x.title||"Supporting evidence",
+      '<div class="sp-preview" id="sp-preview"><span class="sp-loading">Loading…</span></div>'+
+      '<p class="sp-meta">'+escHtml(typeof supportingSummary==="function"?supportingSummary(x):"")+(x.size?" · "+(x.size>1048576?(x.size/1048576).toFixed(1)+" MB":Math.max(1,Math.round(x.size/1024))+" KB"):"")+(shared?' · <b class="ev-shared-tag">Shared '+escHtml(savedDay(shared))+'</b>':"")+'</p>'+
+      '<div class="pr-actions"><button type="button" class="secondary" id="sp-edit">Edit details</button><button type="button" class="primary" id="sp-share">'+(shared?"Share again":"Share")+'</button></div>');
+    sh.el.querySelector("#sp-edit").onclick=()=>{sh.close();openSupportingDetails(x.id,false,window.openSupportingEvidence)};
+    sh.el.querySelector("#sp-share").onclick=()=>shareSupporting(x,()=>{sh.close();window.openSupportingEvidence()});
+    try{
+      const blob=await fileOf(x),url=URL.createObjectURL(blob),mime=blob.type||x.mime||"",box=sh.el.querySelector("#sp-preview");if(!box)return;
+      if(x.type==="photo"||/^image\//.test(mime))box.innerHTML='<img src="'+url+'" alt="'+escHtml(x.title||"Photo")+'">';
+      else if(x.type==="video"||/^video\//.test(mime))box.innerHTML='<video src="'+url+'" controls playsinline preload="metadata"></video>';
+      else if(x.type==="audio"||/^audio\//.test(mime))box.innerHTML='<div class="sp-audio"><audio src="'+url+'" controls preload="metadata"></audio></div>';
+      else if(/pdf/.test(mime))box.innerHTML='<iframe src="'+url+'" title="'+escHtml(x.title||"Document")+'"></iframe><a class="sp-open" href="'+url+'" target="_blank" rel="noopener">Open the full document</a>';
+      else box.innerHTML='<a class="sp-open big" href="'+url+'" target="_blank" rel="noopener" download="'+escHtml(x.filename||"file")+'">Open '+escHtml(x.filename||"the file")+'</a>';
+    }catch(_){const box=sh.el.querySelector("#sp-preview");if(box)box.innerHTML='<span class="sp-loading">This file couldn’t be read on this phone.</span>'}
+  }
   window.openSupportingEvidence=async function(){
     await originalSupporting.apply(this,arguments);
-    const scr=document.getElementById("screen"),items=supportingMeta().filter(x=>x.course===course).slice().reverse();
+    const scr=document.getElementById("screen"),items=supportingMeta().filter(x=>x.course===course).slice().sort((a,b)=>addedOf(b)-addedOf(a));
     if(!items.length||!scr)return;
-    const TYPE_ICON={photo:ICONS.camera};
     scr.insertAdjacentHTML("beforeend",'<div class="ev-saved-line"></div><section class="ev-saved"><h3>Saved evidence</h3>'+
-      items.map(x=>tileHtml(escHtml(x.id),typeof supportingCardIcon==="function"?supportingCardIcon(x.type):icon(TYPE_ICON[x.type]||ICONS.camera,20),x.title||"Supporting evidence",[savedDay(x.createdAt||x.savedAt||Date.now()),typeof supportingSummary==="function"?supportingSummary(x):""].filter(Boolean).join(" · "))).join("")+'</section>');
-    items.filter(x=>x.type==="photo").forEach(async x=>{try{const rec=await window.eviaSupportingFileGet(x.id),el=scr.querySelector('[data-ev-img="'+CSS.escape(x.id)+'"]');if(rec&&rec.blob&&el)el.innerHTML='<img src="'+URL.createObjectURL(rec.blob)+'" alt="">'}catch(_){}});
-    scr.querySelectorAll("[data-ev-open]").forEach(b=>b.onclick=()=>openSupportingDetails(b.dataset.evOpen,false,window.openSupportingEvidence));
-    scr.querySelectorAll("[data-ev-share]").forEach(b=>b.onclick=async()=>{
-      const x=items.find(i=>i.id===b.dataset.evShare);if(!x)return;
-      try{
-        const rec=await window.eviaSupportingFileGet(x.id);if(!rec||!rec.blob)throw new Error("missing");
-        const file=new File([rec.blob],x.filename||"supporting-evidence",{type:rec.blob.type||"application/octet-stream"});
-        if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:x.title||"Supporting evidence"});return}
-        const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=file.name;document.body.appendChild(a);a.click();a.remove();
-      }catch(err){if(!(err&&err.name==="AbortError")&&typeof showEvidenceToast==="function")showEvidenceToast("Couldn’t share that file",true)}
+      items.map(x=>tileHtml(escHtml(x.id),typeof supportingCardIcon==="function"?supportingCardIcon(x.type):icon(ICONS.camera,20),x.title||"Supporting evidence",[savedDay(addedOf(x)),typeof supportingSummary==="function"?supportingSummary(x):""].filter(Boolean).join(" · "),sharedAt("sup:"+x.id))).join("")+'</section>');
+    items.forEach(async x=>{
+      if(!["photo","video"].includes(x.type)&&!/^image\//.test(x.mime||""))return;
+      try{const blob=await fileOf(x),el=scr.querySelector('[data-ev-img="'+CSS.escape(x.id)+'"]');if(!el)return;const url=URL.createObjectURL(blob);
+        el.innerHTML=x.type==="video"?'<video src="'+url+'#t=0.5" muted playsinline preload="metadata"></video><i class="ev-play" aria-hidden="true"></i>':'<img src="'+url+'" alt="">'}catch(_){}
     });
+    scr.querySelectorAll("[data-ev-open]").forEach(b=>b.onclick=()=>{const x=items.find(i=>i.id===b.dataset.evOpen);if(x)previewSupporting(x)});
+    scr.querySelectorAll("[data-ev-share]").forEach(b=>b.onclick=()=>{const x=items.find(i=>i.id===b.dataset.evShare);if(x)shareSupporting(x,()=>window.openSupportingEvidence())});
   };
 
   /* ---------- Evia chat: stats, write-ups and KSB gaps ---------- */

@@ -150,7 +150,8 @@
       return false;
     }
   }
-  function markSent(unitName){
+  function markSent(unitName,list){
+    if(list&&window.eviaMarkShared)list.forEach(e=>window.eviaMarkShared("pack:"+e.id));
     const state=readJson(SENT_KEY,{});state[course+"|"+unitName]=Date.now();
     localStorage.setItem(SENT_KEY,JSON.stringify(state));
     const el=document.getElementById("eport-sent");if(el)el.textContent="Last sent "+ukDate(Date.now());
@@ -296,14 +297,14 @@
     if(pdf){
       const pdfUrl=URL.createObjectURL(pdf.file);
       $("#eport-preview").onclick=()=>{const w=window.open(pdfUrl,"_blank");if(!w)saveFile(pdf.file)};
-      const shareBtn=$("#eport-share");if(shareBtn)shareBtn.onclick=async()=>{if(await shareFiles([pdf.file]))markSent(unitName)};
-      $("#eport-save").onclick=()=>{saveFile(pdf.file);markSent(unitName)};
+      const shareBtn=$("#eport-share");if(shareBtn)shareBtn.onclick=async()=>{if(await shareFiles([pdf.file]))markSent(unitName,entries)};
+      $("#eport-save").onclick=()=>{saveFile(pdf.file);markSent(unitName,entries)};
     }
     $("#eport-zip").onclick=async()=>{
       const btn=$("#eport-zip"),label=btn.querySelector("strong");btn.disabled=true;label.textContent="Preparing zip…";
       try{
         const zip=await makeStoredZip(files.map(f=>({path:f.file.name,blob:f.file})));
-        saveFile(new File([zip],base+"_"+isoDate(Date.now())+".zip",{type:"application/zip"}));markSent(unitName);
+        saveFile(new File([zip],base+"_"+isoDate(Date.now())+".zip",{type:"application/zip"}));markSent(unitName,entries);
       }catch(err){console.error("Evia zip failed",err);alert("Evia couldn't create the zip. Please try again.")}
       finally{btn.disabled=false;label.textContent="Download everything (.zip)"}
     };
