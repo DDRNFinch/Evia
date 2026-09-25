@@ -223,20 +223,22 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     // then an older-style lesson, then leave one part-way and carry on from the same screen.
     await page.addScriptTag({path:path.join(__dirname,"teach-solver.js")});
     const played=await page.evaluate(async()=>{
-      const w=ms=>new Promise(r=>setTimeout(r,ms)),kinds=new Set(),types=new Set();
+      const w=ms=>new Promise(r=>setTimeout(r,ms)),kinds=new Set(),types=new Set(),again=[];
       window.EVIA_TEACH.surpriseChance=1;
       const play=async(id,wrongAt)=>{
         document.querySelector('[data-lesson="'+id+'"]').click();await w(120);
-        for(let n=0;n<90&&window.eviaTeach.current();n++){const c=window.eviaTeach.current();kinds.add(c.kind);types.add(c.step.t);await window.__teachSolve({wrong:n===wrongAt});await w(50)}
+        for(let n=0;n<90&&window.eviaTeach.current();n++){const c=window.eviaTeach.current();kinds.add(c.kind);types.add(c.step.t);if(c.kind==="review")again.push(c.step.t);
+          await window.__teachSolve({wrong:id==="mm4"&&c.step.t==="hot"&&c.kind==="main"?2:n===wrongAt});await w(50)}
         const ok=/(Lesson|Unit) complete/.test(document.querySelector(".tm").textContent);document.querySelector("#tm-path").click();await w(120);return ok;
       };
-      const results=[];for(const id of ["mm1","mm2","mm3","mm4","mm5","mm6","bk-joint1"])results.push(await play(id,id==="mm2"?1:-1));
+      const results=[];for(const id of ["mm1","mm2","mm3","mm4","mm5","mm6","bk-joint1"])results.push(await play(id,id==="mm3"?3:-1));
       const mortar=[...document.querySelectorAll(".tm-unit")].find(u=>/Mixing mortar/.test(u.textContent));
-      return {all:results.every(Boolean),done:mortar?mortar.querySelectorAll(".tm-node.done").length:0,trophy:!!(mortar&&mortar.querySelector(".tm-node.trophy.done")),kinds:[...kinds],types:[...types],stats:window.eviaTeach.stats()};
+      return {all:results.every(Boolean),done:mortar?mortar.querySelectorAll(".tm-node.done").length:0,trophy:!!(mortar&&mortar.querySelector(".tm-node.trophy.done")),kinds:[...kinds],types:[...types],again,stats:window.eviaTeach.stats()};
     });
     check("The Mixing mortar unit plays through, ending in a unit challenge, and older lessons still play",played.all&&played.done===6&&played.trophy,JSON.stringify(played));
-    const every=["teach","explore","watch","cards","choice","tf","tap","gap","build","order","match","sort","judge","spot","next","scene","hot","label","load","quick","banner"];
+    const every=["teach","explore","watch","cards","choice","tf","tap","gap","build","order","match","sort","judge","spot","scene","hot","label","load","quick","banner"];
     check("Teach me has every kind of screen, a round to fix mistakes and a surprise question",every.every(t=>played.types.includes(t))&&played.kinds.includes("review")&&played.kinds.includes("bonus"),every.filter(t=>!played.types.includes(t)).join(",")+" "+played.kinds.join(","));
+    check("A question never got right comes back at the end asked a different way",played.again.includes("tf"),played.again.join(","));
     check("XP and a daily streak are kept",played.stats.xp>0&&played.stats.streak===1&&played.stats.today);
     const resumed=await page.evaluate(async()=>{
       const w=ms=>new Promise(r=>setTimeout(r,ms));

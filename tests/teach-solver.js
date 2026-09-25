@@ -16,7 +16,8 @@ window.__teachSolve=async function(o){
       $('.tm-opt[data-k="'+a+'"]').click();await w(30);await go();await go();break}
     case "spot":if(wrongFirst){$$(".tm-lopt").find(b=>+b.dataset.k!==s.a).click();await w(60);await go()}$('.tm-lopt[data-k="'+s.a+'"]').click();await w(60);await go();break;
     case "tap":if(wrongFirst){$$(".tm-tok").find(b=>!b.dataset.ans).click();await w(60);await go()}$(".tm-tok[data-ans]").click();await w(60);await go();break;
-    case "hot":if(wrongFirst){$$(".tm-hit").find(b=>+b.dataset.i!==s.a).click();await w(60);await go()}$('.tm-hit[data-i="'+s.a+'"]').click();await w(60);await go();break;
+    case "hot":if(o.wrong===2){const bad=$$(".tm-hit").filter(b=>+b.dataset.i!==s.a);bad[0].click();await w(60);await go();bad[1].click();await w(60);await go();break}
+      if(wrongFirst){$$(".tm-hit").find(b=>+b.dataset.i!==s.a).click();await w(60);await go()}$('.tm-hit[data-i="'+s.a+'"]').click();await w(60);await go();break;
     case "gap":{const ans=(s.text.match(/\[([^\]]+)\]/g)||[]).map(x=>x.slice(1,-1));for(const a of ans){const t=$$(".tm-bank .tm-wt:not(.used)").find(b=>b.textContent===a);t.click();await w(40)}await go();await go();break}
     case "build":{const want=Array.isArray(s.answer)?s.answer:s.answer.split(" ");for(const a of want){const t=$$(".tm-bank .tm-wt:not(.used)").find(b=>b.textContent===a);t.click();await w(40)}await go();await go();break}
     case "order":for(let k=0;k<s.items.length;k++){$('.tm-pool [data-in="'+k+'"]').click();await w(40)}await go();await go();break;

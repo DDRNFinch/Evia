@@ -85,6 +85,7 @@ units.forEach(u=>{
     if(ids.has(l.id))problems.push("duplicate lesson id "+l.id);ids.add(l.id);
     if(!l.steps.some(s=>!["teach","learn","explore","watch","banner"].includes(s.t)&&!(s.t==="cards"&&!s.recall)))problems.push(l.id+": no questions");
     l.steps.forEach((s,i)=>{steps++;checkStep(s,l.id+" step "+(i+1)+": ")});
+    l.steps.forEach((s,i)=>{if(s.again)checkStep(s.again,l.id+" step "+(i+1)+" second go: ")});
     if(l.surprise){if(l.surprise.t==="banner")problems.push(l.id+": the surprise must be a question");checkStep(l.surprise,l.id+" surprise: ")}
   });
 });

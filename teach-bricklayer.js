@@ -9,6 +9,7 @@
   /* Mixing mortar: S14, K20 (ratios, silos, pre-mixed, gauging, hand and machine mixing), S1 and K1 (safety signs),
      S6 and K12 (how much to mix), S20 (teamwork) and B1 (health, safety and wellbeing first). */
   add("bricklayer",[{unit:"Mixing mortar",skill:"Mortar mixing",lessons:[
+    /* 1: explore first, then build up ratios by doing. */
     {id:"mm1",title:"What’s in mortar",blurb:"The ingredients, and what a ratio means",
       surprise:{t:"choice",q:"You’ve tipped 3 buckets of cement onto the board for a 1:4 mix. How many buckets of sand go with them?",opts:["12","7","4","3"],a:0,why:"4 of sand for every 1 of cement: 3 × 4 = 12."},
       steps:[
@@ -19,44 +20,44 @@
         {x:272,y:90,label:"Plasticiser",text:"A *plasticiser* makes mortar smoother and easier to spread. Some mixes use lime for this instead."}]},
       {t:"match",q:"Match each ingredient to its job",pairs:[["Sand","Gives the mix its body"],["Cement","Binds it as it sets"],["Water","Starts the set"],["Plasticiser","Makes it easier to spread"]],why:"Sand for body, cement to bind, water to start the set, plasticiser to help it spread."},
       {t:"teach",key:"Ratio",title:"Mixed by ratio",pic:"ratio",say:"Mortar is mixed by *ratio*, by volume. 1:4 means 1 part cement to 4 parts sand, using the same bucket for every part."},
-      {t:"load",q:"Load a *1:3* mix onto the board",into:"Mixing board",items:[bk("cement"),bk("sand")],need:{cement:1,sand:3},hint:"1:3 is 1 bucket of cement and 3 of sand.",why:"1 part cement to 3 parts sand. The first number is the cement."},
-      {t:"gap",text:"A 1:5 mix is 1 part [cement] to 5 parts [sand].",opts:["water","lime"],why:"The first number is the cement, the second the sand."},
+      {t:"load",q:"Load a *1:3* mix onto the board",into:"Mixing board",items:[bk("cement"),bk("sand")],need:{cement:1,sand:3},hint:"1:3 is 1 bucket of cement and 3 of sand.",why:"1 part cement to 3 parts sand. The first number is the cement.",
+        again:{t:"gap",text:"1:3 means 1 bucket of [cement] to 3 buckets of [sand].",opts:["water","lime"],why:"The first number is the cement, the second the sand."}},
       {t:"teach",title:"Three-part mixes",pic:"ratio3",say:"Some specifications add lime as a third part. *1:1:6* means 1 cement, 1 lime and 6 sand. The order is always cement, lime, sand."},
-      {t:"tap",q:"The spec says 1:1:6. Tap the number for the lime.",text:"1 : {1} : 6",hint:"It goes cement, then lime, then sand.",why:"Cement : lime : sand, so the middle number is the lime."},
+      {t:"tap",q:"The spec says 1:1:6. Tap the number for the lime.",text:"1 : {1} : 6",hint:"It goes cement, then lime, then sand.",why:"Cement : lime : sand, so the middle number is the lime.",
+        again:{t:"tf",q:"In a 1:1:6 mix, the 6 is the lime.",a:false,why:"It goes cement, lime, sand, so the 6 is the sand."}},
       {t:"teach",title:"Stronger isn’t better",pic:"cracks",say:"Mortar should be a bit weaker than the bricks. Then if the wall moves, cracks follow the joints, which can be raked out and repointed, instead of splitting the bricks."},
-      {t:"tf",q:"The strongest mix is always the best choice.",a:false,why:"Too strong and the bricks crack instead of the joints. The specification sets the right mix for the job."},
-      CHALLENGE,
-      {t:"build",q:"What does *1:4* mean? Build it.",answer:"1 part cement to 4 parts sand",extra:["water","lime","3"],why:"1:4 is 1 part cement to 4 parts sand, measured by volume."},
+      {t:"tf",q:"The strongest mix is always the best choice.",a:false,why:"Too strong and the bricks crack instead of the joints. The specification sets the right mix for the job.",
+        again:{t:"choice",q:"Why should mortar be a bit weaker than the bricks?",opts:["So any cracks follow the joints, which are easy to repoint","So it’s cheaper","So it sets faster","So it’s easier to mix"],a:0,why:"Weaker mortar means movement cracks stay in the joints, not the bricks."}},
       {t:"scene",who:"Your supervisor",say:"Can you get some mortar mixed for the garden wall?",q:"Nobody’s told you the mix. What do you do?",opts:[
         {text:"Check the specification, or ask what mix it needs",ok:true,why:"The spec sets the mix for the job. If you’re not sure, ask."},
         {text:"Make it 1:3 to be safe, as stronger is better",ok:false,why:"Stronger isn’t safer. Too strong and the bricks can crack. The spec sets the mix."},
         {text:"Use whatever you mixed on the last job",ok:false,why:"Every job can be different. Check the spec, or ask."}]}
     ]},
-    {id:"mm2",title:"Gauging it right",blurb:"Measure the same way every time",
+    /* 2: starts with a problem on site, then teaches why it happened. */
+    {id:"mm2",title:"Gauging it right",blurb:"Why Priya’s wall came out patchy",
       surprise:{t:"tf",q:"Two batches mixed at the same ratio, but with sand from different deliveries, can dry a different colour.",a:true,why:"Sand colour varies between deliveries, so use the same sand for the whole job where you can."},
       steps:[
+      {t:"scene",who:"Priya, second year",pic:"banding",say:"My wall’s come out patchy: some joints are darker than others. I just counted shovels for each batch.",q:"What do you think went wrong?",opts:[
+        {text:"Shovelfuls vary, so each batch had a different mix",ok:true,why:"Spot on. Every shovelful is a different size, so the strength and colour of each batch drifts."},
+        {text:"The bricks were too wet",ok:false,why:"Wet bricks cause other problems, but patchy joints batch by batch come from the mix changing."},
+        {text:"Nothing: joints always dry patchy",ok:false,why:"They shouldn’t. Joints dry an even colour when every batch is the same."}]},
       {t:"teach",key:"Gauging",title:"Gauge every part",pic:"strike",say:"*Gauging* means measuring every part the same way, every time. Fill the bucket or gauge box, then strike it off level with a straight edge."},
-      {t:"choice",q:"Which bucket is gauged properly?",opts:[{pic:"heaped"},{pic:"level"},{pic:"under"}],a:1,why:"Struck off level holds the same amount every time. Heaped holds more, and short holds less."},
-      {t:"teach",title:"Why not count shovels?",pic:"banding",say:"Every shovelful is a different size, so the mix drifts. Batches come out different strengths and colours, and it shows as patchy joints on the finished wall."},
+      {t:"choice",q:"Which bucket is gauged properly?",opts:[{pic:"heaped"},{pic:"level"},{pic:"under"}],a:1,why:"Struck off level holds the same amount every time. Heaped holds more, and short holds less.",
+        again:{t:"tf",q:"A heaped bucket holds the same as one struck off level.",a:false,why:"A heaped bucket holds more, so the mix changes."}},
       {t:"judge",q:"Good gauging, or bad?",items:[
         {text:"Using the same bucket for the cement and the sand",good:true,why:"Same bucket, same size parts."},
         {text:"Heaping the bucket to save a trip",good:false,why:"A heaped bucket holds more, so the mix changes."},
-        {text:"Counting shovelfuls of sand",good:false,why:"Shovelfuls vary in size."},
         {text:"Striking off each bucket level",good:true,why:"Level every time means the same amount every time."},
         {text:"Adding an extra bit of cement for luck",good:false,why:"It changes the strength and the colour."}]},
       {t:"teach",title:"Watch the sand",pic:"sandcover",say:"Sand left in the rain soaks up water. Wet sand already holds some, so add yours a little at a time. Keep sand covered, and use the same delivery for the whole job so the colour matches."},
-      {t:"scene",who:"Your supervisor",say:"It rained all night and the sand’s soaked.",q:"How does that change your mixing?",opts:[
-        {text:"Add water a little at a time, because the sand already holds some",ok:true,why:"Wet sand brings its own water. Add yours slowly until the mix is right."},
-        {text:"Add the usual amount of water all at once",ok:false,why:"With wet sand, that makes a sloppy, weak mix."},
-        {text:"Add extra cement to dry it out",ok:false,why:"That changes the ratio, so the strength and colour change too."}]},
-      {t:"spot",q:"Jay mixed three batches for one wall. Tap the mistake.",lines:["Batch 1: 1 bucket of cement to 4 of sand, all struck off level","Batch 2: the same bucket, struck off level again","Batch 3: 1 bucket of cement, then 4 big shovelfuls of sand","Each time: water added a little at a time"],a:2,why:"Shovelfuls aren’t a measure. Batch 3 will be a different strength and colour from the rest of the wall."},
+      {t:"spot",q:"Jay mixed three batches for one wall. Tap the mistake.",lines:["Batch 1: 1 bucket of cement to 4 of sand, all struck off level","Batch 2: the same bucket, struck off level again","Batch 3: soaking wet sand, and the usual water tipped in all at once","Each batch: turned until it was one even colour"],a:2,why:"With wet sand, water should go in a little at a time. Batch 3 will be sloppy and weaker than the rest."},
       {t:"quick",items:[
-        {q:"Heaped buckets are fine if you’re in a hurry",a:false},
         {q:"Gauging keeps the colour the same from batch to batch",a:true},
         {q:"A gauge box is struck off level",a:true},
         {q:"Soaking wet sand needs extra water",a:false},
-        {q:"Use the same bucket for every part",a:true}]}
+        {q:"Covering the sand keeps batches the same",a:true}]}
     ]},
+    /* 3: hands on: watch it, then do it. */
     {id:"mm3",title:"Mixing by hand",blurb:"Dry mix, make a well, add water, turn",
       surprise:{t:"tf",q:"Washing-up liquid is a good swap for plasticiser.",a:false,why:"It isn’t made for mortar and can put too much air in, which weakens it. Use a proper plasticiser at the dose on the tub."},
       steps:[
@@ -65,25 +66,24 @@
         {pic:"hand2",text:"Turn it over dry until it’s one even colour, with no streaks."},
         {pic:"hand3",text:"Make a well in the middle and pour in some water, with the plasticiser mixed in if you’re using it."},
         {pic:"hand4",text:"Turn the dry mix in from the edges, adding water a little at a time, until it’s smooth and workable."}]},
-      {t:"order",q:"Put the steps in order",items:["Gauge the sand and cement","Dry mix to one even colour","Make a well in the middle","Add water a little at a time","Turn it until it’s smooth and workable"],why:"Dry mixing first spreads the cement evenly before any water goes in."},
+      {t:"order",q:"Your turn: put the steps in order",items:["Gauge the sand and cement","Dry mix to one even colour","Make a well in the middle","Add water a little at a time","Turn it until it’s smooth and workable"],why:"Dry mixing first spreads the cement evenly before any water goes in.",
+        again:{t:"next",seq:["Dry mix to one even colour","Make a well in the middle","Pour some water into the well"],opts:["Turn the dry mix in from the edges","Leave it to soak for an hour","Tip the water off and start again"],a:0,why:"Turn it in from the edges, adding water a little at a time."}},
       {t:"teach",key:"Workable",title:"What good mortar looks like",pic:"consistency",say:"Good mortar is *workable*: one even colour, holds its shape on the trowel and spreads smoothly. Too wet, it slumps and runs. Too dry, it crumbles and won’t stick."},
       {t:"sort",q:"Too wet, just right or too dry?",bins:["Too wet","Just right","Too dry"],items:[
         {text:"Slumps and runs off the trowel",bin:0,why:"Too much water."},
         {text:"Crumbles and won’t stick to the brick",bin:2,why:"Not enough water to bind it."},
         {text:"Holds its shape and spreads smoothly",bin:1,why:"That’s workable mortar."},
-        {text:"Water sitting on top of the mix",bin:0,why:"More water than the mix can hold."},
         {text:"Stiff and hard to spread",bin:2,why:"It needs a little more water."},
         {text:"Squeezes out and smears the face of the bricks",bin:0,why:"Sloppy mortar oozes out of the joints and stains the face."}]},
-      {t:"choice",q:"Which trowel of mortar is just right?",opts:[{pic:"trowel-wet"},{pic:"trowel-good"},{pic:"trowel-dry"}],a:1,why:"It holds a neat shape with an even colour: not runny, not crumbly."},
       {t:"teach",title:"Use it in time",pic:"clock2h",say:"Only mix what you’ll use in about two hours. Once mortar starts to set, adding water just weakens it, so throw it away and mix fresh."},
-      {t:"next",seq:["Dry mix to one even colour","Make a well in the middle","Pour some water into the well"],opts:["Turn the dry mix in from the edges","Leave it to soak for an hour","Tip the water off and start again"],a:0,why:"Turn it in from the edges, adding water a little at a time."},
-      CHALLENGE,
       {t:"scene",who:"On site",say:"The mortar in your tub was mixed nearly three hours ago and it’s stiffening up.",q:"What now?",opts:[
         {text:"Throw it away and mix a fresh batch",ok:true,why:"Once it’s started to set it won’t bond properly. Next time, mix less, more often."},
         {text:"Add water and knock it back up",ok:false,why:"Adding water to mortar that’s setting weakens it."},
         {text:"Add some cement to bring it back",ok:false,why:"That won’t bring it back, and it changes the mix."}]},
-      {t:"gap",text:"Dry mix until it’s one even [colour], then add water a little at a [time].",opts:["shape","bucket","batch"],why:"Even colour first, then water a little at a time."}
+      {t:"choice",q:"Last one: which trowel of mortar is just right?",opts:[{pic:"trowel-wet"},{pic:"trowel-good"},{pic:"trowel-dry"}],a:1,why:"It holds a neat shape with an even colour: not runny, not crumbly.",
+        again:{t:"tf",q:"Mortar that slumps flat and drips off the trowel is too wet.",a:true,why:"Too much water: it’ll squeeze out and stain the face."}}
     ]},
+    /* 4: kit and machines, with a quick challenge at the end. */
     {id:"mm4",title:"Mixers, silos and pre-mix",blurb:"Machine mixing and ready-made mortar",
       surprise:{t:"choice",q:"What colour are the plugs and leads for 110 V site equipment?",opts:["Yellow","Blue","Red","Black"],a:0,why:"Yellow is 110 V. Blue is 230 V and red is 400 V."},
       steps:[
@@ -94,16 +94,12 @@
         {x:150,y:141,label:"Stand",text:"Set it up level and stable on firm ground, out of the way of walkways."},
         {x:264,y:153,label:"110 V plug",text:"Electric tools and mixers on site usually run on 110 V, with yellow plugs and leads. Check the lead isn’t damaged."}]},
       {t:"teach",title:"Loading the mixer",pic:"mixload",say:"With the drum turning: some water first, then half the sand, the cement, the rest of the sand, then top up the water slowly. Let it mix for a few minutes."},
-      {t:"order",q:"Load the mixer in the right order",items:["Some of the water","Half the sand","The cement","The rest of the sand","Top up the water slowly"],why:"Water first stops the mix sticking to the drum, and the cement goes in between the sand so it mixes in evenly."},
+      {t:"order",q:"Load the mixer in the right order",items:["Some of the water","Half the sand","The cement","The rest of the sand","Top up the water slowly"],why:"Water first stops the mix sticking to the drum, and the cement goes in between the sand so it mixes in evenly.",
+        again:{t:"choice",q:"Why does some water go in the drum first?",opts:["It stops the mix sticking to the drum","It makes the mortar stronger","It cools the motor","It measures the sand"],a:0,why:"A wet drum stops the sand and cement sticking and balling up."}},
       {t:"hot",q:"Tap where you must never put your hands while it’s turning",pic:"mixer",a:0,spots:[
         {x:196,y:50,r:34,label:"Drum"},{x:104,y:92,r:17,label:"Tipping wheel",why:"You turn that wheel to tip the drum. Look for the part that mixes."},{x:170,y:98,r:12,label:"Motor"},{x:150,y:141,r:16,label:"Stand"},{x:264,y:153,r:14,label:"Plug"}],
-        why:"The drum. Keep hands, gloves and tools out. Switch off and wait for it to stop before you clean it."},
-      {t:"judge",q:"Safe or not?",labels:["Safe","Not safe"],items:[
-        {text:"Scraping the drum with a shovel while it turns",good:false,why:"The shovel can be snatched and swung round."},
-        {text:"Switching off and unplugging before cleaning inside",good:true,why:"No power means nothing can move."},
-        {text:"Checking the guards are on before you start",good:true,why:"Guards keep hands and clothes away from moving parts."},
-        {text:"Hitting the drum with a hammer to free stuck mortar",good:false,why:"It damages the drum. Clean it with water and some coarse aggregate while it turns, then tip it out."},
-        {text:"Refuelling a petrol mixer while it’s running",good:false,why:"Switch off and let it cool first. Fuel on a hot engine can catch fire."}]},
+        why:"The drum. Keep hands, gloves and tools out. Switch off and wait for it to stop before you clean it.",
+        again:{t:"tf",q:"It’s fine to reach into the drum if it’s only turning slowly.",a:false,why:"Never. Switch off and wait for it to stop."}},
       {t:"explore",title:"Silo mortar",pic:"silo",say:"Big sites often have a silo. The mix is set at the factory, so every batch comes out the same. Tap to see how it works.",spots:[
         {x:114,y:88,label:"Silo",text:"Holds dry mortar, already blended at the factory: sand, cement and any additives."},
         {x:152,y:139,label:"Mixer",text:"At the bottom, water is added and it’s mixed as it comes through."},
@@ -111,7 +107,6 @@
         {x:256,y:125,label:"Water supply",text:"A hose brings the water in at a set flow, so the mix stays the same."},
         {x:197,y:154,label:"Outlet",text:"Mixed mortar comes out here, into a barrow or tub."}]},
       {t:"teach",key:"Retarder",title:"Pre-mixed mortar",pic:"premix",say:"Ready-to-use mortar arrives wet in tubs. A *retarder* keeps it workable for a set time, often a day or two, so check the delivery ticket. Keep the lid on so it doesn’t dry out or get rained on."},
-      {t:"match",q:"Match each way of getting mortar",pairs:[["By hand","Small amounts on a clean board"],["Drum mixer","Bigger batches, mixed for a few minutes"],["Silo","Big sites, the same mix every time"],["Pre-mixed tub","Ready to use, within its time"]],why:"Hand mixing for small amounts, a mixer for bigger batches, silos on big sites, and pre-mix ready to go."},
       CHALLENGE,
       {t:"label",q:"Label the silo",pic:"silo",spots:[
         {x:40,y:40,px:84,py:44,label:"Dry mortar"},{x:40,y:112,px:106,py:138,label:"Mixer"},{x:212,y:40,px:163,py:106,label:"Controls"},
@@ -122,66 +117,64 @@
         {text:"Use it anyway, as it’ll dry out on the wall",ok:false,why:"Wet mortar is weaker, slumps in the joints and stains the face."},
         {text:"Tip a bag of cement into the barrow to thicken it",ok:false,why:"That changes the mix. The silo’s mix is set at the factory."}]}
     ]},
+    /* 5: opens with an emergency, then PPE, signs, quantities and the team. */
     {id:"mm5",title:"Safe, sorted and together",blurb:"PPE, signs, how much to mix, teamwork",
       surprise:{t:"choice",q:"Which sign tells you to wear eye protection?",opts:[{pic:"sign-eyewash"},{pic:"sign-eyes"},{pic:"sign-warn"}],a:1,why:"A blue circle is a must-do sign: wear eye protection. The green one shows where the eyewash is."},
       steps:[
-      {t:"cards",recall:true,title:"Warm up: can you remember these?",cards:[
-        {front:"1:4",back:"1 part cement to 4 parts sand."},
-        {front:"Gauging",back:"Measuring every part the same way, struck off level."},
-        {front:"Workable",back:"Holds its shape on the trowel and spreads smoothly."},
-        {front:"Retarder",back:"Keeps ready-to-use mortar workable for a set time."}]},
+      {t:"scene",who:"Kai, your labourer",say:"Argh, mortar’s just splashed in my eye!",q:"What do you do first?",opts:[
+        {text:"Rinse it with clean water straight away, for at least 10 minutes, and get first aid",ok:true,why:"Use an eyewash or clean water for at least 10 minutes, then get first aid or medical help."},
+        {text:"Tell Kai to rub it until it stops stinging",ok:false,why:"Rubbing grinds the grit in. Rinse it out."},
+        {text:"Wait and see if it settles down",ok:false,why:"Cement can damage an eye quickly. Rinse it straight away."}]},
       {t:"explore",title:"Kit up to mix",pic:"ppe-close",say:"Wet cement is strongly alkaline. It can burn skin, sometimes without you feeling it until hours later. Tap to see what protects you.",spots:[
         {x:145,y:46,label:"Goggles",text:"Cement splashes and dust can seriously damage your eyes."},
         {x:174,y:66,label:"Dust mask",text:"For opening and tipping cement bags, which throws up fine dust."},
         {x:121,y:137,label:"Gloves",text:"Waterproof gloves keep wet cement off your hands. Don’t let it get inside them."},
         {x:160,y:92,label:"Long sleeves",text:"Keep your arms and legs covered, with hi-vis on top so you’re seen."},
         {x:147,y:193,label:"Boots",text:"Safety boots. Wet mortar inside a boot, or soaking through at the knees, can burn."}]},
-      {t:"scene",who:"Your mate",say:"Argh, mortar’s just splashed in my eye!",q:"What do you do first?",opts:[
-        {text:"Rinse it with clean water straight away, for at least 10 minutes, and get first aid",ok:true,why:"Use an eyewash or clean water for at least 10 minutes, then get first aid or medical help."},
-        {text:"Tell them to rub it until it stops stinging",ok:false,why:"Rubbing grinds the grit in. Rinse it out."},
-        {text:"Wait and see if it settles down",ok:false,why:"Cement can damage an eye quickly. Rinse it straight away."}]},
       {t:"cards",title:"Safety signs: tap each one to flip it",cards:[
         {pic:"sign-eyes",term:"Blue circle: must do",back:"A *mandatory* sign. This one says wear eye protection."},
         {pic:"sign-nosmoke",term:"Red ring and bar: must not",back:"A *prohibition* sign. This one says no smoking."},
         {pic:"sign-warn",term:"Yellow triangle: warning",back:"A *warning* sign: there’s a hazard. This one is general danger."},
         {pic:"sign-firstaid",term:"Green square: safe condition",back:"Shows safety equipment or the way out. This one is first aid."},
         {pic:"sign-extinguisher",term:"Red square: fire equipment",back:"Shows where fire-fighting kit is. This one is a fire extinguisher."}]},
-      {t:"sort",q:"What kind of sign is it?",bins:["Must do","Must not","Warning","Safe condition","Fire equipment"],items:[
+      {t:"sort",q:"New signs: what kind is each one?",bins:["Must do","Must not","Warning","Safe condition","Fire equipment"],items:[
         {pic:"sign-hat",bin:0,why:"Blue circle: wear a hard hat."},
-        {pic:"sign-gloves",bin:0,why:"Blue circle: wear gloves."},
         {pic:"sign-nophone",bin:1,why:"Red ring and bar: no mobile phones."},
         {pic:"sign-electric",bin:2,why:"Yellow triangle: danger, electricity."},
         {pic:"sign-eyewash",bin:3,why:"Green square: eyewash station."},
-        {pic:"sign-extinguisher",bin:4,why:"Red square: fire extinguisher."}]},
+        {pic:"sign-gloves",bin:0,why:"Blue circle: wear gloves."}]},
       {t:"teach",title:"How much to mix",pic:"wall-est",say:"Work out what you’ll lay before the mortar starts to set, and mix just that. A half-brick wall takes about *60 bricks* a square metre."},
-      {t:"gap",q:"Work it out",text:"A half-brick wall 5 m long and 1.2 m high is 6 m². At 60 bricks a square metre, that’s about [360] bricks.",opts:["300","72","600"],why:"5 × 1.2 = 6 m², and 6 × 60 = 360 bricks."},
+      {t:"gap",q:"Work it out",text:"A half-brick wall 5 m long and 1.2 m high is 6 m². At 60 bricks a square metre, that’s about [360] bricks.",opts:["300","72","600"],why:"5 × 1.2 = 6 m², and 6 × 60 = 360 bricks.",
+        again:{t:"choice",q:"A half-brick wall is 3 m long and 1.5 m high. About how many bricks?",opts:["270","180","450","90"],a:0,why:"3 × 1.5 = 4.5 m², and 4.5 × 60 = 270 bricks."}},
       {t:"teach",title:"Mortar runs the job",pic:"team",say:"Tell your labourer what you’ll need and when, keep the mixing area tidy, and speak up early when cement or the silo is running low. Look out for each other too."},
       {t:"judge",q:"Good teamwork, or not?",labels:["Good","Not good"],items:[
         {text:"Telling your labourer you’ll need more mortar in half an hour",good:true,why:"A heads-up means nobody’s left waiting."},
         {text:"Leaving the hose and mixer lead across the walkway",good:false,why:"It’s a trip hazard for everyone."},
         {text:"Letting the site manager know the silo’s nearly empty",good:true,why:"A refill takes time to arrange."},
-        {text:"Keeping quiet about a faulty mixer so work isn’t held up",good:false,why:"Report it and don’t use it. Faulty kit puts everyone at risk."},
-        {text:"Checking a new starter has been shown how to use the mixer",good:true,why:"Looking out for each other keeps everyone safe."}]},
+        {text:"Keeping quiet about a faulty mixer so work isn’t held up",good:false,why:"Report it and don’t use it. Faulty kit puts everyone at risk."}]},
       {t:"quick",items:[
         {q:"A red ring with a bar means you must not",a:true},
         {q:"A yellow triangle means you must do something",a:false},
-        {q:"Green signs show a safe condition, like first aid",a:true},
         {q:"Wet cement can burn without you feeling it at first",a:true},
         {q:"It’s fine to mix a whole day’s mortar first thing",a:false},
-        {q:"110 V leads and plugs are yellow",a:true}]}
+        {q:"Kneeling in wet mortar can burn through your trousers",a:true}]}
     ]},
-    {id:"mm6",title:"Unit challenge",blurb:"Ten questions from across the unit",challenge:true,steps:[
-      {t:"banner",kind:"trophy",title:"Unit challenge",text:"Ten questions from across the unit, getting harder as you go. No teaching this time: it’s all you!",go:"I’m ready",xp:"+50 XP for finishing"},
-      {t:"choice",q:"Which bucket would you use to gauge?",opts:[{pic:"heaped"},{pic:"under"},{pic:"level"}],a:2,why:"Struck off level: the same amount every time."},
-      {t:"match",q:"Match each sign to what it means",pairs:[[{pic:"sign-eyes"},"Wear eye protection"],[{pic:"sign-nosmoke"},"No smoking"],[{pic:"sign-firstaid"},"First aid"],[{pic:"sign-warn"},"Warning: danger"]],why:"Blue must do, red must not, yellow warning, green safe condition."},
+    /* 6: the challenge asks about the unit from new angles, not the same questions again. */
+    {id:"mm6",title:"Unit challenge",blurb:"Ten new questions from across the unit",challenge:true,steps:[
+      {t:"banner",kind:"trophy",title:"Unit challenge",text:"Ten new questions from across the unit, getting harder as you go. No teaching this time: it’s all you!",go:"I’m ready",xp:"+50 XP for finishing"},
+      {t:"choice",q:"The spec says *1:½:4½* (cement : lime : sand). How much lime goes with 1 bucket of cement?",opts:["Half a bucket","4½ buckets","1 bucket","None"],a:0,why:"Cement, lime, sand: the middle number, ½, is the lime."},
       {t:"load",q:"You need a bigger batch. Load a *1:4* mix using *2* buckets of cement.",into:"Mixer",items:[bk("cement"),bk("sand")],need:{cement:2,sand:8},hint:"Twice the cement means twice the sand.",why:"2 of cement means 2 × 4 = 8 of sand. Same ratio, bigger batch."},
-      {t:"order",q:"Load the mixer in the right order",items:["Some of the water","Half the sand","The cement","The rest of the sand","Top up the water slowly"],why:"Water first, cement in between the sand, then top up the water slowly."},
+      {t:"scene",who:"Jay",say:"I tipped the cement into the empty drum first, then the sand and water.",q:"What’s likely to happen?",opts:[
+        {text:"Cement sticks to the dry drum and balls up",ok:true,why:"That’s why some water goes in first, and the cement goes in between the sand."},
+        {text:"It mixes faster",ok:false,why:"Dry cement in a dry drum sticks and balls up, so the mix is uneven."},
+        {text:"Nothing: the order doesn’t matter",ok:false,why:"It does. Water first, then half the sand, the cement, the rest of the sand, then top up the water."}]},
       {t:"label",q:"Label the PPE for mixing",pic:"ppe-person",spots:[
         {x:48,y:30,px:142,py:32,label:"Hard hat"},{x:48,y:70,px:145,py:50,label:"Goggles"},{x:48,y:140,px:114,py:137,label:"Gloves"},
         {x:272,y:52,px:171,py:61,label:"Dust mask"},{x:272,y:112,px:185,py:112,label:"Hi-vis"},{x:272,y:180,px:180,py:194,label:"Boots"}],
         why:"Hard hat, goggles, a dust mask for tipping bags, hi-vis over long sleeves, gloves and boots."},
+      {t:"spot",q:"Sam set up the mixer. Tap the mistake.",lines:["Set it up on firm, level ground","Checked the guards were on","Ran the lead across the walkway to reach the socket","Cleaned the drum with water and coarse aggregate at the end of the day"],a:2,why:"A lead across a walkway is a trip hazard. Route it out of the way."},
       {t:"gap",text:"Wet cement is [alkaline], so it can [burn] your skin.",opts:["acidic","cool"],why:"Wet cement is strongly alkaline and can cause serious burns."},
-      {t:"tf",pic:"cracks",q:"Cracks that split the bricks, instead of following the joints, can be a sign the mortar was too strong.",a:true,why:"Mortar should be a bit weaker than the bricks, so any cracking stays in the joints."},
+      {t:"tf",pic:"cracks",q:"The wall on the right was probably built with mortar that was too strong.",a:true,why:"The cracks split the bricks instead of following the joints: a sign the mortar was stronger than the bricks."},
       {t:"scene",who:"Your supervisor",say:"It’s half three. You knock off at half four and you’ll lay about 100 more bricks.",q:"How much mortar do you mix?",opts:[
         {text:"Just enough for about 100 bricks",ok:true,why:"Mix what you’ll use. Anything left at the end of the day is waste."},
         {text:"A full mixer, to be on the safe side",ok:false,why:"Most of it would go off before it’s used. That’s wasted cement and money."},

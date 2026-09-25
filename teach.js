@@ -190,7 +190,7 @@
     /* Now and then, after three in a row, a surprise: a trickier question for double XP. */
     const maybeSurprise=cur=>{
       if(!l.surprise||surprised||cur.kind!=="main"||combo<3)return;
-      const chance=typeof T.surpriseChance==="number"?T.surpriseChance:.6;if(Math.random()>=chance)return;
+      const chance=typeof T.surpriseChance==="number"?T.surpriseChance:.35;if(Math.random()>=chance)return;
       surprised=true;
       queue.splice(1,0,{s:{t:"banner",kind:"surprise",title:"Surprise challenge!",text:"You’re on a roll. Here’s a tricky one for double XP.",go:"Bring it on"},kind:"banner"},{s:l.surprise,kind:"bonus"});
     };
@@ -221,7 +221,9 @@
             return;
           }
           lost();sound("no");buzz([20,40,20]);
-          if(tries===1&&cur.kind==="main"&&scored(s)){st.misses++;st.review.push(s)}
+          if(tries===1&&cur.kind==="main"&&scored(s))st.misses++;
+          /* Only what you never got right comes back at the end, asked a different way when the lesson has one. */
+          if(o.last&&cur.kind==="main"&&scored(s))st.review.push(s.again||s);
           if(o.last){if(c.reveal)c.reveal();if(cur.kind==="main"&&scored(s))st.asks++;feedback(false,why,"Continue",advance,{reveal:true});return}
           feedback(false,why,"Try again",()=>{clearFb();setBtn(null);if(c.retry)c.retry()});
         },
