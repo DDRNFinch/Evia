@@ -1229,3 +1229,9 @@ html body .pack-actions{grid-template-columns:1fr}
 .ui-batch{align-items:center}
 .ui-batch .secondary{flex:0 0 auto;padding:9px 14px;font-size:13.5px}
 .ui-hours-n{flex:0 0 92px;font-size:16px;white-space:nowrap}
+
+/* Profile: the name is a clear box to type in */
+html body .pf-name{border:1.5px solid var(--ui-line)!important;background:#fff!important;border-radius:14px;padding:10px 14px;font-size:19px;box-shadow:0 1px 3px rgba(16,24,40,.05)}
+html body .pf-name::placeholder{color:var(--ui-faint);font-weight:600}
+html body .pf-name:focus{border-color:var(--yellow)!important;outline:none}
+.profile-sheet .evia-guide-inline{margin:10px 0 12px}

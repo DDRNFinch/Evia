@@ -273,8 +273,9 @@
   }
 
   /* ---------- Step 4: my course ---------- */
+  const closePanels=()=>{const m=document.getElementById("modal-root");if(m&&!m.querySelector(".profile-sheet"))m.innerHTML=""};
   function showPortfolioStep(){
-    document.body.classList.add("evia-onboarding");
+    document.body.classList.add("evia-onboarding");closePanels();
     nav("course");
     window.scrollTo(0,0);
     const tile=document.querySelector("#screen .unit-card[data-u]");
@@ -291,7 +292,7 @@
 
   /* ---------- Step 5: Evia ---------- */
   function showEviaStep(){
-    document.body.classList.add("evia-onboarding");
+    document.body.classList.add("evia-onboarding");closePanels();
     window.scrollTo(0,0);
     const fab=document.getElementById("evia-fab");
     if(window.eviaMood)window.eviaMood("happy");
@@ -302,25 +303,39 @@
 
   /* ---------- Step 6: profile ---------- */
   function showProfileStep(){
-    document.body.classList.add("evia-onboarding");
+    document.body.classList.add("evia-onboarding");closePanels();
     hideGuide();
     if(!window.eviaOpenProfile){finish();return}
     const modal=document.getElementById("modal-root");
     let seen=false;
     if(profileObserver)profileObserver.disconnect();
+    /* Evia walks through the profile one section at a time: name, dates, signature, then Save. */
+    const STEPS=[
+      ["#profile-name","First, type your <strong>name</strong> here. It goes on all your evidence."],
+      ["#profile-start","Now your apprenticeship <strong>start and end dates</strong>. I use them to tell you if you’re on track."],
+      ["#signature-pad","Sign here with your finger. Your <strong>signature</strong> is added to the evidence you save."],
+      ["#save-profile","That’s it. Tap <strong>Save</strong> and you’re all set."]
+    ];
+    let at=-1;
+    const showStep=(sheet,i)=>{
+      at=i;const [sel,text]=STEPS[i],target=sheet.querySelector(sel);
+      let box=sheet.querySelector(".evia-guide-inline");
+      if(!box){box=document.createElement("div");box.className="evia-guide-inline";box.setAttribute("role","status")}
+      box.innerHTML='<div class="evia-guide-top"><div class="evia-guide-kicker">EVIA · LAST STEP · '+(i+1)+' OF '+STEPS.length+'</div>'+SKIP_BUTTON+'</div><div class="evia-guide-text">'+text+'</div>'+(i<STEPS.length-1?'<div class="evia-guide-actions"><button type="button" id="evia-guide-pnext">Next</button></div>':"");
+      /* Sit Evia's note just above the section it's talking about. */
+      const anchor=target&&(target.closest(".pf-group")||target.closest(".pf-head")||target.closest(".pf-save"));
+      if(anchor)anchor.insertAdjacentElement(sel==="#profile-name"?"afterend":"beforebegin",box);else sheet.prepend(box);
+      sheet.querySelectorAll(".evia-guide-target").forEach(el=>el.classList.remove("evia-guide-target"));
+      const hl=sel==="#profile-start"?target&&target.closest(".pf-dates"):sel==="#signature-pad"?target&&target.closest(".pf-sign"):target;
+      if(hl)hl.classList.add("evia-guide-target");
+      const nb=box.querySelector("#evia-guide-pnext");if(nb)nb.onclick=()=>showStep(sheet,i+1);
+      setTimeout(()=>{(hl||box).scrollIntoView({block:"center",behavior:"smooth"});if(sel==="#profile-name"&&target&&!target.value)target.focus({preventScroll:true})},120);
+    };
     const decorate=()=>{
       const sheet=modal.querySelector(".profile-sheet");
       if(sheet){
         seen=true;
-        if(!sheet.querySelector(".evia-guide-inline")){
-          const head=sheet.querySelector(".profile-head");
-          const box=document.createElement("div");
-          box.className="evia-guide-inline";
-          box.setAttribute("role","status");
-          box.innerHTML='<div class="evia-guide-top"><div class="evia-guide-kicker">EVIA · LAST STEP</div>'+SKIP_BUTTON+'</div><div class="evia-guide-text">Finally, complete your details. Add your <strong>name</strong>, your apprenticeship <strong>start and end dates</strong> and your <strong>signature</strong>, then tap <strong>Save profile</strong>.</div>';
-          if(head)head.insertAdjacentElement("afterend",box);else sheet.prepend(box);
-          const save=document.getElementById("save-profile");if(save)save.classList.add("evia-guide-target");
-        }
+        if(at<0||!sheet.querySelector(".evia-guide-inline"))showStep(sheet,Math.max(0,at));
       }else if(seen&&!modal.innerHTML.trim()){
         observer.disconnect();finish();
       }
