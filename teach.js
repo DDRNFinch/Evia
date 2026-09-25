@@ -61,6 +61,19 @@
       '<circle class="tp-head" cx="230" cy="34" r="14"/><path class="tp-body" d="M206 100 Q206 56 230 56 Q254 56 254 100 Z"/>'+
       '<path class="tp-bubble" d="M122 22 H196 Q204 22 204 30 V50 Q204 58 196 58 H150 L138 68 L140 58 H122 Q114 58 114 50 V30 Q114 22 122 22 Z"/><text x="159" y="45">More mortar at 11?</text>',"Two people talking about when mortar is needed")
   };
+  Object.assign(PICS,{
+    tape:()=>svg(320,120,
+      '<rect class="tp-tape" x="14" y="30" width="70" height="62" rx="14"/><circle class="tp-hub" cx="49" cy="61" r="12"/>'+
+      '<rect class="tp-blade" x="80" y="52" width="226" height="22" rx="2"/>'+Array.from({length:23},(_,k)=>'<path class="tp-tick" d="M'+(88+k*9.5)+' 52 V'+(k%5===0?66:59)+'"/>').join("")+
+      '<text x="88" y="90">0</text><text x="135.5" y="90">50</text><text x="183" y="90">100</text><text x="230.5" y="90">150</text><text x="278" y="90">200 mm</text>',"A tape measure marked in millimetres"),
+    area:()=>svg(320,130,
+      '<rect class="tp-wall" x="70" y="20" width="180" height="72" rx="3"/>'+Array.from({length:5},(_,k)=>'<path class="tp-thin" d="M70 '+(32+k*12)+' H250"/>').join("")+
+      '<path class="tp-dim" d="M70 106 H250 M70 101 V111 M250 101 V111 M262 20 V92 M257 20 H267 M257 92 H267"/><text x="160" y="124">5 m</text><text x="286" y="60">2 m</text>',"A wall 5 metres long and 2 metres high"),
+    write:()=>svg(320,120,
+      '<rect class="tp-page" x="70" y="10" width="180" height="104" rx="8"/>'+[0,1,2,3,4].map(k=>'<path class="tp-thin" d="M88 '+(34+k*16)+' H232"/>').join("")+
+      '<text class="tp-hand" x="160" y="30">First, I checked the drawings.</text><text class="tp-hand" x="160" y="46">Then I set out the job.</text><text class="tp-hand" x="160" y="62">Finally, I checked the quality.</text>'+
+      '<path class="tp-pen" d="M262 94 L292 34 L300 38 L270 98 Z"/>',"A neat write-up in full sentences")
+  });
   const pic=name=>PICS[name]?'<div class="tm-pic">'+PICS[name]()+'</div>':"";
 
   /* ---------- Lessons ---------- */
@@ -105,64 +118,113 @@
       ]
     }]
   };
-  const units=()=>COURSES[typeof course!=="undefined"?course:""]||[];
+  /* Maths and English: the same style, for every course, when switched on in the profile. No off-the-job time. */
+  const FS=[
+    {unit:"Maths",fs:"maths",lessons:[
+      {id:"ma1",title:"Measuring and units",blurb:"Millimetres, metres and working them out",steps:[
+        {t:"learn",pic:"tape",title:"Millimetres and metres",text:"On site we measure in millimetres (mm) and metres (m). There are 1,000 mm in a metre and 10 mm in a centimetre. Drawings are usually in millimetres."},
+        {t:"choice",q:"How many millimetres are in 2.4 m?",opts:["24","240","2,400","24,000"],a:2,why:"Multiply metres by 1,000: 2.4 × 1,000 = 2,400 mm."},
+        {t:"choice",q:"A piece is 215 mm long. What is that in metres?",opts:["0.215 m","2.15 m","21.5 m","0.0215 m"],a:0,why:"Divide millimetres by 1,000: 215 ÷ 1,000 = 0.215 m."},
+        {t:"match",q:"Match the measurements that are the same",pairs:[["1 m","1,000 mm"],["1 cm","10 mm"],["0.5 m","500 mm"],["1 km","1,000 m"]]},
+        {t:"choice",q:"You cut 450 mm off a 2.4 m length. How much is left?",opts:["1,850 mm","1,950 mm","2,050 mm","1,995 mm"],a:1,why:"Change to the same unit first: 2,400 − 450 = 1,950 mm."},
+        {t:"tf",q:"Four lots of 75 mm makes 300 mm.",a:true,why:"75 × 4 = 300. Repeated measurements are just multiplication."}
+      ]},
+      {id:"ma2",title:"Area, ratio and extra",blurb:"Working out how much you need",steps:[
+        {t:"learn",pic:"area",title:"Area",text:"Area is length × width (or height), in square metres (m²). A wall 5 m long and 2 m high is 5 × 2 = 10 m²."},
+        {t:"choice",q:"A wall is 4 m long and 1.5 m high. What is its area?",opts:["5.5 m²","6 m²","8 m²","60 m²"],a:1,why:"4 × 1.5 = 6 m²."},
+        {t:"learn",title:"How much to order",text:"To estimate materials, work out the area, then how many you need per m². Then add a bit extra for cuts and breakages, often 5 to 10%."},
+        {t:"choice",q:"A floor is 12 m². Each board covers 2 m². How many boards before any extra?",opts:["6","10","14","24"],a:0,why:"12 ÷ 2 = 6 boards."},
+        {t:"choice",q:"You need 50 lengths. Add 10% extra. How many do you order?",opts:["51","55","60","500"],a:1,why:"10% of 50 is 5, so 50 + 5 = 55."},
+        {t:"choice",q:"A 1:4 mix uses 12 buckets of sand. How much cement?",opts:["2 buckets","3 buckets","4 buckets","48 buckets"],a:1,why:"1:4 means sand is 4 times the cement: 12 ÷ 4 = 3 buckets."}
+      ]}
+    ]},
+    {unit:"English",fs:"english",lessons:[
+      {id:"en1",title:"Clear sentences",blurb:"Capitals, full stops and joining ideas",steps:[
+        {t:"learn",pic:"write",title:"Start and finish properly",text:"Every sentence starts with a capital letter and ends with a full stop. Names, places, days and “I” always have capitals. Keep sentences short: one idea each."},
+        {t:"choice",q:"Which is written correctly?",opts:["i checked the level and it was plumb","I checked the level. It was plumb.","I checked the level it was plumb.","i Checked the level, It was plumb"],a:1,why:"Two ideas, two sentences, each with a capital letter and a full stop."},
+        {t:"tf",q:"In “We started on Monday in Leeds.”, Monday and Leeds need capital letters.",a:true,why:"Days of the week and place names always start with a capital."},
+        {t:"order",q:"Put the words in order to make a sentence",items:["First","I","checked","the","drawings."],why:"A sentence starts with the capital letter and ends with the full stop."},
+        {t:"choice",q:"Which is the best way to join these? “I wore gloves. Cement can burn skin.”",opts:["I wore gloves because cement can burn skin.","I wore gloves, cement can burn skin.","I wore gloves cement can burn skin.","I wore gloves and, cement can burn skin"],a:0,why:"“Because” joins the reason to what you did."},
+        {t:"match",q:"Match each word to what it means",pairs:[["their","Belonging to them"],["there","A place"],["they’re","They are"],["you’re","You are"]]}
+      ]},
+      {id:"en2",title:"Writing up your work",blurb:"Order, reasons and what you learned",steps:[
+        {t:"learn",title:"A good write-up",text:"Say what you did, in order, and why. Use words like first, then, after that and finally. Write in full sentences, not text speak, as your assessor will read it."},
+        {t:"order",q:"Put this write-up in order",items:["First, I checked the drawings and measurements.","Then I set out the job and checked it was square.","After that, I did the main work, checking as I went.","Finally, I cleaned up and checked the quality."],why:"Sequence words make the order of the job easy to follow."},
+        {t:"choice",q:"Which is best for your portfolio?",opts:["gonna finish it 2moro","I will finish the job tomorrow.","finish tmrw lol","will do tmrw"],a:1,why:"Full words and a full sentence: it’s a formal record of your work."},
+        {t:"choice",q:"Which sentence explains why, not just what?",opts:["I used a spirit level.","I used a spirit level to check each part was level, so the finished job would be right.","Spirit level.","I had a level."],a:1,why:"Adding the reason shows you understand the job."},
+        {t:"tf",q:"“I should of checked it” is correct.",a:false,why:"It’s “should have” (or “should’ve”), never “should of”."},
+        {t:"choice",q:"Which is a good “what I learned” sentence?",opts:["It was ok.","I learned to check the drawings twice, because a small mistake at the start grows as the job goes on.","Nothing really.","Learned stuff."],a:1,why:"Say what you learned and why it matters. This is what assessors look for."}
+      ]}
+    ]}
+  ];
+  const profile=()=>{try{return JSON.parse(localStorage.getItem("evia7-profile")||"{}")||{}}catch(_){return {}}};
+  /* Trade units for the course, then maths and English if they're switched on in the profile. */
+  const trade=()=>COURSES[typeof course!=="undefined"?course:""]||[];
+  const units=()=>{const p=profile();return trade().concat(FS.filter(u=>(u.fs==="maths"&&p.mathsEnabled)||(u.fs==="english"&&p.englishEnabled)))};
   const available=()=>units().length>0;
+  const isDone=(L,l)=>!!(L[l.id]&&L[l.id].done);
   function summary(){
-    const L=mine(),all=[].concat(...units().map(u=>u.lessons)),done=all.filter(l=>L[l.id]&&L[l.id].done).length;
-    const next=all.find(l=>!(L[l.id]&&L[l.id].done));
-    return {done,total:all.length,next:next?next.title:null,unit:units()[0]?units()[0].unit:""};
+    const L=mine(),all=[].concat(...units().map(u=>u.lessons)),done=all.filter(l=>isDone(L,l)).length;
+    const next=all.find(l=>!isDone(L,l)),t=trade()[0];
+    return {done,total:all.length,next:next?next.title:null,unit:t?t.unit:"maths and English"};
   }
   /* Evia's view of a confidence skill, from how the lessons went (first-try answers). Needs half the lessons done. */
   function viewFor(area){
-    const u=units().find(x=>x.skill===area);if(!u)return null;
-    const L=mine(),done=u.lessons.filter(l=>L[l.id]&&L[l.id].done);
+    const u=trade().find(x=>x.skill===area);if(!u)return null;
+    const L=mine(),done=u.lessons.filter(l=>isDone(L,l));
     if(done.length<Math.ceil(u.lessons.length/2))return null;
     /* Rated on first-try accuracy; "Mastered" only once every lesson in the unit is done. */
     const avg=done.reduce((n,l)=>n+L[l.id].best,0)/done.length,all=done.length===u.lessons.length;
     const level=Math.min(avg>=.9?4:avg>=.7?3:avg>=.5?2:1,all?4:3);
     return {level,label:LEVELS[level-1],done:done.length,total:u.lessons.length,soFar:!all};
   }
+  /* A lesson left part-way through carries on from the same step. */
+  const resumeOf=id=>{const s=readStore();return ((s[course]||{}).resume||{})[id]||null};
+  const setResume=(id,v)=>{const s=readStore(),c=s[course]=s[course]||{lessons:{}};c.resume=c.resume||{};if(v)c.resume[id]=v;else delete c.resume[id];writeStore(s)};
 
   /* ---------- The page ---------- */
   let root=null,onKey=null;
   const EVIA='<span class="tm-evia evia-mini" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span>';
-  function open(){
+  function shell(label){
     if(root)root.remove();
-    root=document.createElement("div");root.className="tm";root.setAttribute("role","dialog");root.setAttribute("aria-modal","true");root.setAttribute("aria-label","Teach me");
+    root=document.createElement("div");root.className="tm";root.setAttribute("role","dialog");root.setAttribute("aria-modal","true");root.setAttribute("aria-label",label);
     document.body.appendChild(root);
     onKey=e=>{if(e.key==="Escape")close()};document.addEventListener("keydown",onKey);
-    path();
   }
+  function open(){shell("Teach me");path()}
   function close(){
     if(!root)return;document.removeEventListener("keydown",onKey);
+    if(window.eviaOtj)window.eviaOtj.flush();
     const r=root;root=null;r.classList.add("tm-out");setTimeout(()=>r.remove(),reduced()?0:200);
-    if(typeof render==="function"&&typeof screen!=="undefined"&&screen==="course")render();
+    if(typeof render==="function"&&typeof screen!=="undefined"&&(screen==="course"||screen==="learning"))render();
   }
-
+  const LOCK='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="11" width="12" height="9" rx="2"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>';
+  function unitHtml(u,L,counter){
+    const d=u.lessons.filter(l=>isDone(L,l)).length,nextI=u.lessons.findIndex(l=>!isDone(L,l));
+    return '<section class="tm-unit'+(u.fs?" fs":"")+'"><div class="tm-unit-head"><span class="tm-unit-k">'+(u.fs?"Functional skills":"Unit")+'</span><h2>'+esc(u.unit)+'</h2><small>'+u.lessons.length+' lessons'+(u.fs?"":" · covers the whole unit")+'</small><span class="tm-unit-bar"><i style="width:'+Math.round(d/u.lessons.length*100)+'%"></i></span></div>'+
+      '<ol class="tm-path">'+u.lessons.map((l,k)=>{
+        const n=counter.n++,r=L[l.id],state=isDone(L,l)?"done":k===nextI?"next":"locked",res=state==="next"&&resumeOf(l.id);
+        return '<li class="tm-node '+state+'" style="--i:'+(n%4)+'"><button type="button" data-lesson="'+l.id+'"'+(state==="locked"?' disabled aria-disabled="true"':"")+' aria-label="'+esc(l.title)+(state==="done"?", done":state==="locked"?", locked":"")+'">'+
+          '<span class="tm-dot">'+(state==="done"?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>':state==="locked"?LOCK:'<b>'+(k+1)+'</b>')+'</span>'+
+          (state==="next"?'<span class="tm-start">'+(res?"Carry on":"Start")+'</span>':"")+
+          '<span class="tm-label"><strong>'+esc(l.title)+'</strong><small>'+esc(l.blurb)+(r?' · best '+Math.round(r.best*100)+'%':"")+'</small></span></button></li>';
+      }).join("")+'</ol></section>';
+  }
   function path(){
-    const L=mine(),us=units(),all=[].concat(...us.map(u=>u.lessons));
-    const nextI=all.findIndex(l=>!(L[l.id]&&L[l.id].done)),s=summary();
-    const name=(()=>{try{return (JSON.parse(localStorage.getItem("evia7-profile")||"{}").name||"").split(/\s+/)[0]}catch(_){return ""}})();
-    const say=s.done===0?"Hi"+(name?" "+esc(name):"")+"! I’ll teach you everything in each unit, a few minutes at a time. Tap the first lesson to start.":
+    const L=mine(),tr=trade(),fs=units().filter(u=>u.fs),all=[].concat(...units().map(u=>u.lessons)),s=summary(),p=profile();
+    const name=String(p.name||"").split(/\s+/)[0];
+    const say=s.done===0?"Hi"+(name?" "+esc(name):"")+"! I’ll teach you "+(tr.length?"everything in each unit":"step by step")+", a few minutes at a time. Tap a lesson to start.":
       s.done===s.total?"You’ve finished every lesson here. Nice work! Replay any lesson to beat your score.":
       "Welcome back"+(name?", "+esc(name):"")+". Next up: <strong>"+esc(s.next)+"</strong>.";
-    const others=(typeof data==="function"?data().u.map(u=>u[0]):[]).filter(n=>!us.some(u=>u.unit===n)).slice(0,4);
-    let n=0;
+    const others=(typeof data==="function"?data().u.map(u=>u[0]):[]).filter(n=>!tr.some(u=>u.unit===n)).slice(0,4);
+    const counter={n:0};
     root.innerHTML='<header class="tm-bar"><button type="button" class="tm-x" aria-label="Close">×</button><strong>Teach me</strong><span class="tm-count">'+s.done+' / '+s.total+'</span></header>'+
       '<div class="tm-scroll">'+
         '<section class="tm-hero">'+EVIA+'<p class="tm-say">'+say+'</p></section>'+
-        us.map(u=>{
-          const d=u.lessons.filter(l=>L[l.id]&&L[l.id].done).length;
-          return '<section class="tm-unit"><div class="tm-unit-head"><span class="tm-unit-k">Unit</span><h2>'+esc(u.unit)+'</h2><small>'+u.lessons.length+' lessons · covers the whole unit</small><span class="tm-unit-bar"><i style="width:'+Math.round(d/u.lessons.length*100)+'%"></i></span></div>'+
-            '<ol class="tm-path">'+u.lessons.map(l=>{
-              const i=n++,r=L[l.id],state=r&&r.done?"done":i===nextI?"next":i<nextI||nextI<0?"done":"locked";
-              return '<li class="tm-node '+state+'" style="--i:'+(i%4)+'"><button type="button" data-lesson="'+l.id+'"'+(state==="locked"?' disabled aria-disabled="true"':"")+' aria-label="'+esc(l.title)+(state==="done"?", done":state==="locked"?", locked":"")+'">'+
-                '<span class="tm-dot">'+(state==="done"?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>':state==="locked"?'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="11" width="12" height="9" rx="2"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>':'<b>'+(i+1)+'</b>')+'</span>'+
-                (state==="next"?'<span class="tm-start">Start</span>':"")+
-                '<span class="tm-label"><strong>'+esc(l.title)+'</strong><small>'+esc(l.blurb)+(r?' · best '+Math.round(r.best*100)+'%':"")+'</small></span></button></li>';
-            }).join("")+'</ol></section>';
-        }).join("")+
-        (others.length?'<section class="tm-soon"><h3>Coming next</h3>'+others.map(o=>'<div class="tm-soon-row"><span class="tm-dot sm"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="11" width="12" height="9" rx="2"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg></span>'+esc(o)+'</div>').join("")+'</section>':"")+
+        tr.map(u=>unitHtml(u,L,counter)).join("")+
+        (others.length?'<section class="tm-soon"><h3>'+(tr.length?"Coming next":"Lessons for your units are coming")+'</h3>'+others.map(o=>'<div class="tm-soon-row"><span class="tm-dot sm">'+LOCK+'</span>'+esc(o)+'</div>').join("")+'</section>':"")+
+        (fs.length?'<h2 class="tm-fs-h">Maths and English</h2><p class="tm-fs-note">These help with your maths and English. They don’t count towards your off-the-job hours.</p>'+fs.map(u=>unitHtml(u,L,counter)).join(""):
+          (!p.mathsEnabled&&!p.englishEnabled?'<p class="tm-fs-note">Maths and English lessons can be switched on in your Profile.</p>':""))+
       '</div>';
     root.querySelector(".tm-x").onclick=close;
     root.querySelectorAll("[data-lesson]").forEach(b=>b.onclick=()=>{const l=all.find(x=>x.id===b.dataset.lesson);if(l)lesson(l)});
@@ -172,11 +234,15 @@
   /* ---------- A lesson ---------- */
   function lesson(l){
     const steps=l.steps,asks=steps.filter(s=>s.t!=="learn").length;
-    let i=0,first=0;
+    const res=resumeOf(l.id);let i=res?Math.min(res.i,steps.length-1):0,first=res?res.first:0,stepFirst=first;
+    /* Off-the-job time: trade lessons only (maths and English don't count). The timer runs quietly in otj-auto.js. */
+    const u=units().find(x=>x.lessons.includes(l)),otjKey=u&&!u.fs&&window.eviaOtj?"teach|"+u.unit:null;
+    if(otjKey)window.eviaOtj.start(otjKey,{description:"Teach me: interactive lessons with Evia on "+u.unit});
     const frame=()=>{
       root.innerHTML='<header class="tm-bar tm-lbar"><button type="button" class="tm-x" aria-label="Leave lesson">×</button><span class="tm-prog" aria-hidden="true"><i></i></span></header>'+
         '<div class="tm-scroll tm-step" aria-live="polite"></div><footer class="tm-foot"><div class="tm-fb" hidden></div><button type="button" class="primary tm-go" disabled>Check</button></footer>';
-      root.querySelector(".tm-x").onclick=()=>{path()};
+      /* Leaving part-way: the timer stops and the lesson carries on from this step next time. */
+      root.querySelector(".tm-x").onclick=()=>{if(i>0)setResume(l.id,{i,first:stepFirst});if(otjKey)window.eviaOtj.stop(otjKey);path()};
     };
     frame();
     const stepEl=()=>root.querySelector(".tm-step"),go=()=>root.querySelector(".tm-go"),fb=()=>root.querySelector(".tm-fb");
@@ -190,7 +256,7 @@
     const clearFb=()=>{const f=fb();f.hidden=true;root.classList.remove("tm-happy","tm-oops")};
     const next=()=>{i++;show()};
     function show(){
-      clearFb();progress();
+      clearFb();progress();stepFirst=first;
       if(i>=steps.length){done();return}
       const s=steps[i],el=stepEl(),g=go();el.scrollTop=0;
       let tries=0;
@@ -243,9 +309,10 @@
       }
     }
     function done(){
-      const score=asks?first/asks:1;saveResult(l.id,score);
+      const score=asks?first/asks:1;saveResult(l.id,score);setResume(l.id,null);
+      if(otjKey)window.eviaOtj.stop(otjKey,{learned:l.title+": "+l.blurb});
       const all=[].concat(...units().map(u=>u.lessons)),idx=all.findIndex(x=>x.id===l.id),nx=all[idx+1];
-      const u=units().find(x=>x.lessons.includes(l)),view=u?viewFor(u.skill):null;
+      const view=u&&!u.fs?viewFor(u.skill):null;
       root.classList.add("tm-happy");
       root.innerHTML='<div class="tm-scroll tm-end"><div class="tm-confetti" aria-hidden="true">'+Array.from({length:18},(_,k)=>'<i style="--k:'+k+'"></i>').join("")+'</div>'+
         EVIA.replace("tm-evia","tm-evia xl")+'<h2>Lesson complete!</h2><p class="tm-end-sub">'+esc(l.title)+'</p>'+
@@ -259,5 +326,59 @@
     show();
   }
 
-  window.eviaTeach={open,available,summary,viewFor,COURSES};
+  /* ---------- Confidence check, in the same style ----------
+     One skill at a time: Evia asks the skill's own question and the learner picks one of four plain answers. Last
+     time's answer and Evia's view (from Teach me) are marked. Saved in the same format as before
+     (evia7-confidence), so My progress, reviews and college tasks all keep working. */
+  const CHOICES=[["Need training","I haven’t done this yet, or I need someone to show me"],["Basics","I can do it with help"],["Confident","I can do it on my own"],["Mastered","I could show someone else how"]];
+  function confidence(){
+    const qs=(typeof confidenceQuestions==="function"?confidenceQuestions():[]).map(q=>({area:q[0],question:q[1]}));
+    if(!qs.length)return;
+    const hist=(()=>{try{return JSON.parse(localStorage.getItem("evia7-confidence")||"[]")}catch(_){return []}})().filter(x=>x&&x.course===course&&Array.isArray(x.scores));
+    const prev=new Map();hist.forEach(h=>h.scores.forEach(x=>prev.set(x.area,x)));
+    const picks=new Map();let i=0;
+    shell("Confidence check");
+    const pct=vals=>vals.length?Math.round(vals.reduce((n,v)=>n+v,0)/vals.length/4*100):0;
+    const intro=()=>{
+      root.innerHTML='<header class="tm-bar"><button type="button" class="tm-x" aria-label="Close">×</button><strong>Confidence check</strong></header>'+
+        '<div class="tm-scroll"><section class="tm-hero">'+EVIA+'<p class="tm-say">Be honest, there are no wrong answers. I’ll ask about <strong>'+qs.length+' skills</strong>, one at a time. It takes about two minutes'+(prev.size?", and I’ll show you what you said last time":"")+'.</p></section></div>'+
+        '<footer class="tm-foot"><button type="button" class="primary tm-go" id="cf-start">Let’s go</button></footer>';
+      root.querySelector(".tm-x").onclick=close;root.querySelector("#cf-start").onclick=ask;
+    };
+    const ask=()=>{
+      if(i>=qs.length){finish();return}
+      const q=qs[i],was=prev.get(q.area),v=window.eviaTeach.viewFor(q.area),cur=picks.get(i);
+      root.innerHTML='<header class="tm-bar tm-lbar"><button type="button" class="tm-x" aria-label="Close">×</button><span class="tm-prog" aria-hidden="true"><i style="width:'+Math.round(i/qs.length*100)+'%"></i></span></header>'+
+        '<div class="tm-scroll tm-step"><span class="tm-kicker">Skill '+(i+1)+' of '+qs.length+'</span><h2 class="tm-q cf-area">'+esc(q.area)+'</h2>'+
+        '<div class="cf-ask">'+EVIA.replace("tm-evia","tm-evia sm")+'<p>'+esc(q.question)+'</p></div>'+
+        '<div class="cf-opts" role="radiogroup">'+CHOICES.map((c,k)=>'<button type="button" class="tm-opt cf-opt'+(cur===k+1?" on":"")+'" role="radio" aria-checked="'+(cur===k+1)+'" data-v="'+(k+1)+'"><span class="cf-bars" aria-hidden="true">'+[1,2,3,4].map(n=>'<i'+(n<=k+1?' class="on"':"")+'></i>').join("")+'</span><span class="cf-txt"><strong>'+c[0]+'</strong><small>'+c[1]+'</small></span>'+
+          ((was&&was.score===k+1)||(v&&v.level===k+1)?'<span class="cf-tags">'+(was&&was.score===k+1?'<em class="cf-tag">Last time</em>':"")+(v&&v.level===k+1?'<em class="cf-tag evia">Evia’s view</em>':"")+'</span>':"")+'</button>').join("")+'</div></div>'+
+        '<footer class="tm-foot tm-row">'+(i?'<button type="button" class="secondary tm-go" id="cf-back">Back</button>':"")+(was?'<button type="button" class="secondary tm-go" id="cf-same">Same as last time</button>':"")+'</footer>';
+      root.querySelector(".tm-x").onclick=close;
+      const next=val=>{picks.set(i,val);buzz(8);setTimeout(()=>{i++;ask()},reduced()?0:260)};
+      root.querySelectorAll(".cf-opt").forEach(b=>b.onclick=()=>{root.querySelectorAll(".cf-opt").forEach(x=>{x.classList.toggle("on",x===b);x.setAttribute("aria-checked",x===b)});next(+b.dataset.v)});
+      const bk=root.querySelector("#cf-back");if(bk)bk.onclick=()=>{i--;ask()};
+      const sm=root.querySelector("#cf-same");if(sm)sm.onclick=()=>next(was.score);
+    };
+    const finish=()=>{
+      const now=new Date().toISOString();
+      const scores=qs.map((q,k)=>picks.has(k)?{area:q.area,score:picks.get(k),question:q.question,answeredAt:now}:prev.has(q.area)?Object.assign({},prev.get(q.area),{carried:true}):null).filter(Boolean);
+      try{const all=JSON.parse(localStorage.getItem("evia7-confidence")||"[]");all.push({id:"confidence-"+Date.now(),course,startedAt:now,savedAt:now,source:"self-assessment",scores});localStorage.setItem("evia7-confidence",JSON.stringify(all));localStorage.removeItem("evia7-confidence-cycle-"+course)}catch(_){}
+      const before=pct([...prev.values()].map(x=>x.score)),after=pct(scores.map(x=>x.score));
+      const up=scores.filter(x=>{const p=prev.get(x.area);return p&&!x.carried&&x.score>p.score}),low=scores.filter(x=>x.score<=2),high=scores.filter(x=>x.score>=3);
+      const row=x=>{const p=prev.get(x.area),ch=p&&!x.carried&&p.score!==x.score?(x.score>p.score?'<em class="cf-up">↑ up</em>':'<em class="cf-down">↓ down</em>'):"";return '<li><span class="cf-bars" aria-hidden="true">'+[1,2,3,4].map(n=>'<i'+(n<=x.score?' class="on"':"")+'></i>').join("")+'</span><span><strong>'+esc(x.area)+'</strong><small>'+CHOICES[x.score-1][0]+'</small></span>'+ch+'</li>'};
+      root.innerHTML='<header class="tm-bar"><button type="button" class="tm-x" aria-label="Close">×</button><strong>Your confidence</strong></header>'+
+        '<div class="tm-scroll"><section class="tm-hero">'+EVIA.replace("tm-evia","tm-evia xl")+'<p class="tm-say">'+(up.length?"You’ve moved up on <strong>"+esc(up.map(x=>x.area).join(", "))+"</strong>. That’s real progress!":"Thanks for being honest. That helps you and your tutor plan what to practise.")+'</p></section>'+
+          '<div class="tm-stats"><div><b>'+after+'%</b><span>course confidence</span></div><div><b>'+(prev.size?(after>=before?"+":"")+(after-before)+'%':"First")+'</b><span>'+(prev.size?"since last time":"check")+'</span></div></div>'+
+          (low.length?'<h3 class="cf-h">To practise</h3><ul class="cf-sum">'+low.map(row).join("")+'</ul>':"")+
+          (high.length?'<h3 class="cf-h">Confident</h3><ul class="cf-sum">'+high.map(row).join("")+'</ul>':"")+
+        '</div><footer class="tm-foot">'+(low.length&&window.eviaPractice&&window.eviaPractice.suggestTasks(1).length?'<button type="button" class="primary tm-go" id="cf-task">Find me a college task</button>':"")+'<button type="button" class="'+(low.length?"secondary":"primary")+' tm-go" id="cf-done">Done</button></footer>';
+      root.querySelector(".tm-x").onclick=close;root.querySelector("#cf-done").onclick=close;
+      const t=root.querySelector("#cf-task");if(t)t.onclick=()=>{close();setTimeout(()=>window.eviaPractice.openTask(0),220)};
+      buzz([10,40,10]);
+    };
+    intro();
+  }
+
+  window.eviaTeach={open,available,summary,viewFor,confidence,COURSES,FS};
 })();

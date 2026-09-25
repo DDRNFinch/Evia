@@ -113,7 +113,7 @@
         (a.terms.length?'<p><strong>Think about:</strong> '+esc(a.terms.join(" · "))+'</p>':"")+
         (a.can.length?'<details><summary>What good looks like</summary><ul>'+a.can.map(c=>'<li>'+esc(c)+'</li>').join("")+'</ul></details>':"")+
       '</div>':"")+
-      '<textarea class="eg-text" id="eg-text" rows="6" placeholder="In your own words…" aria-label="'+esc(a.ask)+'">'+esc(g.answers[a.key]||"")+'</textarea>',
+      '<textarea class="eg-text" id="eg-text" data-otj="'+esc(ctx.unitName)+'" rows="6" placeholder="In your own words…" aria-label="'+esc(a.ask)+'">'+esc(g.answers[a.key]||"")+'</textarea>',
       [{label:"Skip",run:()=>{save();ask(ctx,P,i+1)}},{label:i===n-1?"Save and finish":"Save and continue",primary:true,run:()=>{save();ask(ctx,P,i+1)}}],
       {kicker:"EVIA · QUESTION "+(i+1)+" OF "+n,title:a.title,back:i>0?()=>{save();ask(ctx,P,i-1)}:null,keep:true,full:true});
     const box=el.querySelector("#eg-text");

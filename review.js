@@ -106,6 +106,24 @@
     function runChoiceTest(type,count){
       const source=bankFor(type),full=type==="epa"&&count>=20;
       const qs=shuffle(source).slice(0,count||5);
+      /* Tests run as a proper exam on their own screen (exam.js): no hints until the end. */
+      if(window.eviaExam&&qs.length){
+        const nvq=!!(window.eviaNvq&&window.eviaNvq.on()),isA=type==="maths"||type==="english";
+        const title=full?(nvq?"Full knowledge test":"EPA full mock"):type==="epa"?(nvq?"Knowledge quick quiz":"EPA quick quiz"):testLabel(type)+" test";
+        const questions=qs.map(q=>({q:q[1],options:shuffle(q[2]),correct:isA?q[3]:q[2][0],explanation:isA?q[4]:"",ksb:isA?"":q[0]}));
+        chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>'+escLocal(title)+'</strong><br>Opening your test now. There are no hints until the end. Good luck!</div>');scroll();
+        setTimeout(()=>{
+          const x=document.getElementById("x");if(x)x.click();
+          window.eviaExam.open({title,kind:type==="epa"?(nvq?"Knowledge test":"End-point assessment practice"):"Practice test",intro:full?"Take your time and answer each one as you would in the real test.":"",questions,onFinish:r=>{
+            const missed=type==="epa"?[...new Set(r.questions.filter(x=>!x.ok).map(x=>x.ksb).filter(Boolean))]:[];
+            saveTest(type,Object.assign({},r,{full,missed}));
+            /* Show what each missed KSB covers, not just its code. */
+            const text=c=>{try{for(const u of data().u)for(const k of u[1]){const [cd,t]=String(k).split("|");if(cd===c&&t)return t.split(/:\s|\.\s/)[0].replace(/[.,;]+$/,"")}}catch(_){}return c};
+            return {revise:missed.slice(0,6).map(text)};
+          }});
+        },900);
+        return;
+      }
       if(full)chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>EPA full mock</strong><br>'+qs.length+' questions from across your KSBs. Take your time and answer each one as you would in the real test.</div>');
       let i=0,score=0;
       const result={questions:[],score:0,total:qs.length};

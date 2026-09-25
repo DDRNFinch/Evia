@@ -93,6 +93,8 @@
   const SHORT=["Need training","Know the basics","Quite confident","Mastered"];
   const overallPct=vals=>vals.length?Math.round(vals.reduce((n,v)=>n+v,0)/vals.length/4*100):null;
   function openConfidence(){
+    /* The confidence check now runs in the Teach me style (teach.js); this sheet is the fallback. */
+    if(window.eviaTeach&&window.eviaTeach.confidence&&skills().length){closeSheet();window.eviaTeach.confidence();return}
     const list=skills();
     if(!list.length){sheet("SKILLS","Confidence check",'<p class="pr-note">There are no practical skills loaded for this course yet.</p>');return}
     const prev=latestMap(),picked=new Map();

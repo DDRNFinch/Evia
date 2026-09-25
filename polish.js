@@ -139,7 +139,7 @@
         '<section class="evidence-section writeup-section">'+
           '<div class="evidence-section-title">THINGS TO MENTION</div>'+
           '<div class="compact-prompts">'+esc(prompts.writeup)+'</div>'+
-          '<textarea id="write" placeholder="Write about the process and what you did…">'+esc(pack.write||"")+'</textarea>'+
+          '<textarea id="write" data-otj="'+esc(u[0])+'" placeholder="Write about the process and what you did…">'+esc(pack.write||"")+'</textarea>'+
         '</section>'+
         '<div class="pack-actions">'+
           '<button class="primary" id="submit-evidence" '+(photos.length&&String(pack.write||"").trim()?"":"disabled")+'>Submit to Portfolio</button>'+

@@ -100,18 +100,34 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.click('#x');await page.waitForTimeout(300);
     check("Profile button comes back after closing the chat",await page.evaluate(()=>getComputedStyle(document.getElementById("profile-btn")).display!=="none"));
 
-    await page.evaluate(()=>window.eviaStartTest("epa",5,"EPA quick quiz"));await page.waitForTimeout(500);
-    check("Answer buttons stay hidden while Evia is thinking",await page.evaluate(()=>{const r=document.querySelector("#chat .rating-options");return !r||getComputedStyle(r).display==="none"}));
-    await page.waitForSelector("[data-test-answer]",{state:"visible",timeout:10000});
-    check("A test question appears with answers",true);
-    await page.click("#x");await page.waitForTimeout(300);
+    // Tests run as a serious exam on their own screen: no hints until the end.
+    await page.evaluate(()=>window.eviaStartTest("epa",5,"EPA quick quiz"));
+    await page.waitForSelector(".ex #ex-start",{state:"visible",timeout:10000});
+    check("Test me opens the test as an exam on its own screen",await page.evaluate(()=>/EPA quick quiz/.test(document.querySelector(".ex").textContent)&&!document.querySelector(".chat-sheet")));
+    const exam=await page.evaluate(async()=>{
+      const w=ms=>new Promise(r=>setTimeout(r,ms));document.querySelector("#ex-start").click();await w(60);
+      let hint=false;
+      for(let k=0;k<5;k++){document.querySelector(".ex-opt").click();await w(20);if(document.querySelector(".ex .correct,.ex .wrong,.ex-ex"))hint=true;document.querySelector("#ex-next").click();await w(40)}
+      const before=JSON.parse(localStorage.getItem("evia7-test-results")||"[]").length;
+      return {hint,results:!!document.querySelector(".ex-score")&&document.querySelectorAll(".ex-review li").length===5,saved:before>0};
+    });
+    check("The exam gives no hints while answering, then shows the score and every answer",!exam.hint&&exam.results);
+    check("The exam result is saved for the progress review",exam.saved);
+    await page.evaluate(()=>document.querySelector("#ex-done").click());await page.waitForTimeout(300);
 
+    // The confidence check: one skill at a time in the Teach me style.
     await page.evaluate(()=>window.eviaPractice.openConfidence());await page.waitForTimeout(300);
-    await page.evaluate(()=>document.querySelectorAll(".cf-row input").forEach((inp,i)=>{inp.value=i%4+1;inp.dispatchEvent(new Event("input",{bubbles:true}))}));
-    check("Confidence sliders update the overall score",await page.evaluate(()=>/%/.test(document.getElementById("cf-score").textContent)));
-    await page.click("#pr-save");await page.waitForTimeout(300);
-    check("Confidence check saves and shows a training plan",await page.evaluate(()=>/training plan/i.test(document.getElementById("pr-title").textContent)));
-    check("A college practice task is suggested",await page.$("[data-task]"));
+    const conf=await page.evaluate(async()=>{
+      const w=ms=>new Promise(r=>setTimeout(r,ms));document.querySelector("#cf-start").click();await w(60);
+      const one=!!document.querySelector(".cf-ask")&&document.querySelectorAll(".cf-opt").length===4;
+      let k=0;while(document.querySelector(".cf-opt")&&k<40){document.querySelectorAll(".cf-opt")[k%4].click();k++;await w(320)}
+      return {one,summary:/course confidence/.test(document.querySelector(".tm").textContent),saved:JSON.parse(localStorage.getItem("evia7-confidence")||"[]").some(x=>x.course===course)};
+    });
+    check("The confidence check asks one skill at a time with four clear answers",conf.one);
+    check("Confidence check saves and shows a summary",conf.summary&&conf.saved);
+    await page.evaluate(()=>document.querySelector("#cf-task").click());await page.waitForTimeout(500);
+    check("A college practice task is suggested",await page.evaluate(()=>/COLLEGE TASK/.test((document.querySelector(".pr-sheet .chat-kicker")||{}).textContent||"")));
+    await page.evaluate(()=>{document.getElementById("modal-root").innerHTML=""});
 
     await page.evaluate(()=>document.getElementById("profile-btn").click());await page.waitForTimeout(300);
     await page.evaluate(()=>document.getElementById("profile-dsl-name").closest("details").open=true);await page.fill("#profile-dsl-name","Jo Smith");await page.fill("#profile-dsl-phone","01234 567890");await page.click("#save-profile");await page.waitForTimeout(200);
@@ -158,9 +174,9 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>{localStorage.setItem("evia7-working-evidence-packs",JSON.stringify({["bricklayer|"+data().u[5][0]]:{course:"bricklayer",unit:data().u[5][0],photos:[],write:"Started"}}));nav("course")});await page.waitForTimeout(450);
     check("My course has a heading and a Draft tag",await page.evaluate(()=>/My course/.test(document.querySelector(".ui-page-head h1").textContent)&&document.querySelectorAll(".draft-chip").length===1));
     check("Evia reminds learners to back up once they have a few packs",await page.evaluate(()=>{localStorage.removeItem("evia7-last-backup");return window.eviaStats.nudges(window.eviaStats.compute()).some(n=>n.id==="backup")}));
-    await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";window.eviaStartTest("maths",5,"Maths")});await page.waitForSelector("[data-test-answer]",{state:"visible",timeout:12000});
-    check("A test from Practice opens on its own screen, without the chat menu",await page.evaluate(()=>/Maths/.test(document.querySelector(".chat-sheet h2").textContent)&&!document.querySelector("#chat [data-chat-option]")));
-    await page.click("#x");await page.waitForTimeout(300);
+    await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";window.eviaStartTest("maths",5,"Maths")});await page.waitForSelector(".ex #ex-start",{state:"visible",timeout:12000});
+    check("A maths test from Practice opens as an exam",await page.evaluate(()=>/Maths test/.test(document.querySelector(".ex").textContent)));
+    await page.evaluate(()=>document.querySelector(".ex-x").click());await page.waitForTimeout(300);
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";nav("learning")});await page.waitForTimeout(500);
     await page.evaluate(()=>window.eviaOpenLearningLogs());await page.waitForSelector("#download-otj",{timeout:5000});
     await page.evaluate(()=>document.getElementById("download-otj").click());await page.waitForSelector("#eport-save",{timeout:15000});
@@ -220,8 +236,22 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("A Teach me lesson plays through (learn, match, choice, true or false) and the path moves on",played);
     await page.evaluate(()=>document.querySelector(".tm-x").click());await page.waitForTimeout(300);
     await page.evaluate(()=>window.eviaPractice.openConfidence());await page.waitForTimeout(400);
-    check("The confidence check shows Evia's view from the lessons beside the learner's own rating",await page.evaluate(()=>/Evia says: Mastered|Evia says: Confident/.test((document.querySelector(".cf-evia")||{}).textContent||"")));
-    await page.evaluate(()=>{document.getElementById("modal-root").innerHTML=""});
+    const view=await page.evaluate(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms));document.querySelector("#cf-start").click();await w(60);
+      while(document.querySelector(".cf-area")&&document.querySelector(".cf-area").textContent!=="Mortar mixing"){document.querySelectorAll(".cf-opt")[2].click();await w(320)}
+      const t=document.querySelector(".cf-tag.evia");const ok=!!t&&/Confident|Mastered/.test(t.closest(".cf-opt").textContent);document.querySelector(".tm-x").click();await w(250);return ok});
+    check("The confidence check marks Evia's view from the lessons beside the learner's own answer",view);
+    // Off-the-job time: trade lessons and write-ups are logged automatically; maths and English aren't.
+    const otj=await page.evaluate(async()=>{
+      const w=ms=>new Promise(r=>setTimeout(r,ms)),O=window.eviaOtj,before=hours.length;
+      O.start("teach|Mixing mortar",{description:"Teach me: interactive lessons with Evia on Mixing mortar"});O._add("teach|Mixing mortar",125000);O.stop("teach|Mixing mortar",{learned:"Mixing it"});
+      const e=hours.find(x=>x.auto&&x.autoKey&&x.autoKey.startsWith("teach|Mixing mortar"));
+      const p=JSON.parse(localStorage.getItem("evia7-profile")||"{}");p.mathsEnabled=true;localStorage.setItem("evia7-profile",JSON.stringify(p));
+      window.eviaTeach.open();await w(100);const b=document.querySelector('[data-lesson="ma1"]');if(b)b.click();await w(100);
+      const mathsTimed=O.running("teach|Maths");document.querySelector(".tm-x").click();await w(80);document.querySelector(".tm-x").click();await w(250);
+      return {logged:!!e&&e.mins===2&&hours.length===before+1,learned:!!e&&/Mixing it/.test(e.learned),maths:!!b,mathsTimed};
+    });
+    check("Teach me time is logged to off-the-job hours automatically, by the minute",otj.logged&&otj.learned);
+    check("Maths lessons are there but don't count towards off-the-job hours",otj.maths&&!otj.mathsTimed);
 
     // Backup and restore: a learner's portfolio survives being restored and the app reloading.
     const keep=await page.evaluate(()=>evidence.length);

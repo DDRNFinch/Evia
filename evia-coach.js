@@ -89,6 +89,8 @@
   const eviaView=area=>{const v=window.eviaTeach&&window.eviaTeach.viewFor(area);return v?'<p class="cf-evia"><span class="evia-mini" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span><span>From your Teach me lessons, Evia says: <strong>'+esc(v.label)+'</strong></span></p>':""};
   function confidence(){
     const k=K(),qs=typeof confidenceQuestions==="function"?confidenceQuestions():[];
+    /* Runs as its own full-screen flow in the Teach me style (teach.js). */
+    if(qs.length&&window.eviaTeach&&window.eviaTeach.confidence){k.say("Let’s check your confidence, one skill at a time.");setTimeout(()=>{k.closeChat();setTimeout(window.eviaTeach.confidence,80)},700);return}
     if(!qs.length){k.say("I don’t have a skills list for your course yet.");k.replies([{label:"Something else",run:k.somethingElse}]);return}
     const prev=new Map();readJson("evia7-confidence",[]).filter(x=>x&&x.course===course&&Array.isArray(x.scores)).forEach(s=>s.scores.forEach(x=>prev.set(x.area,x.score)));
     k.say("Be honest, there are no wrong answers. I’ll ask about "+qs.length+" skills: slide each one to where you are now."+(prev.size?" The faint dot shows where you were last time.":"")+" It takes about two minutes.");

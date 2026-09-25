@@ -305,13 +305,15 @@
         '<div class="ui-page">'+
           '<section class="ui-card ui-hours-sum"><div><strong>'+escHtml(hmText(total))+'</strong><small>logged in total</small></div><div><strong>'+hours.length+'</strong><small>entr'+(hours.length===1?"y":"ies")+'</small></div></section>'+
           (hours.length?'<section class="ui-card ui-logs-dl"><div><strong>'+(fresh.length?fresh.length+" new entr"+(fresh.length===1?"y":"ies"):"Everything’s downloaded")+'</strong><small>'+(fresh.length?(last?"Since your last download on "+escHtml(savedDay(last.downloadedAt)):"Not downloaded yet"):"New entries will be ready to download here")+'</small></div>'+(fresh.length?'<button type="button" class="primary" id="download-otj">Download PDF</button>':"")+'</section>':"")+
-          (hours.length?'<h2 class="ui-hours-h">Your log</h2><div class="ui-card ui-hours-list">'+hours.slice().sort((a,b)=>Number(b.createdAt)-Number(a.createdAt)).map(x=>{const isNew=Number(x.createdAt)>cutoff;return '<div class="ui-hours-item'+(isNew?"":" done")+'"><span class="ui-hours-n">'+escHtml(hmText(Number(x.n||0)))+'</span><span class="ui-hours-copy"><strong>'+escHtml(x.description||"No description recorded.")+'</strong><small>'+escHtml(day(x.createdAt))+' · '+(isNew?"<em>New</em>":"Downloaded")+'</small></span></div>'}).join("")+'</div>'
+          (hours.length?'<h2 class="ui-hours-h">Your log</h2><div class="ui-card ui-hours-list">'+hours.slice().sort((a,b)=>Number(b.createdAt)-Number(a.createdAt)).map(x=>{const isNew=Number(x.createdAt)>cutoff;return '<div class="ui-hours-item'+(isNew?"":" done")+'"><span class="ui-hours-n">'+escHtml(hmText(Number(x.n||0)))+'</span><span class="ui-hours-copy"><strong>'+escHtml(x.description||"No description recorded.")+'</strong><small>'+escHtml(day(x.createdAt))+' · '+(isNew?"<em>New</em>":"Downloaded")+(x.auto?' · <span class="ui-auto-tag">Logged by Evia</span>':"")+'</small></span>'+(x.auto&&isNew?'<button type="button" class="ui-auto-x" data-rm-auto="'+escHtml(x.id)+'" aria-label="Remove this entry">×</button>':"")+'</div>'}).join("")+'</div>'+
+            (hours.some(x=>x.auto)?'<p class="ui-auto-note">Evia logs Teach me lessons and writing up your evidence automatically, counting only the time you’re actively working. Off-the-job training only counts in your paid working hours (or if your employer gives you the time back), so remove any entry that doesn’t.</p>':"")
             :'<div class="ui-card ui-empty"><span class="ui-icon-chip">'+icon(ICONS.clock)+'</span><p>No off-the-job learning logged yet. Tap Evia and choose <strong>Log my hours</strong>.</p></div>')+
           (batches.length?'<h2 class="ui-hours-h">Past downloads</h2><div class="ui-card ui-hours-list">'+batches.map(b=>'<div class="ui-hours-item ui-batch"><span class="ui-hours-copy"><strong>'+escHtml(savedDay(b.downloadedAt))+'</strong><small>'+(b.entryIds||[]).length+' entr'+((b.entryIds||[]).length===1?"y":"ies")+'</small></span><button type="button" class="secondary" data-batch="'+escHtml(b.id)+'">Download again</button></div>').join("")+'</div>':"")+
         '</div>';
       $("#ui-logs-back").onclick=()=>nav("course");
       const dl=$("#download-otj");if(dl)dl.onclick=()=>downloadOTJPDF("new");
       document.querySelectorAll("[data-batch]").forEach(b=>b.onclick=()=>downloadOTJPDF(b.dataset.batch));
+      document.querySelectorAll("[data-rm-auto]").forEach(b=>b.onclick=()=>{if(!confirm("Remove this entry from your learning log?"))return;const i=hours.findIndex(x=>x.id===b.dataset.rmAuto);if(i>=0){hours.splice(i,1);persist();openLearningLogs()}});
       window.scrollTo(0,0);
     });
   }
@@ -775,7 +777,7 @@
     });
   }
   /* Evia steps aside while any panel other than her chat is open. */
-  const panelWatch=()=>{const m=document.getElementById("modal-root");const open=!!(m&&m.querySelector(".overlay,.profile-overlay,.ksb-modal-overlay")&&!m.querySelector(".chat-sheet"))||!!document.querySelector(".dw-overlay,.tm");document.body.classList.toggle("ui-panel-open",open)};
+  const panelWatch=()=>{const m=document.getElementById("modal-root");const open=!!(m&&m.querySelector(".overlay,.profile-overlay,.ksb-modal-overlay")&&!m.querySelector(".chat-sheet"))||!!document.querySelector(".dw-overlay,.tm,.ex");document.body.classList.toggle("ui-panel-open",open)};
   new MutationObserver(()=>{enhanceDates();panelWatch()}).observe(document.getElementById("modal-root")||document.body,{childList:true,subtree:true});
   new MutationObserver(panelWatch).observe(document.body,{childList:true});
   window.eviaDateWheel=openDateWheel;
