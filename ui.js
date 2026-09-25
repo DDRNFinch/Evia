@@ -691,6 +691,22 @@
   const originalNav=window.nav,originalOpenUnit=window.openUnit;
   window.nav=function(s){withFade(()=>originalNav(s))};
   window.openUnit=function(i){withFade(()=>originalOpenUnit(i))};
+  /* The other full pages fade the same way. */
+  ["openSupportingEvidence","eviaOpenSendToPortfolio"].forEach(name=>{const f=window[name];if(typeof f==="function")window[name]=function(){const args=arguments;return withFade(()=>f.apply(this,args))}});
+  /* Pop-up panels fade out when closed with ✕ or a tap outside, instead of vanishing. */
+  const fadeClose=(e,trigger)=>{
+    const ov=trigger.closest("#modal-root .overlay");
+    if(!ov||trigger.dataset.fading==="1"||reduced())return;
+    e.stopImmediatePropagation();e.preventDefault();
+    trigger.dataset.fading="1";ov.classList.add("ui-closing");
+    setTimeout(()=>{if(document.body.contains(trigger))trigger.click()},170);
+  };
+  document.addEventListener("click",e=>{
+    const t=e.target;if(!(t instanceof Element))return;
+    const btn=t.closest("#modal-root .close,#modal-root #x");
+    if(btn){fadeClose(e,btn);return}
+    if(t.matches("#modal-root .overlay")&&!t.querySelector(".chat-sheet"))fadeClose(e,t);
+  },true);
   window.chat=function(opts){hideBubble();originalChat();enhanceChat(opts);if(window.eviaMood)window.eviaMood("happy")};
   $("#evia-fab").onclick=window.chat;
   window.eviaCoach={analyse,suggestion,checkUnit,showStats};

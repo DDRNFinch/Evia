@@ -1123,3 +1123,13 @@ html body .chat-sheet .chat{flex:1 1 auto;height:auto!important;min-height:0;bac
 html[data-a11y-motion="reduce"] body .chat-sheet,html[data-a11y-motion="reduce"] #chat *{animation:none!important;transition:none!important}
 #chat .ui-action .ui-action-icon{display:grid}
 .cf-levels{grid-template-columns:1fr 1fr}.cf-level{flex-direction:row;justify-content:flex-start;gap:10px;padding:10px 12px;font-size:13px;text-align:left}
+
+/* ---------- Smooth everywhere: panels fade out, buttons press softly ---------- */
+#modal-root .overlay{animation:uiOverlayIn .2s ease both}
+#modal-root .overlay.ui-closing{opacity:0!important;transition:opacity .17s ease!important}
+#modal-root .overlay.ui-closing .sheet{transform:translateY(10px);transition:transform .17s ease}
+@keyframes uiOverlayIn{from{opacity:0}to{opacity:1}}
+button.primary,button.secondary,.pv-card,.ev-tile-main,.ev-tile-share,.unit-card,.cf-level,.hw-preset,.bottom-nav button,.ui-tile,.pr-row,.pr-task{transition:transform .12s ease,opacity .15s ease,background .15s ease,box-shadow .15s ease}
+button.primary:active,button.secondary:active,.pv-card:active,.ev-tile-main:active,.ev-tile-share:active,.unit-card:active,.cf-level:active,.hw-preset:active,.bottom-nav button:active,.ui-tile:active,.pr-row:active,.pr-task:active{transform:scale(.97)}
+@media (prefers-reduced-motion:reduce){#modal-root .overlay{animation:none}button,.pv-card,.unit-card{transition:none!important}}
+html[data-a11y-motion="reduce"] #modal-root .overlay{animation:none}
