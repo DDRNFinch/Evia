@@ -26,7 +26,7 @@
     maths:{measure:t=>bestTestSince(["maths"],t.createdAt),pct:true,action:["Maths test","maths"]},
     english:{measure:t=>bestTestSince(["english"],t.createdAt),pct:true,action:["English test","english"]},
     skill:{measure:t=>skillMap().get(t.param)||t.baseline,action:["Rate my skills","confidence"]},
-    quality:{measure:(t,S)=>S.coverage||0,pct:true,action:["Go to Course","course"]},
+    quality:{measure:(t,S)=>S.coverage||0,pct:true,action:["Go to My course","course"]},
     scenarios:{measure:t=>{const p=window.eviaScenarios&&window.eviaScenarios.progress().topics.find(x=>x.id===t.param);return p?p.done:0},action:["Open scenarios","scenarios"]},
     streak:{measure:(t,S)=>S.streak,unit:"weeks",action:["Add evidence","course"]},
     rate:{measure:(t,S)=>S.confidence.sessions?1:0,action:["Rate my skills","confidence"]}

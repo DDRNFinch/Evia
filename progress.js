@@ -201,7 +201,7 @@
           (S.weeksLeft!=null?stat("Weeks left",S.weeksLeft):"")+
           stat((nvqOn()?"Site jobs":"Units")+" not started",S.unitsLeft)+
           (S.weeksPerUnit!=null?stat("Time for each one","about "+Math.max(1,Math.floor(S.weeksPerUnit))+" weeks"):"")+
-          (p.start&&p.end?stat("Course dates",shortDate(p.start)+" – "+longDate(p.end)):"")+
+          (p.start&&p.end?stat("Course dates",longDate(p.start)+" – "+longDate(p.end)):"")+
           (rd?stat("Next review",rd.days<0?"Overdue · was due "+shortDate(rd.due):shortDate(rd.due)):"")+
         '</div>'+
         note(verdict&&verdict.cls==="behind"?"To catch up, start a unit you haven’t touched yet: it ticks off the most in one go. Evia can tell you which one.":"Keep adding evidence as you go. Evia can take you through your progress review when it’s due."));
