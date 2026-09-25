@@ -1095,19 +1095,17 @@ html body .chat-sheet .chat{flex:1 1 auto;height:auto!important;min-height:0;bac
 .hw.done,.ui-widget .done{opacity:.6;pointer-events:none}
 .hw-note textarea{width:100%;min-height:0;border-radius:14px;padding:10px 12px;font-size:15px;margin-bottom:8px}
 .hw-note-actions{display:flex;gap:8px;justify-content:flex-end}
-/* confidence check */
-.cf{padding:14px;border-radius:18px;background:#fff;border:1px solid var(--ui-line)}
-.cf-top{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:700;color:var(--ui-muted);margin-bottom:8px}
-.cf-dots{display:flex;gap:3px}.cf-dots i{width:6px;height:6px;border-radius:50%;background:#e4e7ec}.cf-dots i.done{background:var(--yellow)}.cf-dots i.now{background:var(--ui-ink)}
-.cf>strong{display:block;font-size:16px;color:var(--ui-ink)}
-.cf p{margin:4px 0 12px;font-size:13.5px;line-height:1.45;color:var(--ui-text)}
-.cf-levels{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.cf-level{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border-radius:14px;border:1.5px solid var(--ui-line);background:#fff;font-size:11.5px;font-weight:700;line-height:1.2;color:var(--ui-text);cursor:pointer;transition:transform .12s ease,background .15s ease,border-color .15s ease}
-.cf-level i{font-style:normal;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#f2f4f7;font-size:14px}
-.cf-level.was{border-style:dashed}
-.cf-level.picked{background:var(--soft,#fff7d6);border-color:var(--yellow);transform:scale(1.04)}
-.cf-level.picked i{background:var(--yellow);color:var(--ui-on-accent)}
-.cf-was{display:block;margin-top:8px;font-size:12px;color:var(--ui-muted)}
+/* confidence check in the chat: one skill at a time, with the slider and last time's dot */
+.cfc{padding:14px;border-radius:18px;background:#fff;border:1px solid var(--ui-line);min-width:0}
+.cfc-top{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--ui-muted);margin-bottom:8px}
+.cfc-dots{display:flex;flex-wrap:wrap;gap:3px;justify-content:flex-end}.cfc-dots i{width:6px;height:6px;border-radius:50%;background:#e4e7ec}.cfc-dots i.done{background:var(--yellow)}.cfc-dots i.now{background:var(--ui-ink)}
+.cfc .cf-row{border:0;padding:0;margin:0;background:none;box-shadow:none}
+.cfc .cf-row-top strong{font-size:16px}
+.cfc .cf-desc{margin:4px 0 12px}
+.cfc-legend{display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:var(--ui-faint)}
+.cfc-was{display:block;margin-top:8px;font-size:12.5px;color:var(--ui-muted)}
+.cfc-next{width:100%;margin-top:12px}
+.cfc.done .cfc-next{display:none}
 /* college task and evidence cards */
 .ut,.ec-item{padding:14px;border-radius:18px;background:#fff;border:1px solid var(--ui-line)}
 .ut-kicker{display:block;font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--yellow-ink)}
@@ -1122,17 +1120,17 @@ html body .chat-sheet .chat{flex:1 1 auto;height:auto!important;min-height:0;bac
 @media (prefers-reduced-motion:reduce){html body .chat-sheet,#chat .bubble,#chat .chat-pill,#chat .ui-widget,#chat .rating-pill{animation:none!important}.ui-score-fill{transition:none}}
 html[data-a11y-motion="reduce"] body .chat-sheet,html[data-a11y-motion="reduce"] #chat *{animation:none!important;transition:none!important}
 #chat .ui-action .ui-action-icon{display:grid}
-.cf-levels{grid-template-columns:1fr 1fr}.cf-level{flex-direction:row;justify-content:flex-start;gap:10px;padding:10px 12px;font-size:13px;text-align:left}
 
 /* ---------- Smooth everywhere: panels fade out, buttons press softly ---------- */
 #modal-root .overlay{animation:uiOverlayIn .2s ease both}
 #modal-root .overlay.ui-closing{opacity:0!important;transition:opacity .17s ease!important}
 #modal-root .overlay.ui-closing .sheet{transform:translateY(10px);transition:transform .17s ease}
 @keyframes uiOverlayIn{from{opacity:0}to{opacity:1}}
-button.primary,button.secondary,.pv-card,.ev-tile-main,.ev-tile-share,.unit-card,.cf-level,.hw-preset,.bottom-nav button,.ui-tile,.pr-row,.pr-task{transition:transform .12s ease,opacity .15s ease,background .15s ease,box-shadow .15s ease}
-button.primary:active,button.secondary:active,.pv-card:active,.ev-tile-main:active,.ev-tile-share:active,.unit-card:active,.cf-level:active,.hw-preset:active,.bottom-nav button:active,.ui-tile:active,.pr-row:active,.pr-task:active{transform:scale(.97)}
+button.primary,button.secondary,.pv-card,.ev-tile-main,.ev-tile-share,.unit-card,.hw-preset,.bottom-nav button,.ui-tile,.pr-row,.pr-task{transition:transform .12s ease,opacity .15s ease,background .15s ease,box-shadow .15s ease}
+button.primary:active,button.secondary:active,.pv-card:active,.ev-tile-main:active,.ev-tile-share:active,.unit-card:active,.hw-preset:active,.bottom-nav button:active,.ui-tile:active,.pr-row:active,.pr-task:active{transform:scale(.97)}
 @media (prefers-reduced-motion:reduce){#modal-root .overlay{animation:none}button,.pv-card,.unit-card{transition:none!important}}
 html[data-a11y-motion="reduce"] #modal-root .overlay{animation:none}
 #chat .ui-actions{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 #chat .ui-action{min-width:0}
 @media (max-width:380px){#chat .ui-action{padding:10px 8px;gap:8px;min-height:52px}#chat .ui-action strong{font-size:13px}.ui-action-icon{width:28px;height:28px}}
+.cfc .cf-desc{white-space:normal;overflow:visible;font-size:13px;line-height:1.45;margin:4px 0 14px}

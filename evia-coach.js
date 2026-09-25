@@ -76,24 +76,38 @@
   }
 
   /* ---------- Confidence check: one skill at a time ---------- */
-  const LEVELS=["Need more training","Know the basics","Quite confident","Mastered"];
+  const LEVELS=["Need more training","Know the basics","Quite confident","Mastered"],SHORT=["Need training","Basics","Confident","Mastered"];
   function confidence(){
     const k=K(),qs=typeof confidenceQuestions==="function"?confidenceQuestions():[];
     if(!qs.length){k.say("I don’t have a skills list for your course yet.");k.replies([{label:"Something else",run:k.somethingElse}]);return}
     const prev=new Map();readJson("evia7-confidence",[]).filter(x=>x&&x.course===course&&Array.isArray(x.scores)).forEach(s=>s.scores.forEach(x=>prev.set(x.area,x.score)));
-    k.say("Be honest, there are no wrong answers. I’ll ask about "+qs.length+" skills; tap how you feel about each. It takes about two minutes.");
+    k.say("Be honest, there are no wrong answers. I’ll ask about "+qs.length+" skills: slide each one to where you are now."+(prev.size?" The faint dot shows where you were last time.":"")+" It takes about two minutes.");
     const scores=[];let i=0;
     const ask=()=>{
       if(i>=qs.length){finish();return}
-      const [area,question]=qs[i];
-      k.widget('<div class="cf"><div class="cf-top"><span>'+(i+1)+' of '+qs.length+'</span><span class="cf-dots">'+qs.map((_,n)=>'<i class="'+(n<i?"done":n===i?"now":"")+'"></i>').join("")+'</span></div><strong>'+esc(area)+'</strong><p>'+esc(question)+'</p><div class="cf-levels">'+LEVELS.map((l,n)=>'<button type="button" class="cf-level'+(prev.get(area)===n+1?" was":"")+'" data-level="'+(n+1)+'"><i>'+(n+1)+'</i><span>'+l+'</span></button>').join("")+'</div>'+(prev.has(area)?'<small class="cf-was">Last time: '+LEVELS[prev.get(area)-1]+'</small>':"")+'</div>',el=>{
-        el.querySelectorAll("[data-level]").forEach(b=>b.onclick=()=>{
-          const score=+b.dataset.level;
-          el.querySelectorAll("[data-level]").forEach(x=>{x.disabled=true;x.classList.toggle("picked",x===b)});
-          el.classList.add("done");
+      const [area,question]=qs[i],was=prev.get(area),v=was||1;
+      /* The same slider as the Practice check: four stops, and a faint dot where you were last time. */
+      k.widget('<div class="cfc"><div class="cfc-top"><span>'+(i+1)+' of '+qs.length+'</span><span class="cfc-dots" aria-hidden="true">'+qs.map((_,n)=>'<i class="'+(n<i?"done":n===i?"now":"")+'"></i>').join("")+'</span></div>'+
+        '<div class="cf-row'+(was?"":" unset")+'"'+(was?' data-level="'+(was<=2?"low":"high")+'"':"")+'><div class="cf-row-top"><strong id="cfc-name-'+i+'">'+esc(area)+'</strong><span class="cf-level">'+(was?esc(SHORT[was-1]):"Slide to rate")+'</span></div>'+
+        '<p class="cf-desc">'+esc(question)+'</p>'+
+        '<div class="cf-track" style="--v:'+v+'"><span class="cf-stops" aria-hidden="true"><i></i><i></i><i></i><i></i></span>'+(was?'<span class="cf-last" style="--l:'+was+'" title="Last time: '+esc(LEVELS[was-1])+'"></span>':"")+'<input type="range" min="1" max="4" step="1" value="'+v+'" aria-labelledby="cfc-name-'+i+'" aria-valuetext="'+(was?esc(LEVELS[v-1]):"Not rated")+'"></div>'+
+        '<div class="cfc-legend" aria-hidden="true"><span>Need training</span><span>Basics</span><span>Confident</span><span>Mastered</span></div></div>'+
+        (was?'<small class="cfc-was">Last time: '+esc(LEVELS[was-1])+' (the faint dot)</small>':"")+
+        '<button type="button" class="chat-pill ui-pill-primary cfc-next"'+(was?"":" disabled")+'><strong>'+(was?"Same as last time":"Next")+'</strong></button></div>',el=>{
+        const row=el.querySelector(".cf-row"),input=el.querySelector("input"),track=el.querySelector(".cf-track"),next=el.querySelector(".cfc-next");
+        const set=()=>{
+          const n=+input.value;row.classList.remove("unset");row.dataset.level=n<=2?"low":"high";track.style.setProperty("--v",n);
+          row.querySelector(".cf-level").innerHTML=esc(SHORT[n-1])+(was&&was!==n?' <small>· was '+esc(SHORT[was-1])+'</small>':"");
+          input.setAttribute("aria-valuetext",LEVELS[n-1]);
+          next.disabled=false;next.querySelector("strong").textContent=i+1<qs.length?"Next":"Finish";
+        };
+        ["input","change","pointerup"].forEach(ev=>input.addEventListener(ev,set));
+        next.onclick=()=>{
+          if(next.disabled)return;
+          const score=+input.value;input.disabled=true;el.firstElementChild.parentElement.classList.add("done");
           scores.push({area,score,question,answeredAt:new Date().toISOString()});
-          i++;setTimeout(ask,reduced()?0:260);
-        });
+          i++;setTimeout(ask,reduced()?0:200);
+        };
       });
     };
     const finish=()=>{
