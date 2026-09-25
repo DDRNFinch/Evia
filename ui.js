@@ -710,6 +710,50 @@
     const lp=$("#download-last-otj");if(lp)lp.onclick=()=>downloadOTJPDF("last");
   }
 
+  /* ---------- Date wheel: every date field opens a day / month / year wheel instead of the phone's calendar ---------- */
+  const MONTHS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const fmtDate=v=>{if(!v)return"";const d=new Date(v+"T12:00:00");return isNaN(d)?"":d.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})};
+  function openDateWheel(input,label){
+    const ITEM=40,now=new Date(),cur=input.value?new Date(input.value+"T12:00:00"):now;
+    const years=[];for(let y=now.getFullYear()-8;y<=now.getFullYear()+8;y++)years.push(y);
+    const col=(name,vals,fmt)=>'<div class="hw-col dw-col" data-col="'+name+'" tabindex="0" role="listbox" aria-label="'+name+'"><div class="hw-pad"></div>'+vals.map(v=>'<div class="hw-item" data-v="'+v+'" role="option">'+fmt(v)+'</div>').join("")+'<div class="hw-pad"></div></div>';
+    const ov=document.createElement("div");ov.className="overlay dw-overlay";
+    ov.innerHTML='<section class="sheet pr-sheet dw-sheet" role="dialog" aria-modal="true" aria-label="'+escHtml(label||"Choose a date")+'"><div class="sheet-head"><div><div class="chat-kicker">CHOOSE A DATE</div><h2>'+escHtml(label||"Date")+'</h2></div><button class="close" type="button" aria-label="Close">×</button></div>'+
+      '<div class="hw dw"><div class="hw-band" aria-hidden="true"></div>'+col("Day",[...Array(31).keys()].map(i=>i+1),v=>v)+col("Month",[...Array(12).keys()],v=>MONTHS[v])+col("Year",years,v=>v)+'</div>'+
+      '<p class="hw-readout dw-readout" aria-live="polite"></p><div class="pr-actions"><button type="button" class="secondary dw-clear">Clear</button><button type="button" class="primary dw-ok">Done</button></div></section>';
+    document.body.appendChild(ov);
+    const cols={d:ov.querySelector('[data-col="Day"]'),m:ov.querySelector('[data-col="Month"]'),y:ov.querySelector('[data-col="Year"]')},out=ov.querySelector(".dw-readout");
+    const idx=c=>Math.round(c.scrollTop/ITEM);
+    const val=()=>{const y=years[Math.max(0,Math.min(years.length-1,idx(cols.y)))],m=Math.max(0,Math.min(11,idx(cols.m))),max=new Date(y,m+1,0).getDate(),d=Math.min(max,Math.max(1,idx(cols.d)+1));return {y,m,d,max}};
+    const show=()=>{const v=val();Object.values(cols).forEach(c=>{const i=idx(c);c.querySelectorAll(".hw-item").forEach((it,n)=>it.classList.toggle("on",n===i))});
+      cols.d.querySelectorAll(".hw-item").forEach((it,n)=>it.classList.toggle("off",n+1>v.max));
+      out.textContent=new Date(v.y,v.m,v.d).toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"})};
+    Object.values(cols).forEach(c=>{let t=null;c.addEventListener("scroll",()=>{clearTimeout(t);t=setTimeout(show,60)},{passive:true});
+      c.addEventListener("keydown",e=>{if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();c.scrollBy({top:e.key==="ArrowDown"?ITEM:-ITEM})}});
+      c.querySelectorAll(".hw-item").forEach((it,n)=>it.onclick=()=>c.scrollTo({top:n*ITEM,behavior:reduced()?"auto":"smooth"}))});
+    requestAnimationFrame(()=>{cols.d.scrollTop=(cur.getDate()-1)*ITEM;cols.m.scrollTop=cur.getMonth()*ITEM;cols.y.scrollTop=Math.max(0,years.indexOf(cur.getFullYear()))*ITEM;show()});
+    const close=()=>{ov.classList.add("ui-closing");setTimeout(()=>ov.remove(),reduced()?0:170)};
+    const set=v=>{input.value=v;input.dispatchEvent(new Event("input",{bubbles:true}));input.dispatchEvent(new Event("change",{bubbles:true}));const b=input.nextElementSibling;if(b&&b.classList.contains("dw-field"))paintField(b,input)};
+    ov.querySelector(".close").onclick=close;
+    ov.addEventListener("click",e=>{if(e.target===ov)close()});
+    ov.querySelector(".dw-clear").onclick=()=>{set("");close()};
+    ov.querySelector(".dw-ok").onclick=()=>{const v=val();set(v.y+"-"+String(v.m+1).padStart(2,"0")+"-"+String(v.d).padStart(2,"0"));close()};
+  }
+  const CAL='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>';
+  function paintField(btn,input){btn.innerHTML='<span>'+(input.value?escHtml(fmtDate(input.value)):'<em>Choose a date</em>')+'</span>'+CAL}
+  function enhanceDates(root){
+    (root||document).querySelectorAll('input[type="date"]:not([data-dw])').forEach(input=>{
+      input.dataset.dw="1";
+      const label=(input.closest("label")&&input.closest("label").childNodes[0]&&input.closest("label").childNodes[0].textContent.trim())||input.getAttribute("aria-label")||"Date";
+      input.type="hidden";
+      const btn=document.createElement("button");btn.type="button";btn.className="dw-field";btn.setAttribute("aria-label",label);
+      paintField(btn,input);input.insertAdjacentElement("afterend",btn);
+      btn.onclick=e=>{e.preventDefault();openDateWheel(input,label)};
+    });
+  }
+  new MutationObserver(()=>enhanceDates()).observe(document.getElementById("modal-root")||document.body,{childList:true,subtree:true});
+  window.eviaDateWheel=openDateWheel;
+
   /* ---------- Wire into the app ---------- */
   const originalRender=window.render,originalChat=window.chat;
   /* Two tabs either side of Evia. Old screen names still work: Portfolio is Course's "My evidence", Progress is Learning. */

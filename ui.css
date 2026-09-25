@@ -1235,3 +1235,17 @@ html body .pf-name{border:1.5px solid var(--ui-line)!important;background:#fff!i
 html body .pf-name::placeholder{color:var(--ui-faint);font-weight:600}
 html body .pf-name:focus{border-color:var(--yellow)!important;outline:none}
 .profile-sheet .evia-guide-inline{margin:10px 0 12px}
+
+/* You are here: a line and label, no dot; the label stays on screen at either end */
+.pv-tl-mark::after{display:none}
+.pv-tl-mark.at-start span{transform:none;left:-2px}
+.pv-tl-mark.at-end span{transform:translateX(-100%);left:2px}
+/* Date wheel */
+.dw-field{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:46px;margin-top:6px;padding:0 12px 0 14px;border:1.5px solid var(--ui-line);border-radius:14px;background:#fff;font:inherit;font-size:15px;font-weight:600;color:var(--ui-ink);text-align:left;cursor:pointer}
+.dw-field em{font-style:normal;font-weight:500;color:var(--ui-faint)}
+.dw-field svg{flex:0 0 auto;width:20px;height:20px;fill:none;stroke:var(--yellow-ink);stroke-width:1.8;stroke-linecap:round}
+.dw-overlay{z-index:120}
+.dw .hw-col{width:auto;flex:1}
+.dw .hw-col[data-col="Month"]{flex:1.2}
+.hw-item.off{opacity:.25}
+.dw-readout{font-weight:700}

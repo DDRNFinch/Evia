@@ -30,7 +30,7 @@
     const h=big?14:10;
     return '<div class="pv-timeline'+(big?" big":"")+'" role="img" aria-label="'+(timePct!=null?timePct+"% of the way through the course, ":"")+ksbPct+"% of "+term().many+' with evidence">'+
       '<div class="pv-tl-track" style="height:'+h+'px"><i class="pv-tl-fill pv-grow-x" style="width:'+ksbPct+'%"></i></div>'+
-      (timePct!=null?'<div class="pv-tl-mark pv-fade" style="left:'+clamp(timePct,0,100)+'%"><span>You are here</span></div>':"")+
+      (timePct!=null?'<div class="pv-tl-mark pv-fade'+(timePct<15?" at-start":timePct>85?" at-end":"")+'" style="left:'+clamp(timePct,0,100)+'%"><span>You are here</span></div>':"")+
       '<div class="pv-tl-ends"><span>Start</span><span>End</span></div></div>';
   }
   /* Ring: stroke drawn round from 12 o'clock. */
@@ -112,7 +112,7 @@
   function gather(){
     const S=window.eviaStats.compute(),a=S.a;
     const gap=a.timePct==null?null:a.timePct-a.ksbPct;
-    const verdict=gap==null?null:gap>10?{cls:"behind",text:"A little behind",icon:"!"}:gap<-5?{cls:"ahead",text:"Ahead of schedule",icon:"↑"}:{cls:"ontrack",text:"On track",icon:"✓"};
+    const verdict=gap==null?null:a.timePct<5&&a.ksbPct<5?{cls:"ontrack",text:"Just getting started",icon:"✓"}:gap>10?{cls:"behind",text:"A little behind",icon:"!"}:gap<-5?{cls:"ahead",text:"Ahead of schedule",icon:"↑"}:{cls:"ontrack",text:"On track",icon:"✓"};
     /* Off-the-job: the last 8 weeks, Monday to Sunday. */
     const thisWeek=weekStart(Date.now()),otjWeeks=[];
     for(let i=7;i>=0;i--){const ws=thisWeek-i*WEEK;otjWeeks.push({start:ws,h:hours.filter(x=>{const t=Number(x.createdAt);return t>=ws&&t<ws+WEEK}).reduce((n,x)=>n+Number(x.n||0),0)})}
@@ -143,7 +143,7 @@
     // Off-the-job hours
     const wk=D.otjWeeks;
     out.push(card("otj","Off-the-job hours",hmBig(S.otjTotal),S.otjWeek?"+"+hm(S.otjWeek)+" this week":"Nothing logged this week yet",
-      columns(wk.map(w=>w.h),wk.map((w,i)=>i===wk.length-1?"This wk":i%2===1?shortDate(w.start):""),Math.max(OTJ_WEEK_GOAL*1.4,...wk.map(w=>w.h)),{goal:OTJ_WEEK_GOAL,goalLabel:OTJ_WEEK_GOAL+" h a week",aria:"Off-the-job hours for each of the last 8 weeks",highlight:wk.length-1})));
+      wk.some(w=>w.h>0)?columns(wk.map(w=>w.h),wk.map((w,i)=>i===wk.length-1?"This wk":i%2===1?shortDate(w.start):""),Math.max(OTJ_WEEK_GOAL*1.4,...wk.map(w=>w.h)),{goal:OTJ_WEEK_GOAL,goalLabel:OTJ_WEEK_GOAL+" h a week",aria:"Off-the-job hours for each of the last 8 weeks",highlight:wk.length-1}):empty("Your weekly hours will chart here. Tap Evia and choose Log my hours.")));
     // Tests
     const tests=D.tests,last=tests[tests.length-1];
     out.push(card("tests",nvqOn()?"Knowledge tests":"Tests",last?num(testPct(last),"%"):"–",last?"last score · best "+S.bestTest+"% · "+tests.length+" taken":"No tests taken yet",
@@ -157,7 +157,7 @@
     }else out.push(card("conf","Confidence","–","Not rated yet",empty("Rate your skills with Evia to see your shape")));
     // Activity
     const yr=new Date().getFullYear(),mc=monthCounts(D.counts,yr),thisMonth=mc[new Date().getMonth()],yearTotal=mc.reduce((n,v)=>n+v,0);
-    out.push(card("act","Activity",num(thisMonth)+'<small> this month</small>',"things added in "+new Date().toLocaleDateString("en-GB",{month:"long"})+" · "+yearTotal+" in "+yr+(S.streak?" · "+S.streak+"-week streak":""),'<span class="pv-year">'+yr+'</span>'+yearBars(D.counts,yr)));
+    out.push(card("act","Activity",num(thisMonth)+'<small> this month</small>',"things added in "+new Date().toLocaleDateString("en-GB",{month:"long"})+" · "+yearTotal+" in "+yr+(S.streak?" · "+S.streak+"-week streak":""),yearTotal?'<span class="pv-year">'+yr+'</span>'+yearBars(D.counts,yr):empty("Each month you add evidence or hours shows as a bar here.")));
     // Evidence quality
     out.push(card("quality","Evidence quality",S.coverage==null?"–":num(S.coverage,"%"),S.coverage==null?"Submit a unit with a write-up first":"of the key points covered"+(S.avgPhotos!=null?" · "+(Math.round(S.avgPhotos*10)/10)+(Math.round(S.avgPhotos*10)/10===1?" photo":" photos")+" a pack":""),S.coverage==null?empty("Evia checks each write-up once it’s saved"):dial(S.coverage)));
     // Targets
@@ -186,7 +186,7 @@
     const el=root.querySelector(".pv-sheet");play(el,true);
     return el;
   }
-  const note=text=>'<p class="pv-note"><span aria-hidden="true">💡</span>'+text+'</p>';
+  const note=text=>'<p class="pv-note"><span aria-hidden="true">💡</span><span>'+text+'</span></p>';
   const stat=(label,value)=>'<div class="pv-stat"><span>'+label+'</span><strong>'+value+'</strong></div>';
 
   function deep(id,D){
@@ -224,7 +224,7 @@
       const wk=D.otjWeeks,log=hours.slice().sort((x,y)=>Number(y.createdAt)-Number(x.createdAt));
       const el=sheet("MY PROGRESS","Off-the-job hours",
         '<div class="pv-deep-hero">'+hmBig(S.otjTotal)+'<span>logged in total</span></div>'+
-        columns(wk.map(w=>w.h),wk.map(w=>shortDate(w.start).split(" ")[0]),Math.max(OTJ_WEEK_GOAL*1.4,...wk.map(w=>w.h)),{h:130,goal:OTJ_WEEK_GOAL,goalLabel:OTJ_WEEK_GOAL+" h a week",aria:"Off-the-job hours each week",highlight:wk.length-1})+
+        (wk.some(w=>w.h>0)?'<p class="pv-caption">Each bar is a week, Monday to Sunday.</p>'+columns(wk.map(w=>w.h),wk.map((w,i)=>i===wk.length-1?"This wk":i%2===1?shortDate(w.start):""),Math.max(OTJ_WEEK_GOAL*1.4,...wk.map(w=>w.h)),{h:130,goal:OTJ_WEEK_GOAL,goalLabel:OTJ_WEEK_GOAL+" h a week",aria:"Off-the-job hours each week",highlight:wk.length-1}):'<span class="pv-empty">Nothing logged in the last 8 weeks.</span>')+
         '<div class="pv-stats">'+stat("This week",hm(S.otjWeek))+stat("This month",hm(S.otjMonth))+stat("Entries",log.length)+'</div>'+
         note("Most apprentices need about "+OTJ_WEEK_GOAL+" hours a week; your commitment statement has your exact number. Tell Evia what you did and she’ll log it. Your full log and its PDFs are in <strong>Learning logs</strong> on My course."));
     }
@@ -252,7 +252,7 @@
       sheet("MY PROGRESS","Activity",
         '<div class="pv-deep-hero">'+num(total)+'<span>things added in '+yr+'</span></div>'+
         '<p class="pv-caption">Each bar is a month. It counts the evidence packs, off-the-job entries and supporting files you added.</p>'+
-        '<span class="pv-year">'+yr+'</span>'+yearBars(D.counts,yr,150)+
+        (total?'<span class="pv-year">'+yr+'</span>'+yearBars(D.counts,yr,150):'<span class="pv-empty">Nothing added yet this year.</span>')+
         (last?'<h3 class="pv-h">'+(yr-1)+'</h3>'+columns(monthCounts(D.counts,yr-1),"JFMAMJJASOND".split(""),Math.max(4,...monthCounts(D.counts,yr-1))*1.15,{h:110,aria:"Things added each month in "+(yr-1)}):"")+
         '<div class="pv-stats">'+stat("Weeks in a row",S.streak)+stat("Longest run",S.longest+" week"+(S.longest===1?"":"s"))+stat("Evidence packs",S.allPacks)+stat("Last upload",S.lastUpload?shortDate(S.lastUpload):"None yet")+'</div>'+
         note("Adding a little every week beats a lot at once. A week counts towards your streak when you add anything at all."));
