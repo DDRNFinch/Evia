@@ -119,47 +119,17 @@
     }]
   };
   /* Maths and English: the same style, for every course, when switched on in the profile. No off-the-job time. */
-  const FS=[
-    {unit:"Maths",fs:"maths",lessons:[
-      {id:"ma1",title:"Measuring and units",blurb:"Millimetres, metres and working them out",steps:[
-        {t:"learn",pic:"tape",title:"Millimetres and metres",text:"On site we measure in millimetres (mm) and metres (m). There are 1,000 mm in a metre and 10 mm in a centimetre. Drawings are usually in millimetres."},
-        {t:"choice",q:"How many millimetres are in 2.4 m?",opts:["24","240","2,400","24,000"],a:2,why:"Multiply metres by 1,000: 2.4 × 1,000 = 2,400 mm."},
-        {t:"choice",q:"A piece is 215 mm long. What is that in metres?",opts:["0.215 m","2.15 m","21.5 m","0.0215 m"],a:0,why:"Divide millimetres by 1,000: 215 ÷ 1,000 = 0.215 m."},
-        {t:"match",q:"Match the measurements that are the same",pairs:[["1 m","1,000 mm"],["1 cm","10 mm"],["0.5 m","500 mm"],["1 km","1,000 m"]]},
-        {t:"choice",q:"You cut 450 mm off a 2.4 m length. How much is left?",opts:["1,850 mm","1,950 mm","2,050 mm","1,995 mm"],a:1,why:"Change to the same unit first: 2,400 − 450 = 1,950 mm."},
-        {t:"tf",q:"Four lots of 75 mm makes 300 mm.",a:true,why:"75 × 4 = 300. Repeated measurements are just multiplication."}
-      ]},
-      {id:"ma2",title:"Area, ratio and extra",blurb:"Working out how much you need",steps:[
-        {t:"learn",pic:"area",title:"Area",text:"Area is length × width (or height), in square metres (m²). A wall 5 m long and 2 m high is 5 × 2 = 10 m²."},
-        {t:"choice",q:"A wall is 4 m long and 1.5 m high. What is its area?",opts:["5.5 m²","6 m²","8 m²","60 m²"],a:1,why:"4 × 1.5 = 6 m²."},
-        {t:"learn",title:"How much to order",text:"To estimate materials, work out the area, then how many you need per m². Then add a bit extra for cuts and breakages, often 5 to 10%."},
-        {t:"choice",q:"A floor is 12 m². Each board covers 2 m². How many boards before any extra?",opts:["6","10","14","24"],a:0,why:"12 ÷ 2 = 6 boards."},
-        {t:"choice",q:"You need 50 lengths. Add 10% extra. How many do you order?",opts:["51","55","60","500"],a:1,why:"10% of 50 is 5, so 50 + 5 = 55."},
-        {t:"choice",q:"A 1:4 mix uses 12 buckets of sand. How much cement?",opts:["2 buckets","3 buckets","4 buckets","48 buckets"],a:1,why:"1:4 means sand is 4 times the cement: 12 ÷ 4 = 3 buckets."}
-      ]}
-    ]},
-    {unit:"English",fs:"english",lessons:[
-      {id:"en1",title:"Clear sentences",blurb:"Capitals, full stops and joining ideas",steps:[
-        {t:"learn",pic:"write",title:"Start and finish properly",text:"Every sentence starts with a capital letter and ends with a full stop. Names, places, days and “I” always have capitals. Keep sentences short: one idea each."},
-        {t:"choice",q:"Which is written correctly?",opts:["i checked the level and it was plumb","I checked the level. It was plumb.","I checked the level it was plumb.","i Checked the level, It was plumb"],a:1,why:"Two ideas, two sentences, each with a capital letter and a full stop."},
-        {t:"tf",q:"In “We started on Monday in Leeds.”, Monday and Leeds need capital letters.",a:true,why:"Days of the week and place names always start with a capital."},
-        {t:"order",q:"Put the words in order to make a sentence",items:["First","I","checked","the","drawings."],why:"A sentence starts with the capital letter and ends with the full stop."},
-        {t:"choice",q:"Which is the best way to join these? “I wore gloves. Cement can burn skin.”",opts:["I wore gloves because cement can burn skin.","I wore gloves, cement can burn skin.","I wore gloves cement can burn skin.","I wore gloves and, cement can burn skin"],a:0,why:"“Because” joins the reason to what you did."},
-        {t:"match",q:"Match each word to what it means",pairs:[["their","Belonging to them"],["there","A place"],["they’re","They are"],["you’re","You are"]]}
-      ]},
-      {id:"en2",title:"Writing up your work",blurb:"Order, reasons and what you learned",steps:[
-        {t:"learn",title:"A good write-up",text:"Say what you did, in order, and why. Use words like first, then, after that and finally. Write in full sentences, not text speak, as your assessor will read it."},
-        {t:"order",q:"Put this write-up in order",items:["First, I checked the drawings and measurements.","Then I set out the job and checked it was square.","After that, I did the main work, checking as I went.","Finally, I cleaned up and checked the quality."],why:"Sequence words make the order of the job easy to follow."},
-        {t:"choice",q:"Which is best for your portfolio?",opts:["gonna finish it 2moro","I will finish the job tomorrow.","finish tmrw lol","will do tmrw"],a:1,why:"Full words and a full sentence: it’s a formal record of your work."},
-        {t:"choice",q:"Which sentence explains why, not just what?",opts:["I used a spirit level.","I used a spirit level to check each part was level, so the finished job would be right.","Spirit level.","I had a level."],a:1,why:"Adding the reason shows you understand the job."},
-        {t:"tf",q:"“I should of checked it” is correct.",a:false,why:"It’s “should have” (or “should’ve”), never “should of”."},
-        {t:"choice",q:"Which is a good “what I learned” sentence?",opts:["It was ok.","I learned to check the drawings twice, because a small mistake at the start grows as the job goes on.","Nothing really.","Learned stuff."],a:1,why:"Say what you learned and why it matters. This is what assessors look for."}
-      ]}
-    ]}
-  ];
+  /* Maths and English come from teach-maths.js and teach-english.js (Functional Skills Level 2, by area). */
+  const FS=[];
   const profile=()=>{try{return JSON.parse(localStorage.getItem("evia7-profile")||"{}")||{}}catch(_){return {}}};
   /* Trade units for the course, then maths and English if they're switched on in the profile. */
-  const trade=()=>COURSES[typeof course!=="undefined"?course:""]||[];
+  /* Lessons written in the teach-*.js files (window.EVIA_TEACH) join the built-in Mixing mortar pilot. */
+  const EXT=window.EVIA_TEACH||{courses:{},fs:[]};
+  Object.keys(EXT.courses).forEach(c=>{COURSES[c]=(COURSES[c]||[]).concat(EXT.courses[c])});
+  if(EXT.fs&&EXT.fs.length)FS.splice(0,FS.length,...EXT.fs);
+  /* Units follow the order of the course (lessons for units not in the course list go last). */
+  const courseOrder=()=>{try{return data().u.map(u=>u[0])}catch(_){return []}};
+  const trade=()=>{const list=COURSES[typeof course!=="undefined"?course:""]||[],o=courseOrder();return list.slice().sort((a,b)=>{const x=o.indexOf(a.unit),y=o.indexOf(b.unit);return (x<0?999:x)-(y<0?999:y)})};
   const units=()=>trade().concat(FS);
   const available=()=>true;
   const hasCourse=()=>trade().length>0;
@@ -202,9 +172,9 @@
   const LOCK='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="11" width="12" height="9" rx="2"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>';
   function unitHtml(u,L,counter){
     const d=u.lessons.filter(l=>isDone(L,l)).length,nextI=u.lessons.findIndex(l=>!isDone(L,l));
-    return '<section class="tm-unit'+(u.fs?" fs":"")+'"><div class="tm-unit-head"><span class="tm-unit-k">'+(u.fs?"Functional skills":"Unit")+'</span><h2>'+esc(u.unit)+'</h2><small>'+u.lessons.length+' lessons'+(u.fs?"":" · covers the whole unit")+'</small><span class="tm-unit-bar"><i style="width:'+Math.round(d/u.lessons.length*100)+'%"></i></span></div>'+
+    return '<section class="tm-unit'+(u.fs?" fs":"")+'"><div class="tm-unit-head"><span class="tm-unit-k">'+(u.fs?"Level 2":"Unit")+'</span><h2>'+esc(u.unit)+'</h2><small>'+u.lessons.length+' lessons'+(u.fs?"":" · covers the whole unit")+'</small><span class="tm-unit-bar"><i style="width:'+Math.round(d/u.lessons.length*100)+'%"></i></span></div>'+
       '<ol class="tm-path">'+u.lessons.map((l,k)=>{
-        const n=counter.n++,r=L[l.id],state=isDone(L,l)?"done":k===nextI?"next":"locked",res=state==="next"&&resumeOf(l.id);
+        const n=counter.n++,r=L[l.id],state=isDone(L,l)?"done":k===nextI?"next":u.fs?"open":"locked",res=state==="next"&&resumeOf(l.id);
         return '<li class="tm-node '+state+'" style="--i:'+(n%4)+'"><button type="button" data-lesson="'+l.id+'"'+(state==="locked"?' disabled aria-disabled="true"':"")+' aria-label="'+esc(l.title)+(state==="done"?", done":state==="locked"?", locked":"")+'">'+
           '<span class="tm-dot">'+(state==="done"?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>':state==="locked"?LOCK:'<b>'+(k+1)+'</b>')+'</span>'+
           (state==="next"?'<span class="tm-start">'+(res?"Carry on":"Start")+'</span>':"")+
@@ -219,10 +189,10 @@
     const done=all.filter(l=>isDone(L,l)).length,next=all.find(l=>!isDone(L,l)),name=String(p.name||"").split(/\s+/)[0];
     const title=section==="course"?"Teach me":"Teach me · "+(section==="maths"?"Maths":"English");
     const say=!all.length?"I don’t have lessons for your course yet, but they’re on the way. You can try maths or English in the meantime.":
-      done===0?"Hi"+(name?" "+esc(name):"")+"! I’ll teach you "+(section==="course"?"everything in each unit":section==="maths"?"the maths you use on site":"clear writing for your portfolio")+", a few minutes at a time. Tap the first lesson to start.":
+      done===0?"Hi"+(name?" "+esc(name):"")+"! I’ll teach you "+(section==="course"?"everything in each unit":section==="maths"?"Level 2 maths, with examples from site":"Level 2 reading, writing, speaking and listening")+", a few minutes at a time. Tap "+(section==="course"?"the first lesson":"any lesson")+" to start.":
       done===all.length?"You’ve finished every lesson here. Nice work! Replay any lesson to beat your score.":
       "Welcome back"+(name?", "+esc(name):"")+". Next up: <strong>"+esc(next.title)+"</strong>.";
-    const others=section==="course"?(typeof data==="function"?data().u.map(u=>u[0]):[]).filter(n=>!us.some(u=>u.unit===n)).slice(0,4):[];
+    const others=section==="course"&&!(window.eviaNvq&&window.eviaNvq.on())?courseOrder().filter(n=>!us.some(u=>u.unit===n)).slice(0,4):[];
     const counter={n:0};
     root.innerHTML='<header class="tm-bar"><button type="button" class="tm-x" aria-label="Close">×</button><strong>'+title+'</strong><span class="tm-count">'+done+' / '+all.length+'</span></header>'+
       '<div class="tm-scroll">'+
@@ -273,7 +243,8 @@
       }
       if(s.t==="choice"||s.t==="tf"){
         const opts=s.t==="tf"?["True","False"]:s.opts,ans=s.t==="tf"?(s.a?0:1):s.a;
-        el.innerHTML='<h2 class="tm-q">'+esc(s.q)+'</h2><div class="tm-opts'+(s.pics?" pics":"")+(s.t==="tf"?" tf":"")+'">'+opts.map((o,k)=>'<button type="button" class="tm-opt" data-k="'+k+'">'+(typeof o==="object"?pic(o.pic)+'<span>'+esc(o.text)+'</span>':'<span>'+esc(o)+'</span>')+'</button>').join("")+'</div>';
+        const order=opts.map((_,k)=>k);if(s.shuffle)order.sort(()=>Math.random()-.5);
+        el.innerHTML='<h2 class="tm-q">'+esc(s.q)+'</h2><div class="tm-opts'+(s.pics?" pics":"")+(s.t==="tf"?" tf":"")+'">'+order.map(k=>{const o=opts[k];return '<button type="button" class="tm-opt" data-k="'+k+'">'+(typeof o==="object"?pic(o.pic)+'<span>'+esc(o.text)+'</span>':'<span>'+esc(o)+'</span>')+'</button>'}).join("")+'</div>';
         let picked=null;
         reset=()=>{picked=null;el.querySelectorAll(".tm-opt").forEach(b=>{b.classList.remove("on","wrong");b.disabled=false});g.disabled=true;g.textContent="Check";g.onclick=check};
         const check=()=>{const ok=picked===ans;const b=el.querySelector('[data-k="'+picked+'"]');b.classList.add(ok?"right":"wrong");if(ok)el.querySelectorAll(".tm-opt").forEach(x=>x.disabled=true);retryOrNext(ok,s.why)};

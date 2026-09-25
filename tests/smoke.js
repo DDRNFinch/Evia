@@ -248,7 +248,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       O.start("teach|Mixing mortar",{description:"Teach me: interactive lessons with Evia on Mixing mortar"});O._add("teach|Mixing mortar",125000);O.stop("teach|Mixing mortar",{learned:"Mixing it"});
       const e=hours.find(x=>x.auto&&x.autoKey&&x.autoKey.startsWith("teach|Mixing mortar"));
       const p=JSON.parse(localStorage.getItem("evia7-profile")||"{}");p.mathsEnabled=true;localStorage.setItem("evia7-profile",JSON.stringify(p));
-      window.eviaTeach.open("maths");await w(100);const b=document.querySelector('[data-lesson="ma1"]');if(b)b.click();await w(100);
+      window.eviaTeach.open("maths");await w(100);const b=document.querySelector('[data-lesson="m2-num"]');if(b)b.click();await w(100);
       const mathsTimed=O.running("teach|Maths");document.querySelector(".tm-x").click();await w(80);document.querySelector(".tm-x").click();await w(250);
       return {logged:!!e&&e.mins===2&&hours.length===before+1,learned:!!e&&/Mixing it/.test(e.learned),maths:!!b,mathsTimed};
     });
@@ -260,7 +260,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       const p=JSON.parse(localStorage.getItem("evia7-profile")||"{}");p.englishEnabled=false;localStorage.setItem("evia7-profile",JSON.stringify(p));
       window.eviaOpenProfile();await w(300);const sw=document.getElementById("profile-english");sw.checked=true;sw.dispatchEvent(new Event("change",{bubbles:true}));
       document.getElementById("profile-close").click();await w(100);
-      window.eviaTeach.open("english");await w(150);const ok=!!document.querySelector('[data-lesson="en1"]');document.querySelector(".tm-x").click();await w(250);
+      window.eviaTeach.open("english");await w(150);const ok=!!document.querySelector('[data-lesson="e2-read"]');document.querySelector(".tm-x").click();await w(250);
       return ok&&JSON.parse(localStorage.getItem("evia7-profile")).englishEnabled===true});
     check("English lessons open from Teach me, and the profile switch saves even when closed without saving",fsOn);
 
