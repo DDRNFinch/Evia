@@ -1896,3 +1896,9 @@ html body .tp .tp-mid{font-size:24px;font-weight:800;fill:var(--ui-ink)}html bod
 .tp-box{fill:#f7f5ef;stroke:#9aa1ab;stroke-width:1.4}.tp-access{fill:#fff;stroke:#4b5563;stroke-width:1.4}.tp-memb{fill:#2f6db5}.tp-memb2{fill:#2b3038}
 .tp-airflow{fill:none;stroke:#7fb6e6;stroke-width:2;stroke-dasharray:4 3}.tp-wallp2{fill:#e8e3d6;stroke:#9aa1ab}.tp-scribe{fill:none;stroke:#7a5230;stroke-width:1.5}.tp-frame3{fill:#f0f0f0;stroke:#9aa1ab}
 .tp-vcl{fill:#e2483d}.tp-deck{fill:#c9a36b;stroke:#7a5230;stroke-width:.8}
+.tp-roof{fill:#7b8490;stroke:#2b3240;stroke-width:1.2}.tp-leadf{fill:#9aa3ad;stroke:#4b5563;stroke-width:1.1;stroke-linejoin:round}.tp-pot{fill:#b5653d;stroke:#6e3822;stroke-width:1.2}
+.tp-bf{fill:#d9b77e}.tp-rec{fill:#7a3524}.tp-chamf{fill:rgba(255,255,255,.55);stroke:rgba(0,0,0,.25);stroke-width:.8}.tp-shadow2{fill:rgba(0,0,0,.28)}
+.tp-soil{fill:#9c7a55}.tp-backfill{fill:#b99a74}.tp-gravel{fill:#d4ccb8;stroke:#9b927c;stroke-width:1}.tp-pipe3{fill:none;stroke:#c8642c;stroke-width:9;stroke-linecap:butt}
+.tp-trench{fill:#cbb08a;stroke:#8a6d45;stroke-width:1}.tp-bm{fill:var(--ui-ink);stroke:var(--ui-ink);stroke-width:1.6}
+.tp-aircrete{fill:#eceae4;stroke:#8a8f97;stroke-width:.8}.tp-scoop{fill:#c5ccd4;stroke:#4b5563;stroke-width:1.4}.tp-teeth2{fill:none;stroke:#4b5563;stroke-width:1.4;stroke-linejoin:round}
+.tp-rod{fill:none;stroke:#c8935a;stroke-width:4;stroke-linecap:round}.tp-gridl{stroke:rgba(16,24,40,.12);stroke-width:1}.tp-bar{fill:var(--yellow);stroke:var(--yellow-ink);stroke-width:1}

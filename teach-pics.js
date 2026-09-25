@@ -480,6 +480,95 @@
       t(81,108,"Warm roof","tp-sm")+t(81,121,"insulation above the deck","tp-xs")+t(239,108,"Cold roof","tp-sm")+t(239,121,"between joists, ventilated","tp-xs"),
       "Two flat roof sections: a warm roof with insulation above the deck over a vapour control layer, and a cold roof with insulation between the joists and a ventilated gap above")
   });
+  /* ---------- Trowel Level 3 ---------- */
+  const polar=(cx,cy,R,a)=>r(cx+R*Math.sin(a))+' '+r(cy-R*Math.cos(a));
+  Object.assign(P,{
+    /* A segmental arch, rough ringed: 17 voussoirs on end radiating from one centre, an odd number so a key sits at
+       the crown, skewbacks on the radial lines at each end. Span 1,170 mm, rise 230 mm (about a fifth of the span). */
+    arch:()=>{const s=.12,cx=160,sp=90,S=70,rise=28,R=(S*S+rise*rise)/(2*rise),cy=sp+R-rise,D=215*s,R2=R+D,th=Math.asin(S/R),n=17,dA=2*th/n,g=10*s/R;
+      let v="";for(let k=0;k<n;k++){const a0=-th+k*dA+g/2,a1=a0+dA-g;v+='<path class="tp-b'+(1+k%3)+'" d="M'+polar(cx,cy,R,a0)+' A'+r(R)+' '+r(R)+' 0 0 1 '+polar(cx,cy,R,a1)+' L'+polar(cx,cy,R2,a1)+' A'+r(R2)+' '+r(R2)+' 0 0 0 '+polar(cx,cy,R2,a0)+' Z"/>'}
+      return svg(320,150,panel(20,6,280,16,s)+
+        '<path class="tp-mortar" d="M'+polar(cx,cy,R,-th)+' A'+r(R)+' '+r(R)+' 0 0 1 '+polar(cx,cy,R,th)+' L'+polar(cx,cy,R2,th)+' A'+r(R2)+' '+r(R2)+' 0 0 0 '+polar(cx,cy,R2,-th)+' Z"/>'+v+
+        '<path class="tp-hole2" d="M90 150 V90 A'+r(R)+' '+r(R)+' 0 0 1 230 90 V150 Z"/><path class="tp-cent" d="M26 90 H294"/>'+
+        dimH(132,90,230,"")+dimV(160,62,90,"",0),
+        "A segmental brick arch over an opening: wedge-shaped voussoirs on end with a key brick at the crown, the springing line across the tops of the jambs, the span and the rise")},
+    /* A chimney stack two bricks wide through a 27° roof, seen from the side: pot and flaunching, two oversailing
+       courses, the flue liner inside (dashed) and stepped flashing tucked into the bed joints. */
+    chimney:()=>{const s=.14,W=440*s,x0=130,roof=x=>160-(x-20)*.5,J=[101.3,90.8,80.3,69.8,59.3];
+      const pts=[];let x=x0;while(x<x0+W-.01){const top=Math.max(...J.filter(j=>j<=roof(x)-7)),nx=Math.min(x0+W,20+(153-top)*2);pts.push([x,top],[nx,top]);x=nx+.01}
+      const step='<path class="tp-leadf" d="M'+x0+' '+roof(x0)+' '+pts.map(p=>'L'+r(p[0])+' '+r(p[1])).join(" ")+' L'+r(x0+W)+' '+r(roof(x0+W))+' Z"/>';
+      return svg(150,130,panel(x0,49.5,W,6,s)+brickwork(x0-3,39,W+6,1,s,BOND.stretcher,{headers:false})+brickwork(x0-6,28.5,W+12,1,s,k=>[102.5].concat(rep([215],6)),{headers:false})+
+        '<path class="tp-mortar" d="M'+(x0-6)+' 28 L150 20 H172 L'+r(x0+W+6)+' 28 Z"/><path class="tp-pot" d="M150 20 L152 4 H170 L172 20 Z"/>'+
+        '<path class="tp-cent" d="M144.4 28 V104 M177.2 28 V88"/>'+
+        '<path class="tp-roof" d="M20 160 L300 20 V160 Z"/>'+step,
+        "A chimney stack through a pitched roof seen from the side: a pot in sloping mortar flaunching, two oversailing courses at the top, a flue liner inside and lead stepped flashing where the stack meets the roof","90 0")},
+    /* Decorative courses in elevation: a dentil course (alternate headers project), a string course in contrasting
+       bricks and a plinth course with a bevelled top above the base. */
+    decor:()=>{const s=.2,X=20,W=280,y=k=>6+k*15,row=(k,f,cls)=>brickwork(X,y(k),W,1,s,()=>f,{headers:false}).replace(/tp-b[123]/g,m=>cls||m);
+      let dent="";const hw=102.5*s,step=112.5*s;for(let i=0;X+i*step<X+W;i++){const w=Math.min(hw,X+W-(X+i*step));dent+='<rect class="'+(i%2?"tp-rec":"tp-b2")+'" x="'+r(X+i*step)+'" y="'+y(1)+'" width="'+r(w)+'" height="13"/>'+(i%2?"":'<rect class="tp-shadow2" x="'+r(X+i*step)+'" y="'+(y(1)+13)+'" width="'+r(w)+'" height="3"/>')}
+      return svg(320,130,'<rect class="tp-mortar" x="'+X+'" y="6" width="'+W+'" height="118"/>'+row(0,BOND.stretcher(0))+row(2,BOND.stretcher(1))+dent+row(3,BOND.stretcher(0))+row(4,BOND.stretcher(1),"tp-bf")+row(5,BOND.stretcher(0))+
+        row(6,BOND.stretcher(1))+'<rect class="tp-chamf" x="'+X+'" y="'+y(6)+'" width="'+W+'" height="4"/>'+row(7,BOND.stretcher(0)),
+        "A brick wall with a dentil course of alternate projecting headers near the top, a string course of contrasting buff bricks across the middle, and a plinth course with a bevelled top near the bottom")},
+    /* A corbel in section: three courses each stepping out a quarter brick (56 mm), 168 mm in all, less than the
+       215 mm wall it comes out of. */
+    corbel:()=>{const s=.34,X=110,W=215*s,c=75*s,b=65*s,top=8;let o="";
+      const N=[3,2,1,0,0];N.forEach((n,k)=>{const w=r(W+n*56.25*s);o+='<rect class="tp-mortar" x="'+X+'" y="'+r(top+k*c)+'" width="'+r(W+(k<4?N[k+1]:n)*56.25*s)+'" height="'+r(k<4?c:b)+'"/><rect class="tp-brick" x="'+X+'" y="'+r(top+k*c)+'" width="'+w+'" height="'+r(b)+'"/>'});
+      return svg(320,132,o+'<path class="tp-cent" d="M'+r(X+W)+' 4 V128"/>',
+        "A corbel cut through: three brick courses each stepping out a quarter brick further than the one below, from a one-brick wall")},
+    /* Brick cladding on a concrete frame, in section: a steel support angle bolted to the slab edge carries the
+       brickwork above; a compressible movement joint sits under it; a cavity tray over it; ties back to the frame. */
+    supportangle:()=>{const s=.4,bx=166,bw=102.5*s,cr=(y,h)=>'<rect class="tp-brick" x="'+bx+'" y="'+y+'" width="'+r(bw)+'" height="'+h+'"/>';
+      return svg(320,150,'<rect class="tp-block" x="60" y="0" width="50" height="58"/><rect class="tp-block" x="60" y="100" width="50" height="50"/><rect class="tp-conc" x="20" y="58" width="90" height="42"/>'+
+        '<rect class="tp-mortar" x="'+bx+'" y="0" width="'+r(bw)+'" height="96"/>'+cr(0,6)+cr(10,26)+cr(40,26)+cr(70,26)+
+        '<path class="tp-dpc" d="M111 40 L'+bx+' 88 V95 H'+r(bx+bw)+'"/>'+
+        '<path class="tp-hang" d="M110 64 H114 V94 H'+r(bx+bw-6)+' V98 H110 Z"/><rect class="tp-nail" x="100" y="72" width="16" height="4"/>'+
+        '<rect class="tp-filler" x="'+bx+'" y="98" width="'+r(bw)+'" height="6"/><rect class="tp-seal" x="'+r(bx+bw-3)+'" y="98" width="3" height="6"/>'+
+        '<rect class="tp-mortar" x="'+bx+'" y="104" width="'+r(bw)+'" height="46"/>'+cr(104,26)+cr(134,16)+
+        '<path class="tp-tie" d="M'+(bx+20)+' 23 H104 M'+(bx+20)+' 127 H104"/>',
+        "A section through brick cladding on a concrete frame: a steel support angle bolted to the slab edge carries the brickwork, a cavity tray runs over it, a compressible movement joint sits under it, and ties hold the brickwork back to the frame")},
+    /* A drain in long section: pipe on a granular bed and surround laid to a steady fall into an inspection chamber,
+       trench backfilled above. The fall is exaggerated so you can see it. */
+    drain:()=>svg(320,130,'<rect class="tp-soil" x="0" y="20" width="320" height="110"/><path class="tp-ground" d="M0 20 H320"/>'+
+      '<rect class="tp-backfill" x="10" y="21" width="230" height="100"/><path class="tp-gravel" d="M10 82 L240 94 V121 H10 Z"/><path class="tp-pipe3" d="M10 94 L246 106"/>'+
+      '<rect class="tp-brick" x="240" y="16" width="12" height="104"/><rect class="tp-brick" x="292" y="16" width="12" height="104"/><rect class="tp-conc" x="240" y="120" width="64" height="8"/>'+
+      '<path class="tp-conc" d="M252 102 Q272 118 292 102 V120 H252 Z"/><rect class="tp-steel" x="236" y="12" width="72" height="5"/><rect class="tp-hole2" x="252" y="17" width="40" height="85"/><path class="tp-conc" d="M252 102 Q272 118 292 102 V120 H252 Z"/>'+
+      '<path class="tp-arrow" d="M60 76 L150 81"/><path class="tp-arrowh" d="M143 76 L151 81 L143 86"/>',
+      "A drain in long section: a pipe on a granular bed laid to a steady fall into a brick inspection chamber with a cover, with the flow arrow showing the water running downhill and the trench backfilled above"),
+    /* Setting out in plan: the foundation trench, building lines on profile boards set clear of the dig, diagonals
+       checked, and a temporary bench mark (TBM) peg. */
+    profiles:()=>{const bh=(x,y)=>'<rect class="tp-wood" x="'+(x-12)+'" y="'+(y-3)+'" width="24" height="6"/><circle class="tp-peg" cx="'+(x-12)+'" cy="'+y+'" r="3"/><circle class="tp-peg" cx="'+(x+12)+'" cy="'+y+'" r="3"/>',
+      bv=(x,y)=>'<rect class="tp-wood" x="'+(x-3)+'" y="'+(y-12)+'" width="6" height="24"/><circle class="tp-peg" cx="'+x+'" cy="'+(y-12)+'" r="3"/><circle class="tp-peg" cx="'+x+'" cy="'+(y+12)+'" r="3"/>';
+      return svg(320,140,'<path class="tp-trench" fill-rule="evenodd" d="M84 29 H236 V111 H84 Z M96 41 H224 V99 H96 Z"/>'+
+        '<path class="tp-string" d="M34 35 H286 M34 105 H286 M90 8 V132 M230 8 V132"/><path class="tp-string2" d="M90 35 L230 105 M230 35 L90 105"/>'+
+        bv(34,35)+bv(286,35)+bv(34,105)+bv(286,105)+bh(90,8)+bh(230,8)+bh(90,132)+bh(230,132)+
+        '<circle class="tp-peg" cx="300" cy="128" r="5"/><path class="tp-bm" d="M293 117 L300 107 L307 117 Z M290 118 H310"/>',
+        "Setting out a building in plan: the foundation trench, string lines on profile boards set back clear of the trench at each end, the diagonals strung to check it's square, and a temporary bench mark peg")},
+    /* Thin joint aircrete blockwork: first course bedded on a normal 10 mm mortar bed, then 2 to 3 mm joints; and the
+       serrated scoop that spreads the jointing mortar. */
+    thinjoint:()=>{const s=.14,bw=440*s,bh=215*s,X=20,W=190;let o="";
+      for(let k=0;k<3;k++){const y=104-1.4-(k+1)*(bh+.42);let x=X-(k%2?bw/2:0);while(x<X+W){const a=Math.max(x,X),w=Math.min(x+bw,X+W)-a;if(w>1)o+='<rect class="tp-aircrete" x="'+r(a)+'" y="'+r(y)+'" width="'+r(w-.42)+'" height="'+r(bh)+'"/>';x+=bw+.42}}
+      return svg(320,130,'<rect class="tp-conc" x="10" y="104" width="210" height="22"/><rect class="tp-mortar" x="'+X+'" y="101.2" width="'+W+'" height="2.8"/><path class="tp-dpc" d="M'+X+' 104 H'+(X+W)+'"/>'+o+
+        '<path class="tp-scoop" d="M236 46 H300 V70 H236 Z"/><path class="tp-teeth2" d="M236 70 '+Array.from({length:8},(_,k)=>'l4 6 l4 -6').join(" ")+'"/><rect class="tp-grip2" x="258" y="30" width="20" height="8" rx="3"/><path class="tp-shank" d="M262 38 V46 M274 38 V46"/>',
+        "Thin joint aircrete blockwork: the first course on a normal mortar bed over the DPC, then courses with 2 to 3 millimetre joints, next to the serrated scoop used to spread the jointing mortar")},
+    /* A wall curved on plan, built in headers so joints stay small, with the trammel (radius rod) swinging from the
+       centre peg to check each course. 2.5 m radius. */
+    curved:()=>{const s=.05,cx=160,cy=140,R=125,D=215*s,h=102.5*s,n=46,th=.96;let o="";
+      for(let k=0;k<n;k++){const a=-th+(k+.5)*2*th/n,c=Math.cos(a),sn=Math.sin(a),px=(rr,w)=>r(cx+rr*sn+w*c)+' '+r(cy-rr*c+w*sn);
+        o+='<path class="tp-b'+(1+k%3)+'" d="M'+px(R-D,-h/2)+' L'+px(R,-h/2)+' L'+px(R,h/2)+' L'+px(R-D,h/2)+' Z"/>'}
+      return svg(320,150,'<path class="tp-mortar" d="M'+polar(cx,cy,R-D,-th)+' A'+(R-D)+' '+(R-D)+' 0 0 1 '+polar(cx,cy,R-D,th)+' L'+polar(cx,cy,R,th)+' A'+R+' '+R+' 0 0 0 '+polar(cx,cy,R,-th)+' Z"/>'+o+
+        '<path class="tp-rod" d="M'+cx+' '+cy+' L'+polar(cx,cy,R,.42)+'"/><circle class="tp-peg" cx="'+cx+'" cy="'+cy+'" r="5"/>',
+        "A wall curved on plan, seen from above, built in headers, with a trammel rod pivoting on a peg at the centre of the curve reaching out to the face of the wall")},
+    /* A simple bar chart programme: when each activity runs and what has to finish first. */
+    gantt:()=>{const rows=[["Set out",0,1],["Foundations",1,3],["Walls to DPC",3,4],["Superstructure",4,8]],X=110,wk=24;
+      return svg(320,130,Array.from({length:9},(_,k)=>'<path class="tp-gridl" d="M'+(X+k*wk)+' 14 V112"/>').join("")+Array.from({length:8},(_,k)=>t(X+k*wk+12,11,String(k+1),"tp-xs")).join("")+
+        rows.map((w,i)=>{const y=20+i*23;return t(56,y+12,w[0],"tp-sm")+'<rect class="tp-bar" x="'+(X+w[1]*wk+2)+'" y="'+y+'" width="'+((w[2]-w[1])*wk-4)+'" height="14" rx="3"/>'}).join("")+t(206,126,"Weeks","tp-xs"),
+        "A bar chart programme over 8 weeks: set out in week 1, foundations weeks 2 and 3, walls to DPC in week 4, superstructure weeks 5 to 8")},
+    /* Repointing in section, face on the left: joints raked out to at least 15 mm, then pointed with matching mortar. */
+    repoint:()=>svg(320,120,[["Raked out",'<rect class="tp-mortar2" x="15" y="39" width="45" height="6"/>'],["Repointed",'<rect class="tp-mortar2" x="15" y="39" width="45" height="6"/><rect class="tp-mortar" x="0" y="39" width="15" height="6"/>']].map((j,i)=>{const x=50+i*140;
+      return '<g transform="translate('+x+' 6)"><rect class="tp-brick" x="0" y="0" width="60" height="39"/><rect class="tp-brick" x="0" y="45" width="60" height="39"/>'+j[1]+'<path class="tp-face" d="M0 -2 V86"/></g>'+t(x+30,108,j[0],"tp-sm")}).join("")+
+      '<path class="tp-thin" d="M124 51 H72"/>'+t(150,54,"15 mm+","tp-xs"),
+      "Repointing cut through the wall, face on the left: the joint raked out at least 15 millimetres deep, then refilled with new mortar to the face")
+  });
   /* The old simple bucket, kept for any lesson that still uses it. */
   P.sbucket=()=>svg(120,100,sbucket(40,34,"tp-sand"),"A bucket");
   T.pics=Object.assign(T.pics||{},P);
