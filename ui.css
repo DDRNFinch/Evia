@@ -2111,3 +2111,19 @@ html[data-evia-expr="hearts"]:not(.evia-happy):not(.evia-sleepy) body .evia-face
 @media (prefers-reduced-motion:reduce){html[data-evia-expr="hearts"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i,html body .evia-face[data-x="hearts"] i{animation:none!important}}
 .evia-face i{position:relative}
 .rw-tabs{grid-template-columns:repeat(4,1fr)!important}.rw-tabs button{font-size:13.5px}
+/* ---------- PPE (rewards.js) ---------- */
+.evia-kit .evia-ppe{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.ek-band{fill:none;stroke:#2b3240;stroke-width:4.5;stroke-linecap:round}
+.ek-cup{stroke-width:1.6}
+.ek-hv{fill:#d4ee2a}.ek-neck{fill:#fffdfa}.ek-strip{fill:#c9d0d8}
+.ek-vest .ek-line>*{fill:none;stroke:var(--evia-shape-stroke,var(--yellow));stroke-width:3px;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+.ek-vest.glow .ek-strip{fill:#fff;filter:drop-shadow(0 0 2px #fff) drop-shadow(0 0 4px #d4ee2a);animation:ekShine 2.2s ease-in-out infinite}
+@keyframes ekShine{0%,100%{opacity:.75}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.ek-vest.glow .ek-strip{animation:none}}
+.evia-face{position:relative}
+.ek-eyes{position:absolute;inset:0;pointer-events:none;z-index:2}
+.ek-eyes b{position:absolute;display:block;box-sizing:border-box}
+.ek-lens{border:var(--bw) solid #2b3240;border-radius:32%;background:rgba(191,224,245,.28)}
+.ek-bridge,.ek-arm{background:#2b3240;border-radius:2px}
+.ek-gog{border:calc(var(--bw)*1.4) solid #2b3240;border-radius:40%/50%;background:rgba(191,224,245,.3)}
+.ek-strap{background:#3a4250;border-radius:3px;z-index:-1}
