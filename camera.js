@@ -30,9 +30,10 @@
     const prompts=(opts.prompts||[]).map(p=>String(p).trim()).filter(Boolean);
     /* Guided mode (guide.js): opts.guide=[{say,hint}] — Evia asks for one thing at a time; Skip or Next moves on. */
     const guide=Array.isArray(opts.guide)&&opts.guide.length?opts.guide:null;
-    const shots=[];let stream=null,step=0,stepStart=0;
+    const shots=[];let stream=null,step=0;
     const el=overlay("cam-photo",
       '<header class="cam-top"><button type="button" class="cam-icon" data-cam-close aria-label="Close camera">'+X+'</button><strong>'+escHtml(opts.title||"Camera")+'</strong><span class="cam-count" aria-live="polite">0 photos</span></header>'+
+      (guide?'<div class="cam-progress" aria-hidden="true"><i></i></div>':"")+
       '<div class="cam-stage"><video playsinline muted autoplay></video><span class="cam-frame" aria-hidden="true"></span></div>'+
       /* Things to capture as plain text under the picture: ideas for what to photograph, nothing to tick off. */
       (guide?'<div class="cam-guide" aria-live="polite"><span class="evia-mini" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span><div><small class="cam-guide-n"></small><p class="cam-guide-say"></p><span class="cam-guide-hint"></span></div></div>':
@@ -43,15 +44,16 @@
     const refresh=()=>{
       count.textContent=shots.length+" photo"+(shots.length===1?"":"s");
       if(guide){
-        const g=guide[step],got=shots.length-stepStart,last=step===guide.length-1;
+        /* The request stays on screen; the learner moves on whenever they're ready. */
+        const g=guide[step],last=step===guide.length-1,P=opts.progress||{done:0,total:guide.length};
         el.querySelector(".cam-guide-n").textContent=(step+1)+" of "+guide.length;
         el.querySelector(".cam-guide-say").textContent=g.say;
-        el.querySelector(".cam-guide-hint").textContent=got?"Got "+got+". Take more if you like, or move on.":g.hint||"";
-        doneBtn.disabled=false;doneBtn.textContent=got?(last?"Finish":"Next"):(last?"Skip and finish":"Skip");
-        doneBtn.classList.toggle("cam-skip",!got);
+        el.querySelector(".cam-guide-hint").textContent=g.hint||"";
+        el.querySelector(".cam-progress i").style.width=Math.round((P.done+step+1)/P.total*100)+"%";
+        doneBtn.disabled=false;doneBtn.textContent=last?"Finish":"Next";
       }else{doneBtn.disabled=!shots.length;doneBtn.textContent=shots.length?"Done ("+shots.length+")":"Done"}
       strip.innerHTML=shots.map((s,i)=>'<span class="cam-thumb"><img src="'+s.url+'" alt="Photo '+(i+1)+'"><button type="button" data-remove="'+i+'" aria-label="Remove photo '+(i+1)+'">'+X+'</button></span>').join("");
-      strip.querySelectorAll("[data-remove]").forEach(b=>b.onclick=()=>{const i=+b.dataset.remove,[s]=shots.splice(i,1);if(s)URL.revokeObjectURL(s.url);if(i<stepStart)stepStart--;refresh()});
+      strip.querySelectorAll("[data-remove]").forEach(b=>b.onclick=()=>{const [s]=shots.splice(+b.dataset.remove,1);if(s)URL.revokeObjectURL(s.url);refresh()});
       strip.scrollLeft=strip.scrollWidth;
     };
     const take=()=>{
@@ -66,7 +68,7 @@
       },"image/jpeg",.88);
     };
     shutter.onclick=take;
-    /* Photos already on the phone can be added without leaving the camera (and count for the current guided step). */
+    /* Photos already on the phone can be added without leaving the camera (including mid-guide). */
     const pick=el.querySelector(".cam-gallery input");
     pick.onchange=()=>{[...pick.files].filter(f=>f&&f.size&&/^image\//.test(f.type||"image/")).forEach(f=>shots.push({blob:f,url:URL.createObjectURL(f),takenAt:f.lastModified||Date.now()}));pick.value="";refresh()};
     const finish=keep=>{
@@ -75,7 +77,7 @@
       if((files.length||guide)&&opts.onDone)opts.onDone(files);
     };
     doneBtn.onclick=()=>{
-      if(guide&&step<guide.length-1){step++;stepStart=shots.length;refresh();buzz(8);return}
+      if(guide&&step<guide.length-1){step++;refresh();buzz(8);return}
       finish(true);
     };
     el.querySelector("[data-cam-close]").onclick=()=>{if(shots.length&&!confirm("Keep the "+shots.length+" photo"+(shots.length===1?"":"s")+" you’ve taken?")){finish(false);return}finish(true)};

@@ -92,7 +92,7 @@
 
   function photos(ctx,P){
     close(true);
-    window.eviaCamera.open({title:ctx.unitName,guide:P.photos,onDone:async files=>{
+    window.eviaCamera.open({title:ctx.unitName,guide:P.photos,progress:{done:0,total:P.photos.length+P.asks.length},onDone:async files=>{
       if(files.length)await ctx.addFiles(files);
       setTimeout(()=>{
         sheet('<p class="eg-say">'+(files.length?"Nice, that’s "+files.length+" photo"+(files.length===1?"":"s")+" added.":"No photos this time. You can add them later.")+' Now a few questions about how the job went. Answer in your own words, as if you were explaining it to someone new.</p>',
@@ -107,7 +107,7 @@
     if(i>=n){review(ctx,P);return}
     const a=P.asks[i];
     const el=sheet(
-      '<div class="eg-progress" aria-hidden="true"><i style="width:'+Math.round(i/n*100)+'%"></i></div>'+
+      '<div class="eg-progress" aria-hidden="true"><i style="width:'+Math.round((P.photos.length+i+1)/(P.photos.length+n)*100)+'%"></i></div>'+
       '<p class="eg-say eg-q">'+esc(a.ask)+'</p>'+
       (a.terms.length||a.can.length?'<div class="eg-think">'+
         (a.terms.length?'<p><strong>Think about:</strong> '+esc(a.terms.join(" · "))+'</p>':"")+

@@ -1294,7 +1294,6 @@ html body .eg-final{min-height:260px}
 .cam-guide-n{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5)}
 .cam-guide-say{margin:0;font-size:17px;font-weight:700;line-height:1.35;color:#fff}
 .cam-guide-hint{font-size:13.5px;line-height:1.4;color:rgba(255,255,255,.72)}
-.cam-done.cam-skip{background:rgba(255,255,255,.14);color:#fff}
 @media (prefers-reduced-motion:reduce){.eg-progress i{transition:none}}
 .cam-gallery{display:inline-flex;flex-direction:column;align-items:center;gap:3px;min-width:64px;padding:6px 8px;border-radius:14px;color:#fff;font-size:12px;font-weight:650;cursor:pointer}
 .cam-gallery svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
@@ -1307,3 +1306,6 @@ html body .eg-final{min-height:260px}
 .eg-stages{margin:0;padding:0 0 0 4px;list-style:none;counter-reset:eg;display:flex;flex-direction:column;gap:6px}
 .eg-stages li{counter-increment:eg;display:flex;align-items:center;gap:10px;font-size:14.5px;font-weight:650;color:var(--ui-ink)}
 .eg-stages li::before{content:counter(eg);width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--soft,#fff7d6);color:var(--yellow-ink);font-size:12px;font-weight:800}
+.cam-progress{height:4px;margin:0 16px 10px;border-radius:999px;background:rgba(255,255,255,.16);overflow:hidden}
+.cam-progress i{display:block;height:100%;width:0;border-radius:inherit;background:var(--yellow);transition:width .3s ease}
+@media (prefers-reduced-motion:reduce){.cam-progress i{transition:none}}
