@@ -1134,3 +1134,9 @@ html[data-a11y-motion="reduce"] #modal-root .overlay{animation:none}
 #chat .ui-action{min-width:0}
 @media (max-width:380px){#chat .ui-action{padding:10px 8px;gap:8px;min-height:52px}#chat .ui-action strong{font-size:13px}.ui-action-icon{width:28px;height:28px}}
 .cfc .cf-desc{white-space:normal;overflow:visible;font-size:13px;line-height:1.45;margin:4px 0 14px}
+.pv-radar-label{font-size:11px}
+.pv-radar-big .pv-radar{max-width:100%}
+.pv-axis.on{fill:var(--ui-ink);font-weight:800}
+.pv-axis.future{opacity:.45}
+.pv-year{display:block;margin-bottom:2px;font-size:12px;font-weight:800;color:var(--ui-muted)}
+.pv-caption{margin:0 0 12px;font-size:13px;line-height:1.45;color:var(--ui-muted)}

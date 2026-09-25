@@ -48,8 +48,9 @@
       return bh>0?'<path class="pv-col pv-grow-y" style="--d:'+(i*45)+'ms;transform-origin:'+(x+bw/2)+'px '+(H-pad)+'px" d="M'+x+','+(H-pad)+'V'+(yy+Math.min(4,bh))+'q0,-4 4,-4h'+(bw-8)+'q4,0 4,4V'+(H-pad)+'Z"'+(opts.highlight===i?' data-hi="1"':"")+'/>':"";
     }).join("");
     const goal=opts.goal!=null?'<line class="pv-goal" x1="0" x2="'+W+'" y1="'+y(opts.goal)+'" y2="'+y(opts.goal)+'"/><text class="pv-goal-label" x="0" y="'+(y(opts.goal)-4)+'" text-anchor="start">'+esc(opts.goalLabel||"")+'</text>':"";
-    const labs=labels.map((l,i)=>l?'<text class="pv-axis" x="'+(i*slot+slot/2)+'" y="'+(H-4)+'" text-anchor="middle">'+esc(l)+'</text>':"").join("");
-    return '<svg class="pv-cols" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(opts.aria||"")+'"><line class="pv-base" x1="0" x2="'+W+'" y1="'+(H-pad)+'" y2="'+(H-pad)+'"/>'+goal+bars+labs+'</svg>';
+    const labs=labels.map((l,i)=>l?'<text class="pv-axis'+(opts.highlight===i?" on":"")+(opts.future!=null&&opts.future>=0&&i>opts.future?" future":"")+'" x="'+(i*slot+slot/2)+'" y="'+(H-4)+'" text-anchor="middle">'+esc(l)+'</text>':"").join("");
+    const val=opts.valueAt!=null&&opts.valueAt>=0?'<text class="pv-end-label pv-fade" x="'+(opts.valueAt*slot+slot/2)+'" y="'+(y(values[opts.valueAt])-6)+'" text-anchor="middle">'+values[opts.valueAt]+'</text>':"";
+    return '<svg class="pv-cols" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(opts.aria||"")+'"><line class="pv-base" x1="0" x2="'+W+'" y1="'+(H-pad)+'" y2="'+(H-pad)+'"/>'+goal+bars+labs+val+'</svg>';
   }
   /* Line of scores over time, 0–100, with the last value labelled at the end. */
   function line(values,opts){
@@ -68,15 +69,25 @@
   /* Spider chart of confidence: now (accent) and last time (grey outline). */
   function radar(areas,now,prev,size){
     const n=areas.length;if(n<3)return"";
-    const S=size||180,c=S/2,R=S/2-(size>200?44:10);
+    const big=size>200,S=size||180,c=S/2,R=S/2-(big?30:10),padX=big?78:0,padY=big?26:0;
     const pt=(i,v)=>{const a=-Math.PI/2+i*2*Math.PI/n,r=R*v/4;return [c+r*Math.cos(a),c+r*Math.sin(a)]};
     const poly=vals=>vals.map((v,i)=>pt(i,v||0).map(z=>z.toFixed(1)).join(",")).join(" ");
     const rings=[1,2,3,4].map(l=>'<polygon class="pv-radar-grid" points="'+poly(areas.map(()=>l))+'"/>').join("");
     const spokes=areas.map((_,i)=>{const [x,y]=pt(i,4);return '<line class="pv-radar-grid" x1="'+c+'" y1="'+c+'" x2="'+x.toFixed(1)+'" y2="'+y.toFixed(1)+'"/>'}).join("");
-    const labels=size>200?areas.map((a,i)=>{const [x,y]=pt(i,4.9);return '<text class="pv-axis" x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" text-anchor="'+(Math.abs(x-c)<8?"middle":x>c?"start":"end")+'" dominant-baseline="middle">'+esc(a.length>16?a.slice(0,15)+"…":a)+'</text>'}).join(""):"";
-    return '<svg class="pv-radar" viewBox="0 0 '+S+' '+S+'" role="img" aria-label="Confidence in each skill">'+rings+spokes+
+    /* Long skill names wrap onto two lines instead of being cut off. */
+    const wrap=t=>{if(t.length<=13)return[t];const w=t.split(" ");let a="",i=0;while(i<w.length&&(a+" "+w[i]).trim().length<=13){a=(a+" "+w[i]).trim();i++}if(!a){a=w[0];i=1}let b=w.slice(i).join(" ");if(b.length>14)b=b.slice(0,13)+"…";return b?[a,b]:[a]};
+    const labels=big?areas.map((a,i)=>{const [x,y]=pt(i,4.75),lines=wrap(a),anchor=Math.abs(x-c)<8?"middle":x>c?"start":"end",dy=y<c-8?-(lines.length-1)*12:y>c+8?0:-(lines.length-1)*6;return '<text class="pv-axis pv-radar-label" x="'+x.toFixed(1)+'" y="'+(y+dy).toFixed(1)+'" text-anchor="'+anchor+'" dominant-baseline="middle">'+lines.map((l,n)=>'<tspan x="'+x.toFixed(1)+'" dy="'+(n?12:0)+'">'+esc(l)+'</tspan>').join("")+'</text>'}).join(""):"";
+    return '<svg class="pv-radar" viewBox="'+(-padX)+' '+(-padY)+' '+(S+padX*2)+' '+(S+padY*2)+'" role="img" aria-label="Confidence in each skill">'+rings+spokes+
       (prev?'<polygon class="pv-radar-prev" points="'+poly(prev)+'"/>':"")+
       '<g class="pv-radar-now pv-scale" style="transform-origin:'+c+'px '+c+'px"><polygon points="'+poly(now)+'"/>'+now.map((v,i)=>{const [x,y]=pt(i,v||0);return '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3.5"/>'}).join("")+'</g>'+labels+'</svg>';
+  }
+  /* Activity by month: one bar for each month of the year, J to D, this month highlighted and labelled. */
+  function monthCounts(counts,year){
+    const out=Array(12).fill(0);counts.forEach((v,t)=>{const d=new Date(t);if(d.getFullYear()===year)out[d.getMonth()]+=v});return out;
+  }
+  function yearBars(counts,year,h){
+    const now=new Date(),vals=monthCounts(counts,year),cur=year===now.getFullYear()?now.getMonth():-1;
+    return columns(vals,"JFMAMJJASOND".split(""),Math.max(4,...vals)*1.15,{h:h||104,aria:"Evidence, hours and files added each month in "+year,highlight:cur,valueAt:cur,future:cur});
   }
   /* Calendar grid: one square per day, darker for busier days. Columns are weeks, Monday at the top. */
   function calendar(counts,weeks){
@@ -145,7 +156,8 @@
       out.push(card("conf","Confidence",num(good)+'<small> / '+cur.length+'</small>',"skills you feel confident in",'<span class="pv-radar-wrap">'+radar(areas,cur.map(x=>x.score),prev,170)+(prev?'<span class="pv-legend"><span><i class="now"></i>Now</span><span><i class="prev"></i>Last time</span></span>':"")+'</span>'));
     }else out.push(card("conf","Confidence","–","Not rated yet",empty("Rate your skills with Evia to see your shape")));
     // Activity
-    out.push(card("act","Activity",num(S.streak)+'<small> week'+(S.streak===1?"":"s")+'</small>',S.streak?"in a row · longest "+S.longest+" week"+(S.longest===1?"":"s"):"Add something this week to start a streak",calendar(D.counts,18)));
+    const yr=new Date().getFullYear(),mc=monthCounts(D.counts,yr),thisMonth=mc[new Date().getMonth()],yearTotal=mc.reduce((n,v)=>n+v,0);
+    out.push(card("act","Activity",num(thisMonth)+'<small> this month</small>',"things added in "+new Date().toLocaleDateString("en-GB",{month:"long"})+" · "+yearTotal+" in "+yr+(S.streak?" · "+S.streak+"-week streak":""),'<span class="pv-year">'+yr+'</span>'+yearBars(D.counts,yr)));
     // Evidence quality
     out.push(card("quality","Evidence quality",S.coverage==null?"–":num(S.coverage,"%"),S.coverage==null?"Submit a unit with a write-up first":"of the key points covered"+(S.avgPhotos!=null?" · "+(Math.round(S.avgPhotos*10)/10)+(Math.round(S.avgPhotos*10)/10===1?" photo":" photos")+" a pack":""),S.coverage==null?empty("Evia checks each write-up once it’s saved"):dial(S.coverage)));
     // Targets
@@ -240,12 +252,14 @@
         note("Skills at the top need the most practice. Evia can find you a college task that works on them."));
     }
     else if(id==="act"){
-      const months=[];for(let i=5;i>=0;i--){const d=new Date();d.setDate(1);d.setHours(0,0,0,0);d.setMonth(d.getMonth()-i);const s=d.getTime(),e=new Date(d.getFullYear(),d.getMonth()+1,1).getTime();let n=0;D.counts.forEach((v,t)=>{if(t>=s&&t<e)n+=v});months.push({s,n})}
+      const yr=new Date().getFullYear(),last=monthCounts(D.counts,yr-1).reduce((n,v)=>n+v,0),total=monthCounts(D.counts,yr).reduce((n,v)=>n+v,0);
       sheet("MY PROGRESS","Activity",
-        '<div class="pv-deep-hero">'+num(S.streak)+'<span>week'+(S.streak===1?"":"s")+' in a row</span></div>'+calendar(D.counts,26)+
-        '<h3 class="pv-h">Each month</h3>'+columns(months.map(m=>m.n),months.map(m=>new Date(m.s).toLocaleDateString("en-GB",{month:"short"})),Math.max(4,...months.map(m=>m.n)),{h:110,aria:"Things added each month",highlight:5})+
-        '<div class="pv-stats">'+stat("Longest streak",S.longest+" week"+(S.longest===1?"":"s"))+stat("Evidence packs",S.allPacks)+stat("Last upload",S.lastUpload?shortDate(S.lastUpload):"None yet")+'</div>'+
-        note("Adding a little every week beats a lot at once. Evidence, hours and supporting files all count."));
+        '<div class="pv-deep-hero">'+num(total)+'<span>things added in '+yr+'</span></div>'+
+        '<p class="pv-caption">Each bar is a month. It counts the evidence packs, off-the-job entries and supporting files you added.</p>'+
+        '<span class="pv-year">'+yr+'</span>'+yearBars(D.counts,yr,150)+
+        (last?'<h3 class="pv-h">'+(yr-1)+'</h3>'+columns(monthCounts(D.counts,yr-1),"JFMAMJJASOND".split(""),Math.max(4,...monthCounts(D.counts,yr-1))*1.15,{h:110,aria:"Things added each month in "+(yr-1)}):"")+
+        '<div class="pv-stats">'+stat("Weeks in a row",S.streak)+stat("Longest run",S.longest+" week"+(S.longest===1?"":"s"))+stat("Evidence packs",S.allPacks)+stat("Last upload",S.lastUpload?shortDate(S.lastUpload):"None yet")+'</div>'+
+        note("Adding a little every week beats a lot at once. A week counts towards your streak when you add anything at all."));
     }
     else if(id==="quality"){
       const checks=(S.checks||[]).slice().sort((x,y)=>x.covered.length/x.terms.length-y.covered.length/y.terms.length);
