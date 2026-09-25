@@ -164,7 +164,7 @@
     const camLabel=document.querySelector('label[for="evidence-camera"]');
     if(camLabel&&window.eviaCamera&&window.eviaCamera.supported())camLabel.onclick=e=>{e.preventDefault();window.eviaCamera.open({title:u[0],prompts:String(prompts.photos||"").split("·"),onDone:files=>addFiles(files)})};
     $("#evidence-gallery").onchange=async e=>{await addFiles([...e.target.files]);e.target.value=""};
-    const eg=$("#eg-start");if(eg)eg.onclick=()=>window.eviaGuide.start({unitName:u[0],prompts,pack,addFiles,save:()=>savePack(pack),done:()=>renderPack(pack)});
+    const eg=$("#eg-start");if(eg)eg.onclick=()=>window.eviaGuide.start({unitName:u[0],prompts,ksbs:u[1],pack,addFiles,save:()=>savePack(pack),done:()=>renderPack(pack)});
     const how=$("#st-how");if(how)how.onclick=()=>window.eviaStrength.guide();
     $("#write").oninput=e=>{
       pack.write=e.target.value;savePack(pack);

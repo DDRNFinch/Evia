@@ -1,7 +1,8 @@
 /* Evia7 guided evidence: Evia walks a learner through one evidence pack, if they want her to.
-   window.eviaGuide.start({unitName, prompts, pack, addFiles, save, done})
-     1. Photos: Evia's camera asks for each thing to capture in turn (take one or more, or skip).
-     2. Questions: one question for each thing to mention, with a text box (skip, or save and continue).
+   window.eviaGuide.start({unitName, prompts, ksbs, pack, addFiles, save, done})
+     1. Photos: Evia's camera follows the job in stages (getting ready, setting out, part-way through, finished),
+        saying what to show at each; take as many as you like, or skip.
+     2. Questions: one per stage, with the things to mention and the unit's skills for that stage as prompts.
      3. Statement: the answers are put together, in the learner's own words, as the pack's write-up,
         which goes on the PDF with the photos as normal.
    Answers are saved in the pack as they go (pack.guide), so a learner can stop and carry on later. */
@@ -11,123 +12,131 @@
   const reduced=()=>window.eviaAccessibility?window.eviaAccessibility.reducedMotion():matchMedia("(prefers-reduced-motion: reduce)").matches;
   const AVATAR='<span class="evia-mini" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span>';
 
-  /* ---------- What Evia asks ---------- */
-  /* Photo requests: what to photograph and how to frame it, so learners get the wider view and the detail. */
-  const SHOTS=[
-    [/\bppe\b|\brpe\b/,t=>["Photograph the PPE you wore for this job.","Lay it out, or ask someone to take one of you wearing it: hard hat, hi-vis, boots, gloves and eye protection."]],
-    [/sign/,t=>["Photograph the safety signs around your work area.","Stand back so the sign and the area it protects are both in the picture."]],
-    [/protect/,t=>["Show how you protected the finished work.","Covers, boards or sheeting over the new work, and what they’re protecting."]],
-    [/safe|hazard|risk|barrier/,t=>["Show how your work area was kept safe.","Stand back to get the whole area in: barriers, signs, clear access and materials stacked safely."]],
-    [/drawing|specification|^plans?$/,t=>["Photograph the "+t+" you worked from.","Lay them flat in good light and get close enough to read the measurements. Then take one next to your work."]],
-    [/team|communicat/,t=>["Photograph the team at work.","Show who you worked with and what they were doing. Ask before you photograph anyone."]],
-    [/tool maintenance|maintain/,t=>["Show how you look after your tools.","Your tools cleaned and stored, or you cleaning them at the end of the day."]],
-    [/tool/,t=>["Photograph the "+t+" you used.","Lay them out so each one can be seen clearly, then take one of a tool in use."]],
-    [/^(setting|marking) out\b/,t=>["Photograph yourself "+t+".","Ask someone to take one of you doing it, then take one of the finished set-up with the measurements showing."]],
-    [/^finished\b/,t=>["Photograph the "+t+".","Stand back to get the whole job in, then move in close on the detail you’re proudest of."]],
-    [/setting[- ]?out|marking out|\blevels?\b|laser|profile|gauge rod|squares?\b|\blines?\b|datum|plumb/,t=>[/setting|marking/.test(t)?"Photograph your "+t+".":"Photograph your "+t+" in use.","Get one of the whole set-up, then move in close to show the tape, level bubble or line where it matters."]],
-    [/ratio|quantit|gaug/,t=>["Show how you measured it out.","Photograph the gauge box, buckets or bag labels so the "+t+" is clear. Then one of the finished mix."]],
-    [/hand\/mechanical|mechanical/,t=>["Show how the mixing was done: by hand or with a mixer.","One of the mixing in progress, and one of the equipment you used."]],
-    [/joint finish|half round|flush|weather struck|recessed|bucket handle|struck/,t=>[/joint finish/.test(t)?"Photograph your joint finishes.":"Photograph your "+t+" joints.","Get close, side-on if you can, so the shape of the joint shows. Then one from further back to show it’s even along the wall."]],
-    [/waste|recycl|environment|surface water/,t=>["Photograph how you dealt with waste.","Skips, sorted waste, recycling, or materials kept covered from the weather."]],
-    [/defect|damage|repair/,t=>["Photograph the "+t+" before you started.","Get close enough to see the problem clearly. Then take the same view once you’ve finished."]],
-    [/silo|mixer|drill|saw|cutter|grinder|scaffold|platform|ladder|podium|trestle|plant|pump|jig/,t=>["Photograph the "+t+" you used.","Stand back so the whole thing and where it’s set up are in the picture. Then take one closer showing how you used it: the controls, the outlet or the fixings."]],
-    [/^(bricks?|blocks?|bricks\/blocks|sand|cement|pre-?mix|lime|aggregates?|insulation|materials?|plaster|render|membranes?|adhesive|nails\/screws\/bolts|fixings)$/,t=>["Photograph the "+t+" before you started.","Show any labels, sizes or markings clearly. Then take one of them in place in your work."]],
-    [/^(mixing|cutting|measuring|splicing|scribing|jointing|pointing|laying|fixing|levelling|installing|fitting|building|gauging|hanging|cladding the)\b/,t=>["Photograph yourself "+t+".","Ask someone to take one of you part-way through, then take one of the result."]],
-    [/construction|installation|carcassing|studwork/,t=>["Photograph the "+t+" at each stage.","One at the start, one part-way through and one finished. Photos from the middle of the job matter as much as the end."]]
+  /* ---------- The stages of a job ---------- */
+  /* Each thing to capture, thing to mention and the unit's skills and behaviours is sorted into the stage of the job
+     it belongs to, so Evia follows the job from start to finish and asks about each part once. The learner never sees
+     codes: skills show as plain "Good evidence shows you can…" lines. */
+  const STAGES=[
+    {key:"setout",title:"Setting out",
+      photo:"Photograph your setting out: the lines, levels and measurements, with the tape or level showing. Get one of the whole set-up, then move in close.",
+      ask:"How did you set it out, and how did you check it was right?"},
+    {key:"finish",title:"The finished job",
+      photo:"Photograph the finished job. Stand back to get the whole thing in, then move in close on the detail: joints, levels, finish. Include how you left the area.",
+      ask:"How did you finish off, and how did you check the quality of your work?"},
+    {key:"ready",title:"Getting ready",
+      photo:"Before you start, photograph your work area set up safely, and the materials, tools and drawings ready to use.",
+      ask:"How did you get ready for this job?"},
+    {key:"know",title:"Why it matters",
+      ask:"What would you tell a new apprentice about doing this job properly, and why it matters?"},
+    {key:"doing",title:"The job in progress",
+      photo:"Photograph the job part-way through. Ask someone to take one of you at work, then take a few of how it’s coming along.",
+      ask:"Talk me through how you did the job, step by step."}
   ];
-  function photoAsk(term){
-    const t=term.toLowerCase();
-    for(const [re,fn] of SHOTS)if(re.test(t)){const [say,hint]=fn(term);return {say,hint}}
-    return {say:"Photograph the "+term+" in your work.",hint:"Stand back so it’s clear where the "+term+" sits in the job. Then move in close to show the detail: joints, levels and fixings."};
+  const ORDER=["ready","setout","doing","finish","know","reflect"];
+  const REFLECT={key:"reflect",title:"Looking back",ask:"What went well, and what would you do differently next time?"};
+  /* Checked in this order: safety belongs to getting ready even when it mentions protection; materials only count as
+     getting ready when nothing else places them. */
+  const RULES=[
+    ["doing",/\bteam|communicat/],
+    ["reflect",/learning|development|reflect|feedback|improv/],
+    ["setout",/setting[- ]?out|set out|marking out|\blevels?\b|laser|profile|gauge rods?|squares?\b|\blines?\b|datum|plumb|radius|angle/],
+    ["ready",/\bppe\b|\brpe\b|protective equipment|safe|hazard|risk|\bsigns?\b|signage|asbestos|slips|height|manual handling|health|wellbeing|well-being|toolbox|method statement/],
+    ["know",/regulation|standard|warrant|inclus|equity|divers|equal|modern|digital|terminology|principle|legislation|ownership|\bcost|programme|design/],
+    ["finish",/finish|joint|pointing|flush|half round|weather|recess|struck|protect|clean|waste|recycl|environment|surface water|maintain|maintenance|capping|coping|tidy|inspect|quality|check/],
+    ["ready",/drawing|specification|estimat|resource|select|quantit|material|pre-?mix|silo|\btools?\b|plan\b|prepar|survey|defect|damage/]
+  ];
+  const stageOf=text=>{const t=String(text).toLowerCase();const r=RULES.find(([,re])=>re.test(t));return r?r[0]:"doing"};
+  const list=a=>a.length<2?a.join(""):a.slice(0,-1).join(", ")+" and "+a[a.length-1];
+  /* A skill or behaviour from the unit, as a plain line: "Gauge and hand mix mortar to ratio". */
+  function plain(ksb){
+    let t=String(ksb).split("|").slice(1).join("|").split(/:\s|\.\s|\bFor example\b|\be\.g\.|,?\s+including,/)[0].trim().replace(/[.,;]+$/,"");
+    t=t.replace(/^(\w+?)(ies|s)\b/,(m,w,e)=>/^(applies|carries|complies|identifies|specifies)$/i.test(m)?w+"y":/ss$/i.test(m)||!/^(uses|selects|applies|works|takes|follows|carries|communicates|interprets|maintains|installs|builds|sets|prepares|checks|plans|identifies|complies|contributes|demonstrates)$/i.test(m)?m:w+(e==="ies"?"y":""));
+    t=t.replace(/\btheir own\b/gi,"your own").replace(/\bthemselves\b/gi,"yourself").replace(/\btheir\b/gi,"your");
+    return t.length>6&&t.length<140?t.charAt(0).toUpperCase()+t.slice(1):"";
   }
-  /* Questions for the write-up: specific where the topic is common across trades, otherwise how and why. */
-  const ASK=[
-    [/\bppe\b/,t=>"What PPE did you wear for this job, and why did you need it?"],
-    [/\brpe\b|\blev\b|dust/,t=>"How did you protect yourself from dust on this job?"],
-    [/asbestos/,t=>"What would you do if you thought you’d found asbestos? Why does it matter?"],
-    [/slips|trips|falls/,t=>"How did you stop slips, trips and falls on this job?"],
-    [/height|scaffold|ladder/,t=>"How did you work safely at height on this job?"],
-    [/manual handling|lifting/,t=>"How did you lift and move materials safely?"],
-    [/^health$|wellbeing|well-being|mental/,t=>"How did you look after your health and wellbeing during this job?"],
-    [/safe|safety|hazard|risk assessment|method statement|toolbox/,t=>"How did you keep yourself and others safe on this job?"],
-    [/team/,t=>"Who did you work with, and how did you help each other?"],
-    [/communicat/,t=>"Who did you need to talk to on this job, and what about?"],
-    [/drawing|specification/,t=>"How did you use the "+t+" on this job? What did they tell you?"],
-    [/environment|waste|recycl|resource|surface water/,t=>"How did you deal with waste and look after the environment on this job?"],
-    [/regulation|standard|warrant/,t=>"Which "+t+" applied to this job, and how did your work meet them?"],
-    [/inclusion|equity|diversity|equality/,t=>"What does "+t+" mean on site or in your team? Give an example."],
-    [/terminology/,t=>"Which trade words came up on this job? Explain two or three of them."],
-    [/digital|modern|modelling|bim/,t=>"Where does "+t+" fit into jobs like this one?"],
-    [/ownership|responsib/,t=>"What were you responsible for on this job, and how did you make sure it was right?"],
-    [/defect|damage/,t=>"What "+t+" did you look for, and what did you do about them?"],
-    [/maintenance|maintain/,t=>"How do you look after your tools and equipment, and why?"],
-    [/ratio|gauging|quantit/,t=>"What "+t+" did you use, and how did you get it right?"],
-    [/cost|time|programme|schedule/,t=>"How did "+t+" affect the way you planned this job?"]
-  ];
-  function question(term){
-    const t=term.toLowerCase();
-    for(const [re,fn] of ASK)if(re.test(t))return fn(term);
-    return "Tell me about the "+term+" on this job: what you did, and what it’s for.";
+  /* The plan for a pack: which stages to photograph and which to ask about, with what to think about in each. */
+  function plan(ctx){
+    const caps=split(ctx.prompts&&ctx.prompts.photos),terms=split(ctx.prompts&&ctx.prompts.writeup);
+    const ksbs=(ctx.ksbs||[]).filter(k=>/^[SB]\d/.test(String(k)));
+    const by={};ORDER.forEach(k=>by[k]={caps:[],terms:[],can:[]});
+    caps.forEach(c=>by[stageOf(c)].caps.push(c));
+    terms.forEach(t=>by[stageOf(t)].terms.push(t));
+    ksbs.forEach(k=>{const p=plain(k);if(p&&!by[stageOf(p)].can.includes(p))by[stageOf(p)].can.push(p)});
+    const def=k=>k==="reflect"?REFLECT:STAGES.find(s=>s.key===k);
+    const photos=["ready","setout","doing","finish"].filter(k=>k==="doing"||k==="finish"||k==="ready"||by[k].caps.length).map(k=>{
+      const s=def(k),c=by[k].caps;
+      return {key:k,say:s.title,hint:s.photo+(c.length?" Try to show "+list(c)+".":"")};
+    });
+    const asks=ORDER.filter(k=>k==="doing"||k==="reflect"||by[k].terms.length||by[k].can.length).map(k=>{
+      const s=def(k);return {key:k,title:s.title,ask:s.ask,terms:by[k].terms,can:by[k].can.slice(0,3)};
+    });
+    return {photos,asks};
   }
 
   /* ---------- The flow ---------- */
+  const answeredIn=(g,asks)=>asks.filter(a=>String(g.answers[a.key]||"").trim()).length;
   function start(ctx){
-    const caps=split(ctx.prompts&&ctx.prompts.photos),terms=split(ctx.prompts&&ctx.prompts.writeup);
-    const g=ctx.pack.guide=ctx.pack.guide||{answers:{}};
-    const answered=terms.filter(t=>String(g.answers[t]||"").trim()).length;
-    const canCam=window.eviaCamera&&window.eviaCamera.supported()&&caps.length;
-    sheet('<p class="eg-say">'+(answered?"Welcome back. You’ve answered "+answered+" of my "+terms.length+" questions.":"I’ll guide you through this pack. First the photos, one thing at a time, then a few questions about the job. I’ll put your answers together into your statement.")+'</p>'+
+    const P=plan(ctx);
+    const g=ctx.pack.guide=ctx.pack.guide&&ctx.pack.guide.v===2?ctx.pack.guide:{v:2,answers:{},covered:{}};
+    const answered=answeredIn(g,P.asks);
+    const canCam=window.eviaCamera&&window.eviaCamera.supported();
+    sheet('<p class="eg-say">'+(answered?"Welcome back. You’ve answered "+answered+" of my "+P.asks.length+" questions.":"I’ll guide you through this job from start to finish. First photos of each stage, then a few questions about how it went. I’ll put your answers together into your statement.")+'</p>'+
+      (answered?"":'<ol class="eg-stages">'+P.photos.map(p=>'<li>'+esc(p.say)+'</li>').join("")+'</ol>')+
       '<p class="eg-small">Skip anything you like. Your answers save as you go.</p>',
-      [answered?{label:"Carry on with the questions",primary:true,run:()=>ask(ctx,terms,firstGap(terms,g))}:null,
-       canCam?{label:"Start with photos",primary:!answered,run:()=>photos(ctx,caps,terms)}:null,
-       {label:canCam?"Skip to the questions":"Start the questions",primary:!canCam&&!answered,run:()=>ask(ctx,terms,answered?firstGap(terms,g):0)}].filter(Boolean),
+      [answered?{label:"Carry on with the questions",primary:true,run:()=>ask(ctx,P,firstGap(P,g))}:null,
+       canCam?{label:"Start with photos",primary:!answered,run:()=>photos(ctx,P)}:null,
+       {label:canCam?"Skip to the questions":"Start the questions",primary:!canCam&&!answered,run:()=>ask(ctx,P,answered?firstGap(P,g):0)}].filter(Boolean),
       {kicker:"EVIA · GUIDED EVIDENCE",title:ctx.unitName});
   }
-  const firstGap=(terms,g)=>{const i=terms.findIndex(t=>!String(g.answers[t]||"").trim());return i<0?terms.length:i};
+  const firstGap=(P,g)=>{const i=P.asks.findIndex(a=>!String(g.answers[a.key]||"").trim());return i<0?P.asks.length:i};
 
-  function photos(ctx,caps,terms){
+  function photos(ctx,P){
     close(true);
-    window.eviaCamera.open({title:ctx.unitName,guide:caps.map(c=>Object.assign({term:c},photoAsk(c))),onDone:async files=>{
+    window.eviaCamera.open({title:ctx.unitName,guide:P.photos,onDone:async files=>{
       if(files.length)await ctx.addFiles(files);
       setTimeout(()=>{
-        sheet('<p class="eg-say">'+(files.length?"Nice, that’s "+files.length+" photo"+(files.length===1?"":"s")+" added.":"No photos this time. You can add them later.")+' Now a few questions about the job. Answer in your own words, as if you were explaining it to someone new.</p>',
-          [{label:"Start the questions",primary:true,run:()=>ask(ctx,terms,firstGap(terms,ctx.pack.guide))},{label:"Stop for now",run:()=>close()}],
+        sheet('<p class="eg-say">'+(files.length?"Nice, that’s "+files.length+" photo"+(files.length===1?"":"s")+" added.":"No photos this time. You can add them later.")+' Now a few questions about how the job went. Answer in your own words, as if you were explaining it to someone new.</p>',
+          [{label:"Start the questions",primary:true,run:()=>ask(ctx,P,firstGap(P,ctx.pack.guide))},{label:"Stop for now",run:()=>close()}],
           {kicker:"EVIA · GUIDED EVIDENCE",title:"Photos done"});
       },files.length?250:60);
     }});
   }
 
-  function ask(ctx,terms,i){
-    const g=ctx.pack.guide;
-    if(!terms.length||i>=terms.length){review(ctx,terms);return}
-    const t=terms[i];
+  function ask(ctx,P,i){
+    const g=ctx.pack.guide,n=P.asks.length;
+    if(i>=n){review(ctx,P);return}
+    const a=P.asks[i];
     const el=sheet(
-      '<div class="eg-progress" aria-hidden="true"><i style="width:'+Math.round(i/terms.length*100)+'%"></i></div>'+
-      '<p class="eg-say eg-q">'+esc(question(t))+'</p>'+
-      '<textarea class="eg-text" id="eg-text" rows="6" placeholder="In your own words…" aria-label="'+esc(question(t))+'">'+esc(g.answers[t]||"")+'</textarea>',
-      [{label:"Skip",run:()=>{save();ask(ctx,terms,i+1)}},{label:i===terms.length-1?"Save and finish":"Save and continue",primary:true,run:()=>{save();ask(ctx,terms,i+1)}}],
-      {kicker:"EVIA · QUESTION "+(i+1)+" OF "+terms.length,title:t.charAt(0).toUpperCase()+t.slice(1),back:i>0?()=>{save();ask(ctx,terms,i-1)}:null,keep:true});
+      '<div class="eg-progress" aria-hidden="true"><i style="width:'+Math.round(i/n*100)+'%"></i></div>'+
+      '<p class="eg-say eg-q">'+esc(a.ask)+'</p>'+
+      (a.terms.length||a.can.length?'<div class="eg-think">'+
+        (a.terms.length?'<p><strong>Think about:</strong> '+esc(a.terms.join(" · "))+'</p>':"")+
+        (a.can.length?'<p><strong>Good evidence shows you can:</strong></p><ul>'+a.can.map(c=>'<li>'+esc(c)+'</li>').join("")+'</ul>':"")+
+      '</div>':"")+
+      '<textarea class="eg-text" id="eg-text" rows="6" placeholder="In your own words…" aria-label="'+esc(a.ask)+'">'+esc(g.answers[a.key]||"")+'</textarea>',
+      [{label:"Skip",run:()=>{save();ask(ctx,P,i+1)}},{label:i===n-1?"Save and finish":"Save and continue",primary:true,run:()=>{save();ask(ctx,P,i+1)}}],
+      {kicker:"EVIA · QUESTION "+(i+1)+" OF "+n,title:a.title,back:i>0?()=>{save();ask(ctx,P,i-1)}:null,keep:true});
     const box=el.querySelector("#eg-text");
-    function save(){g.answers[t]=box.value.trim();ctx.save()}
+    /* An answered stage counts in full for the things to mention it covers (strength.js). */
+    function save(){g.answers[a.key]=box.value.trim();g.covered[a.key]=g.answers[a.key]?a.terms.slice():[];ctx.save()}
     let timer=null;box.oninput=()=>{clearTimeout(timer);timer=setTimeout(save,400)};
     setTimeout(()=>box.focus({preventScroll:true}),reduced()?0:220);
   }
 
-  /* The statement: what they already wrote, then each answer as its own paragraph, in the order asked. */
-  function compile(ctx,terms){
-    const g=ctx.pack.guide,parts=terms.map(t=>String(g.answers[t]||"").trim()).filter(Boolean);
+  /* The statement: what they already wrote, then each answer as its own paragraph, in the order of the job. */
+  function compile(ctx,P){
+    const g=ctx.pack.guide,parts=P.asks.map(a=>String(g.answers[a.key]||"").trim()).filter(Boolean);
     const had=String(ctx.pack.write||"").trim();
-    const fresh=parts.filter(p=>!had.includes(p));
-    return [had,...fresh].filter(Boolean).join("\n\n");
+    return [had,...parts.filter(p=>!had.includes(p))].filter(Boolean).join("\n\n");
   }
-  function review(ctx,terms){
-    const text=compile(ctx,terms),n=terms.filter(t=>String(ctx.pack.guide.answers[t]||"").trim()).length;
+  function review(ctx,P){
+    const text=compile(ctx,P),n=answeredIn(ctx.pack.guide,P.asks);
     if(!text){
       sheet('<p class="eg-say">You skipped all the questions, so there’s nothing to put together yet. You can come back to me any time, or write it yourself.</p>',[{label:"Close",primary:true,run:()=>close()}],{kicker:"EVIA · GUIDED EVIDENCE",title:"Your statement"});return;
     }
     const el=sheet('<p class="eg-say">Here’s your statement, made from your '+n+' answer'+(n===1?"":"s")+'. Read it through and change anything you like. It goes in your write-up and on the PDF with your photos.</p>'+
       '<textarea class="eg-text eg-final" id="eg-final" rows="12" aria-label="Your statement">'+esc(text)+'</textarea>',
-      [{label:"Back",run:()=>ask(ctx,terms,terms.length-1)},{label:"Use this statement",primary:true,run:()=>{
+      [{label:"Back",run:()=>ask(ctx,P,P.asks.length-1)},{label:"Use this statement",primary:true,run:()=>{
         ctx.pack.write=el.querySelector("#eg-final").value.trim();ctx.pack.guide.used=new Date().toISOString();
         ctx.save();close();ctx.done();
         if(typeof showEvidenceToast==="function")setTimeout(()=>showEvidenceToast("Statement added to your write-up"),250);
@@ -156,5 +165,5 @@
     o.classList.add("ui-closing");setTimeout(()=>{if(root.contains(o))root.innerHTML=""},170);
   }
 
-  window.eviaGuide={start,question,photoAsk};
+  window.eviaGuide={start,plan,plain};
 })();

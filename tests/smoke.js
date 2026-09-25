@@ -175,7 +175,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       const few=S.pack({photos:ph(4),write:"I checked the ratio, worked with my team, wore PPE and used the silos."},pr);
       const lots=S.pack({photos:ph(10),write:"I checked the ratio, worked with my team, wore PPE and used the silos."},pr);
       const mid=S.pack({photos:ph(7),write:"I checked the ratio."},pr);
-      const guided=S.pack({photos:ph(10),write:"Some words here.",guide:{answers:{ratio:"a",teamwork:"b",PPE:"c"}}},pr);
+      const guided=S.pack({photos:ph(10),write:"Some words here.",guide:{v:2,answers:{doing:"a"},covered:{doing:["ratio","teamwork","PPE"]}}},pr);
       return few==="weak"&&lots==="strong"&&mid==="weak"&&guided==="strong";
     }));
     await page.evaluate(()=>{course="bricklayer";persist();openUnit(0)});await page.waitForTimeout(700);
@@ -189,12 +189,12 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>{course="bricklayer";persist();openUnit(data().u.findIndex(u=>u[0]==="Cavity opening"))});await page.waitForTimeout(700);
     await page.evaluate(()=>document.getElementById("eg-start").click());await page.waitForTimeout(300);
     await page.evaluate(()=>[...document.querySelectorAll(".eg-sheet button")].find(b=>/questions/.test(b.textContent)).click());await page.waitForTimeout(300);
-    const q1=await page.evaluate(()=>document.querySelector(".eg-q").textContent);
+    const q1=await page.evaluate(()=>document.querySelector(".eg-q").textContent+" "+(document.querySelector(".eg-think")||{}).textContent);
     await page.evaluate(()=>{document.getElementById("eg-text").value="I fitted the cavity closer at the reveal.";[...document.querySelectorAll(".eg-sheet button")].find(b=>/Save and continue/.test(b.textContent)).click()});await page.waitForTimeout(300);
     await page.evaluate(()=>{document.getElementById("eg-text").value="The ties go in at 450 centres.";[...document.querySelectorAll(".eg-sheet button")].find(b=>/Save and continue/.test(b.textContent)).click()});await page.waitForTimeout(300);
     for(let i=0;i<12;i++){const more=await page.evaluate(()=>{const b=[...document.querySelectorAll(".eg-sheet button")].find(b=>/^Skip$/.test(b.textContent));if(b){b.click();return true}return false});if(!more)break;await page.waitForTimeout(200)}
     await page.evaluate(()=>[...document.querySelectorAll(".eg-sheet button")].find(b=>/Use this statement/.test(b.textContent)).click());await page.waitForTimeout(700);
-    check("Evia can guide a pack: a question for each thing to mention, then the answers become the statement",/cavity closure/i.test(q1)&&await page.evaluate(()=>document.getElementById("write").value==="I fitted the cavity closer at the reveal.\n\nThe ties go in at 450 centres."));
+    check("Evia guides a pack through the stages of the job, then the answers become the statement",/step by step/i.test(q1)&&/cavity closure/.test(q1)&&await page.evaluate(()=>document.getElementById("write").value==="I fitted the cavity closer at the reveal.\n\nThe ties go in at 450 centres."));
     await page.evaluate(()=>{const w=document.getElementById("write");w.value="";w.dispatchEvent(new Event("input"))});
 
     // Backup and restore: a learner's portfolio survives being restored and the app reloading.

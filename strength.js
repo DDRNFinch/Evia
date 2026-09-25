@@ -23,7 +23,7 @@
   const combine=(p,w)=>p==="strong"&&w==="strong"?"strong":p==="weak"||w==="weak"?"weak":"good";
 
   /* Areas answered with guided Evia in a working pack. */
-  const guidedAreas=p=>Object.keys((p&&p.guide&&p.guide.answers)||{}).filter(t=>String(p.guide.answers[t]||"").trim());
+  const guidedAreas=p=>{const c=p&&p.guide&&p.guide.covered;return c?[...new Set([].concat(...Object.values(c)))]:[]};
   /* A working pack (before it's submitted). */
   function pack(p,prompts){
     return combine(photoLevel((p.photos||[]).length),writeLevel(p.write,split(prompts&&prompts.writeup),guidedAreas(p)));

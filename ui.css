@@ -1299,3 +1299,11 @@ html body .eg-final{min-height:260px}
 .cam-gallery{display:inline-flex;flex-direction:column;align-items:center;gap:3px;min-width:64px;padding:6px 8px;border-radius:14px;color:#fff;font-size:12px;font-weight:650;cursor:pointer}
 .cam-gallery svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .cam-gallery:active{background:rgba(255,255,255,.12)}
+.eg-think{padding:12px 14px;border-radius:14px;background:#f6f5f1;font-size:13.5px;line-height:1.5;color:var(--ui-text)}
+.eg-think p{margin:0}.eg-think p+p{margin-top:8px}
+.eg-think strong{color:var(--ui-ink)}
+.eg-think ul{margin:4px 0 0;padding-left:18px}
+.eg-think li+li{margin-top:2px}
+.eg-stages{margin:0;padding:0 0 0 4px;list-style:none;counter-reset:eg;display:flex;flex-direction:column;gap:6px}
+.eg-stages li{counter-increment:eg;display:flex;align-items:center;gap:10px;font-size:14.5px;font-weight:650;color:var(--ui-ink)}
+.eg-stages li::before{content:counter(eg);width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--soft,#fff7d6);color:var(--yellow-ink);font-size:12px;font-weight:800}
