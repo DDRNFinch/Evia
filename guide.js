@@ -111,11 +111,11 @@
       '<p class="eg-say eg-q">'+esc(a.ask)+'</p>'+
       (a.terms.length||a.can.length?'<div class="eg-think">'+
         (a.terms.length?'<p><strong>Think about:</strong> '+esc(a.terms.join(" · "))+'</p>':"")+
-        (a.can.length?'<p><strong>Good evidence shows you can:</strong></p><ul>'+a.can.map(c=>'<li>'+esc(c)+'</li>').join("")+'</ul>':"")+
+        (a.can.length?'<details><summary>What good looks like</summary><ul>'+a.can.map(c=>'<li>'+esc(c)+'</li>').join("")+'</ul></details>':"")+
       '</div>':"")+
       '<textarea class="eg-text" id="eg-text" rows="6" placeholder="In your own words…" aria-label="'+esc(a.ask)+'">'+esc(g.answers[a.key]||"")+'</textarea>',
       [{label:"Skip",run:()=>{save();ask(ctx,P,i+1)}},{label:i===n-1?"Save and finish":"Save and continue",primary:true,run:()=>{save();ask(ctx,P,i+1)}}],
-      {kicker:"EVIA · QUESTION "+(i+1)+" OF "+n,title:a.title,back:i>0?()=>{save();ask(ctx,P,i-1)}:null,keep:true});
+      {kicker:"EVIA · QUESTION "+(i+1)+" OF "+n,title:a.title,back:i>0?()=>{save();ask(ctx,P,i-1)}:null,keep:true,full:true});
     const box=el.querySelector("#eg-text");
     /* An answered stage counts in full for the things to mention it covers (strength.js). */
     function save(){g.answers[a.key]=box.value.trim();g.covered[a.key]=g.answers[a.key]?a.terms.slice():[];ctx.save()}
@@ -141,16 +141,19 @@
         ctx.save();close();ctx.done();
         if(typeof showEvidenceToast==="function")setTimeout(()=>showEvidenceToast("Statement added to your write-up"),250);
       }}],
-      {kicker:"EVIA · GUIDED EVIDENCE",title:"Your statement",keep:true});
+      {kicker:"EVIA · GUIDED EVIDENCE",title:"Your statement",keep:true,full:true});
   }
 
   /* ---------- Sheet ---------- */
   function sheet(body,buttons,o){
     const root=document.getElementById("modal-root");
-    root.innerHTML='<div class="overlay eg-overlay"><section class="sheet pr-sheet eg-sheet" role="dialog" aria-modal="true" aria-labelledby="eg-title">'+
+    fit(false);
+    root.innerHTML='<div class="overlay eg-overlay'+(o.full?" eg-full":"")+'"><section class="sheet pr-sheet eg-sheet" role="dialog" aria-modal="true" aria-labelledby="eg-title">'+
       '<div class="sheet-head"><div class="eg-head">'+AVATAR+'<div><div class="chat-kicker">'+esc(o.kicker)+'</div><h2 id="eg-title">'+esc(o.title)+'</h2></div></div><button class="close" id="eg-close" type="button" aria-label="Close">×</button></div>'+
       '<div class="pr-body">'+body+'<div class="pr-actions eg-actions">'+(o.back?'<button type="button" class="eg-back" id="eg-back">‹ Back</button>':"")+buttons.map((b,i)=>'<button type="button" class="'+(b.primary?"primary":"secondary")+'" data-eg="'+i+'">'+esc(b.label)+'</button>').join("")+'</div></div></section></div>';
     const el=root.querySelector(".eg-sheet");
+    /* Full screens keep the buttons outside the scrolling part, so they sit just above the keyboard. */
+    if(o.full){el.appendChild(el.querySelector(".eg-actions"));fit(true)}
     el.querySelectorAll("[data-eg]").forEach(b=>b.onclick=()=>buttons[+b.dataset.eg].run());
     if(o.back)el.querySelector("#eg-back").onclick=o.back;
     const x=()=>{const t=el.querySelector("#eg-text");if(t&&t.oninput)t.oninput();close()};
@@ -159,7 +162,21 @@
     if(!el.querySelector("textarea")){const h=el.querySelector("#eg-title");h.setAttribute("tabindex","-1");h.focus({preventScroll:true})}
     return el;
   }
+  /* Writing screens fill the space above the keyboard, so the question, the box and the buttons all stay in view. */
+  let fitting=false;
+  const size=()=>{
+    const v=window.visualViewport,h=v?v.height:innerHeight,r=document.documentElement.style;
+    r.setProperty("--eg-vh",h+"px");r.setProperty("--eg-top",(v?v.offsetTop:0)+"px");
+    /* Short on space (usually the keyboard is up): tuck away the extras so the answer box stays roomy. */
+    const o=document.querySelector(".eg-overlay.eg-full");if(o)o.classList.toggle("eg-tight",h<600);
+  };
+  function fit(on){
+    const v=window.visualViewport;if(on===fitting)return;fitting=on;
+    if(on){size();if(v){v.addEventListener("resize",size);v.addEventListener("scroll",size)}else addEventListener("resize",size)}
+    else if(v){v.removeEventListener("resize",size);v.removeEventListener("scroll",size)}else removeEventListener("resize",size);
+  }
   function close(now){
+    fit(false);
     const root=document.getElementById("modal-root"),o=root&&root.querySelector(".eg-overlay");if(!o)return;
     if(now||reduced()){root.innerHTML="";return}
     o.classList.add("ui-closing");setTimeout(()=>{if(root.contains(o))root.innerHTML=""},170);

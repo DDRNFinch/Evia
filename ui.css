@@ -1309,3 +1309,31 @@ html body .eg-final{min-height:260px}
 .cam-progress{height:4px;margin:0 16px 10px;border-radius:999px;background:rgba(255,255,255,.16);overflow:hidden}
 .cam-progress i{display:block;height:100%;width:0;border-radius:inherit;background:var(--yellow);transition:width .3s ease}
 @media (prefers-reduced-motion:reduce){.cam-progress i{transition:none}}
+/* Guided writing screens: pinned to the top and sized to the space above the keyboard (guide.js sets --eg-vh). */
+html body .eg-overlay.eg-full{align-items:flex-start;background:rgba(20,28,42,.3)}
+html body .eg-full .eg-sheet{position:fixed;left:0;right:0;top:var(--eg-top,0px);width:100%;height:var(--eg-vh,100dvh);max-height:none;border-radius:0;display:flex;flex-direction:column;padding:max(12px,env(safe-area-inset-top)) 16px 12px;overflow:hidden;box-sizing:border-box}
+html body .eg-full .sheet-head{flex:none;margin-bottom:8px}
+html body .eg-full .sheet-head h2{font-size:20px}
+html body .eg-full .evia-mini{width:30px;height:30px}
+html body .eg-full .pr-body{flex:1;min-height:0;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+html body .eg-full .eg-q{flex:none;padding:10px 14px;font-size:16px}
+html body .eg-full .eg-think{flex:none;padding:8px 12px;font-size:13px}
+html body .eg-full .wc-field{flex:1;min-height:96px;display:flex}
+html body .eg-full .wc-field>.eg-text,html body .eg-full .eg-text{flex:1;min-height:96px;height:auto;resize:none}
+html body .eg-full .wc{flex:none}
+html body .eg-full .wc-panel{max-height:40vh;overflow:auto}
+html body .eg-full .eg-actions{flex:none;margin-top:0;padding-top:4px;flex-wrap:nowrap}
+html body .eg-full .eg-actions button{min-height:44px;white-space:nowrap}
+.eg-think details{margin-top:6px}
+.eg-think summary{cursor:pointer;font-weight:700;color:var(--yellow-ink);list-style:none}
+.eg-think summary::-webkit-details-marker{display:none}
+.eg-think summary::after{content:" ›";display:inline-block;transition:transform .2s ease}
+.eg-think details[open] summary::after{transform:rotate(90deg)}
+html body .eg-full .eg-sheet>.eg-actions{padding-top:8px}
+html body .eg-tight .chat-kicker{display:none}
+html body .eg-tight .sheet-head{margin-bottom:4px}
+html body .eg-tight .eg-think details{display:none}
+html body .eg-tight .pr-body{gap:6px}
+html body .eg-tight .eg-q{padding:8px 12px;font-size:15px}
+html body .eg-full .eg-actions{gap:8px}
+@media (max-width:380px){html body .eg-full .eg-actions button{padding:10px 12px;font-size:14px}html body .eg-full .eg-back{padding:10px 2px}}

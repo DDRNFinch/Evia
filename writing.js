@@ -154,7 +154,7 @@
     };
   }
 
-  const HELPED="#write, #otj-description, textarea[data-reflect], textarea[data-nvq-answer]";
+  const HELPED="#write, #otj-description, textarea[data-reflect], textarea[data-nvq-answer], textarea.eg-text";
   const ICON='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 18 8.5 6h1L14 18M5.6 14h6.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="m14.5 14.5 2.5 2.5 4.5-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   function setUp(ta){
     if(ta.dataset.wc)return;ta.dataset.wc="1";
