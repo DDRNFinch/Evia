@@ -126,6 +126,7 @@
           '<h2>'+esc(u[0])+'</h2>'+
           '<p>Capture the whole job in one pack. Take photos from the <strong>beginning, middle and end</strong> of the job.</p>'+
         '</div>'+
+        (window.eviaGuide?'<button type="button" class="eg-start" id="eg-start"><span class="evia-mini" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span><span><strong>'+(pack.guide&&Object.values(pack.guide.answers||{}).some(Boolean)&&!pack.guide.used?"Carry on with Evia":"Let Evia guide you")+'</strong><small>Photos one at a time, then a few questions</small></span><span class="eg-start-chev" aria-hidden="true">›</span></button>':"")+
         '<div class="evidence-photo-actions">'+
           '<label class="evidence-photo-button" for="evidence-camera"><span class="evidence-photo-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="18" height="14" rx="3"></rect><path d="M8 6.5l1.4-2h5.2l1.4 2"></path><circle cx="12" cy="13.5" r="3.5"></circle></svg></span><span>Camera</span><input id="evidence-camera" type="file" accept="image/*" capture="environment"></label>'+
           '<label class="evidence-photo-button" for="evidence-gallery"><span class="evidence-photo-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"></rect><circle cx="8.5" cy="9.5" r="1.6"></circle><path d="M4 16.5l5-5 4 4 3-3 4 4"></path></svg></span><span>Gallery</span><input id="evidence-gallery" type="file" accept="image/*" multiple></label>'+
@@ -166,6 +167,7 @@
     const camLabel=document.querySelector('label[for="evidence-camera"]');
     if(camLabel&&window.eviaCamera&&window.eviaCamera.supported())camLabel.onclick=e=>{e.preventDefault();window.eviaCamera.open({title:u[0],prompts:String(prompts.photos||"").split("·"),onDone:files=>addFiles(files)})};
     $("#evidence-gallery").onchange=async e=>{await addFiles([...e.target.files]);e.target.value=""};
+    const eg=$("#eg-start");if(eg)eg.onclick=()=>window.eviaGuide.start({unitName:u[0],prompts,pack,addFiles,save:()=>savePack(pack),done:()=>renderPack(pack)});
     const strength=paintStrength=window.eviaStrength?window.eviaStrength.mount(pack,prompts,{save:()=>savePack(pack),repaint:()=>strength&&strength()}):null;
     $("#write").oninput=e=>{
       pack.write=e.target.value;savePack(pack);if(strength)strength();

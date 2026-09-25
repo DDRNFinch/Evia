@@ -1303,3 +1303,30 @@ html body .pv-guide{grid-column:1/-1;display:flex;align-items:center;gap:12px;wi
 .pv-guide strong{font-size:15px;font-weight:700}
 .pv-guide small{font-size:12.5px;color:var(--ui-muted)}
 .pv-guide-chev{font-size:22px;color:var(--ui-faint)}
+
+/* ---------- Guided evidence (guide.js) ---------- */
+.eg-start{display:flex;align-items:center;gap:12px;width:100%;margin:4px 0 14px;padding:10px 14px 10px 10px;border-radius:18px;background:var(--soft,#fff7d6);border:1px solid var(--yellow-line,#f1d878);text-align:left;cursor:pointer;color:var(--ui-ink)}
+.eg-start:active{transform:scale(.99)}
+.eg-start>span:nth-child(2){flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.eg-start strong{font-size:15px;font-weight:700}
+.eg-start small{font-size:12.5px;color:var(--yellow-ink)}
+.eg-start-chev{font-size:22px;color:var(--yellow-ink)}
+.eg-head{display:flex;align-items:center;gap:12px;min-width:0}
+.eg-head h2{overflow-wrap:anywhere}
+.eg-say{margin:0;padding:14px 16px;border-radius:4px 18px 18px 18px;background:var(--soft,#fff7d6);font-size:15px;line-height:1.5;color:var(--ui-ink)}
+.eg-q{font-size:17px;font-weight:650;line-height:1.4}
+.eg-small{margin:2px 2px 0;font-size:13px;color:var(--ui-muted)}
+.eg-progress{height:5px;border-radius:999px;background:#f0efeb;overflow:hidden}
+.eg-progress i{display:block;height:100%;border-radius:inherit;background:var(--yellow);transition:width .3s ease}
+html body .eg-text{width:100%;min-height:150px;box-sizing:border-box;padding:14px;border:1px solid var(--pm-hair,rgba(16,24,40,.1));border-radius:16px;background:#fff;font-size:15.5px;line-height:1.5;resize:vertical;box-shadow:inset 0 1px 2px rgba(16,24,40,.04)}
+html body .eg-final{min-height:260px}
+.eg-actions{align-items:center}
+.eg-back{margin-right:auto;padding:10px 4px;font-weight:700;color:var(--ui-muted);cursor:pointer}
+.cam-guide{display:flex;align-items:flex-start;gap:12px;margin:12px 16px 0;padding:12px 14px;border-radius:18px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12)}
+.cam-guide .evia-mini{background:#fff}
+.cam-guide>div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.cam-guide-n{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5)}
+.cam-guide-say{margin:0;font-size:17px;font-weight:700;line-height:1.35;color:#fff}
+.cam-guide-hint{font-size:13.5px;line-height:1.4;color:rgba(255,255,255,.72)}
+.cam-done.cam-skip{background:rgba(255,255,255,.14);color:#fff}
+@media (prefers-reduced-motion:reduce){.eg-progress i{transition:none}}

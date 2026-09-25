@@ -185,6 +185,18 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("My progress explains how to build a strong portfolio",await page.evaluate(()=>/strong portfolio/.test(document.getElementById("st-title").textContent)&&document.querySelectorAll(".st-tip").length===8));
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML=""});
 
+    // Guided evidence: Evia asks a question for each thing to mention and puts the answers together as the statement.
+    await page.evaluate(()=>{course="bricklayer";persist();openUnit(data().u.findIndex(u=>u[0]==="Cavity opening"))});await page.waitForTimeout(700);
+    await page.evaluate(()=>document.getElementById("eg-start").click());await page.waitForTimeout(300);
+    await page.evaluate(()=>[...document.querySelectorAll(".eg-sheet button")].find(b=>/questions/.test(b.textContent)).click());await page.waitForTimeout(300);
+    const q1=await page.evaluate(()=>document.querySelector(".eg-q").textContent);
+    await page.evaluate(()=>{document.getElementById("eg-text").value="I fitted the cavity closer at the reveal.";[...document.querySelectorAll(".eg-sheet button")].find(b=>/Save and continue/.test(b.textContent)).click()});await page.waitForTimeout(300);
+    await page.evaluate(()=>{document.getElementById("eg-text").value="The ties go in at 450 centres.";[...document.querySelectorAll(".eg-sheet button")].find(b=>/Save and continue/.test(b.textContent)).click()});await page.waitForTimeout(300);
+    for(let i=0;i<12;i++){const more=await page.evaluate(()=>{const b=[...document.querySelectorAll(".eg-sheet button")].find(b=>/^Skip$/.test(b.textContent));if(b){b.click();return true}return false});if(!more)break;await page.waitForTimeout(200)}
+    await page.evaluate(()=>[...document.querySelectorAll(".eg-sheet button")].find(b=>/Use this statement/.test(b.textContent)).click());await page.waitForTimeout(700);
+    check("Evia can guide a pack: a question for each thing to mention, then the answers become the statement",/cavity closure/i.test(q1)&&await page.evaluate(()=>document.getElementById("write").value==="I fitted the cavity closer at the reveal.\n\nThe ties go in at 450 centres."));
+    await page.evaluate(()=>{const w=document.getElementById("write");w.value="";w.dispatchEvent(new Event("input"))});
+
     // Backup and restore: a learner's portfolio survives being restored and the app reloading.
     const keep=await page.evaluate(()=>evidence.length);
     const [bk]=await Promise.all([page.waitForEvent("download",{timeout:20000}),page.evaluate(()=>window.eviaStorage.backup())]);

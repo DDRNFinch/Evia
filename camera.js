@@ -28,20 +28,30 @@
   /* ---------- Photo camera ---------- */
   function openCamera(opts){
     const prompts=(opts.prompts||[]).map(p=>String(p).trim()).filter(Boolean);
-    const shots=[];let stream=null;
+    /* Guided mode (guide.js): opts.guide=[{say,hint}] — Evia asks for one thing at a time; Skip or Next moves on. */
+    const guide=Array.isArray(opts.guide)&&opts.guide.length?opts.guide:null;
+    const shots=[];let stream=null,step=0,stepStart=0;
     const el=overlay("cam-photo",
       '<header class="cam-top"><button type="button" class="cam-icon" data-cam-close aria-label="Close camera">'+X+'</button><strong>'+escHtml(opts.title||"Camera")+'</strong><span class="cam-count" aria-live="polite">0 photos</span></header>'+
       '<div class="cam-stage"><video playsinline muted autoplay></video><span class="cam-frame" aria-hidden="true"></span></div>'+
       /* Things to capture as plain text under the picture: ideas for what to photograph, nothing to tick off. */
-      (prompts.length?'<div class="cam-prompts"><span class="cam-prompts-h">Things to capture</span><p>'+prompts.map(escHtml).join('<span class="cam-dot" aria-hidden="true"> · </span>')+'</p></div>':"")+
+      (guide?'<div class="cam-guide" aria-live="polite"><span class="evia-mini" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span><div><small class="cam-guide-n"></small><p class="cam-guide-say"></p><span class="cam-guide-hint"></span></div></div>':
+       prompts.length?'<div class="cam-prompts"><span class="cam-prompts-h">Things to capture</span><p>'+prompts.map(escHtml).join('<span class="cam-dot" aria-hidden="true"> · </span>')+'</p></div>':"")+
       '<div class="cam-strip" aria-label="Photos taken"></div>'+
       '<footer class="cam-bottom"><span></span><button type="button" class="cam-shutter" aria-label="Take photo"><i></i></button><button type="button" class="cam-done" disabled>Done</button></footer>');
     const video=el.querySelector("video"),strip=el.querySelector(".cam-strip"),count=el.querySelector(".cam-count"),doneBtn=el.querySelector(".cam-done"),shutter=el.querySelector(".cam-shutter");
     const refresh=()=>{
       count.textContent=shots.length+" photo"+(shots.length===1?"":"s");
-      doneBtn.disabled=!shots.length;doneBtn.textContent=shots.length?"Done ("+shots.length+")":"Done";
+      if(guide){
+        const g=guide[step],got=shots.length-stepStart,last=step===guide.length-1;
+        el.querySelector(".cam-guide-n").textContent=(step+1)+" of "+guide.length;
+        el.querySelector(".cam-guide-say").textContent=g.say;
+        el.querySelector(".cam-guide-hint").textContent=got?"Got "+got+". Take more if you like, or move on.":g.hint||"";
+        doneBtn.disabled=false;doneBtn.textContent=got?(last?"Finish":"Next"):(last?"Skip and finish":"Skip");
+        doneBtn.classList.toggle("cam-skip",!got);
+      }else{doneBtn.disabled=!shots.length;doneBtn.textContent=shots.length?"Done ("+shots.length+")":"Done"}
       strip.innerHTML=shots.map((s,i)=>'<span class="cam-thumb"><img src="'+s.url+'" alt="Photo '+(i+1)+'"><button type="button" data-remove="'+i+'" aria-label="Remove photo '+(i+1)+'">'+X+'</button></span>').join("");
-      strip.querySelectorAll("[data-remove]").forEach(b=>b.onclick=()=>{const [s]=shots.splice(+b.dataset.remove,1);if(s)URL.revokeObjectURL(s.url);refresh()});
+      strip.querySelectorAll("[data-remove]").forEach(b=>b.onclick=()=>{const i=+b.dataset.remove,[s]=shots.splice(i,1);if(s)URL.revokeObjectURL(s.url);if(i<stepStart)stepStart--;refresh()});
       strip.scrollLeft=strip.scrollWidth;
     };
     const take=()=>{
@@ -59,9 +69,12 @@
     const finish=keep=>{
       const files=keep?shots.map((s,i)=>{const f=new File([s.blob],"photo-"+stamp()+"-"+(i+1)+".jpg",{type:"image/jpeg"});f.eviaTakenAt=Date.now();return f}):[];
       shots.forEach(s=>URL.revokeObjectURL(s.url));closeOverlay(el,stream);
-      if(files.length&&opts.onDone)opts.onDone(files);
+      if((files.length||guide)&&opts.onDone)opts.onDone(files);
     };
-    doneBtn.onclick=()=>finish(true);
+    doneBtn.onclick=()=>{
+      if(guide&&step<guide.length-1){step++;stepStart=shots.length;refresh();buzz(8);return}
+      finish(true);
+    };
     el.querySelector("[data-cam-close]").onclick=()=>{if(shots.length&&!confirm("Keep the "+shots.length+" photo"+(shots.length===1?"":"s")+" you’ve taken?")){finish(false);return}finish(true)};
     navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:1920},height:{ideal:1920}},audio:false})
       .then(s=>{stream=s;video.srcObject=s;return video.play().catch(()=>{})})

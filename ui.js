@@ -407,6 +407,7 @@
     "working at height":/height|scaffold|ladder|platform|podium|harness|stepladder/,
     "dpcs":/\bdpcs?\b|damp[- ]?proof/,
     "wall ties":/\bties?\b/,
+    "cavity closure":/cavity clos(?:er|ure)|closer/,
     "brick ties":/\bties?\b/,
     "cavity trays":/cavity trays?|\btrays?\b/,
     "insulation":/insulat|\bbatts?\b|kingspan|celotex|rockwool|\bboards?\b/,
