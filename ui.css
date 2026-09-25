@@ -1918,3 +1918,52 @@ html body .bottom-nav button{min-width:0}
 .tt-copy{flex:1;min-width:0}.tt-copy strong{display:block;font-size:16px;color:var(--ui-ink,#172033)}.tt-copy small{display:block;font-size:12.5px;color:var(--ui-muted,#667085);margin-top:2px}
 .tt-bar{display:block;height:6px;margin-top:8px;border-radius:3px;background:#eef1f5;overflow:hidden}.tt-bar>i{display:block;height:100%;border-radius:3px;background:var(--yellow)}
 .tt-chev{font-size:22px;color:#b5becb}
+/* My progress: each section's ways in, under its card; the review card at the top. */
+.pv-cell{display:flex;flex-direction:column;gap:8px}
+.pv-acts{display:flex;flex-wrap:wrap;gap:8px;padding:0 4px}
+.pv-act{height:38px;padding:0 15px;border-radius:13px;font-weight:750;font-size:14px;background:#fff;border:1px solid var(--ui-line);color:var(--ui-ink);cursor:pointer;transition:transform .15s}
+.pv-act.on{background:var(--ui-ink);border-color:var(--ui-ink);color:#fff}
+.pv-act:active{transform:scale(.96)}
+.pv-due{font-size:26px;font-weight:800;letter-spacing:-.02em}.pv-due.late{color:#c4320a}.pv-due.soon{color:var(--yellow-ink)}
+.pv-card.pv-alert{border-color:var(--yellow-line);background:linear-gradient(180deg,#fff,var(--soft))}
+.pv-rev-meta{font-size:13px;color:var(--ui-muted)}
+/* ---------- Evia's four things ---------- */
+@keyframes evFlash{0%,100%{box-shadow:0 0 0 0 transparent}30%{box-shadow:0 0 0 4px color-mix(in srgb,var(--yellow) 55%,transparent)}}
+.ev-flash{animation:evFlash 1.6s ease 2;border-radius:14px}
+.ev-check .ec-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ev-lv{font-size:12px;font-weight:800;padding:3px 10px;border-radius:999px}.ev-lv.l0{background:#fde7e4;color:#b42318}.ev-lv.l1{background:var(--soft);color:var(--yellow-ink)}.ev-lv.l2{background:#dcf5e6;color:#0f6b3a}
+.ev-sub{margin:10px 0 4px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ui-muted)}
+.ev-check ul{margin:0;padding-left:18px;font-size:14px;line-height:1.45}.ev-good li::marker{content:"✓  ";color:#0f8a4a}.ev-miss li::marker{content:"○  ";color:var(--yellow-ink)}
+.qr{display:flex;flex-direction:column;border-radius:18px;background:#fff;border:1px solid var(--ui-line);overflow:hidden}
+.qr-row{display:flex;align-items:center;gap:12px;padding:11px 14px}.qr-row+.qr-row{border-top:1px solid var(--ui-line)}
+.qr-row strong{display:block;font-size:14.5px;color:var(--ui-ink)}.qr-row small{display:block;font-size:12.5px;color:var(--ui-muted);margin-top:1px}
+.qr-ic{flex:0 0 auto;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:13px}
+.qr-row.ok .qr-ic{background:#dcf5e6;color:#0f6b3a}.qr-row.no .qr-ic{background:var(--soft);color:var(--yellow-ink)}
+/* The discussion guide */
+.dg-q{padding:14px;border-radius:16px;background:var(--ui-ink,#172033);color:#fff}.dg-q p{margin:6px 0 0;font-size:15px;line-height:1.45;font-weight:600}
+.dg-stage{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--yellow)}
+.dg-model{margin-top:8px;padding:14px;border-radius:16px;background:#fff;border:1px solid var(--ui-line)}.dg-model p{margin:0;font-size:14.5px;line-height:1.6}
+.dg-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.dg-chips span{font-size:12.5px;font-weight:700;padding:4px 10px;border-radius:999px;background:#dcf5e6;color:#0f6b3a}
+.dg-chips span.no{background:#fde7e4;color:#b42318}
+.dg-prompts{margin:8px 0 0;padding:12px 12px 12px 30px;border-radius:14px;background:var(--soft);font-size:14px;line-height:1.5;color:var(--yellow-ink)}
+.dg-answer{width:100%;margin-top:8px;min-height:130px}.dg-check{margin-top:8px}
+.dg-adv{margin:0;padding:12px 12px 12px 30px;border-radius:16px;background:#fff;border:1px solid var(--ui-line)}.dg-adv li+li{margin-top:8px}.dg-adv strong{display:block;font-size:14.5px}.dg-adv span{font-size:13.5px;color:var(--ui-muted);line-height:1.45}
+/* EPA mode: the chat fades to dark grey, like an exam room. */
+html body .chat-sheet,html body .chat-sheet #chat{transition:background-color .6s ease,color .6s ease}
+html body #modal-root .overlay{transition:background-color .6s ease}
+body.evia-epa #modal-root .overlay{background:rgba(12,14,18,.62)}
+body.evia-epa .chat-sheet{background:#2b2f36!important;color:#eef0f3}
+body.evia-epa .chat-sheet #chat{background:transparent!important}
+body.evia-epa .chat-sheet .sheet-head h2,body.evia-epa .chat-sheet .chat-kicker{color:#eef0f3}
+body.evia-epa .chat-sheet .close{color:#aab1bd}
+body.evia-epa #chat .bubble.evia{background:#3a3f48!important;color:#eef0f3}
+body.evia-epa #chat .bubble.user{background:var(--yellow)!important;color:#1a1d22}
+body.evia-epa #chat .chat-pill{background:#3a3f48!important;color:#eef0f3!important;border-color:#4a505a!important}
+body.evia-epa #chat .chat-pill.ui-pill-primary{background:var(--yellow)!important;color:#1a1d22!important}
+body.evia-epa .dg-model,body.evia-epa .dg-adv,body.evia-epa .qr{background:#343941;border-color:#4a505a;color:#eef0f3}
+body.evia-epa .dg-q{background:#1d2026}
+body.evia-epa .test-response{background:#1f2227;color:#eef0f3;border-color:#4a505a}
+body.evia-epa .dg-adv span{color:#b7bdc8}
+body.evia-epa .chat-sheet::after{background:#2b2f36!important;border-color:#2b2f36!important;transition:background-color .6s ease}
+.ui-logs-grid{grid-template-columns:1fr!important}
+.ui-log-add{width:100%;margin:0 0 12px;height:48px;border-radius:16px}

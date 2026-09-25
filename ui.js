@@ -279,9 +279,8 @@
     const last=otjBatches[otjBatches.length-1],cutoff=Number(last?last.cutoff:0),fresh=hours.filter(x=>Number(x.createdAt)>cutoff).length;
     const reviews=window.eviaGetReviews?window.eviaGetReviews().length:0,total=hours.reduce((n,x)=>n+Number(x.n||0),0),rd=window.eviaReviewDue&&window.eviaReviewDue();
     const tile=(id,cls,iconSvg,value,label,sub)=>'<button type="button" class="ui-log-tile '+cls+'" id="'+id+'"><span class="ui-log-top"><span class="ui-log-icon">'+iconSvg+'</span><span class="ui-log-chev" aria-hidden="true">›</span></span><b class="ui-log-value">'+value+'</b><strong>'+label+'</strong><small>'+sub+'</small></button>';
-    return '<h2 class="ui-section-label">Learning and reviews</h2><div class="ui-logs-grid" id="ui-logs-grid">'+
-      tile("ui-open-logs","logs",icon(ICONS.clock),hours.length?escHtml(hmText(total)):"0 h","Learning logs",hours.length?(fresh&&last?fresh+" new to download":hours.length+" entr"+(hours.length===1?"y":"ies")):"Log hours with Evia")+
-      tile("ui-open-reviews","reviews",'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 1 9-9"/><path d="M12 12l4-3"/></svg>',String(reviews),"Progress reviews",rd?(rd.days<0?"Next one overdue":"Next "+escHtml(new Date(rd.due).toLocaleDateString("en-GB",{day:"numeric",month:"short"}))):"None yet")+
+    return '<h2 class="ui-section-label">Learning logs</h2><div class="ui-logs-grid" id="ui-logs-grid">'+
+      tile("ui-open-logs","logs",icon(ICONS.clock),hours.length?escHtml(hmText(total)):"0 h","Learning logs",hours.length?(fresh&&last?fresh+" new to download":hours.length+" entr"+(hours.length===1?"y":"ies")):"No hours logged yet")+
     '</div>';
   }
   function bindLogsGrid(){
@@ -298,15 +297,16 @@
       const day=t=>new Date(Number(t)).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
       const batches=otjBatches.slice().reverse();
       $("#screen").innerHTML='<button class="secondary ui-back" id="ui-logs-back" type="button">‹ My course</button><h1 class="ui-sub-title">Learning logs</h1>'+
-        '<div class="ui-page">'+
+        '<div class="ui-page">'+'<button type="button" class="primary ui-log-add" id="ui-log-add">+ Log hours</button>'+
           '<section class="ui-card ui-hours-sum"><div><strong>'+escHtml(hmText(total))+'</strong><small>logged in total</small></div><div><strong>'+hours.length+'</strong><small>entr'+(hours.length===1?"y":"ies")+'</small></div></section>'+
           (hours.length?'<section class="ui-card ui-logs-dl"><div><strong>'+(fresh.length?fresh.length+" new entr"+(fresh.length===1?"y":"ies"):"Everything’s downloaded")+'</strong><small>'+(fresh.length?(last?"Since your last download on "+escHtml(savedDay(last.downloadedAt)):"Not downloaded yet"):"New entries will be ready to download here")+'</small></div>'+(fresh.length?'<button type="button" class="primary" id="download-otj">Download PDF</button>':"")+'</section>':"")+
           (hours.length?'<h2 class="ui-hours-h">Your log</h2><div class="ui-card ui-hours-list">'+hours.slice().sort((a,b)=>Number(b.createdAt)-Number(a.createdAt)).map(x=>{const isNew=Number(x.createdAt)>cutoff;return '<div class="ui-hours-item'+(isNew?"":" done")+'"><span class="ui-hours-n">'+escHtml(hmText(Number(x.n||0)))+'</span><span class="ui-hours-copy"><strong>'+escHtml(x.description||"No description recorded.")+'</strong><small>'+escHtml(day(x.createdAt))+' · '+(isNew?"<em>New</em>":"Downloaded")+(x.auto?' · <span class="ui-auto-tag">Logged by Evia</span>':"")+'</small></span>'+(x.auto&&isNew?'<button type="button" class="ui-auto-x" data-rm-auto="'+escHtml(x.id)+'" aria-label="Remove this entry">×</button>':"")+'</div>'}).join("")+'</div>'+
             (hours.some(x=>x.auto)?'<p class="ui-auto-note">Evia logs Teach me lessons and writing up your evidence automatically, counting only the time you’re actively working. Off-the-job training only counts in your paid working hours (or if your employer gives you the time back), so remove any entry that doesn’t.</p>':"")
-            :'<div class="ui-card ui-empty"><span class="ui-icon-chip">'+icon(ICONS.clock)+'</span><p>No off-the-job learning logged yet. Tap Evia and choose <strong>Log my hours</strong>.</p></div>')+
+            :'<div class="ui-card ui-empty"><span class="ui-icon-chip">'+icon(ICONS.clock)+'</span><p>No off-the-job learning logged yet. Tap <strong>Log hours</strong> above to add some.</p></div>')+
           (batches.length?'<h2 class="ui-hours-h">Past downloads</h2><div class="ui-card ui-hours-list">'+batches.map(b=>'<div class="ui-hours-item ui-batch"><span class="ui-hours-copy"><strong>'+escHtml(savedDay(b.downloadedAt))+'</strong><small>'+(b.entryIds||[]).length+' entr'+((b.entryIds||[]).length===1?"y":"ies")+'</small></span><button type="button" class="secondary" data-batch="'+escHtml(b.id)+'">Download again</button></div>').join("")+'</div>':"")+
         '</div>';
       $("#ui-logs-back").onclick=()=>nav("course");
+      $("#ui-log-add").onclick=()=>{window.chat({quiet:true});setTimeout(()=>window.eviaCoachFlows&&window.eviaCoachFlows.hours(),120)};
       const dl=$("#download-otj");if(dl)dl.onclick=()=>downloadOTJPDF("new");
       document.querySelectorAll("[data-batch]").forEach(b=>b.onclick=()=>downloadOTJPDF(b.dataset.batch));
       document.querySelectorAll("[data-rm-auto]").forEach(b=>b.onclick=()=>{if(!confirm("Remove this entry from your learning log?"))return;const i=hours.findIndex(x=>x.id===b.dataset.rmAuto);if(i>=0){hours.splice(i,1);persist();openLearningLogs()}});
@@ -320,13 +320,13 @@
       const pb=document.getElementById("profile-btn");if(pb)pb.style.display="none";
       $("#page-title").textContent="Progress reviews";
       const reviews=window.eviaGetReviews?window.eviaGetReviews():[],rd=window.eviaReviewDue&&window.eviaReviewDue();
-      $("#screen").innerHTML='<button class="secondary ui-back" id="back-reviews-portfolio" type="button">‹ My course</button><h1 class="ui-sub-title">Progress reviews</h1>'+
+      $("#screen").innerHTML='<button class="secondary ui-back" id="back-reviews-portfolio" type="button">‹ My progress</button><h1 class="ui-sub-title">Progress reviews</h1>'+
         '<div class="ui-page">'+
-          (rd?'<section class="ui-card ui-logs-dl"><div><strong>'+(rd.days<0?"Your next review is overdue":"Next review: "+escHtml(savedDay(rd.due)))+'</strong><small>Tap Evia and choose Review me</small></div></section>':"")+
+          (rd?'<section class="ui-card ui-logs-dl"><div><strong>'+(rd.days<0?"Your next review is overdue":"Next review: "+escHtml(savedDay(rd.due)))+'</strong><small>Tap Start my review on My progress</small></div></section>':"")+
           (reviews.length?'<div class="ui-card ui-hours-list">'+reviews.map(r=>{const t=(r.targets||[]).length;return '<button type="button" class="ui-hours-item ui-review-row" data-review-id="'+escHtml(r.id||"")+'"><span class="ui-review-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 1 9-9"/><path d="M12 12l4-3"/></svg></span><span class="ui-hours-copy"><strong>Review · '+escHtml(savedDay(r.date))+'</strong><small>'+(r.snapshot?r.snapshot.ksbPct+"% evidenced · ":"")+t+' target'+(t===1?"":"s")+' set</small></span><span class="ui-review-chev" aria-hidden="true">›</span></button>'}).join("")+'</div>'
-            :'<div class="ui-card ui-empty"><span class="ui-icon-chip">'+icon(ICONS.clock)+'</span><p>No reviews yet. Evia takes you through your first one in the chat: tap her and choose <strong>Review me</strong>.</p></div>')+
+            :'<div class="ui-card ui-empty"><span class="ui-icon-chip">'+icon(ICONS.clock)+'</span><p>No reviews yet. Evia takes you through your first one in the chat: tap <strong>Start my review</strong> on My progress.</p></div>')+
         '</div>';
-      $("#back-reviews-portfolio").onclick=()=>nav("course");
+      $("#back-reviews-portfolio").onclick=()=>nav("learning");
       document.querySelectorAll("[data-review-id]").forEach(b=>b.onclick=()=>{if(window.eviaShowReview)window.eviaShowReview(b.dataset.reviewId)});
       window.scrollTo(0,0);
     });
@@ -627,26 +627,25 @@
       return bits.filter(Boolean).join(" ");
     }catch(_){return""}
   }
+  /* Evia's four things: check a piece of evidence, a quick review of every area, targets, and EPA practice. Hours,
+     confidence, college tasks and scenarios are opened from their section of My progress. */
   const ACTIONS=[
-    ["test","Test me",'<path d="M7 3.5h10a1.5 1.5 0 0 1 1.5 1.5v15l-3-1.8-3 1.8-3-1.8-3 1.8V5A1.5 1.5 0 0 1 7 3.5Z"/><path d="M9 8.5h6M9 12h6"/>'],
-    ["upskill","Upskill me",'<path d="m4 16 5-5 4 4 7-7"/><path d="M15 8h5v5"/>'],
-    ["confidence","Confidence check",'<path d="M4 20h16"/><rect x="5.5" y="12" width="3" height="6" rx="1"/><rect x="10.5" y="8" width="3" height="10" rx="1"/><rect x="15.5" y="4" width="3" height="14" rx="1"/>'],
-    ["review","Review me",'<path d="M12 21a9 9 0 1 1 9-9"/><path d="M12 12l4-3"/><circle cx="12" cy="12" r="1.2"/>'],
-    ["evidence","Check my evidence",'<path d="m5 12.5 4.5 4.5L19 7.5"/>'],
-    ["hours","Log my hours",'<path d="M20 12a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"/><path d="M12 7.5V12l3 2"/>']
+    ["evidence","Evidence check",'<path d="m5 12.5 4.5 4.5L19 7.5"/>'],
+    ["quick","Quick review",'<path d="M4 20h16"/><rect x="5.5" y="12" width="3" height="6" rx="1"/><rect x="10.5" y="8" width="3" height="10" rx="1"/><rect x="15.5" y="4" width="3" height="14" rx="1"/>'],
+    ["targets","Show targets",'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/>'],
+    ["epa",(window.eviaNvq&&window.eviaNvq.on())?"Knowledge tests":"EPA mocks",'<path d="M7 3.5h10a1.5 1.5 0 0 1 1.5 1.5v15l-3-1.8-3 1.8-3-1.8-3 1.8V5A1.5 1.5 0 0 1 7 3.5Z"/><path d="M9 8.5h6M9 12h6"/>']
   ];
   function actionRun(id){
     const C=window.eviaCoachFlows||{};
     return {
-      test:()=>{userSays("Test me");if(window.eviaTestMe)window.eviaTestMe()},
-      upskill:()=>{userSays("Upskill me");C.upskill?C.upskill():taskFromMenu()},
-      confidence:()=>{userSays("Confidence check");C.confidence?C.confidence():(closeChat(),setTimeout(()=>window.eviaPractice&&window.eviaPractice.openConfidence(),60))},
-      review:reviewFromMenu,
-      evidence:()=>{userSays("Check my evidence");C.evidence?C.evidence():writeups()},
-      hours:()=>{userSays("Log my hours");C.hours?C.hours():nav("hours")}
+      evidence:()=>{userSays("Evidence check");C.evidenceCheck?C.evidenceCheck():writeups()},
+      quick:()=>{userSays("Quick review");if(C.quickReview)C.quickReview()},
+      targets:()=>{userSays("Show targets");C.targets?C.targets():targetsFromMenu()},
+      epa:()=>{userSays(ACTIONS[3][1]);if(C.epa)C.epa()}
     }[id];
   }
   function actionGrid(){
+    document.body.classList.remove("evia-epa");
     const gen=chatGen;
     queue=queue.then(()=>{
       const c=chatBox();if(!c||gen!==chatGen)return;

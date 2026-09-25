@@ -38,7 +38,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("The app opens on My course; the nav is Course, Progress, Evia, Teach me and Rewards",await page.evaluate(()=>screen==="course"&&!!document.getElementById("ui-course-head")&&[...document.querySelectorAll("[data-nav]")].map(b=>b.textContent.trim()).join()==="Course,Progress,Teach me,Rewards"));
     for(const s of ["course","progress","portfolio","learning"]){await page.evaluate(s=>nav(s),s);await page.waitForTimeout(450)}
     await page.evaluate(()=>nav("progress"));await page.waitForTimeout(450);
-    check("My progress says when the next review is due",await page.evaluate(()=>!window.eviaReviewDue()||!!document.querySelector(".pv-review-line")));
+    check("My progress starts with the progress review, and each section has its way in",await page.evaluate(()=>{const first=document.querySelector(".pv-grid .pv-card");return first&&first.id==="pv-review"&&!!document.querySelector('[data-act="otj:0"]')&&!!document.querySelector('[data-act="conf:1"]')&&!!document.querySelector('[data-act="review:0"]')}));
     check("My progress shows a chart card for each area, with no action buttons",await page.evaluate(()=>screen==="learning"&&["where","ksb","otj","tests","conf","act","quality","targets","ach"].every(id=>document.getElementById("pv-"+id))&&!document.querySelector("#screen .primary,#screen .pg-action")));
     await page.click("#pv-otj");await page.waitForTimeout(500);
     check("Tapping a card opens its deep dive with a how-to note",await page.evaluate(()=>/Off-the-job hours/.test(document.getElementById("pv-sheet-title").textContent)&&!!document.querySelector(".pv-sheet .pv-note")&&!!document.querySelector(".pv-sheet .pv-cols")));
@@ -92,10 +92,33 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>window.chat());
     await page.waitForFunction(()=>{const c=document.getElementById("chat");return c&&!c.querySelector(".evia-thinking")},null,{timeout:15000});
     await page.waitForSelector("#chat .ui-action",{timeout:15000});
-    check("Evia opens with a catch-up and her six actions",await page.evaluate(()=>{const t=[...document.querySelectorAll("#chat .ui-action")].map(b=>b.innerText.trim());return ["Test me","Upskill me","Confidence check","Review me","Check my evidence","Log my hours"].every(x=>t.includes(x))&&/off-the-job/.test(document.getElementById("chat").innerText)&&!document.querySelector(".chat-sheet .ui-ask")}));
+    check("Evia opens with a catch-up and her four actions",await page.evaluate(()=>{const t=[...document.querySelectorAll("#chat .ui-action")].map(b=>b.innerText.trim());return t.join()==="Evidence check,Quick review,Show targets,EPA mocks"&&/off-the-job/.test(document.getElementById("chat").innerText)&&!document.querySelector(".chat-sheet .ui-ask")}));
     await page.click('#chat .ui-action[data-action="evidence"]');
-    await page.waitForFunction(()=>/unit/.test((document.querySelector("#chat .bubble.evia:last-of-type")||{}).innerText||"")&&document.querySelectorAll("#chat .bubble.evia").length>=2,null,{timeout:15000});
-    check("Check my evidence goes through the units with evidence",await page.evaluate(()=>/I’ve been through/.test(document.getElementById("chat").innerText)));
+    await page.waitForFunction(()=>[...document.querySelectorAll("#chat .ui-replies button")].length>=2,null,{timeout:15000});
+    await page.evaluate(()=>document.querySelector("#chat .ui-replies button").click());
+    await page.waitForFunction(()=>!!document.querySelector("#chat .ev-check")&&[...document.querySelectorAll("#chat .ui-replies button")].some(b=>/Add photos/.test(b.textContent)),null,{timeout:15000});
+    check("Evidence check rates a piece of evidence, lists what's still to mention and offers ways to fix it",await page.evaluate(()=>{const t=[...document.querySelectorAll("#chat .ui-replies button")].map(b=>b.textContent);return /Weak|Good|Strong/.test(document.querySelector("#chat .ev-check").textContent)&&["Add photos","Improve my write-up","Let Evia guide me","Check another"].every(x=>t.includes(x))}));
+    await page.evaluate(()=>[...document.querySelectorAll("#chat .ui-replies button")].find(b=>b.textContent==="Something else").click());
+    await page.waitForSelector('#chat .ui-actions .ui-action[data-action="quick"]',{timeout:15000});await page.click('#chat .ui-actions .ui-action[data-action="quick"]');
+    await page.waitForSelector("#chat .qr",{timeout:15000});
+    check("Quick review shows every area at a glance and offers the ones needing work",await page.evaluate(()=>document.querySelectorAll("#chat .qr-row").length>=7&&[...document.querySelectorAll("#chat .ui-replies button")].filter(b=>/^Open /.test(b.textContent)).length>=1));
+    await page.evaluate(()=>[...document.querySelectorAll("#chat .ui-replies button")].find(b=>b.textContent==="Something else").click());
+    await page.waitForSelector('#chat .ui-actions .ui-action[data-action="epa"]',{timeout:15000});await page.click('#chat .ui-actions .ui-action[data-action="epa"]');
+    await page.waitForFunction(()=>[...document.querySelectorAll("#chat .ui-replies button")].some(b=>/Discussion guide/.test(b.textContent)),null,{timeout:15000});
+    check("EPA mocks darkens the chat and offers quick practice, a full mock, a full discussion and the guide",await page.evaluate(()=>{const t=[...document.querySelectorAll("#chat .ui-replies button")].map(b=>b.textContent);return document.body.classList.contains("evia-epa")&&["Quick practice","Full mock","Full discussion","Discussion guide"].every(x=>t.includes(x))}));
+    await page.evaluate(()=>[...document.querySelectorAll("#chat .ui-replies button")].find(b=>b.textContent==="Discussion guide").click());
+    await page.waitForFunction(()=>[...document.querySelectorAll("#chat .ui-replies button")].length>=5,null,{timeout:15000});
+    await page.evaluate(()=>document.querySelector("#chat .ui-replies button").click());
+    await page.waitForSelector("#chat .dg-model",{timeout:15000});
+    await page.waitForFunction(()=>[...document.querySelectorAll("#chat .ui-replies button")].some(b=>/read it/.test(b.textContent)),null,{timeout:15000});
+    await page.evaluate(()=>[...document.querySelectorAll("#chat .ui-replies button")].find(b=>/read it/.test(b.textContent)).click());
+    await page.waitForSelector("#chat .dg-prompts",{timeout:15000});
+    await page.fill("#chat .dg-answer","I would read the drawings, set out from the datum, wear PPE, mix the mortar and keep it to line and level.");
+    await page.click("#chat .dg-check");await page.waitForSelector("#chat .dg-result",{timeout:15000});
+    check("The discussion guide goes from a model answer to answering with prompts, and checks each area",await page.evaluate(()=>document.querySelectorAll("#chat .dg-result .ok").length===5));
+    await page.click('#x');await page.waitForTimeout(400);
+    check("EPA mode ends when the chat closes",await page.evaluate(()=>!document.body.classList.contains("evia-epa")));
+    await page.evaluate(()=>window.chat());await page.waitForSelector("#chat .ui-action",{timeout:15000});
     check("Targets are set from Evia's stats",await page.evaluate(()=>{window.eviaTargets.ensure();return window.eviaTargets.mine().length>=3}));
     await page.click('#x');await page.waitForTimeout(300);
     check("Profile button comes back after closing the chat",await page.evaluate(()=>getComputedStyle(document.getElementById("profile-btn")).display!=="none"));
@@ -140,7 +163,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>{document.body.classList.add("evia-onboarding");nav("progress")});await page.waitForTimeout(200);
     check("The first-run demo can point at the KSB card on My progress",!!await page.$("#pv-ksb"));
     await page.evaluate(()=>nav("course"));await page.waitForTimeout(200);
-    check("My course has Learning logs and Progress reviews side by side under the units, for the demo to point at",await page.evaluate(()=>{const g=document.getElementById("ui-logs-grid");return !!g&&g.querySelectorAll(".ui-log-tile").length===2&&!!g.previousElementSibling}));
+    check("My course has Learning logs under the units, for the demo to point at (reviews moved to My progress)",await page.evaluate(()=>{const g=document.getElementById("ui-logs-grid");return !!g&&g.querySelectorAll(".ui-log-tile").length===1&&!document.getElementById("ui-open-reviews")&&!!g.previousElementSibling}));
     await page.evaluate(()=>{document.body.classList.remove("evia-onboarding");nav("home")});await page.waitForTimeout(450);
 
     await page.evaluate(()=>window.eviaStartReview());await page.waitForTimeout(400);

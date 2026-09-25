@@ -69,7 +69,7 @@
     }
 
     function runDiscussion(){
-      const qs=bankFor("discussion").slice(0,5);
+      const bank=bankFor("discussion"),qs=opts.count&&opts.count<5?shuffle(bank).slice(0,opts.count):bank.slice(0,5);
       const result={questions:[],score:0,total:qs.length};
       let i=0;
       const ask=()=>{

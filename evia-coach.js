@@ -1,6 +1,7 @@
 /* Evia7 coach: the things Evia does with the learner in the chat, spoken like a coach rather than filled in like a
-   form. Log my hours (with an hours-and-minutes wheel), a confidence check one skill at a time, Upskill me, Check my
-   evidence, and a message box that understands the common things apprentices ask. Uses the chat helpers in ui.js. */
+   form. Her menu: Evidence check, Quick review, Show targets and EPA mocks. The other flows here (log hours with an
+   hours-and-minutes wheel, a confidence check one skill at a time, college tasks, scenarios) are opened from the
+   matching section of My progress. Uses the chat helpers in ui.js. */
 (function(){
   const K=()=>window.eviaChatKit;
   const esc=v=>String(v??"").replace(/[&<>"']/g,x=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[x]));
@@ -137,7 +138,7 @@
         k.replies([{label:"Find me a college task",primary:true,run:upskillTask},{label:"See my confidence",run:()=>{k.closeChat();setTimeout(()=>{nav("learning");setTimeout(()=>window.eviaProgressDeep&&window.eviaProgressDeep("conf"),450)},60)}},{label:"Something else",run:k.somethingElse}]);
       }else{
         k.say("Nothing rated low. Keep it up, and try a full mock test to prove it.");
-        k.replies([{label:"Test me",run:()=>window.eviaTestMe&&window.eviaTestMe()},{label:"Something else",run:k.somethingElse}]);
+        k.replies([{label:(window.eviaNvq&&window.eviaNvq.on())?"Knowledge tests":"EPA mocks",run:epa},{label:"Something else",run:k.somethingElse}]);
       }
     };
     ask();
@@ -247,5 +248,188 @@
     };
   }
 
-  window.eviaCoachFlows={hours:logHours,confidence,upskill,evidence,input,scenario};
+
+  /* ---------- Shared: go to a place in the app from the chat ---------- */
+  const nvqOn=()=>!!(window.eviaNvq&&window.eviaNvq.on());
+  const waitFor=(sel,then,tries)=>{const el=document.querySelector(sel);if(el)return then(el);if((tries||0)<25)setTimeout(()=>waitFor(sel,then,(tries||0)+1),120)};
+  const flash=el=>{el.scrollIntoView({block:"center",behavior:reduced()?"auto":"smooth"});el.classList.remove("ev-flash");void el.offsetWidth;el.classList.add("ev-flash")};
+  /* Open a unit and land on one part of it: the photos, the write-up or the guided pack. */
+  function openUnitAt(u,sel,how){
+    K().closeChat();
+    setTimeout(()=>{openUnit(u.index);setTimeout(()=>waitFor(sel,el=>{flash(el);if(how==="focus")setTimeout(()=>el.focus({preventScroll:true}),400);if(how==="click")setTimeout(()=>el.click(),300)}),300)},60);
+  }
+  /* Open a My progress section: scroll to its card and open its detail. */
+  function openProgress(id){
+    K().closeChat();
+    setTimeout(()=>{nav("learning");setTimeout(()=>waitFor("#pv-"+id,el=>{flash(el);if(id==="review"){if(window.openSavedReviews)setTimeout(window.openSavedReviews,500)}else if(window.eviaProgressDeep)setTimeout(()=>window.eviaProgressDeep(id),500)}),350)},60);
+  }
+
+  /* ---------- Evidence check: one piece of evidence, its quality and what's still missing ---------- */
+  const level=(v,weak,good)=>v<=weak?0:v<=good?1:2;
+  const EV_LEVELS=["Weak","Good","Strong"];
+  function evidenceCheck(){
+    const k=K(),a=k.analyse();
+    const latest=u=>Math.max(...u.entries.map(e=>Date.parse(e.savedAt||"")||0));
+    const started=a.units.filter(u=>u.started).sort((x,y)=>latest(y)-latest(x));
+    if(!started.length){
+      k.say("You haven’t saved any evidence yet. Pick a unit on My course, take a few photos and write what you did. Then I’ll check it for you.");
+      k.replies([{label:"Go to My course",primary:true,run:()=>{k.closeChat();setTimeout(()=>nav("course"),60)}},{label:"Something else",run:k.somethingElse}]);return;
+    }
+    k.say("Which evidence shall I check? Your most recent is first.");
+    k.replies(started.slice(0,5).map((u,i)=>({label:u.name,primary:!i,run:()=>{checkOne(u)}})).concat([{label:"Something else",run:k.somethingElse}]));
+  }
+  function checkOne(u){
+    const k=K(),prompts=(window.eviaLearnerPrompts||{})[course]||{},c=k.checkUnit(u,prompts);
+    const pct=c.terms.length?Math.round(c.covered.length/c.terms.length*100):null;
+    const lv=[level(c.photos,4,9),level(c.words,49,99)].concat(pct==null?[]:[level(pct,49,79)]),overall=Math.min(...lv);
+    const good=[],work=[];
+    (c.photos>=10?good:c.photos>=5?good:work).push(c.photos>=5?k.plural(c.photos,"photo")+(c.photos>=10?": plenty to show the job":", enough to show the job"):"Only "+k.plural(c.photos,"photo")+": add the start, middle and finished job");
+    (c.words>=100?good:c.words>=50?good:work).push(c.words>=50?"A write-up of "+c.words+" words":"The write-up is short ("+c.words+" words): say how you did it and how you checked it");
+    if(pct!=null)(pct>=80?good:work).push(pct>=80?"Covers "+c.covered.length+" of "+c.terms.length+" things to mention":"Covers "+c.covered.length+" of "+c.terms.length+" things to mention");
+    if(window.eviaMood)window.eviaMood(overall===2?"happy":"think");
+    k.say("<strong>"+esc(u.name)+"</strong> is <strong>"+EV_LEVELS[overall]+"</strong> evidence"+(overall===2?". Really nice work.":overall===1?". A few things would make it strong.":". Let’s build it up.")+"");
+    k.widget('<div class="ec ev-check"><div class="ec-item"><div class="ec-head"><strong>'+esc(u.name)+'</strong><span class="ev-lv l'+overall+'">'+EV_LEVELS[overall]+'</span></div>'+
+      (good.length?'<p class="ev-sub">What’s good</p><ul class="ev-good">'+good.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul>':"")+
+      (work.length?'<p class="ev-sub">Needs work</p><ul>'+work.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul>':"")+
+      (c.missing.length?'<p class="ev-sub">Still to mention</p><ul class="ev-miss">'+c.missing.map(x=>'<li>'+esc(x.charAt(0).toUpperCase()+x.slice(1))+'</li>').join("")+'</ul>':"")+
+      '</div></div>');
+    if(c.missing.length)k.say("Add the things still to mention to your write-up, in your own words.");
+    k.replies([
+      {label:"Add photos",primary:c.photos<5,run:()=>openUnitAt(u,"#evidence-photos")},
+      {label:"Improve my write-up",primary:c.photos>=5,run:()=>openUnitAt(u,"#write","focus")},
+      {label:"Let Evia guide me",run:()=>openUnitAt(u,"#eg-start","click")},
+      {label:"Check another",run:evidenceCheck},
+      {label:"Something else",run:k.somethingElse}
+    ]);
+  }
+
+  /* ---------- Quick review: every area at a glance ---------- */
+  function areas(){
+    const S=window.eviaStats.compute(),a=S.a,out=[],add=(id,title,ok,text)=>out.push({id,title,ok,text});
+    const gap=a.timePct==null?0:a.timePct-a.ksbPct;
+    add("where","Evidence",gap<=10,a.ksbPct+"% of "+(window.eviaTerm?window.eviaTerm().many:"KSBs")+" have evidence"+(gap>10?", a little behind for this point in your course":a.timePct!=null?", on track":""));
+    add("quality","Evidence quality",S.coverage!=null&&S.coverage>=70,S.coverage==null?"No write-ups checked yet":"Write-ups cover "+S.coverage+"% of the things to mention");
+    add("otj","Off-the-job hours",S.otjWeek>=6,S.otjWeek?hm(S.otjWeek)+" this week (aim for 6 h)":"Nothing logged this week");
+    const sc=S.confidence.scores,low=sc.filter(x=>x.score<=2);
+    add("conf","Confidence",sc.length>=3&&!low.length,sc.length<3?"Skills not rated yet":low.length?"Low in "+K().listText(low.slice(0,2).map(x=>x.area)):"Confident across your skills");
+    const T=window.eviaTeach,st=T&&T.stats?T.stats():{days:{}},sum=T&&T.summary?T.summary():{done:0,total:0};
+    const recent=Object.keys(st.days||{}).some(d=>Date.now()-Date.parse(d)<8*864e5);
+    add("teach","Teach me",recent,sum.done+" of "+sum.total+" lessons done"+(recent?", learning this week":", nothing this week"));
+    const tests=readJson("evia7-test-results",[]).filter(t=>t&&t.course===course&&(t.type==="epa")),lt=tests[tests.length-1];
+    add("tests",nvqOn()?"Knowledge tests":"EPA practice",!!lt&&lt.pct>=70,lt?"Last score "+lt.pct+"%"+(lt.pct>=70?"":" (aim for 70%)"):"No practice yet");
+    const TG=window.eviaTargets,tg=TG?TG.mine():[],open=tg.filter(t=>!t.done),late=open.filter(t=>t.due&&Date.parse(t.due)<Date.now());
+    add("targets","Targets",tg.length>0&&!late.length,!tg.length?"None set yet":tg.length-open.length+" of "+tg.length+" done"+(late.length?", "+late.length+" overdue":""));
+    const rd=window.eviaReviewDue&&window.eviaReviewDue();
+    add("review","Progress review",!!rd&&rd.days>=0,!rd?"No date yet":rd.days<0?"Overdue":"Next one in "+K().plural(rd.days,"day"));
+    return out;
+  }
+  function quickReview(){
+    const k=K(),list=areas(),work=list.filter(x=>!x.ok),good=list.filter(x=>x.ok);
+    if(window.eviaMood)window.eviaMood(work.length<=2?"happy":"think");
+    k.say(!work.length?"Everything looks good. Brilliant.":good.length?"<strong>"+good.length+"</strong> area"+(good.length===1?" looks":"s look")+" good and <strong>"+work.length+"</strong> need"+(work.length===1?"s":"")+" work.":"Every area needs a bit of work. Let’s take them one at a time.");
+    k.widget('<div class="qr">'+list.map(x=>'<div class="qr-row '+(x.ok?"ok":"no")+'"><span class="qr-ic" aria-hidden="true">'+(x.ok?"✓":"!")+'</span><span><strong>'+esc(x.title)+'</strong><small>'+esc(x.text)+'</small></span></div>').join("")+'</div>');
+    k.replies(work.slice(0,4).map((x,i)=>({label:"Open "+x.title,primary:!i,run:()=>x.id==="teach"?(k.closeChat(),setTimeout(()=>nav("teach"),60)):openProgress(x.id==="tests"&&!readJson("evia7-test-results",[]).some(t=>t&&t.course===course)?"tests":x.id)})).concat([{label:"Something else",run:k.somethingElse}]));
+  }
+
+  /* ---------- Show targets: what's done, what's left, and the most urgent one to do now ---------- */
+  function targetDo(t){
+    const k=K(),C=window.eviaCoachFlows,a=k.analyse();
+    const go={
+      units:()=>a.quickest?k.openUnitFromChat(a.quickest):(k.closeChat(),setTimeout(()=>nav("course"),60)),
+      ksb:()=>a.quickest?k.openUnitFromChat(a.quickest):(k.closeChat(),setTimeout(()=>nav("course"),60)),
+      streak:()=>a.quickest?k.openUnitFromChat(a.quickest):(k.closeChat(),setTimeout(()=>nav("course"),60)),
+      otj:()=>C.hours(),
+      epa:()=>window.eviaTestMe&&window.eviaTestMe({type:"epa-full"}),
+      quiz:()=>window.eviaTestMe&&window.eviaTestMe({type:"epa",count:5}),
+      skill:()=>k.taskFromMenu(),
+      rate:()=>C.confidence(),
+      maths:()=>window.eviaTestMe&&window.eviaTestMe({type:"maths"}),
+      english:()=>window.eviaTestMe&&window.eviaTestMe({type:"english"}),
+      quality:()=>evidenceCheck(),
+      scenarios:()=>C.scenario()
+    }[t.kind];
+    return go||(()=>openProgress("targets"));
+  }
+  function targets(){
+    const k=K(),T=window.eviaTargets;
+    if(!T){k.say("Targets aren’t available just now.");return k.somethingElse()}
+    const {created}=T.ensure();T.check(false);
+    const now=T.mine(),S=T.stats();
+    if(!now.length){k.say("I need a bit more from you first. Capture some evidence and I’ll set targets.");return k.replies([{label:"Something else",run:k.somethingElse}])}
+    const open=now.filter(t=>!t.done).map(t=>({t,p:T.progress(t,S).pct,due:Date.parse(t.due)||Infinity})).sort((x,y)=>x.due-y.due||x.p-y.p);
+    if(created)k.say("You didn’t have any targets yet, so I’ve set "+k.plural(now.length,"target")+" based on how you’re getting on.");
+    k.say(!open.length?"You’ve done all "+now.length+" targets. Brilliant. Your next progress review will set new ones.":"You’ve done <strong>"+(now.length-open.length)+" of "+now.length+"</strong>. <strong>"+open.length+"</strong> still to do.");
+    k.widget('<div class="chat-targets">'+T.cardHtml({chat:true})+'</div>',el=>{T.bind(el);requestAnimationFrame(()=>requestAnimationFrame(()=>{const c=el.querySelector(".pg-card");if(c)c.classList.add("pg-in")}))});
+    if(open.length){
+      const u=open[0],late=u.due<Date.now();
+      k.say("Most urgent: <strong>"+esc(u.t.title)+"</strong>"+(u.due<Infinity?(late?", which was due ":", due ")+new Date(u.due).toLocaleDateString("en-GB",{day:"numeric",month:"long"}):"")+".");
+      k.replies([{label:"Do it now",primary:true,run:targetDo(u.t)},{label:"See them in My progress",run:()=>openProgress("targets")},{label:"Something else",run:k.somethingElse}]);
+    }else k.replies([{label:"See them in My progress",primary:true,run:()=>openProgress("targets")},{label:"Something else",run:k.somethingElse}]);
+  }
+
+  /* ---------- EPA mocks: the chat goes dark grey, like the real thing ---------- */
+  const EPA_KEYS={bricklayer:"bricklaying",site:"siteCarpentry",joiner:"benchJoinery"};
+  const discussions=()=>{const key=EPA_KEYS[course]||"bricklaying";let bank=[];try{bank=EPA_DISCUSSIONS[key]||[]}catch(_){}const g=(window.EVIA_EPA_GUIDE||{})[key]||[];return bank.map((q,i)=>Object.assign({},q,g[i]||{}))};
+  const epaMode=on=>document.body.classList.toggle("evia-epa",!!on);
+  function epa(){
+    const k=K();epaMode(true);
+    k.say(nvqOn()?"Let’s practise for your knowledge tests. Take your time: this is just practice.":"Let’s get you ready for your end-point assessment. Take a breath: this is just practice.");
+    epaMenu();
+  }
+  function epaMenu(){
+    const k=K();
+    k.replies([
+      {label:"Quick practice",primary:true,run:()=>{k.say("5 multiple-choice questions, or 1 discussion question?");k.replies([{label:"5 multiple choice",primary:true,run:()=>window.eviaTestMe({type:"epa",count:5})},{label:"1 discussion question",run:()=>window.eviaTestMe({type:"discussion",count:1})},{label:"Back",run:epaMenu}])}},
+      {label:nvqOn()?"Full knowledge test":"Full mock",run:()=>window.eviaTestMe({type:"epa-full"})},
+      {label:"Full discussion",run:()=>window.eviaTestMe({type:"discussion"})},
+      {label:"Discussion guide",run:()=>{guide()}},
+      {label:"Something else",run:()=>{epaMode(false);k.somethingElse()}}
+    ]);
+  }
+  /* The discussion guide: read a strong answer, answer with prompts, then answer on your own. */
+  function guide(){
+    const k=K(),qs=discussions().filter(q=>q.model);
+    if(!qs.length){k.say("I don’t have discussion questions for your course yet.");return epaMenu()}
+    k.say("I’ll teach you how to answer a discussion question in three stages: <strong>1</strong> read a strong answer, <strong>2</strong> answer it yourself with prompts, <strong>3</strong> answer it with no prompts.");
+    k.say("Which question shall we practise?");
+    k.replies(qs.map((q,i)=>({label:shortQ(q.prompt),primary:!i,run:()=>{stage1(q)}})).concat([{label:"Advice first",run:advice},{label:"Back",run:epaMenu}]));
+  }
+  const shortQ=p=>{const s=String(p).split(/(?<=\.)\s/)[0].replace(/^You (have been asked to|are|need to|have|discover that)\s*/i,"").replace(/\.$/,"");return s.charAt(0).toUpperCase()+s.slice(1)};
+  function advice(){
+    const k=K(),A=(window.EVIA_EPA_GUIDE||{}).advice||[];
+    
+    k.say("Here’s what assessors listen for.");
+    k.widget('<ol class="dg-adv">'+A.map(x=>'<li><strong>'+esc(x[0])+'</strong><span>'+esc(x[1])+'</span></li>').join("")+'</ol>');
+    k.replies([{label:"Pick a question",primary:true,run:guide},{label:"Back",run:epaMenu}]);
+  }
+  const qCard=(q,stage)=>'<div class="dg-q"><span class="dg-stage">Stage '+stage+' of 3</span><p>'+esc(q.prompt)+'</p></div>';
+  function stage1(q){
+    const k=K();
+    k.say("Stage 1: read this strong answer. Notice it goes through the job in order and says <strong>why</strong>, not just what.");
+    k.widget(qCard(q,1)+'<div class="dg-model"><p>'+esc(q.model)+'</p><div class="dg-chips">'+q.points.map(p=>'<span>✓ '+esc(p.label)+'</span>').join("")+'</div></div>');
+    k.replies([{label:"I’ve read it",primary:true,run:()=>{stage(q,2)}},{label:"Pick another question",run:guide}]);
+  }
+  function stage(q,n){
+    const k=K();
+    k.say(n===2?"Stage 2: now answer the same question yourself. Use the prompts to cover each area. Type, or use your phone’s microphone.":"Stage 3: answer it once more, with no prompts this time. Aim to cover every area.");
+    k.widget(qCard(q,n)+(n===2?'<ol class="dg-prompts">'+(q.prompts||q.points.map(p=>p.label)).map(p=>'<li>'+esc(p)+'</li>').join("")+'</ol>':"")+
+      '<textarea class="test-response dg-answer" rows="6" placeholder="Your answer…"></textarea><button type="button" class="chat-pill dg-check"><strong>Check my answer</strong></button>',el=>{
+      const btn=el.querySelector(".dg-check"),ta=el.querySelector("textarea");
+      btn.onclick=()=>{
+        const text=ta.value.trim().toLowerCase();if(!text){ta.focus();return}
+        ta.disabled=true;btn.remove();
+        const got=q.points.filter(p=>p.terms.some(t=>text.includes(t.toLowerCase()))),miss=q.points.filter(p=>!got.includes(p));
+        k.widget('<div class="dg-chips dg-result">'+q.points.map(p=>'<span class="'+(got.includes(p)?"ok":"no")+'">'+(got.includes(p)?"✓ ":"✗ ")+esc(p.label)+'</span>').join("")+'</div>');
+        if(window.eviaMood)window.eviaMood(miss.length?"think":"happy");
+        k.say(!miss.length?"You covered every area. "+(n===3?"You’re ready for this one.":"Now let’s try it without the prompts."):"You covered <strong>"+got.length+" of "+q.points.length+"</strong>. Next time add <strong>"+esc(K().listText(miss.map(p=>p.label.toLowerCase())))+"</strong>.");
+        if(n===2)k.replies([{label:"Stage 3: no prompts",primary:true,run:()=>{stage(q,3)}},{label:"Try stage 2 again",run:()=>stage(q,2)},{label:"Read the answer again",run:()=>stage1(q)}]);
+        else k.replies([miss.length?{label:"Try again",primary:true,run:()=>stage(q,3)}:{label:"Another question",primary:true,run:guide},{label:"Full discussion",run:()=>window.eviaTestMe({type:"discussion"})},{label:"Back to EPA mocks",run:epaMenu},{label:"Something else",run:()=>{epaMode(false);k.somethingElse()}}]);
+      };
+    });
+  }
+
+  /* EPA mode ends when the chat closes. */
+  const mr=document.getElementById("modal-root");
+  if(mr)new MutationObserver(()=>{if(!mr.querySelector(".chat-sheet"))epaMode(false)}).observe(mr,{childList:true});
+  window.eviaCoachFlows={hours:logHours,confidence,upskill,evidence,input,scenario,evidenceCheck,quickReview,targets,epa,epaMode};
 })();

@@ -1,6 +1,6 @@
-/* Evia7 My progress: where the learner is, as animated charts. Each card opens a deep dive with the detail and a
-   short note on how to improve it. There are no action buttons here: doing things is Evia's job. Everything is
-   worked out on the device from data the app already keeps. */
+/* Evia7 My progress: the progress review at the top, then where the learner is, as animated charts. Each card opens a
+   deep dive with the detail and a short note on how to improve it, and has its own way in underneath (log hours, a
+   confidence check, a college task…). Everything is worked out on the device from data the app already keeps. */
 (function(){
   const DAY=864e5,WEEK=7*DAY,OTJ_WEEK_GOAL=6;
   const $=s=>document.querySelector(s);
@@ -126,11 +126,33 @@
   }
 
   /* ---------- Cards ---------- */
-  const card=(id,title,big,sub,chart,extra)=>'<button type="button" class="pv-card'+(extra||"")+'" data-pv="'+id+'" id="pv-'+id+'"><span class="pv-head"><span class="pv-title">'+title+'</span><span class="pv-chev">'+CHEV+'</span></span><span class="pv-big">'+big+'</span>'+(sub?'<span class="pv-sub">'+sub+'</span>':"")+(chart?'<span class="pv-chart">'+chart+'</span>':"")+'</button>';
+  /* Each section's ways in, under its card: [label, what it does, primary?]. */
+  const inChat=run=>()=>{if(window.chat)window.chat({quiet:true});setTimeout(()=>{const f=run();if(typeof f==="function")f()},120)};
+  const coach=name=>inChat(()=>{const C=window.eviaCoachFlows||{};if(C[name])C[name]()});
+  const kit=name=>inChat(()=>{const k=window.eviaChatKit;if(k&&k[name])k[name]()});
+  const ACTS={
+    review:[["Start my review",inChat(()=>window.eviaChatReview&&window.eviaChatReview()),1],["Past reviews",()=>window.openSavedReviews&&window.openSavedReviews()]],
+    where:[["Go to My course",()=>nav("course")]],
+    ksb:[["Add evidence",()=>{let q=null;try{q=window.eviaChatKit.analyse().quickest}catch(_){}if(q&&window.openUnit)window.openUnit(q.index);else nav("course")},1]],
+    otj:[["Log hours",coach("hours"),1],["Learning logs",()=>window.eviaOpenLearningLogs&&window.eviaOpenLearningLogs()]],
+    tests:[[()=>nvqOn()?"Knowledge tests":"EPA mocks",coach("epa"),1]],
+    conf:[["Confidence check",coach("confidence"),1],["Find a college task",kit("taskFromMenu")]],
+    quality:[["Check my evidence",coach("evidenceCheck"),1]],
+    targets:[["Show my targets",coach("targets"),1]],
+    scen:[["Next scenario",coach("scenario"),1]]
+  };
+  const acts=id=>ACTS[id]?'<span class="pv-acts">'+ACTS[id].map((a,i)=>'<button type="button" class="pv-act'+(a[2]?" on":"")+'" data-act="'+id+":"+i+'">'+esc(typeof a[0]==="function"?a[0]():a[0])+'</button>').join("")+'</span>':"";
+  const card=(id,title,big,sub,chart,extra)=>'<div class="pv-cell">'+cardBtn(id,title,big,sub,chart,extra)+acts(id)+'</div>';
+  const cardBtn=(id,title,big,sub,chart,extra)=>'<button type="button" class="pv-card'+(extra||"")+'" data-pv="'+id+'" id="pv-'+id+'"><span class="pv-head"><span class="pv-title">'+title+'</span><span class="pv-chev">'+CHEV+'</span></span><span class="pv-big">'+big+'</span>'+(sub?'<span class="pv-sub">'+sub+'</span>':"")+(chart?'<span class="pv-chart">'+chart+'</span>':"")+'</button>';
   const empty=text=>'<span class="pv-empty">'+esc(text)+'</span>';
 
   function cards(D){
     const {S,a,verdict}=D,T=term(),out=[];
+    // Progress review: when the next one is due, and the last one
+    const rd=window.eviaReviewDue&&window.eviaReviewDue(),revs=window.eviaGetReviews?window.eviaGetReviews():[],lastR=revs[0];
+    out.push(card("review","Progress review",rd?(rd.days<0?'<span class="pv-due late">Overdue</span>':rd.days===0?'<span class="pv-due soon">Due today</span>':num(rd.days)+'<small> day'+(rd.days===1?"":"s")+'</small>'):"–",
+      rd?(rd.days<0?"It was due "+shortDate(rd.due):"until your next review · "+longDate(rd.due)):"Add your start date in Profile",
+      '<span class="pv-rev-meta">'+(lastR?"Last review "+shortDate(lastR.date)+" · "+revs.length+" in all":"No reviews yet")+'</span>',rd&&rd.days<=14?" pv-alert":""));
     // Where you are
     out.push(card("where","Where you are",num(a.ksbPct,"%"),'of '+esc(T.many)+' have evidence'+(verdict?' · <em class="pv-verdict '+verdict.cls+'"><i aria-hidden="true">'+verdict.icon+'</i>'+verdict.text+'</em>':""),timeline(a.timePct,a.ksbPct),""));
     // KSB rings, or units for an NVQ
@@ -143,7 +165,7 @@
     // Off-the-job hours
     const wk=D.otjWeeks;
     out.push(card("otj","Off-the-job hours",hmBig(S.otjTotal),S.otjWeek?"+"+hm(S.otjWeek)+" this week":"Nothing logged this week yet",
-      wk.some(w=>w.h>0)?columns(wk.map(w=>w.h),wk.map((w,i)=>i===wk.length-1?"This wk":i%2===1?shortDate(w.start):""),Math.max(OTJ_WEEK_GOAL*1.4,...wk.map(w=>w.h)),{goal:OTJ_WEEK_GOAL,goalLabel:OTJ_WEEK_GOAL+" h a week",aria:"Off-the-job hours for each of the last 8 weeks",highlight:wk.length-1}):empty("Your weekly hours will chart here. Tap Evia and choose Log my hours.")));
+      wk.some(w=>w.h>0)?columns(wk.map(w=>w.h),wk.map((w,i)=>i===wk.length-1?"This wk":i%2===1?shortDate(w.start):""),Math.max(OTJ_WEEK_GOAL*1.4,...wk.map(w=>w.h)),{goal:OTJ_WEEK_GOAL,goalLabel:OTJ_WEEK_GOAL+" h a week",aria:"Off-the-job hours for each of the last 8 weeks",highlight:wk.length-1}):empty("Your weekly hours will chart here.")));
     // Tests
     const tests=D.tests,last=tests[tests.length-1];
     out.push(card("tests",nvqOn()?"Knowledge tests":"Tests",last?num(testPct(last),"%"):"–",last?"last score · best "+S.bestTest+"% · "+tests.length+" taken":"No tests taken yet",
@@ -154,7 +176,7 @@
       const areas=cur.map(x=>x.area),prev=ses.length>1?areas.map(ar=>{const s=ses[ses.length-2].scores.find(x=>x.area===ar);return s?s.score:0}):null;
       const good=cur.filter(x=>x.score>=3).length;
       out.push(card("conf","Confidence",num(good)+'<small> / '+cur.length+'</small>',"skills you feel confident in",'<span class="pv-radar-wrap">'+radar(areas,cur.map(x=>x.score),prev,170)+(prev?'<span class="pv-legend"><span><i class="now"></i>Now</span><span><i class="prev"></i>Last time</span></span>':"")+'</span>'));
-    }else out.push(card("conf","Confidence","–","Not rated yet",empty("Rate your skills with Evia to see your shape")));
+    }else out.push(card("conf","Confidence","–","Not rated yet",empty("Rate your skills to see your shape")));
     // Activity
     const yr=new Date().getFullYear(),mc=monthCounts(D.counts,yr),thisMonth=mc[new Date().getMonth()],yearTotal=mc.reduce((n,v)=>n+v,0);
     out.push(card("act","Activity",num(thisMonth)+'<small> this month</small>',"things added in "+new Date().toLocaleDateString("en-GB",{month:"long"})+" · "+yearTotal+" in "+yr+(S.streak?" · "+S.streak+"-week streak":""),yearTotal?'<span class="pv-year">'+yr+'</span>'+yearBars(D.counts,yr):empty("Each month you add evidence or hours shows as a bar here.")));
@@ -238,16 +260,16 @@
           const sc=list.map(testPct),best=Math.max(...sc);
           return '<div class="pv-test"><div class="pv-row-top"><strong>'+esc(NAMES[k]||k)+'</strong><span>best '+best+'% · '+list.length+' taken</span></div>'+line(sc.slice(-12),{h:80,aria:(NAMES[k]||k)+" scores over time"})+'</div>';
         }).join(""):'<p class="pv-empty">No tests yet.</p>')+
-        note("A score of 80% or more means you’re in good shape. Ask Evia to test you: a few questions a day adds up."));
+        note("A score of 80% or more means you’re in good shape. A few practice questions a day adds up."));
     }
     else if(id==="conf"){
       const cur=S.confidence.scores,ses=D.sessions,prevS=ses.length>1?ses[ses.length-2].scores:[];
-      if(cur.length<3){sheet("MY PROGRESS","Confidence",'<p class="pv-empty">You haven’t rated your skills yet.</p>'+note("Ask Evia for a confidence check. It takes about two minutes."));return}
+      if(cur.length<3){sheet("MY PROGRESS","Confidence",'<p class="pv-empty">You haven’t rated your skills yet.</p>'+note("A confidence check takes about two minutes."));return}
       const areas=cur.map(x=>x.area),prev=prevS.length?areas.map(ar=>{const s=prevS.find(x=>x.area===ar);return s?s.score:0}):null;
       sheet("MY PROGRESS","Confidence",
         '<div class="pv-radar-big">'+radar(areas,cur.map(x=>x.score),prev,300)+'</div>'+(prev?'<span class="pv-legend center"><span><i class="now"></i>Now</span><span><i class="prev"></i>Last time</span></span>':"")+
         '<div class="pv-rows">'+cur.slice().sort((x,y)=>x.score-y.score).map((x,i)=>{const p=prevS.find(s=>s.area===x.area),ch=p?x.score-p.score:0;return '<span class="pv-row"><span class="pv-row-top"><span>'+esc(x.area)+'</span><strong>'+(ch>0?'<em class="pv-up">↑</em> ':ch<0?'<em class="pv-down">↓</em> ':"")+LEVEL[x.score-1]+'</strong></span>'+bar(x.score/4*100,x.score<=2?"low":"",i*50)+'</span>'}).join("")+'</div>'+
-        note("Skills at the top need the most practice. Evia can find you a college task that works on them."));
+        note("Skills at the top need the most practice. A college task can work on them."));
     }
     else if(id==="act"){
       const yr=new Date().getFullYear(),last=monthCounts(D.counts,yr-1).reduce((n,v)=>n+v,0),total=monthCounts(D.counts,yr).reduce((n,v)=>n+v,0);
@@ -270,13 +292,13 @@
       const T2=window.eviaTargets,tg=T2?T2.mine():[];
       sheet("MY PROGRESS","Targets",
         (tg.length?'<div class="pv-rows">'+tg.map((t,i)=>{const p=T2.progress(t,S);return '<span class="pv-row"><span class="pv-row-top"><span>'+esc(t.title)+'</span><strong>'+(t.done?"Done":Math.round(p.pct*100)+"%")+'</strong></span>'+bar(p.pct*100,p.pct>=1?"good":"",i*60)+'<small class="pv-row-note">'+esc(p.text||"")+(t.due&&!t.done?(p.text?" · ":"")+"by "+esc(shortDate(t.due)):"")+'</small></span>'}).join("")+'</div>':'<p class="pv-empty">No targets yet.</p>')+
-        note("Targets are set at your progress review and tick off on their own as you go. Evia can take you through your review."));
+        note("Targets are set at your progress review and tick off on their own as you go."));
     }
     else if(id==="scen"){
       const sp=S.scenarios;
       sheet("MY PROGRESS","Real-life scenarios",
         '<div class="pv-rows">'+sp.topics.map((t,i)=>'<span class="pv-row"><span class="pv-row-top"><span>'+esc(t.title)+'</span><strong>'+t.done+' of '+t.total+'</strong></span>'+bar(t.total?t.done/t.total*100:0,t.done===t.total?"good":"",i*60)+'</span>').join("")+'</div>'+
-        note("These cover safeguarding, Prevent, British values and equality. Ask Evia to upskill you and she’ll pick one."));
+        note("These cover safeguarding, Prevent, British values and equality."));
     }
     else if(id==="ach"){
       sheet("MY PROGRESS","Achievements",window.eviaStats.badgesHtml(S));
@@ -310,9 +332,9 @@
     document.getElementById("page-title").textContent="My progress";
     let D;try{D=gather()}catch(err){console.error("My progress failed",err);$("#screen").innerHTML='<p class="pv-empty">Evia couldn’t work out your progress just now.</p>';return}
     const rd=window.eviaReviewDue&&window.eviaReviewDue();
-    const reviewLine=rd?'<p class="pv-review-line'+(rd.days<=14?" soon":"")+'">'+(rd.days<0?"Your progress review is overdue. It was due "+shortDate(rd.due)+".":rd.days===0?"Your progress review is due today.":"Next progress review: "+longDate(rd.due)+(rd.days<=14?" · in "+rd.days+" day"+(rd.days===1?"":"s"):""))+'</p>':"";
-    $("#screen").innerHTML='<header class="ui-page-head"><h1>My progress</h1><span>'+esc(typeof data==="function"?data().name:"")+'</span></header>'+reviewLine+'<div class="pv-grid">'+cards(D).join("")+'</div>';
-    document.querySelectorAll("[data-pv]").forEach(b=>b.onclick=()=>deep(b.dataset.pv,gather()));
+    $("#screen").innerHTML='<header class="ui-page-head"><h1>My progress</h1><span>'+esc(typeof data==="function"?data().name:"")+'</span></header>'+'<div class="pv-grid">'+cards(D).join("")+'</div>';
+    document.querySelectorAll("[data-pv]").forEach(b=>b.onclick=()=>b.dataset.pv==="review"?window.openSavedReviews&&window.openSavedReviews():deep(b.dataset.pv,gather()));
+    document.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>{const [id,i]=b.dataset.act.split(":");const a=ACTS[id]&&ACTS[id][+i];if(a)a[1]()});
     observe(document.getElementById("screen"));
   }
   window.eviaProgressPage=page;

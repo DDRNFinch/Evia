@@ -283,7 +283,7 @@
       targets:[tile],button:"Next",onNext:()=>{
         const grid=document.getElementById("ui-logs-grid");
         if(grid)grid.scrollIntoView({block:"center",behavior:"smooth"});
-        guide('Your <strong>learning logs</strong> (off-the-job hours) and <strong>progress reviews</strong> are kept here too, ready to download for your assessor.',{
+        guide('Your <strong>learning logs</strong> (off-the-job hours) are kept here too, ready to download for your assessor. Progress reviews are at the top of <strong>My progress</strong>.',{
           targets:[grid],button:"Next",onNext:()=>{writeState("evia");showEviaStep()}
         });
       }
@@ -296,7 +296,7 @@
     window.scrollTo(0,0);
     const fab=document.getElementById("evia-fab");
     if(window.eviaMood)window.eviaMood("happy");
-    guide('And this is me. Tap me any time: I can <strong>test you</strong>, <strong>log your hours</strong>, <strong>check your evidence</strong>, find you something to <strong>practise</strong> and take you through your <strong>progress review</strong>.',{
+    guide('And this is me. Tap me any time: I can <strong>check your evidence</strong>, give you a <strong>quick review</strong> of how you’re doing, show your <strong>targets</strong> and help you practise for your <strong>EPA</strong>.',{
       targets:[fab],button:"Next",onNext:()=>{writeState("profile");showProfileStep()}
     });
   }
