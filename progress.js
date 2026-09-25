@@ -103,8 +103,8 @@
   /* Dial: a half circle from weak to strong. */
   function dial(pct){
     const r=70,c=Math.PI*r,v=clamp(pct,0,100)/100*c;
-    return '<svg class="pv-dial" viewBox="0 0 180 104" role="img" aria-label="'+pct+'% of the key points covered"><path class="pv-dial-track" d="M20,94 A70,70 0 0 1 160,94"/>'+(v>0?'<path class="pv-dial-fill pv-draw" style="--len:'+c.toFixed(1)+';--v:'+v.toFixed(1)+'" d="M20,94 A70,70 0 0 1 160,94"/>':"")+
-      '<text class="pv-axis" x="20" y="103" text-anchor="middle">Weak</text><text class="pv-axis" x="160" y="103" text-anchor="end">Strong</text></svg>';
+    return '<svg class="pv-dial" viewBox="0 0 180 120" role="img" aria-label="'+pct+'% of the key points covered"><path class="pv-dial-track" d="M20,94 A70,70 0 0 1 160,94"/>'+(v>0?'<path class="pv-dial-fill pv-draw" style="--len:'+c.toFixed(1)+';--v:'+v.toFixed(1)+'" d="M20,94 A70,70 0 0 1 160,94"/>':"")+
+      '<text class="pv-axis" x="20" y="117" text-anchor="middle">Weak</text><text class="pv-axis" x="160" y="117" text-anchor="middle">Strong</text></svg>';
   }
   const bar=(pct,cls,d)=>'<span class="pv-bar'+(cls?" "+cls:"")+'"><i class="pv-grow-x" style="width:'+clamp(Math.round(pct),0,100)+'%;--d:'+(d||0)+'ms"></i></span>';
 
