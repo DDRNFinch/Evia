@@ -252,6 +252,35 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";nav("teach")});await page.waitForTimeout(600);
     check("Teach me is a tab with the course, maths and English, and it's no longer in Upskill me",!upskillHasTeach&&await page.evaluate(()=>{const t=[...document.querySelectorAll("[data-go] strong")].map(b=>b.textContent);return t.join()==="Bricklayer,Maths,English"&&!document.querySelector(".tm-tile")}));
     await page.evaluate(()=>document.querySelector('[data-go="course"]').click());await page.waitForTimeout(600);
+    // Rewards: free starters, locked items, buying, and loot boxes that refund duplicates and guarantee an epic.
+    await page.evaluate(()=>{const x=document.querySelector(".tm-x");if(x)x.click()});await page.waitForTimeout(300);
+    const rw=await page.evaluate(async()=>{
+      const w=ms=>new Promise(r=>setTimeout(r,ms)),R=window.eviaRewards,out={};
+      const keep=localStorage.getItem("evia7-rewards"),rnd=Math.random;
+      localStorage.setItem("evia7-rewards",JSON.stringify({bank:1000,spent:0,owned:[],hat:"",pity:0,seenAch:[],lastXp:0,day:""}));
+      out.free=!R.locked("shape","cloud")&&!R.locked("colour","green")&&R.locked("shape","gear")==="epic"&&R.locked("colour","orange")==="common";
+      nav("rewards");await w(500);
+      out.page=!!document.getElementById("rw-page")&&document.querySelectorAll(".rw-item").length===4&&/Loot box only/.test(document.getElementById("rw-hat-glow").textContent);
+      document.querySelector('[data-buy="hat-blue"]').click();await w(300);
+      out.bought=JSON.parse(localStorage.getItem("evia7-rewards")).owned.includes("hat-blue")&&!!document.querySelector("#evia-fab .evia-kit");
+      document.querySelectorAll(".rw-over").forEach(o=>o.remove());
+      const box=async()=>{document.getElementById("rw-open").click();await w(1700);document.querySelectorAll(".rw-over").forEach(o=>o.remove())};
+      Math.random=()=>0.01;await box();
+      const s1=JSON.parse(localStorage.getItem("evia7-rewards"));
+      out.dupe=s1.owned.includes("shape-oval")||s1.owned.includes("colour-orange");
+      for(let k=0;k<3;k++)await box();
+      const s2=JSON.parse(localStorage.getItem("evia7-rewards"));out.refund=s2.bank>1000;
+      const st=JSON.parse(localStorage.getItem("evia7-rewards"));st.pity=9;localStorage.setItem("evia7-rewards",JSON.stringify(st));
+      await box();const s3=JSON.parse(localStorage.getItem("evia7-rewards"));
+      out.pity=s3.owned.some(id=>["hat-gold","shape-gear","shape-shield","colour-teal","colour-midnight"].includes(id))&&s3.pity===0;
+      Math.random=rnd;if(keep)localStorage.setItem("evia7-rewards",keep);else localStorage.removeItem("evia7-rewards");R.wearOn();
+      return out;
+    });
+    check("Rewards: three shapes and colours are free, others are locked by rarity, and the glowing hat is loot box only",rw.free&&rw.page,JSON.stringify(rw));
+    check("Buying a hard hat puts it on Evia",rw.bought);
+    check("Loot boxes give items you don't have, refund tokens for duplicates, and guarantee an epic after 9 without one",rw.dupe&&rw.refund&&rw.pity,JSON.stringify(rw));
+    await page.evaluate(()=>nav("teach"));await page.waitForTimeout(600);
+    await page.evaluate(()=>document.querySelector('[data-go="course"]').click());await page.waitForTimeout(600);
     // Teach me: play the whole Mixing mortar unit (every kind of screen, a mistake to fix and a surprise question),
     // then an older-style lesson, then leave one part-way and carry on from the same screen.
     await page.addScriptTag({path:path.join(__dirname,"teach-solver.js")});

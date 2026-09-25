@@ -22,7 +22,7 @@
     scr().innerHTML=head("Teach me")+'<div class="tt-list">'+card("course",courseName()||"Your course",count(trade))+card("maths","Maths",count(fs("maths")))+card("english","English",count(fs("english")))+'</div>';
     scr().querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{if(T)T.open(b.dataset.go)});
   }
-  function rewardsPage(){scr().innerHTML=head("Rewards")}
+  function rewardsPage(){if(window.eviaRewards)window.eviaRewards.page();else scr().innerHTML=head("Rewards")}
 
   const prev=window.render;
   window.render=function(){
