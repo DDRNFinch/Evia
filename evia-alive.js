@@ -57,7 +57,10 @@
       root.classList.add("evia-happy");hop();
       clearTimeout(moodTimer);moodTimer=setTimeout(()=>root.classList.remove("evia-happy"),1900);
     }
+    /* A gentle "oh well": a squish and a glance down, then back to normal. */
+    if(mood==="oops"){root.classList.remove("evia-happy");play("evia-squish",1200);look(0,22,1400)}
   };
+  window.eviaLook=look;
 
   /* She glances towards wherever the learner taps. */
   document.addEventListener("pointerdown",e=>{

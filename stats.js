@@ -108,7 +108,7 @@
     const daysAgo=t=>t==null?Infinity:(s.now-t)/DAY;
     if(ach.fresh.length){
       const x=ach.fresh[0];
-      list.push({id:"ach-"+x.id,celebrate:true,achievements:ach.fresh.map(f=>f.id),text:"You’ve earned a new achievement: <strong>"+x.label+"</strong>. "+x.desc+".",action:{label:"See my stats",kind:"stats"}});
+      list.push({id:"ach-"+x.id,celebrate:true,achievements:ach.fresh.map(f=>f.id),text:"You’ve earned a new achievement: <strong>"+x.label+"</strong>. "+x.desc+".",action:{label:"See my progress",kind:"stats"}});
     }
     /* Backups: everything lives on this phone, so remind learners before there's a lot to lose. */
     const packsAll=(typeof evidence!=="undefined"?evidence:[]).filter(e=>e&&!e.induction),lastBackup=Date.parse(localStorage.getItem("evia7-last-backup")||"")||null;

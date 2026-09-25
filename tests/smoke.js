@@ -36,15 +36,19 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.waitForTimeout(500);
 
     check("The app opens on My course; the nav is My course, Evia and My progress",await page.evaluate(()=>screen==="course"&&!!document.getElementById("ui-course-head")&&[...document.querySelectorAll("[data-nav]")].map(b=>b.textContent.trim()).join()==="My course,My progress"));
-    for(const s of ["course","progress","portfolio","learning","hours"]){await page.evaluate(s=>nav(s),s);await page.waitForTimeout(450)}
+    for(const s of ["course","progress","portfolio","learning"]){await page.evaluate(s=>nav(s),s);await page.waitForTimeout(450)}
     await page.evaluate(()=>nav("progress"));await page.waitForTimeout(450);
     check("My progress says when the next review is due",await page.evaluate(()=>!window.eviaReviewDue()||!!document.querySelector(".pv-review-line")));
     check("My progress shows a chart card for each area, with no action buttons",await page.evaluate(()=>screen==="learning"&&["where","ksb","otj","tests","conf","act","quality","targets","ach"].every(id=>document.getElementById("pv-"+id))&&!document.querySelector("#screen .primary,#screen .pg-action")));
     await page.click("#pv-otj");await page.waitForTimeout(500);
     check("Tapping a card opens its deep dive with a how-to note",await page.evaluate(()=>/Off-the-job hours/.test(document.getElementById("pv-sheet-title").textContent)&&!!document.querySelector(".pv-sheet .pv-note")&&!!document.querySelector(".pv-sheet .pv-cols")));
-    await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";nav("hours")});await page.waitForTimeout(450);
-    await page.click('[data-hrs="2"]');await page.fill("#otj-description","Toolbox talk on manual handling");await page.click("#add");await page.waitForTimeout(200);
-    check("Hours are logged with a tap and a line of text",await page.evaluate(()=>hours.some(h=>h.n===2&&/manual handling/.test(h.description))&&screen==="hours"));
+    await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";window.chat({quiet:true})});await page.waitForTimeout(300);
+    await page.evaluate(()=>{window.eviaChatKit.userSays("Log my hours");window.eviaCoachFlows.hours()});
+    await page.waitForSelector('#chat .chat-pill:has-text("Toolbox talk")',{timeout:8000});await page.click('#chat .chat-pill:has-text("Toolbox talk")');
+    await page.waitForSelector("#chat .hw-ok",{timeout:8000});await page.click('#chat [data-preset="1"]');await page.waitForTimeout(500);await page.click("#chat .hw-ok");
+    await page.waitForSelector("#chat .hw-note textarea",{timeout:8000});await page.fill("#chat .hw-note textarea","manual handling");await page.click("#chat .hw-save");await page.waitForTimeout(300);
+    check("Evia logs hours from a chat: what it was, an hours-and-minutes wheel, a few words",await page.evaluate(()=>hours.some(h=>h.n===1&&h.description==="Toolbox talk: manual handling")));
+    await page.evaluate(()=>{document.getElementById("modal-root").innerHTML=""});
     await page.evaluate(()=>nav("learning"));await page.waitForTimeout(450);
     await page.evaluate(()=>nav("portfolio"));await page.waitForTimeout(450);
     await page.evaluate(()=>openUnit(data().u.findIndex(u=>evidence.some(e=>e.c===course&&e.u===u[0]))));await page.waitForTimeout(1200);
@@ -63,10 +67,12 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>nav("home"));await page.waitForTimeout(450);
     await page.evaluate(()=>window.chat());
     await page.waitForFunction(()=>{const c=document.getElementById("chat");return c&&!c.querySelector(".evia-thinking")},null,{timeout:15000});
-    check("Chat menu has My stats, Test me, Progress review and My targets",await page.evaluate(()=>{const t=[...document.querySelectorAll("#chat .chat-pill")].map(b=>b.innerText.trim());return ["My stats","Test me","Progress review","My targets"].every(x=>t.includes(x))}));
-    await page.click('#chat .chat-pill >> text="My targets"');
-    await page.waitForSelector("#chat .chat-targets .tg-row",{state:"visible",timeout:15000});
-    check("My targets sets targets and shows them with progress",await page.evaluate(()=>window.eviaTargets.mine().length>=3&&document.querySelectorAll("#chat .chat-targets .pg-bar").length>=3));
+    await page.waitForSelector("#chat .ui-action",{timeout:15000});
+    check("Evia opens with a catch-up and her six actions",await page.evaluate(()=>{const t=[...document.querySelectorAll("#chat .ui-action")].map(b=>b.innerText.trim());return ["Test me","Upskill me","Confidence check","Review me","Check my evidence","Log my hours"].every(x=>t.includes(x))&&/off-the-job/.test(document.getElementById("chat").innerText)&&!!document.querySelector(".chat-sheet .ui-ask input")}));
+    await page.click('#chat .ui-action[data-action="evidence"]');
+    await page.waitForFunction(()=>/unit/.test((document.querySelector("#chat .bubble.evia:last-of-type")||{}).innerText||"")&&document.querySelectorAll("#chat .bubble.evia").length>=2,null,{timeout:15000});
+    check("Check my evidence goes through the units with evidence",await page.evaluate(()=>/I’ve been through/.test(document.getElementById("chat").innerText)));
+    check("Targets are set from Evia's stats",await page.evaluate(()=>{window.eviaTargets.ensure();return window.eviaTargets.mine().length>=3}));
     await page.click('#x');await page.waitForTimeout(300);
     check("Profile button comes back after closing the chat",await page.evaluate(()=>getComputedStyle(document.getElementById("profile-btn")).display!=="none"));
 
@@ -129,8 +135,8 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";window.eviaStartTest("maths",5,"Maths")});await page.waitForSelector("[data-test-answer]",{state:"visible",timeout:12000});
     check("A test from Practice opens on its own screen, without the chat menu",await page.evaluate(()=>/Maths/.test(document.querySelector(".chat-sheet h2").textContent)&&!document.querySelector("#chat [data-chat-option]")));
     await page.click("#x");await page.waitForTimeout(300);
-    await page.evaluate(()=>{nav("hours")});await page.waitForTimeout(500);
-    await page.evaluate(()=>{const b=document.getElementById("download-otj")||document.getElementById("download-last-otj");b.click()});await page.waitForSelector("#eport-save",{timeout:15000});
+    await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";nav("learning")});await page.waitForTimeout(500);
+    await page.evaluate(()=>{window.eviaProgressDeep("otj");document.getElementById("pv-otj-pdf").click()});await page.waitForSelector("#eport-save",{timeout:15000});
     check("The OTJ log downloads as a PDF with a preview",await page.evaluate(()=>!!document.getElementById("eport-preview")&&/OTJ PDF/.test(document.querySelector(".eport-status").textContent)));
     await page.evaluate(()=>nav("home"));await page.waitForTimeout(400);
 

@@ -115,7 +115,7 @@
           result.full=full;
           const missed=type==="epa"?[...new Set(result.questions.filter(x=>!x.ok).map(x=>x.ksb).filter(Boolean))]:[];
           result.missed=missed;
-          chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>'+(full?"EPA full mock":testLabel(type))+' complete</strong><br>'+score+' / '+qs.length+' correct ('+result.pct+'%). I’ve saved this for your progress review.'+(missed.length?'<br><br><strong>Worth revising:</strong> '+escLocal(missed.slice(0,6).join(", "))+(missed.length>6?' and '+(missed.length-6)+' more':'')+'. Tap any KSB on the Progress page to read what it covers.':'')+'</div>');
+          chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>'+(full?"EPA full mock":testLabel(type))+' complete</strong><br>'+score+' / '+qs.length+' correct ('+result.pct+'%). I’ve saved this for your progress review.'+(missed.length?'<br><br><strong>Worth revising:</strong> '+escLocal(missed.slice(0,6).join(", "))+(missed.length>6?' and '+(missed.length-6)+' more':'')+'. Tap a KSB on My progress to read what it covers.':'')+'</div>');
           scroll();
           saveTest(type,result);
           return;
@@ -124,7 +124,7 @@
         const isAcademic=type==="maths"||type==="english";
         const answers=isAcademic?q[2]:q[2];
         const correct=isAcademic?q[3]:q[2][0];
-        const explanation=isAcademic?q[4]:"The correct answer is "+correct+".";
+        const explanation=isAcademic?q[4]:"";
         chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>Question '+(i+1)+' of '+qs.length+'</strong><br>'+escLocal(q[1])+'</div><div class="rating-options">'+shuffle(answers).map((a,n)=>'<button class="rating-pill" data-test-answer="'+encodeURIComponent(a)+'"><strong>'+String.fromCharCode(65+n)+'. '+escLocal(a)+'</strong></button>').join("")+'</div>');
         scroll();
         document.querySelectorAll("[data-test-answer]").forEach(btn=>btn.onclick=()=>{
@@ -134,15 +134,16 @@
           result.questions.push({question:q[1],chosen,correct,ok,explanation,ksb:isAcademic?"":q[0]});
           document.querySelectorAll("[data-test-answer]").forEach(x=>x.disabled=true);
           document.querySelectorAll("[data-test-answer]").forEach(x=>{if(decodeURIComponent(x.dataset.testAnswer)===correct)x.classList.add("correct")});
-          if(!ok)btn.classList.add("wrong");
+          if(!ok)btn.classList.add("wrong");else btn.classList.add("chosen");
+          if(window.eviaMood)window.eviaMood(ok?"happy":"oops");
           const currentOptions=btn.closest(".rating-options");
-          if(currentOptions)currentOptions.remove();
+          if(currentOptions){currentOptions.classList.add("answered");currentOptions.querySelectorAll("[data-test-answer]").forEach(x=>x.removeAttribute("data-test-answer"))} /* the answers stay, marked, so the learner sees which was right */
           const hasMini=!ok && isAcademic && q[5] && Array.isArray(q[6]);
           const microId="micro-"+Date.now()+"-"+i+"-"+Math.random().toString(36).slice(2,7);
           const miniHtml=hasMini
             ? '<div id="'+microId+'" class="micro-teach"><div class="tag">Mini-session</div><p><strong>'+escLocal(q[5])+'</strong></p><div class="rating-options micro-options">'+q[6].map((a,n)=>'<button type="button" class="rating-pill" data-micro-answer="'+encodeURIComponent(a)+'"><strong>'+String.fromCharCode(65+n)+'. '+escLocal(a)+'</strong></button>').join("")+'</div><div class="micro-result"></div></div>'
             : '';
-          chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>'+(ok?"Correct":"Not quite")+'</strong><br>'+(ok?"That is correct.":"The correct answer is: "+escLocal(correct)+".")+'<br><br>'+escLocal(explanation)+'</div>'+miniHtml+(hasMini?'':'<button type="button" class="chat-pill test-submit" data-next-test><strong>'+(i+1<qs.length?"Next question":"Finish")+'</strong></button>'));
+          chatEl.insertAdjacentHTML("beforeend",'<div class="bubble evia"><strong>'+(ok?"Correct":"Not quite")+'</strong><br>'+(ok?"That is correct.":"The correct answer is: "+escLocal(correct)+".")+(explanation?'<br><br>'+escLocal(explanation):"")+'</div>'+miniHtml+(hasMini?'':'<button type="button" class="chat-pill test-submit" data-next-test><strong>'+(i+1<qs.length?"Next question":"Finish")+'</strong></button>'));
           if(hasMini){
             const microBlock=document.getElementById(microId);
             const microButtons=Array.from(microBlock.querySelectorAll("[data-micro-answer]"));
