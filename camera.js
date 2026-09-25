@@ -31,12 +31,13 @@
     const shots=[];let stream=null,current=0;const done=new Set();
     const el=overlay("cam-photo",
       '<header class="cam-top"><button type="button" class="cam-icon" data-cam-close aria-label="Close camera">'+X+'</button><strong>'+escHtml(opts.title||"Camera")+'</strong><span class="cam-count" aria-live="polite">0 photos</span></header>'+
-      (prompts.length?'<div class="cam-prompts" role="list" aria-label="Things to capture">'+prompts.map((p,i)=>'<button type="button" role="listitem" class="cam-prompt'+(i===0?" on":"")+'" data-prompt="'+i+'">'+escHtml(p)+'</button>').join("")+'</div>':"")+
       '<div class="cam-stage"><video playsinline muted autoplay></video><span class="cam-frame" aria-hidden="true"></span></div>'+
+      /* Things to capture as plain text under the picture; the highlighted one is what the next photo is tagged with. Tap another to switch. */
+      (prompts.length?'<div class="cam-prompts"><span class="cam-prompts-h">Things to capture</span><p role="list" aria-label="Things to capture">'+prompts.map((p,i)=>'<button type="button" role="listitem" class="cam-prompt'+(i===0?" on":"")+'" data-prompt="'+i+'" aria-pressed="'+(i===0)+'">'+escHtml(p)+'</button>').join('<span class="cam-dot" aria-hidden="true"> · </span>')+'</p></div>':"")+
       '<div class="cam-strip" aria-label="Photos taken"></div>'+
       '<footer class="cam-bottom"><span></span><button type="button" class="cam-shutter" aria-label="Take photo"><i></i></button><button type="button" class="cam-done" disabled>Done</button></footer>');
     const video=el.querySelector("video"),strip=el.querySelector(".cam-strip"),count=el.querySelector(".cam-count"),doneBtn=el.querySelector(".cam-done"),shutter=el.querySelector(".cam-shutter");
-    const selectPrompt=i=>{current=i;el.querySelectorAll(".cam-prompt").forEach((b,n)=>b.classList.toggle("on",n===i));const b=el.querySelector('[data-prompt="'+i+'"]');if(b)b.scrollIntoView({block:"nearest",inline:"center",behavior:"smooth"})};
+    const selectPrompt=i=>{current=i;el.querySelectorAll(".cam-prompt").forEach((b,n)=>{b.classList.toggle("on",n===i);b.setAttribute("aria-pressed",n===i)})};
     el.querySelectorAll("[data-prompt]").forEach(b=>b.onclick=()=>selectPrompt(+b.dataset.prompt));
     const refresh=()=>{
       count.textContent=shots.length+" photo"+(shots.length===1?"":"s");

@@ -71,8 +71,8 @@
     const out=[];
     const bad=P.probs.reduce((n,x)=>n+(x.length?1:0),0);
     if(!P.count)out.push({gain:40,text:"Add photos of the job: beginning, middle and end."});
-    if(W.missing.length)out.push({gain:W.missing.length*8,text:"Mention "+listText(W.missing.slice(0,2))+(W.missing.length>2?" (and "+(W.missing.length-2)+" more)":"")+"."});
-    if(P.missing.length&&P.covered.length<Math.min(5,P.covered.length+P.missing.length))out.push({gain:P.missing.length*6,text:"Add a photo of "+listText(P.missing.slice(0,2))+"."});
+    if(W.missing.length)out.push({gain:W.missing.length*8,text:"You could also talk about "+listText(W.missing.slice(0,2))+"."});
+    if(P.missing.length&&P.covered.length<Math.min(5,P.covered.length+P.missing.length))out.push({gain:P.missing.length*6,text:"A photo of "+listText(P.missing.slice(0,2))+" would help."});
     if(bad)out.push({gain:bad*7,text:"Retake "+(bad===1?"one photo that is":bad+" photos that are")+" too dark, blurry or a repeat."});
     if(P.count&&P.stages<3)out.push({gain:(3-P.stages)*6,text:P.stages<2?"Take photos at the start, middle and end of the job, not all at once.":"Add a photo from another stage of the job."});
     if(W.words&&W.parts.reflect<MAX.reflect)out.push({gain:MAX.reflect-W.parts.reflect,text:"Say what you learned or what you’d do differently next time."});
@@ -109,12 +109,10 @@
   const bars=level=>{const n=level==="strong"?3:level==="good"?2:level==="weak"?1:0;return '<span class="st-bars '+(level||"none")+'" aria-hidden="true">'+[1,2,3].map(i=>'<i'+(i<=n?' class="on"':"")+'></i>').join("")+'</span>'};
   let tagging=null;
   function mount(pack,prompts,hooks){
-    const caps=split(prompts.photos),terms=split(prompts.writeup);
+    const caps=split(prompts.photos);
     const paint=()=>{
       const r=score(pack,prompts);
-      const cap=document.getElementById("st-cap"),men=document.getElementById("st-men"),met=document.getElementById("st-meter");
-      if(cap)cap.innerHTML=caps.map(c=>'<span class="st-chip'+(r.photos.covered.includes(c)?" on":"")+'">'+esc(c)+'</span>').join("");
-      if(men)men.innerHTML=terms.map(t=>'<span class="st-chip'+(r.written.covered.includes(t)?" on":"")+'">'+esc(t)+'</span>').join("");
+      const met=document.getElementById("st-meter");
       if(met){
         met.innerHTML='<button type="button" class="st-meter-top" aria-label="How strength is worked out"><span class="st-meter-label">Strength</span>'+bars(r.level)+'<strong>'+(r.level?LABEL[r.level]:"Not started")+'</strong><span class="st-meter-num">'+r.total+'</span></button>'+
           '<span class="st-track"><i style="width:'+r.total+'%"></i><b style="left:75%" aria-hidden="true"></b></span>'+
@@ -179,12 +177,12 @@
   function guide(){
     const tip=(n,title,text)=>'<li class="st-tip"><span class="st-tip-n">'+n+'</span><span><strong>'+title+'</strong><span>'+text+'</span></span></li>';
     sheet("MY PORTFOLIO","How to build a strong portfolio",
-      '<p class="pr-intro">Your assessor needs to see that <strong>you</strong> did the work, that you did it properly, and that you understand why. Every unit has <strong>things to capture</strong> and <strong>things to mention</strong>: they are your checklist.</p>'+
+      '<p class="pr-intro">Your assessor needs to see that <strong>you</strong> did the work, that you did it properly, and that you understand why. Every unit has <strong>things to capture</strong> and <strong>things to mention</strong>: use them as a reminder of what to show and talk about.</p>'+
       '<ol class="st-tips">'+
         tip(1,"Photos from start to finish","Take photos at the beginning, middle and end of the job, not all at the end. Six or more clear photos is a good pack.")+
-        tip(2,"One photo for each thing to capture","Use Evia’s camera: it shows each thing to capture and tags the photo for you. For gallery photos, tap the tag under the photo.")+
+        tip(2,"One photo for each thing to capture","Use Evia’s camera: the things to capture sit under the picture, and the highlighted one is tagged on your photo. For gallery photos, tap the tag under the photo.")+
         tip(3,"Clear, close and well lit","Get close enough to see the detail, hold still and make sure it’s not too dark. Evia flags blurry, dark or repeated photos.")+
-        tip(4,"Mention every key point","Write about each thing to mention in your own words. The chips tick as you cover them.")+
+        tip(4,"Talk about the things to mention","They’re a reminder of the areas to cover, not a checklist. Write about them in your own words, as you would explain the job to someone.")+
         tip(5,"Explain the steps in order","First, then, finally. Say what you did and why you did it that way.")+
         tip(6,"Use real details","Sizes, ratios, the number of courses, the tools and PPE you used, who you worked with.")+
         tip(7,"Say what you learned","What went well, what was tricky, and what you’d do differently next time. This is what lifts good evidence to strong.")+

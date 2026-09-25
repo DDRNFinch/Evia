@@ -179,7 +179,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     }));
     await page.evaluate(()=>{course="bricklayer";persist();openUnit(0)});await page.waitForTimeout(700);
     await page.evaluate(()=>{const w=document.getElementById("write");w.value="I checked the ratio and worked with my team.";w.dispatchEvent(new Event("input"))});await page.waitForTimeout(200);
-    check("The evidence pack shows a live strength meter and ticks the things to mention",await page.evaluate(()=>!!document.querySelector("#st-meter .st-meter-num")&&document.querySelectorAll("#st-men .st-chip.on").length>=2&&!!document.querySelector("#st-meter .st-next-i")));
+    check("The evidence pack shows a live strength meter, with the prompts kept as plain text",await page.evaluate(()=>!!document.querySelector("#st-meter .st-meter-num")&&!!document.querySelector("#st-meter .st-next-i")&&document.querySelectorAll(".writeup-section .compact-prompts").length===1&&!document.querySelector(".compact-prompts .st-chip")));
     await page.evaluate(()=>{const w=document.getElementById("write");w.value="";w.dispatchEvent(new Event("input"));nav("learning")});await page.waitForTimeout(600);
     await page.evaluate(()=>document.getElementById("pv-guide").click());await page.waitForTimeout(400);
     check("My progress explains how to build a strong portfolio",await page.evaluate(()=>/strong portfolio/.test(document.getElementById("st-title").textContent)&&document.querySelectorAll(".st-tip").length===8));

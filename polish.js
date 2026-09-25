@@ -134,12 +134,12 @@
         '<div class="st-tagger" id="st-tagger" hidden></div>'+
         '<section class="evidence-section">'+
           '<div class="evidence-section-title">THINGS TO CAPTURE</div>'+
-          '<div class="compact-prompts st-chips" id="st-cap">'+esc(prompts.photos)+'</div>'+
+          '<div class="compact-prompts">'+esc(prompts.photos)+'</div>'+
         '</section>'+
         '<div class="evidence-section-divider"></div>'+
         '<section class="evidence-section writeup-section">'+
           '<div class="evidence-section-title">THINGS TO MENTION</div>'+
-          '<div class="compact-prompts st-chips" id="st-men">'+esc(prompts.writeup)+'</div>'+
+          '<div class="compact-prompts">'+esc(prompts.writeup)+'</div>'+
           '<textarea id="write" placeholder="Write about the process and what you did…">'+esc(pack.write||"")+'</textarea>'+
         '</section>'+
         '<div class="st-meter" id="st-meter" aria-live="polite"></div>'+
