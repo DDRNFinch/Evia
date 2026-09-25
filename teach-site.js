@@ -1,201 +1,287 @@
-/* Teach me: Site Carpenter. Two lessons per unit that between them cover the unit's KSBs. */
+/* Teach me: Site Carpenter. Each unit has two short lessons (Evia teaches a little, you try it, then something
+   new) and a unit challenge with new questions from new angles. */
 (function(){
-  const {L,Q,T,M,O,lesson,unit,add}=window.EVIA_TEACH;
+  const {TE,EX,W,CD,Q,T,M,O,G,B,TAP,S,J,SP,N,SC,HOT,LB,QF,TROPHY,lesson,unit,add}=window.EVIA_TEACH;
+  const C={challenge:true};
   add("site",[
     unit("Structural carcassing","Structural carcassing",[
       lesson("sc-carc1","Load-bearing studwork","Plates, studs, noggins and openings",[
-        L("Load-bearing stud walls","A sole plate at the bottom, a head plate on top and studs between, usually at 400 or 600 mm centres. Noggins brace the studs and give fixings. Over an opening, a lintel (header) sits on cripple studs to carry the load."),
-        M("Match the part to its job",[["Sole plate","Bottom timber fixed to the floor"],["Head plate","Top timber tying the studs together"],["Noggin","Short piece between studs for bracing and fixing"],["Cripple stud","Short stud that supports a lintel"]]),
-        Q("Why are studs often at 600 mm centres?",["Boards are 1,200 mm wide, so edges land on a stud","It uses the most timber","It’s the only legal spacing","It looks neat"],"Board joints need something to fix to."),
-        Q("Which strength class is stronger?",["C24","C16","Both the same","It depends on colour"],"C24 is stronger. Always use the grade on the drawing."),
-        O("Put building a stud wall in order",["Set out and fix the sole plate","Mark the stud positions on both plates","Fix the head plate","Fit the studs plumb","Fit noggins and trim openings"],"Marking both plates together keeps studs plumb."),
-        T("You can swap load-bearing timber for a smaller size if it’s all that’s on site.",false,"Structural sizes come from the engineer or tables. Never undersize.")
+        EX("A load-bearing stud wall","Tap each part.","studwall",[[60,116,"Sole plate","The bottom timber, fixed to the floor."],[200,10,"Head plate","The top timber tying the studs together."],[24,40,"Stud","Uprights, usually at 400 or 600 mm centres."],[54,61,"Noggin","Short pieces between studs for bracing and board fixings."],[143,25,"Lintel","Carries the load over the opening."],[110,74,"Cripple stud","A short stud that holds up the lintel."]]),
+        TE("Why 600 mm?","Plasterboard sheets are 1,200 mm wide, so studs at 400 or 600 mm centres put every board edge on a stud."),
+        Q("Boards are 1,200 mm wide. Which stud centres let every edge land on a stud?",["600 mm","500 mm","700 mm","450 mm"],"1,200 ÷ 600 = 2, so the edges always meet a stud."),
+        O("Put building a stud wall in order",["Set out and fix the sole plate","Mark the stud positions on both plates together","Fix the head plate","Fit the studs plumb","Fit noggins and trim openings"],"Marking both plates together keeps studs plumb."),
+        TE("Strength class","Carcassing timber is graded, like *C16* or *C24*. C24 is stronger. Use the grade and size on the drawing: never swap for something smaller.",null,"Strength class"),
+        T("You can swap load-bearing timber for a smaller size if that’s all there is.",false,"Structural sizes come from the engineer. Never undersize.")
       ]),
-      lesson("sc-carc2","Power tools, timber and safety","Using tools well and choosing timber",[
-        M("Match the power tool to a safety point",[["Circular saw","Guard working and the work supported"],["Nail gun","Sequential trigger; never point it at anyone"],["Drill","Right bit and a firm grip"],["Mitre saw","Let the blade stop before lifting"]]),
-        Q("Before changing a blade, you should…",["Unplug it or remove the battery","Switch off at the trigger","Let it slow down","Hold the blade still"],"Isolating stops it starting unexpectedly."),
-        L("Timber","Softwoods (spruce, pine, Douglas fir) are used for carcassing, graded C16 or C24. Treated timber resists rot. Engineered timber like I-joists and glulam is strong and stable. Store timber flat, off the ground and covered."),
-        Q("How should carcassing timber be stored on site?",["Flat, off the ground on bearers, and covered","Standing upright against a wall","On wet ground","Uncovered in the sun"],"It stays straight and dry."),
-        T("Putting health and safety first means using a tool’s guard every time.",true,"Guards are there because blades don’t stop for fingers.")
-      ])
+      lesson("sc-carc2","Power tools and timber","Using tools well and storing timber",[
+        M("Match the power tool to a safety point",[["Circular saw","Guard working, work supported"],["Nail gun","Sequential trigger; never point it at anyone"],["Drill","Right bit and a firm grip"],["Mitre saw","Let the blade stop before lifting"]],"Every tool has its rules."),
+        SC("Changing a blade","You need to change the circular saw blade.","First you…",[["Unplug it or take out the battery","Isolating stops it starting unexpectedly."],["Switch off at the trigger","A knock can switch it on."],["Hold the blade still","It could still start."]]),
+        TE("Timber on site","Softwoods (spruce, pine, Douglas fir) are used for carcassing. Treated timber resists rot. Engineered timber, like I-joists and glulam, is strong and stable. Store it flat, off the ground on bearers, and covered."),
+        J("Good timber storage?",[["Flat on bearers, off the ground",true,"It stays straight and dry."],["Standing on end against a wall",false,"It bends and bows."],["Covered but with air round it",true,"Dry, without sweating."],["On wet mud, uncovered",false,"It gets wet and stained."]]),
+        QF([["C24 is stronger than C16",true],["Studs at 600 mm suit 1,200 mm boards",true],["Remove the saw guard for a quick cut",false],["Store timber on end",false]])
+      ]),
+      lesson("sc-carc3","Unit challenge","Carcassing",[
+        TROPHY(6),
+        HOT("Tap the part that holds up the lintel","studwall",[[110,74,10,"Short stud"],[143,25,16,"Beam over the opening"],[54,61,12,"Short brace"],[200,10,16,"Top timber"]],0,"The cripple stud."),
+        Q("A wall is 3.6 m long with studs at 600 mm centres. How many studs, counting both ends?",["7","6","8","12"],"3,600 ÷ 600 = 6 spaces, so 7 studs."),
+        T("Noggins give fixings for board edges and brace the studs.",true,"Two jobs in one."),
+        SP("Jay’s stud wall. Tap the mistake.",["Marked both plates together","Used C24 as drawn","Swapped the lintel for a smaller size","Fitted the studs plumb"],2,"Never undersize structural timber."),
+        B("Build the rule","Never undersize structural timber",["always","bigger"],"Use what the engineer specifies.")
+      ],C)
     ]),
     unit("Timber/metal partition walls","Partition walls",[
-      lesson("sc-part1","Timber and metal partitions","Stud layouts, tracks and lasers",[
-        L("Partitions","Timber partitions use plates and studs. Metal partitions use U-shaped tracks at the top and bottom with C-studs clipped between, then boards screwed on. Set out the line with a laser, fix the plates or tracks, then the studs."),
-        M("Match the part to the system",[["Track","Metal channel at top and bottom"],["C-stud","Metal upright between tracks"],["Sole plate","Timber at the bottom of a timber stud wall"],["Noggin","Timber brace between studs"]]),
-        L("Laser levels","A cross-line laser projects level and plumb lines to set out partitions. Check its accuracy regularly, store it in its case, never look into the beam and switch it off when not in use."),
-        Q("How can you check a laser level is still accurate?",["Mark a line, turn it 180° and check it matches","Look into the beam","Shake it","Check the battery"],"If the lines don’t match, it needs recalibrating."),
-        Q("What is a timber sizing (span) table used for?",["Choosing the right timber size for a span, spacing and load","Pricing timber","Ordering screws","Measuring moisture"],"Pick the size that suits the span and strength class."),
-        T("It’s safe to look into a laser beam for a moment.",false,"Even low-power lasers can damage eyes.")
+      lesson("sc-part1","Timber and metal partitions","Studs, tracks and lasers",[
+        TE("Metal partitions","Metal partitions use *U-tracks* at the top and bottom with *C-studs* clipped between, then boards screwed on. Set out the line, fix the tracks, then the studs.","metalstud"),
+        S("Timber or metal system?",["Timber","Metal"],[["Track",1,"The metal channel top and bottom."],["C-stud",1,"The metal upright."],["Sole plate",0,"Timber at the bottom."],["Noggin",0,"A timber brace."]]),
+        TE("Laser levels","A cross-line laser projects level and plumb lines. Check it often, store it in its case, and never look into the beam."),
+        SC("Setting out","You’re not sure the laser is still accurate.","How do you check it?",[["Mark a line, turn it 180° and check it matches","If they don’t match, it needs recalibrating."],["Look into the beam","Never look into a laser."],["Shake it","That could knock it further out."]]),
+        TE("Span tables","A span table gives the timber size for a span, spacing and strength class. Pick the size that suits all three."),
+        T("It’s safe to glance into a laser beam.",false,"Even low-power lasers can damage eyes.")
       ]),
-      lesson("sc-part2","Modern methods and learning","How buildings go together now",[
-        L("Principles and modern methods","Walls carry or divide; floors and roofs spread loads down to foundations. Modern methods include timber frame panels, SIPs, metal framing systems and factory-made modules, which need accurate site work."),
-        M("Match the method to its description",[["Timber frame panels","Wall panels made in a factory"],["SIPs","Insulated panels that are strong and quick to fit"],["Metal stud systems","Light, straight framing for partitions"],["Volumetric modules","Whole rooms built off site"]]),
-        Q("Why do factory-made components need accurate site work?",["There’s little room to adjust them to fit","They’re heavier","They’re cheaper","They don’t"],"Setting out has to be spot on."),
-        T("Asking to learn a new system, like metal stud framing, is a good way to develop.",true,"Seeking learning opportunities is part of being a great apprentice.")
-      ])
+      lesson("sc-part2","Modern methods","How buildings go together now",[
+        TE("Modern methods","Timber frame panels, SIPs, metal framing and factory-built modules are quicker to put up, but they need accurate site work: there’s little room to adjust."),
+        M("Match the method",[["Timber frame panels","Wall panels made in a factory"],["SIPs","Insulated panels, strong and quick"],["Metal stud systems","Light, straight framing for partitions"],["Volumetric modules","Whole rooms built off site"]],"Different ways to build faster."),
+        Q("Why do factory-made components need accurate site work?",["There’s little room to adjust them","They’re heavier","They’re cheaper","They don’t"],"Setting out must be spot on."),
+        T("Asking to learn a new system, like metal studs, helps you develop.",true,"Seek out learning.")
+      ]),
+      lesson("sc-part3","Unit challenge","Partitions",[
+        TROPHY(5),
+        Q("What goes at the top and bottom of a metal partition?",["U-tracks","C-studs","Noggins","Sole plates"],"Tracks, with C-studs between."),
+        T("Turning a laser 180° and checking the lines match tests its accuracy.",true,"If not, recalibrate."),
+        SP("Kai’s partition. Tap the mistake.",["Set out the line with a laser","Fixed the tracks first","Looked down the beam to line it up","Screwed the boards to the studs"],2,"Never look into the beam."),
+        Q("What does a span table tell you?",["The timber size for a span, spacing and grade","The price","The screw size","The moisture"],"Size from span, spacing and strength."),
+        B("Build the rule","Never look into a laser",["always","briefly"],"It can damage your eyes.")
+      ],C)
     ]),
     unit("Floor joists (and coverings)","Floor joists",[
-      lesson("sc-floor1","Joists and coverings","Sizing, hangers, strutting and decking",[
-        L("Floor joists","Joist size comes from span tables (span, spacing, strength class). Joists sit in hangers or on bearers, level and at the right centres. Strutting stops them twisting: one row for spans between 2.5 and 4.5 m, two rows over 4.5 m."),
-        Q("A joist spans 3.6 m. How many rows of strutting?",["One, at mid-span","None","Two","Three"],"Spans from 2.5 to 4.5 m need one row."),
-        L("Notches and holes","Notch only the top edge, no deeper than 0.125 × the joist depth, between 0.07 and 0.25 of the span from the support. Drill holes on the centre line, no bigger than 0.25 × the depth, between 0.25 and 0.4 of the span."),
-        Q("Where may you drill holes for cables in a joist?",["On the centre line, between 0.25 and 0.4 of the span from the support","Near the bottom edge","Anywhere","Right next to the support"],"The centre of the joist carries the least stress."),
-        L("Floor coverings","Moisture-resistant tongue-and-groove chipboard or boards are glued and screwed or nailed to every joist, joints staggered, with an expansion gap round the edge."),
-        T("Floor boards should be laid tight against the walls with no gap.",false,"Leave an expansion gap so they don’t buckle.")
+      lesson("sc-floor1","Joists and strutting","Sizing, strutting, notches and holes",[
+        TE("Joists","Joist sizes come from span tables. Joists sit in hangers or on bearers, level and at the right centres. *Strutting* stops them twisting: one row for spans of 2.5 to 4.5 m, two rows over 4.5 m.",null,"Strutting"),
+        Q("A joist spans 3.6 m. How many rows of strutting?",["One, at mid-span","None","Two","Three"],"2.5 to 4.5 m needs one row.",{again:G("A 5 m span needs [two] rows of strutting.",["one","no"],"Over 4.5 m: two rows.")}),
+        TE("Notches and holes","Notch only the *top edge*, up to 0.125 × the depth, between 0.07 and 0.25 of the span from a support. Drill holes on the *centre line*, up to 0.25 × the depth, between 0.25 and 0.4 of the span.","joist"),
+        HOT("Tap where you may drill a hole for a cable","joist",[[111,58,16,"Centre, a quarter in"],[64,42,16,"Top edge near the end"],[160,72,16,"Bottom, mid-span"],[26,58,10,"Right by the support"]],0,"On the centre line, 0.25 to 0.4 of the span from the support."),
+        TE("Floor coverings","Moisture-resistant tongue-and-groove chipboard is glued and fixed to every joist, joints staggered, with an expansion gap round the edge."),
+        T("Floor boards should be laid tight against the walls.",false,"Leave an expansion gap so they don’t buckle.")
       ]),
       lesson("sc-floor2","Fixings, decay and the environment","Structural fixings, rot and resources",[
-        M("Match the fixing to its use",[["Joist hanger","Supports a joist end on a wall or beam"],["Restraint strap","Ties floors or roofs to the walls"],["Coach screw","Heavy-duty timber fixing"],["Truss clip","Fixes trusses to the wall plate"]]),
-        Q("How should a joist hanger be fixed?",["With the right nails in every hole","With one screw","Glued only","Any nails, a few holes"],"Structural fixings only work if fixed as the maker says."),
-        M("Match the problem to a sign",[["Wet rot","Soft, dark timber where it stays damp"],["Dry rot","White strands and a mushroom-like growth"],["Woodworm","Small round exit holes"],["Overloading","Sagging or cracked joists"]]),
-        M("Match the control to what it does",[["LEV","Extracts dust at the source"],["RPE","A mask that filters your air"],["COSHH","Controls hazardous substances"],["PUWER","Keeps work equipment safe"]]),
-        T("Using offcuts for noggins and strutting helps reduce waste.",true,"Good planning uses materials efficiently.")
-      ])
+        TE("Joist hangers","A joist hanger carries a joist end on a wall or beam. It only works if it’s fixed with the right nails in *every* hole.","hanger"),
+        M("Match the fixing",[["Joist hanger","Carries a joist end"],["Restraint strap","Ties floors or roofs to the walls"],["Coach screw","Heavy-duty timber fixing"],["Truss clip","Fixes trusses to the wall plate"]],"Structural fixings follow the maker’s instructions."),
+        S("What’s the problem?",["Wet rot","Dry rot","Woodworm"],[["Soft, dark timber where it stays damp",0,"Wet rot."],["White strands and a mushroom-like growth",1,"Dry rot."],["Small round exit holes",2,"Woodworm."]]),
+        T("Using offcuts for noggins and strutting reduces waste.",true,"Good planning uses materials efficiently.")
+      ]),
+      lesson("sc-floor3","Unit challenge","Floor joists",[
+        TROPHY(6),
+        Q("An electrician wants to notch the bottom edge of a joist mid-span. What do you say?",["No: notches are only allowed in the top edge near the supports","Yes, it’s fine","Only if it’s small","Only with glue"],"The bottom mid-span is under most stress."),
+        Q("A 200 mm deep joist. What’s the deepest notch allowed?",["25 mm","50 mm","100 mm","10 mm"],"0.125 × 200 = 25 mm."),
+        SP("Sam’s floor. Tap the mistake.",["Strutting at mid-span on a 4 m span","Hanger nailed in every hole","Boards tight to the walls","Joints in the boards staggered"],2,"Leave an expansion gap."),
+        T("Two rows of strutting are needed for spans over 4.5 m.",true,"One row from 2.5 to 4.5 m."),
+        HOT("Tap where a notch is allowed","joist",[[64,42,14,"Top edge near a support"],[160,58,16,"Centre, mid-span"],[160,74,14,"Bottom, mid-span"],[240,74,14,"Bottom near a support"]],0,"The top edge, 0.07 to 0.25 of the span from a support."),
+        B("Build the hanger rule","Right nails in every hole",["some","screws"],"Or it can’t carry the load.")
+      ],C)
     ]),
     unit("Straight flights of stairs","Stairs",[
       lesson("sc-stair1","Fitting a straight flight","Fixing, levels and the rules",[
-        L("Fitting stairs","Check the opening and floor-to-floor height against the drawing. Fix the top of the flight to the trimmer, fix the wall string to the wall, check every tread is level and the flight is square, and protect the treads while other work goes on."),
+        EX("The parts","Tap each part.","stair",[[60,110,"String","The side board that carries the steps."],[150,44,"Tread","What you step on."],[87,80,"Riser","The upright between treads."],[34,86,"Nosing","The front edge of each tread."]]),
         O("Put fitting a flight in order",["Check the opening and total rise","Offer up the flight and check it’s level","Fix the top to the trimmer","Fix the wall string","Fit newels and protect the treads"],"Check before you fix."),
-        Q("What is the maximum rise for a private stair?",["220 mm","250 mm","180 mm","300 mm"],"Minimum going is also 220 mm, with a maximum pitch of 42°."),
-        Q("What minimum headroom is needed over a domestic stair?",["2 m","1.5 m","1.8 m","2.5 m"],"Measured vertically from the pitch line."),
-        T("Treads should be protected while other trades are working.",true,"Boards or covers stop damage and slips.")
+        TE("The rules","For private stairs: rise up to 220 mm, going at least 220 mm, pitch up to 42°, and at least 2 m headroom."),
+        G("The maximum rise on a private stair is [220] mm.",["250","180"],"And the going at least 220 mm."),
+        T("Treads should be protected while other trades are working.",true,"Covers stop damage and slips.")
       ]),
-      lesson("sc-stair2","Drawings, awareness and safety","Information and staying safe",[
-        L("Drawings and digital models","Drawings and specifications give the stair’s rise, going and fixing details. Digital models and tablets are used on some sites; check you’re using the latest revision."),
-        Q("Why check the drawing revision?",["An older version may have different sizes","It isn’t important","To see the architect’s name","For the date only"],"Building to an old drawing wastes time."),
-        Q("What’s a key hazard while fitting stairs?",["Falling through the open stairwell","Too much light","Paint fumes","Rain"],"Guard or cover openings."),
-        Q("What causes most slips and trips?",["Untidy work areas and trailing leads","Good lighting","Wearing boots","Signs"],"Clear up as you go."),
-        T("Putting safety first means stopping if a stairwell opening isn’t protected.",true,"Report it and don’t work next to it until it’s safe.")
-      ])
+      lesson("sc-stair2","Drawings and staying safe","Information and awareness",[
+        TE("Revisions","Drawings get updated. Always check you’re working from the latest revision before you set out or fix."),
+        SC("Your supervisor","The stair drawing on the wall is revision B; the office has revision C.","What do you do?",[["Get revision C before fitting anything","An older version may have different sizes."],["Use B: it’s close enough","Close enough can mean refitting."],["Guess which is right","Always check."]]),
+        J("Safe on a stair fit?",[["Covering the open stairwell",true,"No one falls through."],["Working next to an unguarded opening",false,"Stop and report it."],["Clearing offcuts as you go",true,"Fewer trips."],["Trailing leads up the flight",false,"A trip on a stair is serious."]],["Safe","Not safe"]),
+        T("Putting safety first means stopping if a stairwell isn’t protected.",true,"Report it.")
+      ]),
+      lesson("sc-stair3","Unit challenge","Stairs",[
+        TROPHY(5),
+        Q("Total rise 2,640 mm with 12 risers. Each rise is…",["220 mm, right at the limit","200 mm","240 mm, too steep","264 mm"],"2,640 ÷ 12 = 220 mm."),
+        HOT("Tap the riser","stair",[[87,80,12,"Upright between steps"],[150,44,14,"Top of a step"],[60,110,16,"Side board"],[34,86,12,"Front edge"]],0,"The upright between treads."),
+        T("Headroom over a private stair must be at least 2 m.",true,"Measured from the pitch line."),
+        SP("Kai’s stair fit. Tap the mistake.",["Checked the total rise","Fixed the top to the trimmer","Worked from last month’s drawing","Protected the treads"],2,"Check the latest revision."),
+        B("Build the rule","Check the latest drawing first",["old","later"],"Revisions change sizes.")
+      ],C)
     ]),
     unit("Service encasement","Service encasement",[
       lesson("sc-serv1","Boxing in services","Frames, access and fire",[
-        L("Service encasement","Frame round pipes and ducts with battens, then board it in. Leave access panels at valves, meters and joints. Don’t fix through pipes or cables, allow for pipes expanding, and use fire-rated boards where the drawings say."),
-        O("Put boxing in a pipe in order",["Find the services and check for hidden pipes and cables","Fix the battens to form the frame","Cut and fit the boards","Fit an access panel at the valve","Fill and finish ready for decoration"],"Access panels mean no one has to rip it out later."),
-        Q("Why include an access panel?",["So valves and meters can be reached","It looks nice","It saves boards","It isn’t needed"],"Services need maintaining."),
-        Q("What should you use before fixing into a wall near services?",["A cable and pipe detector","A spirit level","A tape measure","A hammer"],"Check before you drill or nail."),
-        T("Fire-rated encasement must be built exactly as specified.",true,"Gaps or the wrong board let fire spread.")
+        TE("Boxing in","Frame round pipes with battens, then board it in. Leave *access panels* at valves, meters and joints. Don’t fix through pipes or cables, and allow for pipes expanding.","boxing"),
+        O("Put boxing in a pipe in order",["Find the services and check for hidden pipes and cables","Fix the battens to form the frame","Cut and fit the boards","Fit an access panel at the valve","Fill and finish ready for decoration"],"Access panels mean nothing has to be ripped out later."),
+        SC("Before you fix","You’re about to screw a batten to the wall next to the boiler pipes.","What do you use first?",[["A cable and pipe detector","Check before you drill or fix."],["A spirit level","That won’t find hidden services."],["A tape measure","Measuring won’t show what’s inside."]]),
+        T("Fire-rated boxing must be built exactly as specified.",true,"Gaps or the wrong board let fire spread.")
       ]),
-      lesson("sc-serv2","Hand tools, fire, wellbeing and inclusion","Tools and looking after people",[
-        M("Match the hand tool to its use",[["Tenon saw","Accurate small cuts"],["Block plane","Trimming end grain and edges"],["Sliding bevel","Copying angles"],["Spirit level","Checking level and plumb"]]),
-        M("Match the extinguisher to its use",[["Water (red)","Wood and paper"],["Foam (cream)","Flammable liquids"],["CO2 (black)","Electrical fires"],["Dry powder (blue)","Many types, including gas"]]),
-        Q("Where can a worker find support with stress or low mood?",["Their employer, a mental health first aider or the Construction Industry Helpline","Nowhere on site","Only a doctor","Social media"],"Help is there: use it."),
-        Q("Which action helps an inclusive culture?",["Making sure everyone can use the welfare facilities","Nicknames about someone’s background","Leaving people out of briefings","Ignoring comments"],"Inclusion means everyone can take part."),
-        T("Hand tools should be stored clean and with edges protected.",true,"It keeps them sharp and safe.")
-      ])
+      lesson("sc-serv2","Tools, fire and people","Hand tools, extinguishers, wellbeing and inclusion",[
+        M("Match the hand tool",[["Tenon saw","Accurate small cuts"],["Block plane","Trimming end grain and edges"],["Sliding bevel","Copying angles"],["Spirit level","Checking level and plumb"]],"The right tool for each job."),
+        HOT("Tap the extinguisher for burning petrol","extinguishers",[[40,62,28,"Red"],[120,62,28,"Cream"],[200,62,28,"Black"],[280,62,28,"Blue"]],1,"Foam, with the cream band."),
+        SC("On site","A workmate says they’ve been struggling with stress.","Where can they get support?",[["Their employer, a mental health first aider or the Construction Industry Helpline","Help is there: use it."],["Nowhere on site","There’s more support than people think."],["Social media","That isn’t proper support."]]),
+        J("Inclusive, or not?",[["Making sure everyone can use the welfare cabins",true,"Everyone can take part."],["Nicknames about someone’s background",false,"Not acceptable."],["Leaving people out of briefings",false,"Everyone needs the information."],["Checking a new starter understood the briefing",true,"Inclusion in practice."]],["Inclusive","Not inclusive"])
+      ]),
+      lesson("sc-serv3","Unit challenge","Service encasement",[
+        TROPHY(5),
+        HOT("Tap what the plumber will thank you for","boxing",[[75,63,26,"Panel"],[75,20,14,"Top of the box"],[200,30,20,"Wall"],[75,110,14,"Bottom of the box"]],0,"The access panel at the valve."),
+        T("You can nail through a pipe as long as it’s copper.",false,"Never fix through pipes or cables."),
+        Q("Which extinguisher suits an electrical fire?",["CO2","Water","Foam","None"],"CO2, the black band."),
+        SP("Sam’s boxing. Tap the mistake.",["Used a detector first","Framed with battens","Boarded over the valve with no access","Used fire-rated board as specified"],2,"Valves need an access panel."),
+        B("Build the rule","Leave access to every valve",["hide","no"],"Services need maintaining.")
+      ],C)
     ]),
     unit("Cladding","Cladding",[
       lesson("sc-clad1","Fitting timber cladding","Battens, gaps, fixings and profiles",[
-        L("Timber cladding","Fix battens (and counter-battens) over a breathable membrane to leave a ventilated gap behind the boards. Use stainless steel or suitable fixings so timber like cedar or oak doesn’t stain. Leave gaps for movement, fit insect mesh at vents and follow fire-break details."),
-        M("Match the profile to its description",[["Shiplap","Rebated boards that overlap neatly"],["Feather-edge","Tapered boards that overlap"],["Board-on-board","Vertical boards with gaps covered by others"],["Tongue and groove","Boards that lock edge to edge"]]),
-        Q("Why is there a ventilated gap behind cladding?",["So moisture can dry out and the timber doesn’t rot","To save boards","For cables","It isn’t needed"],"Air flow keeps the back of the boards dry."),
-        Q("Why use stainless steel fixings with cedar or oak?",["The tannins react with plain steel and stain black","They’re cheaper","They’re easier to hide","It doesn’t matter"],"The right fixings keep cladding looking good."),
-        T("Cladding boards should be fixed tight together with no movement gaps.",false,"Timber moves with moisture, so leave gaps as specified.")
+        EX("Cladding in section","Tap each layer.","cladding",[[82,40,"Breathable membrane","Keeps rain off the wall but lets vapour out."],[91,25,"Batten","Holds the boards off the wall."],[105,70,"Cladding boards","Overlap so rain runs off."],[91,96,"Ventilated gap","Air flows up behind the boards so they dry out."]]),
+        Q("Why leave a ventilated gap behind cladding?",["So moisture dries out and the timber doesn’t rot","To save boards","For cables","It isn’t needed"],"Airflow keeps the back dry."),
+        M("Match the profile",[["Shiplap","Rebated boards that overlap neatly"],["Feather-edge","Tapered boards that overlap"],["Board-on-board","Vertical boards with gaps covered by others"],["Tongue and groove","Boards that lock edge to edge"]],"Profiles look and shed water differently."),
+        TE("Fixings","Use stainless steel fixings with cedar and oak: their tannins react with plain steel and stain black. Leave movement gaps and fit insect mesh at the vents."),
+        T("Cladding boards should be fixed tight with no movement gaps.",false,"Timber moves with moisture.")
       ]),
-      lesson("sc-clad2","Safe systems, asbestos and wellbeing","Planning safe work",[
-        M("Match the document to what it does",[["Risk assessment","Finds hazards and controls"],["Method statement","Safe step-by-step method"],["Toolbox talk","Short safety briefing"],["Induction","Site rules when you start"]]),
-        L("Asbestos","Old cladding, soffits and boards on buildings from before 2000 may contain asbestos. If you suspect it, stop, don’t disturb it, keep others away and tell your supervisor."),
-        Q("You’re removing old soffit boards and suspect asbestos. What do you do?",["Stop, leave them and tell your supervisor","Snap them off quickly","Cut them smaller","Sweep up"],"Only licensed contractors deal with it."),
-        Q("What keeps a work area safe when cladding at height?",["Proper scaffold, clear platforms and nothing below the work","Ladders only","Leaving offcuts on the scaffold","Working quickly"],"Keep platforms tidy and the area below barriered."),
-        T("Wellbeing includes physical health, like avoiding back strain from awkward lifting.",true,"Plan lifts and get help with long boards.")
-      ])
+      lesson("sc-clad2","Safe systems and asbestos","Planning safe work",[
+        M("Match the document",[["Risk assessment","Finds hazards and controls"],["Method statement","Safe step-by-step method"],["Toolbox talk","Short safety briefing"],["Induction","Site rules when you start"]],"Read them first."),
+        SC("Stripping old soffits","The old boards could contain asbestos.","What do you do?",[["Stop, leave them and tell your supervisor","Only licensed contractors deal with it."],["Snap them off quickly","That releases fibres."],["Cut them smaller","Cutting makes dust."]]),
+        J("Safe cladding at height?",[["Scaffold with guard rails and clear platforms",true,"Collective protection first."],["Offcuts left on the lift",false,"They can fall or trip someone."],["Area below barriered off",true,"Nothing falls on anyone."],["Carrying long boards up a ladder alone",false,"Plan the lift and get help."]],["Safe","Not safe"]),
+        T("Planning lifts of long boards helps avoid back strain.",true,"Wellbeing includes physical health.")
+      ]),
+      lesson("sc-clad3","Unit challenge","Cladding",[
+        TROPHY(5),
+        Q("Black streaks have appeared round the nails in new cedar cladding. What happened?",["Plain steel nails reacted with the tannins","It rained","The boards are too dry","Bad paint"],"Use stainless steel fixings."),
+        HOT("Tap the ventilated gap","cladding",[[91,96,6,"Gap behind the boards"],[50,60,26,"Wall"],[105,70,8,"Boards"],[82,20,4,"Membrane"]],0,"The gap behind the boards, between the battens."),
+        T("Feather-edge boards are tapered and overlap.",true,"Thick edge over thin."),
+        SP("Jay’s cladding. Tap the mistake.",["Fitted the membrane","Used battens for a gap","Fixed the boards tight together","Used stainless nails"],2,"Leave movement gaps."),
+        B("Build the rule","Leave a gap for air behind",["no","front"],"So the boards dry out.")
+      ],C)
     ]),
     unit("Wall and floor units","Units and fitments",[
-      lesson("sc-units1","Fitting units and fitments","Datums, level and worktops",[
-        L("Fitting units","Find the high point of the floor, set a level datum line (a laser helps), fix base units level along it, then wall units securely to studs or masonry with the right fixings. Worktops are joined with a jig and router, then sealed."),
-        O("Put fitting a run of units in order",["Check the floor and set a level datum","Fit the base units level to the datum","Fix the wall units securely","Fit and joint the worktop","Fit doors and adjust them"],"A good datum makes everything line up."),
-        Q("Why start from the high point of the floor?",["So every unit can be packed up to the same level","It’s the easiest corner","To save legs","It doesn’t matter"],"You can pack up, but you can’t cut the floor down."),
-        L("Jigs","A worktop jig guides the router to cut accurate joints. Making your own jig for repeat jobs, like drilling handle holes, keeps every one the same."),
-        Q("Why use a jig to drill handle holes on 20 doors?",["Every handle ends up in the same place","It looks professional","It’s the law","It’s faster to measure each one"],"Jigs make repeat work accurate."),
-        T("Wall units can be fixed with any screws into plasterboard.",false,"Use fixings suited to the load and the wall, into studs or proper cavity fixings.")
+      lesson("sc-units1","Fitting units","Datums, level and worktops",[
+        TE("Start from a datum","Find the *high point* of the floor and set a level datum line. You can pack units up to the line, but you can’t cut the floor down.",null,"Datum"),
+        O("Put fitting a run of units in order",["Check the floor and set a level datum","Fit the base units level to the datum","Fix the wall units securely","Fit and joint the worktop","Fit doors and adjust them"],"A good datum lines everything up."),
+        Q("Why start from the high point of the floor?",["So every unit can be packed up to the same level","It’s easiest","To save legs","It doesn’t matter"],"You can pack up, not cut down."),
+        TE("Jigs","A worktop jig guides the router for accurate joints. A handmade jig for drilling handle holes puts every handle in the same place."),
+        T("Wall units can be fixed with any screws into plasterboard.",false,"Use proper fixings into studs or suitable cavity fixings.")
       ]),
-      lesson("sc-units2","Environment and teamwork","Waste, resources and working together",[
-        M("Match the waste to what to do",[["Packaging cardboard","Flatten and recycle"],["Clean timber offcuts","Reuse or recycle"],["Worktop off-cuts","Reuse for small shelves or recycle"],["Adhesive and sealant tubes","Dispose of as hazardous where marked"]]),
-        Q("What does FSC or PEFC on timber products show?",["They come from well-managed forests","They’re fireproof","They’re waterproof","They’re cheaper"],"Sustainable forestry matters."),
-        M("Match the teamwork habit to an example",[["Communicating","Telling the plumber when units are fitted"],["Reliability","Finishing when you said"],["Respect","Leaving the kitchen clean for the next trade"],["Helping","Carrying a worktop together"]]),
-        T("Team-focus means planning your work around other trades, like electricians and plumbers.",true,"Kitchens need everyone working in the right order.")
-      ])
+      lesson("sc-units2","Environment and teamwork","Waste and working together",[
+        S("Where does it go?",["Recycle or reuse","Hazardous"],[["Packaging cardboard",0,"Flatten and recycle."],["Clean timber offcuts",0,"Reuse or recycle."],["Empty sealant tubes",1,"Dispose of as marked."],["Worktop offcuts",0,"Small shelves, or recycle."]]),
+        M("Match the teamwork habit",[["Communicating","Telling the plumber when units are fitted"],["Reliability","Finishing when you said"],["Respect","Leaving the kitchen clean for the next trade"],["Helping","Carrying a worktop together"]],"Kitchens need everyone in the right order."),
+        T("FSC or PEFC timber comes from well-managed forests.",true,"Choose it where you can.")
+      ]),
+      lesson("sc-units3","Unit challenge","Units and fitments",[
+        TROPHY(5),
+        Q("The floor falls 15 mm across a kitchen. Where do you set the datum from?",["The highest point of the floor","The lowest point","The middle","The door"],"Pack everything up to it."),
+        N(["Set a level datum","Fit the base units"],["Fix the wall units","Fit the doors first","Tile the walls"],"Then the worktop, then doors."),
+        SP("Kai’s kitchen. Tap the mistake.",["Set the datum from the high point","Used a jig for the worktop joints","Hung the wall units on plasterboard screws","Adjusted the doors last"],2,"Heavy units need proper fixings."),
+        T("A jig makes repeat holes identical.",true,"Every handle in the same place."),
+        B("Build the rule","Start from the high point",["low","middle"],"Pack up, never cut down.")
+      ],C)
     ]),
     unit("Handrails and spindles","Handrails and spindles",[
       lesson("sc-hand1","Fitting handrails and spindles","Heights, gaps and fixing",[
-        L("Balustrades on site","Fit newel posts plumb and secure, then the handrail at about 900 mm above the pitch line on domestic stairs, and spindles at gaps that won’t let a 100 mm sphere through. Cut spindles to the pitch angle so they sit tight."),
-        Q("What is the maximum gap between spindles on a domestic stair?",["Less than 100 mm","150 mm","120 mm","200 mm"],"So a small child can’t get through."),
-        Q("Which tool copies the stair pitch to mark spindle ends?",["Sliding bevel","Tri-square","Tape measure","Chisel"],"Set it to the pitch and mark every spindle."),
-        M("Match the hand tool to its use",[["Sliding bevel","Copying the pitch angle"],["Tenon saw","Cutting spindles cleanly"],["Spirit level","Checking newels are plumb"],["Chisel","Trimming housings"]]),
-        T("Newel posts must be fixed solidly because the handrail relies on them.",true,"A loose newel makes the whole balustrade unsafe.")
+        EX("A balustrade","Tap each part.","balustrade",[[38,70,"Newel post","Fixed solid and plumb: the handrail relies on it."],[150,18,"Handrail","About 900 mm above the pitch line on a house stair."],[128,64,"Spindle","Cut to the stair pitch so it sits tight."],[73,64,"The 100 mm rule","No gap can let a 100 mm sphere through."]]),
+        Q("What’s the largest gap allowed between spindles on a house stair?",["Less than 100 mm","150 mm","120 mm","200 mm"],"So a child can’t get through."),
+        TE("Copying the pitch","Set a *sliding bevel* to the stair pitch and mark every spindle end with it, so they all sit tight on the string or baserail.",null,"Sliding bevel"),
+        M("Match the tool",[["Sliding bevel","Copying the pitch angle"],["Tenon saw","Cutting spindles cleanly"],["Spirit level","Checking newels are plumb"],["Chisel","Trimming housings"]],"The right tool for each job."),
+        T("A loose newel makes the whole balustrade unsafe.",true,"Fix newels solidly.")
       ]),
-      lesson("sc-hand2","Signs, talking and learning","Safety signs and clear communication",[
-        M("Match the sign colour to its meaning",[["Blue circle","You must do this"],["Yellow triangle","Warning of a hazard"],["Red circle","You must not do this"],["Green square","Safe condition, like first aid"]]),
-        M("Match the trade word to its meaning",[["Pitch line","Line joining the nosings"],["Newel","Main post of a balustrade"],["Baluster","Another name for a spindle"],["Going","Depth of a step"]]),
-        Q("Which is the clearest message to your supervisor?",["The newel at the top is 5 mm out of plumb; shall I reset it before fitting the rail?","Something’s wrong","It’s a bit off","Not sure"],"Say what, where and what you suggest."),
-        T("Asking an experienced carpenter to watch you fit spindles is a good way to learn.",true,"Feedback helps you improve.")
-      ])
+      lesson("sc-hand2","Signs, words and learning","Safety signs and clear communication",[
+        CD("Safety signs",[[{pic:"sign-hat"},"Blue circle: must do","Here, wear a hard hat."],[{pic:"sign-nophone"},"Red ring: must not","Here, no mobile phones."],[{pic:"sign-electric"},"Yellow triangle: warning","Here, danger: electricity."],[{pic:"sign-eyewash"},"Green square: safe condition","Here, an eyewash station."]]),
+        M("Match the trade word",[["Pitch line","Line joining the nosings"],["Newel","Main post of a balustrade"],["Baluster","Another name for a spindle"],["Going","Depth of a step"]],"Trade words keep things clear."),
+        Q("Which is the clearest message to your supervisor?",["The top newel is 5 mm out of plumb; shall I reset it before fitting the rail?","Something’s wrong","It’s a bit off","Not sure"],"Say what, where, and what you suggest."),
+        T("Asking an experienced carpenter to watch you fit spindles helps you learn.",true,"Feedback helps you improve.")
+      ]),
+      lesson("sc-hand3","Unit challenge","Handrails and spindles",[
+        TROPHY(5),
+        HOT("Tap the part everything relies on","balustrade",[[38,70,12,"End post"],[128,64,8,"Upright"],[200,95,12,"Bottom rail"],[73,64,8,"Gap"]],0,"The newel post."),
+        Q("A handrail is fixed 780 mm above the pitch line on a house stair. What do you say?",["It’s too low: it should be about 900 mm","It’s fine","It’s too high","It doesn’t matter"],"About 900 mm."),
+        T("A baluster is the same as a spindle.",true,"Two names for the same thing."),
+        SP("Jay’s balustrade. Tap the mistake.",["Newel fixed plumb","Spindle ends marked with a sliding bevel","Spindles 130 mm apart","Handrail at 900 mm"],2,"Gaps must be under 100 mm."),
+        B("Build the rule","No gap bigger than 100 mm",["over","wide"],"To keep children safe.")
+      ],C)
     ]),
     unit("Internal and external doors","Doors",[
       lesson("sc-door1","Hanging doors","Sizing, gaps and connections",[
-        L("Hanging a door","Measure the opening, then plane the door to fit with even gaps of about 2 to 3 mm at the sides and top and a floor gap to suit the covering. Fit the hinges, then the lock and handles. External doors need weather seals and a threshold."),
-        O("Put hanging a door in order",["Measure the opening and check it’s square","Trim the door to size with even gaps","Mark and cut in the hinges","Hang the door and check the swing","Fit the lock, latch and handles"],"Take small amounts off at a time."),
-        Q("What is a typical gap at the sides and top of an internal door?",["About 2 to 3 mm","10 mm","None","20 mm"],"Even gaps look right and stop sticking."),
-        M("Match the product to its use",[["Mastic sealant","Sealing gaps round external frames"],["Preservative","Protecting timber from rot and insects"],["Wood filler","Filling holes before painting"],["Weather seal","Stopping draughts at external doors"]]),
-        M("Match the fixing to a use",[["Lost-head nail","Fixings that need hiding"],["Screw","Strong fixing that can be removed"],["Bolt","Heavy structural connection"],["Adhesive","Bonding along a whole joint"]]),
-        T("Always check the drawing or schedule for which way a door should open.",true,"The door schedule gives size, type and hand.")
+        TE("Even gaps","Plane the door to fit with even gaps of about *2 to 3 mm* at the sides and top, and a floor gap to suit the covering. Take a little off at a time."),
+        O("Put hanging a door in order",["Measure the opening and check it’s square","Trim the door with even gaps","Mark and cut in the hinges","Hang it and check the swing","Fit the lock and handles"],"Small amounts at a time."),
+        TE("Hinges and handles","Top hinge about 150 mm from the top, bottom about 225 mm from the bottom, and the handle about 1,000 mm up. Heavy and fire doors often need a third hinge.","hinges"),
+        M("Match the product",[["Mastic sealant","Sealing gaps round external frames"],["Preservative","Protecting timber from rot and insects"],["Wood filler","Filling holes before painting"],["Weather seal","Stopping draughts at external doors"]],"The right product for the job."),
+        T("The door schedule tells you which way each door opens.",true,"Size, type, hand and fire rating.")
       ]),
       lesson("sc-door2","Sharp tools and safety","Maintaining hand tools",[
-        L("Sharpening","Grind a chisel or plane iron at about 25°, hone a small bevel at about 30°, flatten the back and remove the burr. A sharp tool needs less force and is safer."),
-        O("Put sharpening a plane iron in order",["Flatten the back","Grind the bevel at about 25°","Hone at about 30°","Remove the burr","Refit and set the blade"],"Set the blade to take a fine shaving."),
-        Q("Why is a blunt chisel more dangerous?",["You push harder, so it slips","It’s heavier","It’s sharper","It isn’t"],"Keep your tools sharp."),
-        Q("Where do you find a door’s size, type and fire rating?",["The door schedule and specification","The delivery driver","The skip","Guess from the opening"],"Schedules list every door."),
-        T("Putting wellbeing first includes getting help to lift heavy external doors.",true,"Two-person lifts prevent injuries.")
-      ])
+        TE("Sharpening","Grind at about *25°*, hone at about *30°*, flatten the back and remove the burr. A sharp tool needs less force, so it’s safer.","chisel"),
+        O("Put sharpening a plane iron in order",["Flatten the back","Grind the bevel at about 25°","Hone at about 30°","Remove the burr","Refit and set the blade"],"Set it to take a fine shaving."),
+        SC("Hanging an external door","It’s a heavy solid oak door.","How do you move it into place?",[["With a second person or a door lifter","Two-person lifts prevent injuries."],["Carry it alone, carefully","That risks your back."],["Drag it across the floor","That damages the door and floor."]]),
+        T("Blunt chisels are more likely to slip.",true,"You push harder.")
+      ]),
+      lesson("sc-door3","Unit challenge","Doors",[
+        TROPHY(5),
+        Q("A door sticks at the top of the latch side. What’s the likely fix?",["Plane a little off that edge to even the gap","Add a third hinge","Oil the handle","Force it"],"Keep even 2 to 3 mm gaps."),
+        HOT("Tap where the bottom hinge goes","hinges",[[110,114,12,"Bottom hinge"],[110,22,12,"Top hinge"],[180,80,12,"Handle"],[150,40,16,"Upper panel"]],0,"About 225 mm from the bottom."),
+        SP("Sam’s door. Tap the mistake.",["Checked the door schedule","Planed small amounts at a time","Left a 10 mm gap at the top","Fitted a weather seal to the external door"],2,"About 2 to 3 mm."),
+        T("Fire doors must follow their certification when fitting ironmongery.",true,"Any change must be approved."),
+        B("Build the gap rule","About 2 to 3 mm all round",["10","none"],"Even gaps look right and stop sticking.")
+      ],C)
     ]),
     unit("Skirting boards and architrave","Skirting and architrave",[
       lesson("sc-skirt1","Skirting and architrave","Mitres, scribes and splices",[
-        L("Fitting mouldings","Mitre external corners at 45°. Scribe internal corners: cut the profile of one board to fit over the other, so the joint stays tight. On long runs, splice with a 45° scarf joint. Set architrave back from the lining edge by a small, even margin of about 5 mm."),
-        M("Match the joint to where it’s used",[["Mitre","External corners"],["Scribe","Internal corners"],["Splice (scarf)","Joining lengths on a long run"],["Margin","Even reveal between architrave and lining"]]),
-        Q("Why scribe internal corners instead of mitring them?",["A scribe stays tight when the timber shrinks","It’s quicker","It uses less timber","It looks different"],"Mitres on internal corners tend to open up."),
-        O("Put fitting a length of skirting in order",["Measure the wall","Cut one end to scribe or mitre","Mark and cut the other end","Dry-fit and adjust","Fix to the wall"],"Dry-fit before fixing."),
-        T("A 45° splice is less noticeable than a square butt joint.",true,"The overlap hides any movement.")
+        TE("Corners","*Mitre* external corners at 45°. *Scribe* internal corners: cut one board’s profile to fit over the other, so the joint stays tight when the timber shrinks.","corners"),
+        HOT("Tap the corner you’d scribe","corners",[[42,70,20,"Left corner"],[184,70,20,"Right corner"]],0,"The internal corner."),
+        M("Match the joint",[["Mitre","External corners"],["Scribe","Internal corners"],["Splice (scarf)","Joining lengths on a long run"],["Margin","The even reveal between architrave and lining"]],"Each joint has its place."),
+        TE("Architrave margin","Set architrave back from the lining edge by an even margin of about *5 mm*, and splice long runs with a 45° scarf so movement doesn’t show."),
+        O("Put fitting a length of skirting in order",["Measure the wall","Cut one end to scribe or mitre","Mark and cut the other end","Dry-fit and adjust","Fix to the wall"],"Dry-fit before fixing.")
       ]),
-      lesson("sc-skirt2","Dust, environment and working for yourself","Controls, waste and employment",[
-        M("Match the control to what it does",[["LEV","Extracts dust at the saw"],["RPE","Filters the air you breathe"],["Eye protection","Stops chips reaching your eyes"],["Hearing protection","Protects your ears from saw noise"]]),
-        Q("What’s the best way to deal with short offcuts of skirting?",["Keep useful ones for small returns, recycle the rest","Throw them all in the general skip","Burn them","Leave them on the floor"],"Using offcuts reduces waste."),
-        L("Employment and tax","Employed people pay tax through PAYE. Self-employed people use Self Assessment. In construction, the Construction Industry Scheme (CIS) deducts tax from subcontractors: 20% if registered, 30% if not."),
-        M("Match the term to its meaning",[["PAYE","Tax taken from wages by your employer"],["Self Assessment","You report and pay your own tax"],["CIS","Tax deducted from subcontractor payments"],["Public liability insurance","Covers damage or injury to others"]]),
-        T("Self-employed carpenters need to keep records of what they earn and spend.",true,"You need them for your tax return.")
-      ])
+      lesson("sc-skirt2","Dust and working for yourself","Controls, waste and employment",[
+        M("Match the control",[["LEV","Extracts dust at the saw"],["RPE","Filters the air you breathe"],["Eye protection","Stops chips reaching your eyes"],["Hearing protection","Protects your ears from saw noise"]],"Protect yourself from every hazard."),
+        TE("Tax and CIS","Employed: PAYE. Self-employed: Self Assessment. Under *CIS*, 20% is taken from a registered subcontractor’s pay, 30% if unregistered."),
+        Q("Under CIS, what’s taken from an unregistered subcontractor?",["30%","20%","0%","50%"],"20% if registered."),
+        T("Self-employed carpenters need records of what they earn and spend.",true,"For the tax return.")
+      ]),
+      lesson("sc-skirt3","Unit challenge","Skirting and architrave",[
+        TROPHY(5),
+        Q("An internal mitre has opened up after a month. What would have prevented it?",["Scribing the corner instead","More glue","A longer nail","Caulk"],"Scribes stay tight when timber shrinks."),
+        T("Architrave is set back from the lining edge by an even margin.",true,"About 5 mm."),
+        SP("Jay’s skirting. Tap the mistake.",["Mitred the external corners","Mitred the internal corners","Spliced the long run at 45°","Dry-fitted before fixing"],1,"Internal corners should be scribed."),
+        Q("What angle is each cut in a square external mitre?",["45°","90°","30°","60°"],"Two 45° cuts make 90°."),
+        B("Build the corner rule","Scribe inside and mitre outside",["outside","inside"],"Scribes stay tight.")
+      ],C)
     ]),
     unit("Window boards","Window boards",[
-      lesson("sc-wb1","Fitting window boards","Measuring, notching and mitring",[
-        L("Window boards","Measure the reveal width and depth, allowing the board to run past the reveals (horns) and overhang the wall. Mark and cut the notches, round or bullnose the front edge, mitre returns where needed, and fix it level on packers."),
-        O("Put fitting a window board in order",["Measure the reveal and overhang","Mark out the horns and notches","Cut and shape the board","Dry-fit and check it’s level","Fix and seal"],"Mark from the reveal, not the tape alone."),
-        Q("What are the horns of a window board?",["The parts that extend past the reveals","The front edge","The fixings","The packers"],"They’re notched round the plaster line."),
-        Q("What angle do you cut for a mitred return on a square corner?",["45°","30°","90°","60°"],"Two 45° cuts make a 90° corner."),
-        T("A window board should be fixed level even if the sill isn’t.",true,"Pack it to level.")
+      lesson("sc-wb1","Fitting window boards","Measuring, notching and shaping",[
+        EX("A window board","Tap each part.","windowboard",[[78,74,"Horn","The part that runs past the reveal, notched round the plaster line."],[160,86,"Bullnose","The rounded front edge."],[50,35,"Reveal","The side of the opening the board is notched round."]]),
+        O("Put fitting a window board in order",["Measure the reveal and overhang","Mark out the horns and notches","Cut and shape the board","Dry-fit and check it’s level","Fix and seal"],"Mark from the reveal, not just the tape."),
+        Q("What angle for a mitred return on a square corner?",["45°","30°","90°","60°"],"Two 45° cuts make 90°."),
+        T("A window board should be fixed level even if the sill isn’t.",true,"Pack it level.")
       ]),
-      lesson("sc-wb2","Standards and inclusion","Regulations and fairness at work",[
-        M("Match the standard to what it is",[["British Standards","Agreed ways to make and fit things"],["Building Regulations","Legal requirements for buildings"],["Warranty standards","Quality rules for new homes"],["Specification","What this job must use"]]),
-        Q("Which is an example of inclusion on site?",["Briefings everyone can understand, including those with English as a second language","Only briefing the regular team","Making jokes about accents","Leaving people to work it out"],"Everyone needs to understand safety information."),
-        M("Match the word to its meaning",[["Equity","Fair access and treatment for everyone"],["Diversity","Valuing differences"],["Inclusion","Everyone feels part of the team"],["Discrimination","Treating someone unfairly because of who they are"]]),
-        T("Contributing to an inclusive culture includes challenging offensive comments.",true,"Or reporting them if you can’t challenge safely.")
-      ])
+      lesson("sc-wb2","Standards and inclusion","Rules and fairness at work",[
+        M("Match the standard",[["British Standards","Agreed ways to make and fit things"],["Building Regulations","Legal requirements for buildings"],["Warranty standards","Quality rules for new homes"],["Specification","What this job must use"]],"Different rules, different jobs."),
+        M("Match the word",[["Equity","Fair access and treatment"],["Diversity","Valuing differences"],["Inclusion","Everyone feels part of the team"],["Discrimination","Treating someone unfairly because of who they are"]],"Four ideas to know."),
+        SC("A briefing","Some of the gang have English as a second language.","What helps?",[["Clear, simple briefings and checking everyone understood","Everyone needs the safety information."],["Only brief the regulars","That leaves people at risk."],["Talk faster","That makes it harder."]]),
+        T("Challenging offensive comments helps an inclusive culture.",true,"Or report them if you can’t safely.")
+      ]),
+      lesson("sc-wb3","Unit challenge","Window boards",[
+        TROPHY(4),
+        HOT("Tap the horn","windowboard",[[78,74,12,"Left end"],[160,86,14,"Front edge"],[160,46,16,"Middle"],[50,35,16,"Wall"]],0,"The part running past the reveal."),
+        SP("Kai’s window board. Tap the mistake.",["Measured the overhang","Notched the horns","Fixed it following the sloping sill","Sealed it"],2,"Pack it level."),
+        T("Diversity means valuing people’s differences.",true,"Different backgrounds make stronger teams."),
+        B("Build the rule","Pack it level then fix it",["slope","first"],"Level, even if the sill isn’t.")
+      ],C)
     ]),
     unit("Roofs and loft hatch","Roofs",[
-      lesson("sc-roof1","Pitched roofs and loft hatches","Trussed and cut roofs",[
-        L("Pitched roofs","Trussed rafters are made in a factory, usually fitted at 600 mm centres on wall plates and braced with diagonal and longitudinal bracing. Never cut or alter a truss. Traditional cut roofs are built on site: ridge, rafters with birdsmouth cuts on the wall plate, purlins and ceiling joists."),
-        M("Match the roof part to its description",[["Ridge","Board at the top where rafters meet"],["Wall plate","Timber on the wall the rafters sit on"],["Purlin","Beam supporting rafters part way up"],["Birdsmouth","Notch in a rafter to sit on the wall plate"]]),
-        Q("Can you cut a trussed rafter to make room for a loft hatch?",["No: trim the opening as the designer shows","Yes, if you add a noggin","Yes, one truss is fine","Only the bottom chord"],"Trusses are engineered as a whole."),
-        Q("A rafter rises 3 m over a run of 4 m. How long is it (before overhang)?",["5 m","7 m","3.5 m","12 m"],"3-4-5: the square root of 3² + 4² is 5."),
-        L("Loft hatches","The opening is trimmed with trimmers to the size shown, then lined, with an insulated, draught-sealed hatch."),
-        T("Roof bracing is optional if the trusses look straight.",false,"Bracing is essential for stability.")
+      lesson("sc-roof1","Pitched roofs","Trussed and cut roofs",[
+        EX("A cut roof","Built on site. Tap each part.","cutroof",[[160,16,"Ridge","The board at the top where the rafters meet."],[120,40,"Rafter","Runs from the wall plate to the ridge."],[90,56,"Purlin","A beam supporting the rafters part way up."],[290,91,"Wall plate","The timber on the wall the rafters sit on, notched with a birdsmouth."],[200,97,"Ceiling joist","Ties the feet of the rafters together."]]),
+        TE("Trussed rafters","Trusses are made in a factory, usually fitted at 600 mm centres and braced with diagonal and longitudinal bracing. *Never cut or alter a truss*: trim openings as the designer shows."),
+        SC("Fitting a loft hatch","A truss is right where the hatch needs to go.","What do you do?",[["Trim the opening as the designer shows, without cutting the truss","Trusses are engineered as a whole."],["Cut the bottom chord and add a noggin","That weakens the whole truss."],["Move the truss","It’s part of the design."]]),
+        TE("Rafter length","A rafter rising 3 m over a 4 m run is 5 m long before the overhang: it’s a 3-4-5 triangle.","square345"),
+        Q("A rafter rises 1.5 m over a 2 m run. How long is it?",["2.5 m","3.5 m","3 m","2 m"],"Half of 3-4-5 is 1.5-2-2.5."),
+        T("Roof bracing is optional if the trusses look straight.",false,"Bracing is essential.")
       ]),
-      lesson("sc-roof2","Flat roofs, estimating and working at height","Warm and cold roofs, lists and safety",[
-        L("Flat roofs","A warm flat roof has the insulation above the deck with a vapour control layer below it. A cold roof has insulation between the joists and a ventilated gap above. Firrings (tapered strips) on the joists give the fall so water runs off."),
-        M("Match the term to its meaning",[["Warm roof","Insulation above the deck"],["Cold roof","Insulation between joists, ventilated above"],["Firrings","Tapered strips that create a fall"],["Vapour control layer","Stops moist air getting into the roof"]]),
-        Q("Roof joists at 400 mm centres over a 4.8 m length. How many joists?",["13","12","11","16"],"4,800 ÷ 400 = 12 spaces, so 13 joists."),
-        L("Working at height","Use scaffold with edge protection or other collective protection; ladders are for short, simple tasks. Lofts and roof voids can be confined spaces: plan access, ventilation and how you’d get out."),
-        Q("What protects people from falling off a roof edge?",["Guard rails or edge protection on the scaffold","Working carefully","A spotter only","Nothing is needed"],"Collective protection comes first."),
-        T("Team-focus on a roof includes calling out before passing materials up.",true,"Everyone needs to know what’s coming.")
-      ])
+      lesson("sc-roof2","Flat roofs and height","Warm and cold roofs, lists and safety",[
+        TE("Warm or cold?","A *warm roof* has insulation above the deck, over a vapour control layer. A *cold roof* has insulation between the joists and a ventilated gap above. Firrings give the fall.","flatroofs"),
+        HOT("Tap the cold roof","flatroofs",[[81,50,40,"Left roof"],[239,50,40,"Right roof"]],1,"Insulation between the joists, with a ventilated gap."),
+        Q("Roof joists at 400 mm centres over 4.8 m. How many joists?",["13","12","11","16"],"4,800 ÷ 400 = 12 spaces, so 13 joists."),
+        J("Safe roof work?",[["Scaffold with edge protection",true,"Collective protection first."],["A ladder for a whole day’s roofing",false,"Ladders are for short, simple tasks."],["Calling out before passing materials up",true,"Everyone knows what’s coming."],["Going into the loft without telling anyone",false,"Roof voids can be confined spaces."]],["Safe","Not safe"])
+      ]),
+      lesson("sc-roof3","Unit challenge","Roofs",[
+        TROPHY(6),
+        HOT("Tap the purlin","cutroof",[[90,56,8,"Block under the rafter"],[160,16,10,"Top"],[120,40,10,"Sloping timber"],[200,97,14,"Bottom tie"]],0,"The purlin supports the rafters part way up."),
+        Q("What does a birdsmouth do?",["Lets the rafter sit on the wall plate","Joins rafters at the ridge","Holds a purlin","Vents the roof"],"A notch that seats the rafter."),
+        T("In a warm roof the insulation is above the deck.",true,"Over a vapour control layer."),
+        SP("Sam’s roof. Tap the mistake.",["Trusses at 600 mm centres","Fitted the bracing","Cut a truss chord for the hatch","Fixed trusses with truss clips"],2,"Never cut a truss."),
+        Q("A rafter rises 3 m over 4 m. How long, before the overhang?",["5 m","7 m","3.5 m","12 m"],"3-4-5."),
+        B("Build the truss rule","Never cut or alter a truss",["sometimes","chord"],"They’re engineered as a whole.")
+      ],C)
     ])
   ]);
 })();

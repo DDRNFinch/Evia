@@ -426,6 +426,60 @@
       '<path class="tp-blade2" d="M168 20 V110"/><rect class="tp-guard" x="162" y="20" width="12" height="36"/><rect class="tp-tim2" x="120" y="58" width="80" height="12"/><path class="tp-thin" d="M230 52 H176"/>'+t(270,56,"Guard just","tp-xs")+t(270,68,"above the work","tp-xs"),
       "A band saw with its top guard lowered to just above the piece of timber on the table")
   });
+  /* ---------- Site carpentry ---------- */
+  Object.assign(P,{
+    /* A load-bearing stud wall: plates, studs at 600 mm centres, noggins and a door opening. */
+    studwall:()=>{const full=[20,80,98,180,240,296].map(x=>'<rect class="tp-tim" x="'+x+'" y="14" width="8" height="98"/>').join("");
+      return svg(320,130,'<rect class="tp-tim2" x="14" y="112" width="92" height="8"/><rect class="tp-tim2" x="180" y="112" width="130" height="8"/><rect class="tp-tim2" x="14" y="6" width="296" height="8"/>'+full+
+        '<rect class="tp-tim" x="106" y="30" width="8" height="82"/><rect class="tp-tim" x="172" y="30" width="8" height="82"/><rect class="tp-lint" x="106" y="20" width="74" height="10"/><rect class="tp-tim" x="139" y="14" width="8" height="6"/>'+
+        '<rect class="tp-tim2" x="28" y="58" width="52" height="7"/><rect class="tp-tim2" x="188" y="62" width="52" height="7"/><rect class="tp-tim2" x="248" y="58" width="48" height="7"/>'+
+        dimH(126,24,84,"600")+t(143,72,"Opening","tp-xs"),"A load-bearing stud wall: head and sole plates, studs at 600 millimetre centres, noggins, and a door opening with a lintel sitting on cripple studs beside full-height studs")},
+    /* Metal partition: U-tracks top and bottom with C-studs between. */
+    metalstud:()=>svg(320,130,'<path class="tp-metal" d="M20 8 H300 V16 H20 Z M20 104 H300 V112 H20 Z"/>'+[40,110,180,250].map(x=>'<path class="tp-metal2" d="M'+x+' 16 H'+(x+10)+' V104 H'+x+' Z"/><path class="tp-thin" d="M'+(x+3)+' 16 V104"/>').join("")+
+      t(80,126,"C-studs between","tp-xs")+t(230,126,"U-tracks top and bottom","tp-xs"),"A metal stud partition: U-shaped tracks at the top and bottom with C-studs clipped between them"),
+    /* Where you may notch and drill a floor joist (from each support). */
+    joist:()=>{const L=20,W=280,x=f=>L+f*W;return svg(320,120,'<rect class="tp-tim" x="20" y="40" width="280" height="36"/><rect class="tp-wallb" x="6" y="40" width="14" height="70"/><rect class="tp-wallb" x="300" y="40" width="14" height="70"/>'+
+      '<rect class="tp-zone1" x="'+x(.07)+'" y="40" width="'+(x(.25)-x(.07))+'" height="5"/><rect class="tp-zone1" x="'+x(.75)+'" y="40" width="'+(x(.93)-x(.75))+'" height="5"/>'+
+      '<rect class="tp-zone2" x="'+x(.25)+'" y="52" width="'+(x(.4)-x(.25))+'" height="12"/><rect class="tp-zone2" x="'+x(.6)+'" y="52" width="'+(x(.75)-x(.6))+'" height="12"/>'+
+      '<circle class="tp-holec" cx="'+x(.3)+'" cy="58" r="4"/><circle class="tp-holec" cx="'+x(.35)+'" cy="58" r="4"/><path class="tp-cent" d="M20 58 H300"/>'+
+      t(x(.16),30,"Notches: top edge","tp-xs")+t(x(.16),18,"0.07 to 0.25 of span","tp-xs")+t(x(.325),92,"Holes: on the centre line","tp-xs")+t(x(.325),104,"0.25 to 0.4 of span","tp-xs"),
+      "A floor joist between two supports: notches allowed in the top edge between 0.07 and 0.25 of the span from each support, holes on the centre line between 0.25 and 0.4 of the span")},
+    /* A joist hanger: nailed through every hole. */
+    hanger:()=>svg(320,120,'<rect class="tp-wallb" x="30" y="10" width="60" height="104"/><rect class="tp-tim" x="96" y="40" width="200" height="40"/>'+
+      '<path class="tp-hang" d="M90 30 H100 V84 H122 V36 H128 V90 H90 Z"/>'+[[94,40],[94,60],[112,70],[112,50],[124,60]].map(p=>'<circle class="tp-nail" cx="'+p[0]+'" cy="'+p[1]+'" r="2"/>').join("")+
+      t(200,104,"Right nails in every hole","tp-xs")+t(60,8,"","tp-xs"),"A joist end sitting in a galvanised joist hanger fixed to a wall, with a nail in every hole"),
+    /* Boxing in a pipe: battens, boards and an access panel at the valve. */
+    boxing:()=>svg(320,130,'<rect class="tp-wallp" x="10" y="6" width="300" height="118"/><rect class="tp-pipe2" x="60" y="6" width="10" height="118"/><rect class="tp-pipe2" x="80" y="6" width="10" height="118"/><rect class="tp-valve" x="56" y="58" width="18" height="10"/>'+
+      '<rect class="tp-box" x="44" y="6" width="62" height="118"/><rect class="tp-access" x="50" y="46" width="50" height="34"/><circle class="tp-nail" cx="54" cy="50" r="1.6"/><circle class="tp-nail" cx="96" cy="50" r="1.6"/><circle class="tp-nail" cx="54" cy="76" r="1.6"/><circle class="tp-nail" cx="96" cy="76" r="1.6"/>'+
+      t(200,58,"Access panel at the valve","tp-xs")+'<path class="tp-thin" d="M150 56 H100"/>',"Pipes boxed in with boards, and a screwed-on access panel where the valve is"),
+    /* Timber cladding in section: membrane, battens, a ventilated gap and the boards. */
+    cladding:()=>svg(320,130,'<rect class="tp-block" x="20" y="8" width="60" height="114"/><rect class="tp-memb" x="80" y="8" width="4" height="114"/>'+
+      [20,60,100].map(y=>'<rect class="tp-tim2" x="84" y="'+y+'" width="14" height="10"/>').join("")+
+      Array.from({length:7},(_,k)=>'<path class="tp-tim" d="M98 '+(8+k*16)+' H112 V'+(26+k*16)+' H98 Z"/>').join("")+
+      '<path class="tp-airflow" d="M91 118 V20"/><path class="tp-arrowh" d="M87 26 L91 18 L95 26"/>'+
+      t(200,20,"Breathable membrane","tp-xs")+'<path class="tp-thin" d="M160 17 H84"/>'+t(210,56,"Battens: a ventilated gap","tp-xs")+'<path class="tp-thin" d="M160 53 H98"/>'+t(206,92,"Cladding boards","tp-xs")+'<path class="tp-thin" d="M166 89 H112"/>',
+      "A section through timber cladding: the wall, a breathable membrane, battens leaving a ventilated gap with air rising behind, and the overlapping boards"),
+    /* Skirting corners from above: a scribe inside, a mitre outside. */
+    corners:()=>svg(320,130,'<path class="tp-wallp2" d="M20 20 H140 V36 H36 V110 H20 Z"/><rect class="tp-tim" x="36" y="36" width="104" height="10"/><path class="tp-tim2" d="M36 46 H46 V110 H36 Z"/><path class="tp-scribe" d="M36 46 Q41 42 46 46"/>'+
+      '<path class="tp-wallp2" d="M190 110 V40 H300 V24 H174 V110 Z"/><path class="tp-tim" d="M190 40 H300 V30 H180 Z"/><path class="tp-tim2" d="M180 30 L190 40 V110 H180 Z"/>'+
+      t(80,126,"Internal corner: scribe","tp-xs")+t(240,126,"External corner: mitre","tp-xs"),"Skirting corners seen from above: an internal corner with one board scribed over the other, and an external corner with a 45 degree mitre"),
+    /* A window board from above: horns notched round the reveals, bullnosed front. */
+    windowboard:()=>svg(320,110,'<rect class="tp-wallp2" x="10" y="10" width="80" height="50"/><rect class="tp-wallp2" x="230" y="10" width="80" height="50"/><rect class="tp-frame3" x="90" y="10" width="140" height="10"/>'+
+      '<path class="tp-tim" d="M90 20 H230 V60 H254 V82 Q254 88 248 88 H72 Q66 88 66 82 V60 H90 Z"/>'+t(78,100,"Horn","tp-xs")+t(160,100,"Bullnosed front edge","tp-xs")+t(160,46,"Window board","tp-xs")+t(50,40,"Reveal","tp-xs"),
+      "A window board seen from above, running past the reveals with notched horns and a rounded front edge"),
+    /* A traditional cut roof: ridge, rafters, purlin, wall plate, birdsmouth and ceiling joist. */
+    cutroof:()=>svg(320,130,'<rect class="tp-wallb" x="20" y="94" width="20" height="34"/><rect class="tp-wallb" x="280" y="94" width="20" height="34"/><rect class="tp-tim2" x="20" y="88" width="20" height="6"/><rect class="tp-tim2" x="280" y="88" width="20" height="6"/>'+
+      '<rect class="tp-tim" x="20" y="94" width="280" height="6"/><path class="tp-tim" d="M10 96 L156 14 L162 20 L44 88 L40 88 L38 94 Z"/><path class="tp-tim" d="M310 96 L164 14 L158 20 L276 88 L280 88 L282 94 Z"/><rect class="tp-tim2" x="156" y="8" width="8" height="18"/>'+
+      '<rect class="tp-tim2" x="84" y="50" width="12" height="12"/><rect class="tp-tim2" x="224" y="50" width="12" height="12"/>',
+      "A cut roof in section: rafters from the wall plates up to the ridge, birdsmouth notches over the wall plates, purlins part way up and ceiling joists across"),
+    /* Flat roofs: warm (insulation above the deck) and cold (insulation between the joists, ventilated). */
+    flatroofs:()=>svg(320,130,'<g><rect class="tp-memb2" x="16" y="18" width="130" height="5"/><rect class="tp-insul" x="16" y="23" width="130" height="16"/><rect class="tp-vcl" x="16" y="39" width="130" height="3"/><rect class="tp-deck" x="16" y="42" width="130" height="6"/>'+
+      [26,70,114].map(x=>'<rect class="tp-tim" x="'+x+'" y="48" width="10" height="36"/>').join("")+'</g>'+
+      '<g><rect class="tp-memb2" x="174" y="18" width="130" height="5"/><rect class="tp-deck" x="174" y="23" width="130" height="6"/>'+[184,228,272].map(x=>'<rect class="tp-tim" x="'+x+'" y="29" width="10" height="55"/>').join("")+
+      [194,238].map(x=>'<rect class="tp-insul" x="'+x+'" y="50" width="34" height="34"/>').join("")+'<rect class="tp-vcl" x="174" y="84" width="130" height="3"/><path class="tp-airflow" d="M198 40 H290"/><path class="tp-arrowh" d="M284 36 L292 40 L284 44"/></g>'+
+      t(81,108,"Warm roof","tp-sm")+t(81,121,"insulation above the deck","tp-xs")+t(239,108,"Cold roof","tp-sm")+t(239,121,"between joists, ventilated","tp-xs"),
+      "Two flat roof sections: a warm roof with insulation above the deck over a vapour control layer, and a cold roof with insulation between the joists and a ventilated gap above")
+  });
   /* The old simple bucket, kept for any lesson that still uses it. */
   P.sbucket=()=>svg(120,100,sbucket(40,34,"tp-sand"),"A bucket");
   T.pics=Object.assign(T.pics||{},P);
