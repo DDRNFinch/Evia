@@ -1,6 +1,6 @@
 /* Evia7 camera and recorder.
    eviaCamera.open({title, prompts, onDone(files)}): a full-screen square camera that stays open, so learners can take
-   photo after photo; the unit's "Things to capture" prompts sit on screen and tick off as photos are taken.
+   photo after photo; the unit's "Things to capture" sit under the picture as a plain reminder.
    eviaRecorder.open({type:"video"|"audio", onDone(blob,mime)}): a full-screen recorder with an unmistakable
    recording state, a 2-minute limit and Keep / Retake before anything is saved. */
 (function(){
@@ -28,17 +28,15 @@
   /* ---------- Photo camera ---------- */
   function openCamera(opts){
     const prompts=(opts.prompts||[]).map(p=>String(p).trim()).filter(Boolean);
-    const shots=[];let stream=null,current=0;const done=new Set();
+    const shots=[];let stream=null;
     const el=overlay("cam-photo",
       '<header class="cam-top"><button type="button" class="cam-icon" data-cam-close aria-label="Close camera">'+X+'</button><strong>'+escHtml(opts.title||"Camera")+'</strong><span class="cam-count" aria-live="polite">0 photos</span></header>'+
       '<div class="cam-stage"><video playsinline muted autoplay></video><span class="cam-frame" aria-hidden="true"></span></div>'+
-      /* Things to capture as plain text under the picture; the highlighted one is what the next photo is tagged with. Tap another to switch. */
-      (prompts.length?'<div class="cam-prompts"><span class="cam-prompts-h">Things to capture</span><p role="list" aria-label="Things to capture">'+prompts.map((p,i)=>'<button type="button" role="listitem" class="cam-prompt'+(i===0?" on":"")+'" data-prompt="'+i+'" aria-pressed="'+(i===0)+'">'+escHtml(p)+'</button>').join('<span class="cam-dot" aria-hidden="true"> · </span>')+'</p></div>':"")+
+      /* Things to capture as plain text under the picture: ideas for what to photograph, nothing to tick off. */
+      (prompts.length?'<div class="cam-prompts"><span class="cam-prompts-h">Things to capture</span><p>'+prompts.map(escHtml).join('<span class="cam-dot" aria-hidden="true"> · </span>')+'</p></div>':"")+
       '<div class="cam-strip" aria-label="Photos taken"></div>'+
       '<footer class="cam-bottom"><span></span><button type="button" class="cam-shutter" aria-label="Take photo"><i></i></button><button type="button" class="cam-done" disabled>Done</button></footer>');
     const video=el.querySelector("video"),strip=el.querySelector(".cam-strip"),count=el.querySelector(".cam-count"),doneBtn=el.querySelector(".cam-done"),shutter=el.querySelector(".cam-shutter");
-    const selectPrompt=i=>{current=i;el.querySelectorAll(".cam-prompt").forEach((b,n)=>{b.classList.toggle("on",n===i);b.setAttribute("aria-pressed",n===i)})};
-    el.querySelectorAll("[data-prompt]").forEach(b=>b.onclick=()=>selectPrompt(+b.dataset.prompt));
     const refresh=()=>{
       count.textContent=shots.length+" photo"+(shots.length===1?"":"s");
       doneBtn.disabled=!shots.length;doneBtn.textContent=shots.length?"Done ("+shots.length+")":"Done";
@@ -52,16 +50,14 @@
       const c=document.createElement("canvas");c.width=c.height=px;
       c.getContext("2d").drawImage(video,(video.videoWidth-side)/2,(video.videoHeight-side)/2,side,side,0,0,px,px);
       buzz(12);shutter.classList.add("snap");setTimeout(()=>shutter.classList.remove("snap"),160);
-      const tag=prompts[current];
       c.toBlob(b=>{
         if(!b)return;
-        shots.push({blob:b,url:URL.createObjectURL(b),prompt:tag});refresh();
-        if(prompts.length){done.add(current);const b2=el.querySelector('[data-prompt="'+current+'"]');if(b2)b2.classList.add("got");const next=prompts.findIndex((_,i)=>!done.has(i));if(next>=0)selectPrompt(next)}
+        shots.push({blob:b,url:URL.createObjectURL(b)});refresh();
       },"image/jpeg",.88);
     };
     shutter.onclick=take;
     const finish=keep=>{
-      const files=keep?shots.map((s,i)=>{const f=new File([s.blob],"photo-"+stamp()+"-"+(i+1)+".jpg",{type:"image/jpeg"});f.eviaPrompt=s.prompt;f.eviaTakenAt=Date.now();return f}):[];
+      const files=keep?shots.map((s,i)=>{const f=new File([s.blob],"photo-"+stamp()+"-"+(i+1)+".jpg",{type:"image/jpeg"});f.eviaTakenAt=Date.now();return f}):[];
       shots.forEach(s=>URL.revokeObjectURL(s.url));closeOverlay(el,stream);
       if(files.length&&opts.onDone)opts.onDone(files);
     };

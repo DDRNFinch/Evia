@@ -1,11 +1,11 @@
 /* Evia7 evidence strength: scores an evidence pack against its unit's "Things to capture" and "Things to mention".
    window.eviaStrength:
-     score(pack,prompts) -> {total,level,written,photos,next}  (pack = {photos:[{prompt,takenAt,q}],write})
+     score(pack,prompts) -> {total,level,written,photos,next}  (pack = {photos:[{takenAt,q}],write})
      analyse(blob)       -> {b,s,h}  brightness, sharpness and a small picture hash, worked out on the phone
-     mount(pack,prompts,hooks) paints the live meter and the ticking prompt chips on the evidence pack page
+     mount(pack,prompts,hooks) paints the live meter and any photo warnings on the evidence pack page
      guide()             opens "How to build a strong portfolio"
-   Everything runs offline. Nothing here looks at what a photo shows: learners tag photos with the prompt they cover
-   (Evia's camera tags them as they're taken). */
+   Everything runs offline. Photos are never matched to the things to capture: those are ideas, not a list to finish,
+   and several photos of the same thing count just as well. */
 (function(){
   const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const split=s=>String(s||"").split("·").map(t=>t.trim()).filter(Boolean);
@@ -32,8 +32,8 @@
     return {score:Math.round(clamp(total,0,100)),covered,missing,words:w,parts};
   }
 
-  /* Photos: usable ones (not too dark, not blurry, not a repeat), the prompts they cover and the job's stages. */
-  const DARK=40,BLUR=18,SAME=6;
+  /* Photos: usable ones (not too dark, not blurry, not an identical copy) and the stages of the job they span. */
+  const DARK=40,BLUR=18,SAME=3;
   const ham=(a,b)=>{let d=0;for(let i=0;i<a.length;i++){const x=parseInt(a[i],16)^parseInt(b[i],16);d+=(x&1)+(x>>1&1)+(x>>2&1)+(x>>3&1)}return d};
   function problems(list){
     const seen=[];
@@ -49,19 +49,16 @@
     let n=t.length?1:0;for(let i=1;i<t.length;i++)if(t[i]-t[i-1]>=20*60e3)n++;
     return n;
   }
-  function photos(list,caps){
+  function photos(list){
     list=list||[];
-    const probs=problems(list),usable=list.filter((_,i)=>!probs[i].length);
-    const tags=new Set(usable.map(p=>p.prompt).filter(Boolean));
-    const covered=caps.filter(c=>tags.has(c)),missing=caps.filter(c=>!tags.has(c));
-    const need=Math.min(caps.length,5)||1,st=stages(usable);
-    const parts={count:clamp(usable.length/6,0,1)*35,prompts:caps.length?clamp(covered.length/need,0,1)*45:clamp(usable.length/6,0,1)*45,stages:(st>=3?1:st===2?.5:0)*20};
-    return {score:Math.round(Object.values(parts).reduce((a,b)=>a+b,0)),count:list.length,usable:usable.length,covered,missing,stages:st,probs,parts};
+    const probs=problems(list),usable=list.filter((_,i)=>!probs[i].length),st=stages(usable);
+    const parts={count:clamp(usable.length/8,0,1)*70,stages:(st>=3?1:st===2?.5:0)*30};
+    return {score:Math.round(parts.count+parts.stages),count:list.length,usable:usable.length,stages:st,probs,parts};
   }
 
   function score(pack,prompts){
-    const caps=split(prompts&&prompts.photos),terms=split(prompts&&prompts.writeup);
-    const W=written(pack.write||"",terms),P=photos(pack.photos,caps);
+    const terms=split(prompts&&prompts.writeup);
+    const W=written(pack.write||"",terms),P=photos(pack.photos);
     const empty=!P.count&&!W.words,total=empty?0:Math.round((W.score+P.score)/2);
     const level=empty?null:total>=75&&W.score>=60&&P.score>=60?"strong":total>=45?"good":"weak";
     return {total,level,written:W,photos:P,next:nextSteps(W,P)};
@@ -71,9 +68,9 @@
     const out=[];
     const bad=P.probs.reduce((n,x)=>n+(x.length?1:0),0);
     if(!P.count)out.push({gain:40,text:"Add photos of the job: beginning, middle and end."});
-    if(W.missing.length)out.push({gain:W.missing.length*8,text:"You could also talk about "+listText(W.missing.slice(0,2))+"."});
-    if(P.missing.length&&P.covered.length<Math.min(5,P.covered.length+P.missing.length))out.push({gain:P.missing.length*6,text:"A photo of "+listText(P.missing.slice(0,2))+" would help."});
-    if(bad)out.push({gain:bad*7,text:"Retake "+(bad===1?"one photo that is":bad+" photos that are")+" too dark, blurry or a repeat."});
+    if(W.words&&W.missing.length)out.push({gain:W.missing.length*8,text:"You could also talk about "+listText(W.missing.slice(0,2))+"."});
+    if(P.count&&P.usable<8)out.push({gain:(8-P.usable)*6,text:"More photos would help: close-ups, wider shots, and the same thing from different angles."});
+    if(bad)out.push({gain:bad*7,text:"Retake "+(bad===1?"one photo that is":bad+" photos that are")+" too dark, blurry or an exact copy."});
     if(P.count&&P.stages<3)out.push({gain:(3-P.stages)*6,text:P.stages<2?"Take photos at the start, middle and end of the job, not all at once.":"Add a photo from another stage of the job."});
     if(W.words&&W.parts.reflect<MAX.reflect)out.push({gain:MAX.reflect-W.parts.reflect,text:"Say what you learned or what you’d do differently next time."});
     if(W.words&&W.parts.steps<MAX.steps)out.push({gain:MAX.steps-W.parts.steps,text:"Explain the steps in order: first, then, finally."});
@@ -107,9 +104,7 @@
   /* ---------- On the evidence pack page ---------- */
   const LABEL={strong:"Strong",good:"Good",weak:"Weak"};
   const bars=level=>{const n=level==="strong"?3:level==="good"?2:level==="weak"?1:0;return '<span class="st-bars '+(level||"none")+'" aria-hidden="true">'+[1,2,3].map(i=>'<i'+(i<=n?' class="on"':"")+'></i>').join("")+'</span>'};
-  let tagging=null;
   function mount(pack,prompts,hooks){
-    const caps=split(prompts.photos);
     const paint=()=>{
       const r=score(pack,prompts);
       const met=document.getElementById("st-meter");
@@ -123,33 +118,20 @@
         met.querySelector(".st-meter-top").onclick=()=>explain(r);
         met.querySelector(".st-how").onclick=guide;
       }
-      paintThumbs(pack,r,caps,hooks);
+      paintThumbs(r);
       return r;
     };
     return paint;
   }
-  /* Tag and warning under each thumbnail; tap a thumbnail to say which prompt it shows. */
-  function paintThumbs(pack,r,caps,hooks){
-    const items=[...document.querySelectorAll("#evidence-photos .photo-item")];
-    items.forEach((el,i)=>{
-      const p=pack.photos[i];if(!p)return;
-      let cap=el.querySelector(".st-tag");if(!cap){cap=document.createElement("button");cap.type="button";cap.className="st-tag";el.appendChild(cap)}
-      const pr=r.photos.probs[i]||[];
-      cap.className="st-tag"+(p.prompt?" on":"")+(pr.length?" warn":"");
-      cap.innerHTML=pr.length?'<span aria-hidden="true">!</span> '+esc(pr[0]==="repeat"?"Repeat":pr[0]==="dark"?"Too dark":"Blurry"):esc(p.prompt||"Tag it");
-      cap.setAttribute("aria-label",(p.prompt?"Photo shows "+p.prompt:"Tag this photo")+(pr.length?". "+pr.join(", "):""));
-      cap.onclick=()=>openTagger(i,pack,caps,hooks);
+  /* A small warning under any photo that won't count: too dark, blurry, or an identical copy of another. */
+  function paintThumbs(r){
+    [...document.querySelectorAll("#evidence-photos .photo-item")].forEach((el,i)=>{
+      const pr=r.photos.probs[i]||[];let w=el.querySelector(".st-tag");
+      if(!pr.length){if(w)w.remove();return}
+      if(!w){w=document.createElement("span");w.className="st-tag warn";el.appendChild(w)}
+      w.innerHTML='<span aria-hidden="true">!</span> '+esc(pr[0]==="repeat"?"Copy":pr[0]==="dark"?"Too dark":"Blurry");
+      w.title=pr[0]==="repeat"?"This looks identical to another photo, so it only counts once.":pr[0]==="dark"?"Too dark to see the work clearly.":"Looks blurry. Hold still and try again.";
     });
-    const tg=document.getElementById("st-tagger");
-    if(tg&&tagging!=null&&!pack.photos[tagging]){tg.hidden=true;tagging=null}
-  }
-  function openTagger(i,pack,caps,hooks){
-    const tg=document.getElementById("st-tagger");if(!tg||!caps.length)return;
-    tagging=i;const p=pack.photos[i];
-    tg.hidden=false;
-    tg.innerHTML='<span class="st-tagger-h">Photo '+(i+1)+' shows…</span><span class="st-tagger-list">'+caps.map(c=>'<button type="button" class="st-chip pick'+(p.prompt===c?" on":"")+'" data-c="'+esc(c)+'">'+esc(c)+'</button>').join("")+(p.prompt?'<button type="button" class="st-chip pick clear" data-c="">Not sure</button>':"")+'</span>';
-    tg.querySelectorAll("[data-c]").forEach(b=>b.onclick=async()=>{p.prompt=b.dataset.c||undefined;tg.hidden=true;tagging=null;await hooks.save();hooks.repaint()});
-    tg.scrollIntoView({block:"nearest",behavior:"smooth"});
   }
 
   /* ---------- Explanations ---------- */
@@ -166,11 +148,11 @@
   function explain(r){
     const W=r.written,P=r.photos;
     sheet("EVIDENCE STRENGTH",(r.level?LABEL[r.level]:"Not started")+" · "+r.total,
-      '<p class="pr-intro">Strength is half your photos and half your write-up, checked against this unit’s things to capture and things to mention. Strong is 75 or more, with both halves at 60 or more.</p>'+
+      '<p class="pr-intro">Strength is half your photos and half your write-up. Photos count when they’re clear and taken through the job; the write-up is read for the areas in this unit’s things to mention, detail, and what you learned. Strong is 75 or more, with both halves at 60 or more.</p>'+
       '<h3 class="pr-h">Photos · '+P.score+'</h3><div class="st-rows">'+
-        row("Clear photos ("+P.usable+" of 6)",P.parts.count,35)+row("Things to capture ("+P.covered.length+")",P.parts.prompts,45)+row("Start, middle and end",P.parts.stages,20)+'</div>'+
+        row("Clear photos ("+P.usable+" of 8)",P.parts.count,70)+row("Start, middle and end",P.parts.stages,30)+'</div>'+
       '<h3 class="pr-h">Write-up · '+W.score+'</h3><div class="st-rows">'+
-        row("Things to mention ("+W.covered.length+" of "+(W.covered.length+W.missing.length)+")",W.parts.mention,MAX.mention)+row("Enough detail ("+W.words+" words)",W.parts.length,MAX.length)+row("Steps in order",W.parts.steps,MAX.steps)+row("Real details: sizes, ratios, tools",W.parts.specific,MAX.specific)+row("What you learned",W.parts.reflect,MAX.reflect)+'</div>'+
+        row("Areas from things to mention",W.parts.mention,MAX.mention)+row("Enough detail ("+W.words+" words)",W.parts.length,MAX.length)+row("Steps in order",W.parts.steps,MAX.steps)+row("Real details: sizes, ratios, tools",W.parts.specific,MAX.specific)+row("What you learned",W.parts.reflect,MAX.reflect)+'</div>'+
       '<div class="pr-actions"><button type="button" class="secondary" id="st-guide">How to build a strong portfolio</button></div>');
     document.getElementById("st-guide").onclick=guide;
   }
@@ -179,9 +161,9 @@
     sheet("MY PORTFOLIO","How to build a strong portfolio",
       '<p class="pr-intro">Your assessor needs to see that <strong>you</strong> did the work, that you did it properly, and that you understand why. Every unit has <strong>things to capture</strong> and <strong>things to mention</strong>: use them as a reminder of what to show and talk about.</p>'+
       '<ol class="st-tips">'+
-        tip(1,"Photos from start to finish","Take photos at the beginning, middle and end of the job, not all at the end. Six or more clear photos is a good pack.")+
-        tip(2,"One photo for each thing to capture","Use Evia’s camera: the things to capture sit under the picture, and the highlighted one is tagged on your photo. For gallery photos, tap the tag under the photo.")+
-        tip(3,"Clear, close and well lit","Get close enough to see the detail, hold still and make sure it’s not too dark. Evia flags blurry, dark or repeated photos.")+
+        tip(1,"Photos from start to finish","Take photos at the beginning, middle and end of the job, not all at the end. Eight or more clear photos is a good pack.")+
+        tip(2,"Plenty of photos","Take as many as you like. Several photos of the same thing, close up, from further back and from different angles, all count. The things to capture are ideas to get you started, not a list to finish.")+
+        tip(3,"Clear, close and well lit","Get close enough to see the detail, hold still and make sure it’s not too dark. Evia flags photos that are blurry, too dark, or an exact copy.")+
         tip(4,"Talk about the things to mention","They’re a reminder of the areas to cover, not a checklist. Write about them in your own words, as you would explain the job to someone.")+
         tip(5,"Explain the steps in order","First, then, finally. Say what you did and why you did it that way.")+
         tip(6,"Use real details","Sizes, ratios, the number of courses, the tools and PPE you used, who you worked with.")+

@@ -461,9 +461,6 @@ body.cam-open{overflow:hidden}
 .cam-prompts{padding:12px 18px 0;text-align:center}
 .cam-prompts-h{display:block;margin-bottom:4px;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.5)}
 .cam-prompts p{margin:0;font-size:16px;line-height:1.55;color:rgba(255,255,255,.88)}
-.cam-prompt{display:inline;padding:0;border:0;background:none;color:inherit;font:inherit;cursor:pointer;border-radius:4px}
-.cam-prompt.on{color:var(--yellow);font-weight:700;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px}
-.cam-prompt.got:not(.on){color:rgba(255,255,255,.55)}
 .cam-dot{color:rgba(255,255,255,.4)}
 .cam-stage{position:relative;width:min(100vw,calc(100vh - 330px),640px);aspect-ratio:1/1;margin:0 auto;background:#000;overflow:hidden;border-radius:6px}
 .cam-stage video{width:100%;height:100%;object-fit:cover;display:block}
@@ -1259,19 +1256,9 @@ html body .pf-name:focus{border-color:var(--yellow)!important;outline:none}
   .wc-row{flex-wrap:wrap}.wc-row>div:last-child,.wc-row .wc-acts{width:100%;display:flex;gap:8px;justify-content:flex-end}}
 
 /* ---------- Evidence strength (strength.js) ---------- */
-.st-chip{display:inline-flex;align-items:center;gap:5px;padding:6px 10px;border-radius:999px;background:#f3f2ee;border:1px solid transparent;font-size:12.5px;font-weight:600;line-height:1.2;color:var(--ui-muted)}
-.st-chip.on{background:#ecfdf3;border-color:#c6ecd4;color:#067647}
-.st-chip.on::before{content:"";width:10px;height:6px;margin-top:-3px;border-left:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg)}
-.st-chip.pick{cursor:pointer;min-height:36px;background:#fff;border-color:var(--pm-hair,rgba(16,24,40,.1));color:var(--ui-ink)}
-.st-chip.pick.on{background:#ecfdf3;border-color:#c6ecd4;color:#067647}
-.st-chip.clear{color:var(--ui-muted)}
-.photo-item .st-tag{display:block;width:100%;margin-top:4px;padding:3px 4px;border-radius:8px;background:#f3f2ee;font-size:10.5px;font-weight:650;line-height:1.25;color:var(--ui-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;text-align:center}
-.photo-item .st-tag.on{background:#ecfdf3;color:#067647}
+.photo-item .st-tag{display:block;width:100%;margin-top:4px;padding:3px 4px;border-radius:8px;font-size:10.5px;font-weight:650;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
 .photo-item .st-tag.warn{background:#fef3f2;color:#b42318}
 .photo-item .st-tag.warn span{font-weight:800}
-.st-tagger{margin-top:10px;padding:12px;border-radius:16px;background:#fff;border:1px solid var(--pm-hair,rgba(16,24,40,.08));box-shadow:0 6px 18px rgba(16,24,40,.06);animation:uiOverlayIn .18s ease both}
-.st-tagger-h{display:block;margin:0 2px 8px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ui-muted)}
-.st-tagger-list{display:flex;flex-wrap:wrap;gap:6px}
 
 .st-meter{display:flex;flex-direction:column;gap:10px;margin:18px 0 6px;padding:16px;border-radius:var(--pm-radius,20px);background:#fff;border:1px solid var(--pm-hair,rgba(16,24,40,.07));box-shadow:var(--pm-shadow,0 6px 20px rgba(16,24,40,.05));--st:#98a2b3}
 .st-meter.weak{--st:#d9822b}.st-meter.good{--st:#c9a100}.st-meter.strong{--st:#12a150}
@@ -1296,7 +1283,7 @@ html body .pf-name:focus{border-color:var(--yellow)!important;outline:none}
 .st-next-i::before{content:"";position:absolute;left:2px;top:.6em;width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.55}
 .st-next-i.done{padding-left:0}.st-next-i.done::before{display:none}
 .st-how{align-self:flex-start;padding:2px 0;font-size:13.5px;font-weight:700;color:var(--yellow-ink);cursor:pointer}
-@media (prefers-reduced-motion:reduce){.st-track i{transition:none}.st-tagger{animation:none}}
+@media (prefers-reduced-motion:reduce){.st-track i{transition:none}}
 
 .st-rows{display:flex;flex-direction:column;gap:10px}
 .st-row{display:grid;grid-template-columns:1fr 70px 44px;align-items:center;gap:10px;font-size:13.5px;color:var(--ui-text)}

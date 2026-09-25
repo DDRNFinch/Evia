@@ -172,10 +172,10 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     // Evidence strength: judged on the unit's prompts, not just counts.
     check("Evidence strength rewards covering the prompts, not padding",await page.evaluate(()=>{
       const S=window.eviaStrength,pr={photos:"mixing mortar · ratio · silos",writeup:"ratio · teamwork · PPE · silos"},H=36e5,t=Date.now();
-      const ph=n=>Array.from({length:n},(_,i)=>({takenAt:t-(n-i)*H,prompt:["mixing mortar","ratio","silos"][i%3],q:{b:120,s:40,h:(i*1111111111111111).toString(16).padStart(16,"0").slice(0,16)}}));
+      const ph=n=>Array.from({length:n},(_,i)=>({takenAt:t-(n-i)*H,q:{b:120,s:40,h:(i*1111111111111111).toString(16).padStart(16,"0").slice(0,16)}}));
       const pad=S.score({photos:ph(1),write:"brick ".repeat(150)},pr);
-      const good=S.score({photos:ph(6),write:"First I checked the ratio, 1:4, then mixed it with my team. I wore PPE, gloves and goggles, and took sand from the silos. Finally I cleaned the 2 shovels. I learned to gauge carefully and next time I would mix a smaller batch."},pr);
-      return pad.level==="weak"&&good.level==="strong"&&good.written.missing.length===0&&good.photos.covered.length===3&&pad.next.length>0;
+      const good=S.score({photos:ph(8),write:"First I checked the ratio, 1:4, then mixed it with my team. I wore PPE, gloves and goggles, and took sand from the silos. Finally I cleaned the 2 shovels. I learned to gauge carefully and next time I would mix a smaller batch."},pr);
+      return pad.level==="weak"&&good.level==="strong"&&good.written.missing.length===0&&pad.next.length>0;
     }));
     await page.evaluate(()=>{course="bricklayer";persist();openUnit(0)});await page.waitForTimeout(700);
     await page.evaluate(()=>{const w=document.getElementById("write");w.value="I checked the ratio and worked with my team.";w.dispatchEvent(new Event("input"))});await page.waitForTimeout(200);

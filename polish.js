@@ -131,7 +131,6 @@
           '<label class="evidence-photo-button" for="evidence-gallery"><span class="evidence-photo-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"></rect><circle cx="8.5" cy="9.5" r="1.6"></circle><path d="M4 16.5l5-5 4 4 3-3 4 4"></path></svg></span><span>Gallery</span><input id="evidence-gallery" type="file" accept="image/*" multiple></label>'+
         '</div>'+
         '<div class="evidence-thumbs" id="evidence-photos"></div>'+
-        '<div class="st-tagger" id="st-tagger" hidden></div>'+
         '<section class="evidence-section">'+
           '<div class="evidence-section-title">THINGS TO CAPTURE</div>'+
           '<div class="compact-prompts">'+esc(prompts.photos)+'</div>'+
@@ -155,9 +154,9 @@
         for(const file of files.filter(f=>f&&f.size>0)){
           const blob=await makeThumb(file),id="photo-"+Date.now()+"-"+Math.random().toString(36).slice(2);
           await idbPut({id,blob,addedAt:new Date().toISOString()});
-          /* For the strength rating: when it was taken, which prompt it shows (Evia's camera knows) and a quick quality check. */
+          /* For the strength rating: when it was taken (start, middle or end of the job) and a quick quality check. */
           const q=window.eviaStrength?await window.eviaStrength.analyse(blob):null;
-          pack.photos.push({id,addedAt:new Date().toISOString(),takenAt:file.eviaTakenAt||file.lastModified||Date.now(),prompt:file.eviaPrompt||undefined,q:q||undefined});
+          pack.photos.push({id,addedAt:new Date().toISOString(),takenAt:file.eviaTakenAt||file.lastModified||Date.now(),q:q||undefined});
         }
         await savePack(pack);await renderPack(pack);
       }catch(err){console.error("Evia evidence photo save failed",err);alert("That photo could not be added. Please try again.")}
@@ -242,7 +241,7 @@
       photoIds.push(permanentId);
     }
     evidence.push({id,c:course,u:u[0],d:new Date().toLocaleString("en-GB"),p:[],photoIds,w:pack.write.trim(),k:u[1].map(code),learnerProfile:{name:profile.name||"",start:profile.start||"",end:profile.end||""},signature:profile.signature||"",savedAt:new Date().toISOString(),photoCount:photoIds.length,
-      photoMeta:(pack.photos||[]).filter(p=>p&&p.id).map(p=>({prompt:p.prompt||null,takenAt:p.takenAt||null,q:p.q||null})),
+      photoMeta:(pack.photos||[]).filter(p=>p&&p.id).map(p=>({takenAt:p.takenAt||null,q:p.q||null})),
       strength:window.eviaStrength?(r=>({total:r.total,level:r.level,photos:r.photos.score,written:r.written.score}))(window.eviaStrength.score(pack,learnerPrompts())):undefined});
     persist();
     await removePack();
