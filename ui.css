@@ -1140,3 +1140,14 @@ html[data-a11y-motion="reduce"] #modal-root .overlay{animation:none}
 .pv-axis.future{opacity:.45}
 .pv-year{display:block;margin-bottom:2px;font-size:12px;font-weight:800;color:var(--ui-muted)}
 .pv-caption{margin:0 0 12px;font-size:13px;line-height:1.45;color:var(--ui-muted)}
+
+/* Things to mention: pills that turn green as the write-up covers them */
+.mention-pills{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}
+.mention-pill{display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border-radius:999px;background:#f2f4f7;border:1px solid transparent;font-size:13px;font-weight:600;color:var(--ui-muted);transition:background .25s ease,color .25s ease,border-color .25s ease}
+.mention-pill.met{background:#e8f7ee;border-color:#9fdcb7;color:#067647}
+.mention-pill.met::before{content:"✓";font-weight:800}
+.mention-pill.pop{animation:mentionPop .45s cubic-bezier(.34,1.56,.64,1)}
+@keyframes mentionPop{0%{transform:scale(.85)}60%{transform:scale(1.12)}100%{transform:scale(1)}}
+.mention-count{margin:2px 2px 10px;font-size:12.5px;font-weight:600;color:var(--ui-muted);min-height:1em}
+@media (prefers-reduced-motion:reduce){.mention-pill.pop{animation:none}}
+html[data-a11y-motion="reduce"] .mention-pill.pop{animation:none}

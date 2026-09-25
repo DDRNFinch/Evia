@@ -197,8 +197,10 @@
     k.say("I’m still learning to understand everything, but I can help with these:");
     k.somethingElse();
   }
+  /* The free-text box only shows when a real AI helper is switched on (window.EVIA_AI). Offline, Evia can only
+     match a few keywords, which feels broken, so the six actions are the way in. */
   function input(sheet){
-    if(sheet.querySelector(".ui-ask"))return;
+    if(!window.EVIA_AI||sheet.querySelector(".ui-ask"))return;
     const form=document.createElement("form");form.className="ui-ask";
     form.innerHTML='<input type="text" placeholder="Ask Evia anything…" aria-label="Message Evia" enterkeyhint="send" autocomplete="off"><button type="submit" aria-label="Send"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></button>';
     sheet.appendChild(form);

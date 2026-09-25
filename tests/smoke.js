@@ -56,6 +56,10 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.click(".ev-tile-main");await page.waitForTimeout(400);
     check("Tapping a saved tile shows that pack",await page.evaluate(()=>!!document.getElementById("ev-view-photos")));
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";nav("course")});await page.waitForTimeout(400);
+    await page.evaluate(()=>openUnit(data().u.findIndex(u=>u[0]==="Mixing mortar")));await page.waitForTimeout(900);
+    await page.fill("#write","Mixed the mortar 4:1 by hand with a shovel");await page.waitForTimeout(500);
+    check("Things to mention turn green as the write-up covers them (4:1 ticks ratio and gauging)",await page.evaluate(()=>{const met=[...document.querySelectorAll(".mention-pill.met")].map(p=>p.dataset.term);return ["ratio","gauging","hand/mechanical"].every(t=>met.includes(t))&&!met.includes("silos")&&/3 of \d+ mentioned|\d+ of \d+ mentioned/.test(document.getElementById("mention-count").textContent)}));
+    await page.fill("#write","");
     await page.evaluate(()=>{nav("course")});await page.waitForTimeout(450);await page.evaluate(()=>openUnit(3));await page.waitForTimeout(900);
     check("An evidence pack opens",await page.$("#write"));
     await page.fill("#write","i laid the morter on the dpc and checked it was plum");await page.click(".wc-btn");await page.click(".wc-all");
@@ -68,7 +72,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>window.chat());
     await page.waitForFunction(()=>{const c=document.getElementById("chat");return c&&!c.querySelector(".evia-thinking")},null,{timeout:15000});
     await page.waitForSelector("#chat .ui-action",{timeout:15000});
-    check("Evia opens with a catch-up and her six actions",await page.evaluate(()=>{const t=[...document.querySelectorAll("#chat .ui-action")].map(b=>b.innerText.trim());return ["Test me","Upskill me","Confidence check","Review me","Check my evidence","Log my hours"].every(x=>t.includes(x))&&/off-the-job/.test(document.getElementById("chat").innerText)&&!!document.querySelector(".chat-sheet .ui-ask input")}));
+    check("Evia opens with a catch-up and her six actions",await page.evaluate(()=>{const t=[...document.querySelectorAll("#chat .ui-action")].map(b=>b.innerText.trim());return ["Test me","Upskill me","Confidence check","Review me","Check my evidence","Log my hours"].every(x=>t.includes(x))&&/off-the-job/.test(document.getElementById("chat").innerText)&&!document.querySelector(".chat-sheet .ui-ask")}));
     await page.click('#chat .ui-action[data-action="evidence"]');
     await page.waitForFunction(()=>/unit/.test((document.querySelector("#chat .bubble.evia:last-of-type")||{}).innerText||"")&&document.querySelectorAll("#chat .bubble.evia").length>=2,null,{timeout:15000});
     check("Check my evidence goes through the units with evidence",await page.evaluate(()=>/I’ve been through/.test(document.getElementById("chat").innerText)));

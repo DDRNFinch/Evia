@@ -309,7 +309,10 @@
     "physical health":/health|stretch|back|lifting|posture|break/,
     "teamwork":/team|colleague|together|helped|help(?:ing)? (?:the|a|my)|labourer|gang|supervisor|foreman|mate/,
     "communication":/talk|spoke|told|asked|explain|communicat|briefing|radio|discuss/,
-    "gauging":/gaug|measur\w* (?:the )?(?:sand|cement)|bucket|gauge box/,
+    "gauging":/gaug|measur\w* (?:the )?(?:sand|cement)|bucket|gauge box|\b\d+\s*(?::|to)\s*\d+\b|shovels? (?:of|to)|parts? (?:sand|cement)/,
+    "mortar":/mortar|\bmix\b|muck/,
+    "hand-tool cutting":/\bcut|\bsaw|chisel|bolster|club hammer/,
+    "mixers":/mixer/,"drills":/drill|paddle/,
     "silos":/\bsilos?\b/,
     "pre-mix":/pre-?mix|ready-?mix|bagged|premix/,
     "hand":/by hand|hand mix|shovel|spade/,
@@ -372,6 +375,7 @@
     "scribing":/scrib/,
     "mitring":/mitre|miter/
   };
+  window.eviaTermMatched=(term,text)=>termMatched(term,String(text||"").toLowerCase());
   function termMatched(term,text){
     return term.toLowerCase().split("/").some(alt=>{
       alt=alt.trim();

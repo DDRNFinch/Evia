@@ -137,7 +137,8 @@
         '<div class="evidence-section-divider"></div>'+
         '<section class="evidence-section writeup-section">'+
           '<div class="evidence-section-title">THINGS TO MENTION</div>'+
-          '<div class="compact-prompts">'+esc(prompts.writeup)+'</div>'+
+          '<div class="mention-pills" id="mention-pills">'+String(prompts.writeup||"").split("·").map(t=>t.trim()).filter(Boolean).map(t=>'<span class="mention-pill" data-term="'+esc(t)+'">'+esc(t)+'</span>').join("")+'</div>'+
+          '<p class="mention-count" id="mention-count" aria-live="polite"></p>'+
           '<textarea id="write" placeholder="Write about the process and what you did…">'+esc(pack.write||"")+'</textarea>'+
         '</section>'+
         '<div class="pack-actions">'+
@@ -164,7 +165,19 @@
     const camLabel=document.querySelector('label[for="evidence-camera"]');
     if(camLabel&&window.eviaCamera&&window.eviaCamera.supported())camLabel.onclick=e=>{e.preventDefault();window.eviaCamera.open({title:u[0],prompts:String(prompts.photos||"").split("·"),onDone:files=>addFiles(files)})};
     $("#evidence-gallery").onchange=async e=>{await addFiles([...e.target.files]);e.target.value=""};
+    /* Evia ticks off each thing to mention as the write-up covers it, using the same check as "Check my evidence". */
+    const pills=[...document.querySelectorAll("#mention-pills .mention-pill")];
+    const tickPills=first=>{
+      const w=$("#write");if(!pills.length||!window.eviaTermMatched||!w||!document.body.contains(pills[0]))return;
+      const text=w.value;let met=0,fresh=false;
+      pills.forEach(p=>{const ok=window.eviaTermMatched(p.dataset.term,text);if(ok)met++;if(ok&&!p.classList.contains("met")&&!first){fresh=true;p.classList.remove("pop");void p.offsetWidth;p.classList.add("pop")}p.classList.toggle("met",ok)});
+      const c=$("#mention-count");if(c)c.textContent=met?met+" of "+pills.length+" mentioned"+(met===pills.length?". Brilliant, that’s everything.":""):"Evia ticks these off as you write.";
+      if(fresh&&window.eviaMood&&met===pills.length)window.eviaMood("happy");
+    };
+    tickPills(true);
+    let tickTimer=null;
     $("#write").oninput=e=>{
+      clearTimeout(tickTimer);tickTimer=setTimeout(()=>tickPills(false),250);
       pack.write=e.target.value;savePack(pack);
       const ready=pack.photos.length>0&&String(pack.write||"").trim();
       const btn=$("#submit-evidence"),hint=document.querySelector(".submit-hint");
