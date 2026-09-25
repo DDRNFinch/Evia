@@ -219,23 +219,34 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>[...document.querySelectorAll(".ui-replies button")].find(b=>/Teach me/.test(b.textContent)).click());await page.waitForTimeout(2500);
     check("Upskill me has Teach me, with my course, maths and English, and no tile on My course",await page.evaluate(()=>{const t=[...document.querySelectorAll(".ui-replies button")].map(b=>b.textContent);return ["My course","Maths","English"].every(x=>t.includes(x))&&!document.querySelector(".tm-tile")}));
     await page.evaluate(()=>[...document.querySelectorAll(".ui-replies button")].find(b=>b.textContent==="My course").click());await page.waitForTimeout(600);
+    // Teach me: play the whole Mixing mortar unit (every kind of screen, a mistake to fix and a surprise question),
+    // then an older-style lesson, then leave one part-way and carry on from the same screen.
+    await page.addScriptTag({path:path.join(__dirname,"teach-solver.js")});
     const played=await page.evaluate(async()=>{
-      const w=ms=>new Promise(r=>setTimeout(r,ms)),go=()=>document.querySelector(".tm-go").click();
-      const play=async id=>{
-        document.querySelector('[data-lesson="'+id+'"]').click();await w(100);
-        const L=[].concat(...window.eviaTeach.COURSES.bricklayer.map(u=>u.lessons)).find(l=>l.id===id);
-        for(const s of L.steps){
-          if(s.t==="learn"){go();await w(60);continue}
-          if(s.t==="choice"||s.t==="tf"){const a=s.t==="tf"?(s.a?0:1):s.a;document.querySelector('.tm-opt[data-k="'+a+'"]').click();go();await w(40);go();await w(60);continue}
-          if(s.t==="match"){for(let k=0;k<s.pairs.length;k++){document.querySelector('.tm-m[data-side=l][data-k="'+k+'"]').click();document.querySelector('.tm-m[data-side=r][data-k="'+k+'"]').click()}await w(40);go();await w(60);continue}
-          if(s.t==="order"){for(let k=0;k<s.items.length;k++)document.querySelector('.tm-pool [data-in="'+k+'"]').click();go();await w(40);go();await w(60)}
-        }
-        const ok=/Lesson complete/.test(document.querySelector(".tm").textContent);document.querySelector("#tm-path").click();await w(80);return ok;
+      const w=ms=>new Promise(r=>setTimeout(r,ms)),kinds=new Set(),types=new Set();
+      window.EVIA_TEACH.surpriseChance=1;
+      const play=async(id,wrongAt)=>{
+        document.querySelector('[data-lesson="'+id+'"]').click();await w(120);
+        for(let n=0;n<90&&window.eviaTeach.current();n++){const c=window.eviaTeach.current();kinds.add(c.kind);types.add(c.step.t);await window.__teachSolve({wrong:n===wrongAt});await w(50)}
+        const ok=/(Lesson|Unit) complete/.test(document.querySelector(".tm").textContent);document.querySelector("#tm-path").click();await w(120);return ok;
       };
-      const a=await play("mm1"),b=await play("mm2");
-      return a&&b&&document.querySelectorAll(".tm-node.done").length===2&&!!document.querySelector(".tm-node.next");
+      const results=[];for(const id of ["mm1","mm2","mm3","mm4","mm5","mm6","bk-joint1"])results.push(await play(id,id==="mm2"?1:-1));
+      const mortar=[...document.querySelectorAll(".tm-unit")].find(u=>/Mixing mortar/.test(u.textContent));
+      return {all:results.every(Boolean),done:mortar?mortar.querySelectorAll(".tm-node.done").length:0,trophy:!!(mortar&&mortar.querySelector(".tm-node.trophy.done")),kinds:[...kinds],types:[...types],stats:window.eviaTeach.stats()};
     });
-    check("A Teach me lesson plays through (learn, match, choice, true or false) and the path moves on",played);
+    check("The Mixing mortar unit plays through, ending in a unit challenge, and older lessons still play",played.all&&played.done===6&&played.trophy,JSON.stringify(played));
+    const every=["teach","explore","watch","cards","choice","tf","tap","gap","build","order","match","sort","judge","spot","next","scene","hot","label","load","quick","banner"];
+    check("Teach me has every kind of screen, a round to fix mistakes and a surprise question",every.every(t=>played.types.includes(t))&&played.kinds.includes("review")&&played.kinds.includes("bonus"),every.filter(t=>!played.types.includes(t)).join(",")+" "+played.kinds.join(","));
+    check("XP and a daily streak are kept",played.stats.xp>0&&played.stats.streak===1&&played.stats.today);
+    const resumed=await page.evaluate(async()=>{
+      const w=ms=>new Promise(r=>setTimeout(r,ms));
+      document.querySelector('[data-lesson="mm3"]').click();await w(120);
+      for(let k=0;k<3;k++){await window.__teachSolve();await w(50)}
+      const at=window.eviaTeach.current().step;document.querySelector(".tm-x").click();await w(150);
+      document.querySelector('[data-lesson="mm3"]').click();await w(150);
+      const back=window.eviaTeach.current()&&window.eviaTeach.current().step===at;document.querySelector(".tm-x").click();await w(150);return back;
+    });
+    check("Leaving a lesson part-way carries on from the same screen",resumed);
     await page.evaluate(()=>document.querySelector(".tm-x").click());await page.waitForTimeout(300);
     await page.evaluate(()=>window.eviaPractice.openConfidence());await page.waitForTimeout(400);
     const view=await page.evaluate(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms));document.querySelector("#cf-start").click();await w(60);
