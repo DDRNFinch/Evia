@@ -264,6 +264,13 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       return ok&&JSON.parse(localStorage.getItem("evia7-profile")).englishEnabled===true});
     check("English lessons open from Teach me, and the profile switch saves even when closed without saving",fsOn);
 
+    // Teach me has every unit for every course, and maths and English by area.
+    const allUnits=await page.evaluate(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms)),out={},was=course;
+      for(const c of ["bricklayer","joiner","site","trowel3"]){course=c;window.eviaTeach.open("course");await w(80);out[c]=document.querySelectorAll(".tm-unit").length;document.querySelector(".tm-x").click();await w(220)}
+      for(const f of ["maths","english"]){window.eviaTeach.open(f);await w(80);out[f]=document.querySelectorAll(".tm-node").length;document.querySelector(".tm-x").click();await w(220)}
+      course=was;return out});
+    check("Teach me covers every unit on every course, plus maths (13 areas) and English (17 areas)",allUnits.bricklayer===10&&allUnits.joiner===10&&allUnits.site===12&&allUnits.trowel3===12&&allUnits.maths===13&&allUnits.english===17);
+
     // Backup and restore: a learner's portfolio survives being restored and the app reloading.
     const keep=await page.evaluate(()=>evidence.length);
     const [bk]=await Promise.all([page.waitForEvent("download",{timeout:20000}),page.evaluate(()=>window.eviaStorage.backup())]);
