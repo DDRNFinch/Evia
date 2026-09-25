@@ -1157,7 +1157,7 @@ html body .chat-sheet{bottom:128px;height:min(calc(100dvh - 146px),820px)}
 @media (max-width:520px){html body .chat-sheet{bottom:114px;height:calc(100dvh - 128px)}}
 /* Evia steps aside (slides down) while another panel is open, and pops back when it closes */
 html body .evia-fab{transition:translate .32s cubic-bezier(.3,.9,.4,1),opacity .25s ease}
-body:has(#modal-root .overlay:not(:has(.chat-sheet))) .evia-fab{translate:0 160%;opacity:0;pointer-events:none}
+body.ui-panel-open .evia-fab{translate:0 160%;opacity:0;pointer-events:none}
 /* Scenario cards in the chat */
 .scc{display:flex;flex-direction:column;gap:8px}
 .scc-kicker{font-size:11.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--ui-muted);margin:0 2px}
@@ -1249,3 +1249,10 @@ html body .pf-name:focus{border-color:var(--yellow)!important;outline:none}
 .dw .hw-col[data-col="Month"]{flex:1.2}
 .hw-item.off{opacity:.25}
 .dw-readout{font-weight:700}
+.ui-sub-lead{margin:-6px 4px 16px;font-size:14px;line-height:1.5;color:var(--ui-muted)}
+.ui-review-row{width:100%;align-items:center;text-align:left;font:inherit;color:inherit;cursor:pointer;background:none}
+.ui-review-icon{flex:0 0 38px;height:38px;border-radius:12px;display:grid;place-items:center;background:var(--soft,#fff7d6);color:var(--yellow-ink)}
+.ui-review-icon svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.ui-review-chev{font-size:22px;color:var(--ui-faint)}
+@media (max-width:380px){.ui-hours-sum strong{font-size:22px}.ui-logs-dl{flex-wrap:wrap}.ui-logs-dl .primary{width:100%}
+  .wc-row{flex-wrap:wrap}.wc-row>div:last-child,.wc-row .wc-acts{width:100%;display:flex;gap:8px;justify-content:flex-end}}

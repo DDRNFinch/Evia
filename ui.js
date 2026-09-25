@@ -277,10 +277,11 @@
   const hmText=h=>window.eviaHM?window.eviaHM(h):h+" h";
   function logsGridHtml(){
     const last=otjBatches[otjBatches.length-1],cutoff=Number(last?last.cutoff:0),fresh=hours.filter(x=>Number(x.createdAt)>cutoff).length;
-    const reviews=window.eviaGetReviews?window.eviaGetReviews().length:0,total=hours.reduce((n,x)=>n+Number(x.n||0),0);
-    return '<div class="ui-logs-grid" id="ui-logs-grid">'+
-      '<button type="button" class="ui-log-tile" id="ui-open-logs"><span class="ui-log-icon">'+icon(ICONS.clock)+'</span><strong>Learning logs</strong><small>'+(hours.length?escHtml(hmText(total))+" logged":"None yet")+(fresh&&last?" · "+fresh+" new":"")+'</small></button>'+
-      '<button type="button" class="ui-log-tile alt" id="ui-open-reviews"><span class="ui-log-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 1 9-9"/><path d="M12 12l4-3"/></svg></span><strong>Progress reviews</strong><small>'+(reviews?reviews+" saved":"None yet")+'</small></button>'+
+    const reviews=window.eviaGetReviews?window.eviaGetReviews().length:0,total=hours.reduce((n,x)=>n+Number(x.n||0),0),rd=window.eviaReviewDue&&window.eviaReviewDue();
+    const tile=(id,cls,iconSvg,value,label,sub)=>'<button type="button" class="ui-log-tile '+cls+'" id="'+id+'"><span class="ui-log-top"><span class="ui-log-icon">'+iconSvg+'</span><span class="ui-log-chev" aria-hidden="true">›</span></span><b class="ui-log-value">'+value+'</b><strong>'+label+'</strong><small>'+sub+'</small></button>';
+    return '<h2 class="ui-section-label">Learning and reviews</h2><div class="ui-logs-grid" id="ui-logs-grid">'+
+      tile("ui-open-logs","logs",icon(ICONS.clock),hours.length?escHtml(hmText(total)):"0 h","Learning logs",hours.length?(fresh&&last?fresh+" new to download":hours.length+" entr"+(hours.length===1?"y":"ies")):"Log hours with Evia")+
+      tile("ui-open-reviews","reviews",'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 1 9-9"/><path d="M12 12l4-3"/></svg>',String(reviews),"Progress reviews",rd?(rd.days<0?"Next one overdue":"Next "+escHtml(new Date(rd.due).toLocaleDateString("en-GB",{day:"numeric",month:"short"}))):"None yet")+
     '</div>';
   }
   function bindLogsGrid(){
@@ -311,6 +312,23 @@
     });
   }
   window.eviaOpenLearningLogs=openLearningLogs;
+  /* Progress reviews: each saved review, newest first, with its targets. */
+  window.openSavedReviews=function(){
+    withFade(()=>{
+      const pb=document.getElementById("profile-btn");if(pb)pb.style.display="none";
+      $("#page-title").textContent="Progress reviews";
+      const reviews=window.eviaGetReviews?window.eviaGetReviews():[],rd=window.eviaReviewDue&&window.eviaReviewDue();
+      $("#screen").innerHTML='<button class="secondary ui-back" id="back-reviews-portfolio" type="button">‹ My course</button><h1 class="ui-sub-title">Progress reviews</h1>'+
+        '<div class="ui-page">'+
+          (rd?'<section class="ui-card ui-logs-dl"><div><strong>'+(rd.days<0?"Your next review is overdue":"Next review: "+escHtml(savedDay(rd.due)))+'</strong><small>Tap Evia and choose Review me</small></div></section>':"")+
+          (reviews.length?'<div class="ui-card ui-hours-list">'+reviews.map(r=>{const t=(r.targets||[]).length;return '<button type="button" class="ui-hours-item ui-review-row" data-review-id="'+escHtml(r.id||"")+'"><span class="ui-review-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 1 9-9"/><path d="M12 12l4-3"/></svg></span><span class="ui-hours-copy"><strong>Review · '+escHtml(savedDay(r.date))+'</strong><small>'+(r.snapshot?r.snapshot.ksbPct+"% evidenced · ":"")+t+' target'+(t===1?"":"s")+' set</small></span><span class="ui-review-chev" aria-hidden="true">›</span></button>'}).join("")+'</div>'
+            :'<div class="ui-card ui-empty"><span class="ui-icon-chip">'+icon(ICONS.clock)+'</span><p>No reviews yet. Evia takes you through your first one in the chat: tap her and choose <strong>Review me</strong>.</p></div>')+
+        '</div>';
+      $("#back-reviews-portfolio").onclick=()=>nav("course");
+      document.querySelectorAll("[data-review-id]").forEach(b=>b.onclick=()=>{if(window.eviaShowReview)window.eviaShowReview(b.dataset.reviewId)});
+      window.scrollTo(0,0);
+    });
+  };
 
   /* ---------- Evia chat: stats, write-ups and KSB gaps ---------- */
   const chatBox=()=>document.getElementById("chat");
@@ -712,7 +730,7 @@
 
   /* ---------- Date wheel: every date field opens a day / month / year wheel instead of the phone's calendar ---------- */
   const MONTHS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  const fmtDate=v=>{if(!v)return"";const d=new Date(v+"T12:00:00");return isNaN(d)?"":d.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})};
+  const fmtDate=v=>{if(!v)return"";const d=new Date(v+"T12:00:00");return isNaN(d)?"":d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})};
   function openDateWheel(input,label){
     const ITEM=40,now=new Date(),cur=input.value?new Date(input.value+"T12:00:00"):now;
     const years=[];for(let y=now.getFullYear()-8;y<=now.getFullYear()+8;y++)years.push(y);
@@ -751,7 +769,10 @@
       btn.onclick=e=>{e.preventDefault();openDateWheel(input,label)};
     });
   }
-  new MutationObserver(()=>enhanceDates()).observe(document.getElementById("modal-root")||document.body,{childList:true,subtree:true});
+  /* Evia steps aside while any panel other than her chat is open. */
+  const panelWatch=()=>{const m=document.getElementById("modal-root");const open=!!(m&&m.querySelector(".overlay,.profile-overlay,.ksb-modal-overlay")&&!m.querySelector(".chat-sheet"))||!!document.querySelector(".dw-overlay");document.body.classList.toggle("ui-panel-open",open)};
+  new MutationObserver(()=>{enhanceDates();panelWatch()}).observe(document.getElementById("modal-root")||document.body,{childList:true,subtree:true});
+  new MutationObserver(panelWatch).observe(document.body,{childList:true});
   window.eviaDateWheel=openDateWheel;
 
   /* ---------- Wire into the app ---------- */
@@ -782,7 +803,10 @@
     const head=document.querySelector("#screen > .card:not(.unit-card)");
     if(head)head.remove();
     document.getElementById("screen").insertAdjacentHTML("afterbegin",pageHead("My course").replace('class="ui-page-head"','class="ui-page-head" id="ui-course-head"'));
-    document.getElementById("screen").insertAdjacentHTML("beforeend",logsGridHtml());bindLogsGrid();
+    /* The units sit together in one grouped list. */
+    const scr=document.getElementById("screen"),units=[...scr.querySelectorAll(":scope > .unit-card[data-u]")];
+    if(units.length){const list=document.createElement("div");list.className="ui-unit-list";units[0].before(list);units.forEach(u=>list.appendChild(u))}
+    scr.insertAdjacentHTML("beforeend",logsGridHtml());bindLogsGrid();
     courseNudge();
   };
   window.portfolio=()=>window.courses();
