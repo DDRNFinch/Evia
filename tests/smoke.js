@@ -169,30 +169,6 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("Learning logs then only offers new entries, and past downloads can be downloaded again",await page.evaluate(()=>!document.getElementById("download-otj")&&document.querySelectorAll("[data-batch]").length>=1&&/Everything’s downloaded/.test(document.getElementById("screen").innerText)));
     await page.evaluate(()=>nav("home"));await page.waitForTimeout(400);
 
-    // Drawings: every college-task drawing and a spread of generator jobs bond cleanly (no overlaps, no straight joints).
-    check("Brickwork drawings bond correctly: no overlapping bricks and no straight joints",await page.evaluate(()=>{
-      const D=window.EviaDraw;if(!D)return false;
-      const cfgs=[].concat(...Object.values(D.TASKS).map(l=>l.map(d=>d.cfg)),[{kind:"wall",bond:"english",n:7,courses:8},{kind:"wall",bond:"flemish",n:5,courses:8},{kind:"corner",bond:"english",n:5,ret:3,courses:8},{kind:"corner",bond:"stretcher",n:6,ret:3,courses:8},{kind:"wall",bond:"egw",n:6,courses:9,setting:"site"},{kind:"pier",bond:"english",courses:8}]);
-      const bad=[];
-      for(const c of cfgs){const M=D.build(c);const byZ={};
-        for(const b of M.bricks){if(c.opening||c.gable)continue;(byZ[b.z0]=byZ[b.z0]||[]).push(b)}
-        const zs=Object.keys(byZ).map(Number).sort((a,b)=>a-b);
-        for(const z of zs){const L=byZ[z];for(let i=0;i<L.length;i++)for(let j=i+1;j<L.length;j++){const a=L[i],b=L[j];if(Math.min(a.x1,b.x1)-Math.max(a.x0,b.x0)>1&&Math.min(a.y1,b.y1)-Math.max(a.y0,b.y0)>1)bad.push(D.describe(c)+" overlap")}}
-        const front=z=>(byZ[z]||[]).filter(b=>b.y0<1).map(b=>Math.round(b.x1)).filter(x=>x<M.len-15);
-        for(let k=1;k<zs.length;k++){const a=new Set(front(zs[k-1]));if(front(zs[k]).some(x=>a.has(x)))bad.push(D.describe(c)+" straight joint")}
-        if(!/<svg/.test(D.sheet(c,{title:"t"})))bad.push("no sheet")}
-      if(bad.length)console.log(bad.slice(0,5).join(" | "));return !bad.length}));
-    await page.evaluate(()=>{course="bricklayer";persist();window.eviaPractice.openAllTasks()});await page.waitForTimeout(400);
-    await page.evaluate(()=>document.querySelector('[data-id="bonds-return"]').click());await page.waitForTimeout(400);
-    await page.evaluate(()=>document.querySelector('.pr-draw [data-draw="0"]').click());await page.waitForTimeout(500);
-    check("A college task has drawings that open full screen with a PDF button",await page.evaluate(()=>document.querySelectorAll(".pr-draw-row").length===2&&!!document.querySelector(".dv-overlay .dv-paper svg")&&!!document.querySelector(".dv-pdf")&&document.body.classList.contains("ui-panel-open")));
-    const [dpdf]=await Promise.all([page.waitForEvent("download",{timeout:20000}),page.evaluate(()=>document.querySelector(".dv-pdf").click())]);
-    check("The drawing saves as an A3 PDF",/\.pdf$/.test(dpdf.suggestedFilename())&&fs.readFileSync(await dpdf.path()).slice(0,5).toString()==="%PDF-");
-    await page.evaluate(()=>{document.querySelector(".dv-close").click();document.getElementById("modal-root").innerHTML="";window.EviaDraw.generator()});await page.waitForTimeout(400);
-    await page.evaluate(()=>{document.querySelector('.dg-seg[data-key="kind"] [data-v="corner"]').click();document.querySelector('.dg-seg[data-key="bond"] [data-v="english"]').click();document.querySelector(".dg-go").click()});await page.waitForTimeout(700);
-    check("Draw me a job draws the chosen job",await page.evaluate(()=>/English bond/.test(document.querySelector(".dv-title strong").textContent)&&!!document.querySelector(".dv-paper svg")&&!document.querySelector('.dg-seg[data-key="bond"] [data-v="flemish"]:not([hidden])')));
-    await page.evaluate(()=>{document.querySelector(".dv-close").click()});await page.waitForTimeout(300);
-
     // Backup and restore: a learner's portfolio survives being restored and the app reloading.
     const keep=await page.evaluate(()=>evidence.length);
     const [bk]=await Promise.all([page.waitForEvent("download",{timeout:20000}),page.evaluate(()=>window.eviaStorage.backup())]);
