@@ -86,8 +86,9 @@ function buildOTJPrintWindow(entries,title,downloadedAt){
 function downloadOTJPDF(mode){
  const now=Date.now();
  let entries=[],batch=null;
- if(mode==="last"){
-   batch=otjBatches[otjBatches.length-1];
+ /* "last", or a past download's id, downloads that same set again; "new" only what hasn't been downloaded yet. */
+ if(mode!=="new"){
+   batch=mode==="last"?otjBatches[otjBatches.length-1]:otjBatches.find(b=>b.id===mode);
    entries=otjEntriesForBatch(batch);
    if(!entries.length){alert("There is no saved OTJ PDF to download again.");return}
    if(window.eviaOpenOtjPdf){window.eviaOpenOtjPdf(entries,batch.downloadedAt||now);return}
@@ -355,9 +356,9 @@ function openSavedLearningLogs(){
 function openSavedReviews(){
  const reviews=window.eviaGetReviews?window.eviaGetReviews():[];
  $("#page-title").textContent="Reviews";
- $("#screen").innerHTML='<button class="secondary" id="back-reviews-portfolio" type="button">‹ My progress</button><div class="card portfolio-intro"><div class="section-title">PORTFOLIO</div><h2>Saved Reviews</h2><p>All progress reviews saved for this course.</p></div>'+
+ $("#screen").innerHTML='<button class="secondary" id="back-reviews-portfolio" type="button">‹ My course</button><div class="card portfolio-intro"><div class="section-title">PORTFOLIO</div><h2>Saved Reviews</h2><p>All progress reviews saved for this course.</p></div>'+
  (reviews.length?'<div class="saved-reviews-list">'+reviews.map((r,i)=>'<button type="button" class="card saved-review-item" data-review-id="'+esc(r.id||"")+'"><div><strong>Progress Review</strong><span>'+esc(new Date(r.date).toLocaleDateString("en-GB"))+'</span></div><b>›</b></button>').join("")+'</div>':'<div class="card"><p>No saved reviews yet.</p></div>');
- $("#back-reviews-portfolio").onclick=()=>nav("learning");
+ $("#back-reviews-portfolio").onclick=()=>nav("course");
  document.querySelectorAll("[data-review-id]").forEach(b=>b.onclick=()=>{
    const id=b.getAttribute("data-review-id");
    if(window.eviaShowReview)window.eviaShowReview(id);

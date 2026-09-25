@@ -261,33 +261,46 @@
   function showProgressStep(){
     document.body.classList.add("evia-onboarding");
     nav("progress");
-    const tile=k=>document.querySelector('[data-ksb-code="'+k+'"]');
-    const focus=el=>{if(el)el.scrollIntoView({block:"start",behavior:"smooth"})};
-    const name=firstName();
-    const [c1,c2]=ppeCodes(),nvq=nvqOn();
-    guide('Your PPE evidence has been added to your portfolio'+(name?", "+escHtml(name):"")+'. This is <strong>My progress</strong>, where you can see how you’re getting on — '+(nvq?'your units are listed here, and in <strong>Unit 102</strong>, criterion <strong>1.2</strong> (using health and safety equipment) is now ticked off.':'<strong>K2</strong> is now ticked off.'),{
-      targets:[tile(c1)],button:"Next",onNext:()=>{
-        guide(nvq?'…and so is <strong>1.4</strong> (why and when to use it). Every criterion works this way: your evidence packs, answers to questions and witness testimony tick them off as you go.':'…and so is <strong>S2</strong>. You have submitted evidence for <strong>2 of your KSBs</strong>, but you will need further evidence for them as you work through your course, so keep capturing jobs that show them.',{
-          targets:[tile(c2)],button:"Next",onNext:()=>{writeState("portfolio");showPortfolioStep()}
-        });
-        focus(tile(c2));
-      }
-    });
-    focus(tile(c1));
+    const name=firstName(),[c1,c2]=ppeCodes(),nvq=nvqOn();
+    setTimeout(()=>{
+      const card=document.getElementById("pv-ksb");
+      document.querySelectorAll(".pv-card").forEach(c=>c.classList.add("pv-in"));
+      if(card)card.scrollIntoView({block:"center",behavior:"smooth"});
+      guide('Your PPE evidence is saved'+(name?", "+escHtml(name):"")+'. This is <strong>My progress</strong>: it shows how you’re getting on, and every card opens up for more detail. Your PPE work has already ticked off '+(nvq?'criteria <strong>1.2</strong> and <strong>1.4</strong> in Unit 102':'<strong>'+escHtml(c1||"K2")+'</strong> and <strong>'+escHtml(c2||"S2")+'</strong>')+'. Keep capturing jobs and these fill up.',{
+        targets:[card],button:"Next",onNext:()=>{writeState("portfolio");showPortfolioStep()}
+      });
+    },200);
   }
 
-  /* ---------- Step 4: portfolio ---------- */
+  /* ---------- Step 4: my course ---------- */
   function showPortfolioStep(){
     document.body.classList.add("evia-onboarding");
     nav("course");
-    const tile=document.querySelector("#screen .unit-card[data-u]");
     window.scrollTo(0,0);
-    guide('This is <strong>My course</strong>. Open any unit to capture evidence — everything you save is kept inside that unit, underneath, ready to look back at or share with your assessor.',{
-      targets:[tile],button:"Next",onNext:()=>{writeState("profile");showProfileStep()}
+    const tile=document.querySelector("#screen .unit-card[data-u]");
+    guide('This is <strong>My course</strong>. Open any unit to capture evidence. Everything you save stays inside that unit, underneath, ready to look back at or share with your assessor.',{
+      targets:[tile],button:"Next",onNext:()=>{
+        const grid=document.getElementById("ui-logs-grid");
+        if(grid)grid.scrollIntoView({block:"center",behavior:"smooth"});
+        guide('Your <strong>learning logs</strong> (off-the-job hours) and <strong>progress reviews</strong> are kept here too, ready to download for your assessor.',{
+          targets:[grid],button:"Next",onNext:()=>{writeState("evia");showEviaStep()}
+        });
+      }
     });
   }
 
-  /* ---------- Step 5: profile ---------- */
+  /* ---------- Step 5: Evia ---------- */
+  function showEviaStep(){
+    document.body.classList.add("evia-onboarding");
+    window.scrollTo(0,0);
+    const fab=document.getElementById("evia-fab");
+    if(window.eviaMood)window.eviaMood("happy");
+    guide('And this is me. Tap me any time: I can <strong>test you</strong>, <strong>log your hours</strong>, <strong>check your evidence</strong>, find you something to <strong>practise</strong> and take you through your <strong>progress review</strong>.',{
+      targets:[fab],button:"Next",onNext:()=>{writeState("profile");showProfileStep()}
+    });
+  }
+
+  /* ---------- Step 6: profile ---------- */
   function showProfileStep(){
     document.body.classList.add("evia-onboarding");
     hideGuide();
@@ -342,6 +355,7 @@
     else if(stage==="unit")showPpeUnit();
     else if(stage==="progress")showProgressStep();
     else if(stage==="portfolio")showPortfolioStep();
+    else if(stage==="evia")showEviaStep();
     else if(stage==="profile")showProfileStep();
   }
 

@@ -1208,3 +1208,24 @@ html body .pack-actions{grid-template-columns:1fr}
 .sp-open{display:block;padding:12px;font-weight:800;color:var(--yellow-ink);text-align:center}
 .sp-open.big{padding:34px 16px;font-size:15px}
 .sp-meta{margin:0 2px 8px;font-size:13px;color:var(--ui-muted)}
+
+/* My course: learning logs and progress reviews, side by side under the units */
+.ui-logs-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0 8px}
+.ui-log-tile{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0;padding:16px;border-radius:20px;text-align:left;cursor:pointer;background:var(--yellow);color:var(--ui-on-accent);box-shadow:0 6px 18px rgba(16,24,40,.08);font:inherit;transition:transform .12s ease}
+.ui-log-tile:active{transform:scale(.97)}
+.ui-log-tile.alt{background:var(--ui-ink);color:#fff}
+.ui-log-tile strong{font-size:15.5px;line-height:1.2;margin-top:6px}
+.ui-log-tile small{font-size:12.5px;opacity:.8}
+.ui-log-icon{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;background:rgba(255,255,255,.3)}
+.ui-log-tile.alt .ui-log-icon{background:rgba(255,255,255,.14)}
+.ui-log-icon svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+/* Learning logs page */
+.ui-logs-dl{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px}
+.ui-logs-dl strong{display:block;font-size:15px;color:var(--ui-ink)}
+.ui-logs-dl small{display:block;margin-top:2px;font-size:12.5px;color:var(--ui-muted)}
+.ui-logs-dl .primary{flex:0 0 auto;background:var(--yellow);color:var(--ui-on-accent);padding:11px 16px}
+.ui-hours-item.done{opacity:.6}
+.ui-hours-n{flex-basis:74px}
+.ui-batch{align-items:center}
+.ui-batch .secondary{flex:0 0 auto;padding:9px 14px;font-size:13.5px}
+.ui-hours-n{flex:0 0 92px;font-size:16px;white-space:nowrap}

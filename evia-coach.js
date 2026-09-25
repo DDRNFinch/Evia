@@ -80,7 +80,7 @@
     const week=hours.filter(x=>Number(x.createdAt)>=weekStart()).reduce((n,x)=>n+Number(x.n||0),0);
     if(window.eviaMood)window.eviaMood("happy");
     k.say((learned?k.pick(["Great learning.","That’s a good one to have learned.","Nice, that’s worth knowing."])+" ":"")+"Logged <strong>"+esc(hm(hrs))+"</strong>. "+(week>=6?"That’s <strong>"+esc(hm(week))+"</strong> this week, which is brilliant.":"That’s <strong>"+esc(hm(week))+"</strong> this week so far."));
-    k.replies([{label:"Log more",run:logHours},{label:"Something else",run:k.somethingElse}]);
+    k.replies([{label:"Log more",run:logHours},{label:"See my learning logs",run:()=>{k.closeChat();setTimeout(()=>window.eviaOpenLearningLogs&&window.eviaOpenLearningLogs(),120)}},{label:"Something else",run:k.somethingElse}]);
   }
 
   /* ---------- Confidence check: one skill at a time ---------- */

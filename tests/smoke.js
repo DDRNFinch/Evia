@@ -122,7 +122,9 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML=""});
 
     await page.evaluate(()=>{document.body.classList.add("evia-onboarding");nav("progress")});await page.waitForTimeout(200);
-    check("The first-run demo can point at K2 and S2 on Progress",await page.$('[data-ksb-code="K2"]')&&await page.$('[data-ksb-code="S2"]'));
+    check("The first-run demo can point at the KSB card on My progress",!!await page.$("#pv-ksb"));
+    await page.evaluate(()=>nav("course"));await page.waitForTimeout(200);
+    check("My course has Learning logs and Progress reviews side by side under the units, for the demo to point at",await page.evaluate(()=>{const g=document.getElementById("ui-logs-grid");return !!g&&g.querySelectorAll("button").length===2&&!!g.previousElementSibling}));
     await page.evaluate(()=>{document.body.classList.remove("evia-onboarding");nav("home")});await page.waitForTimeout(450);
 
     await page.evaluate(()=>window.eviaStartReview());await page.waitForTimeout(400);
@@ -160,8 +162,11 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("A test from Practice opens on its own screen, without the chat menu",await page.evaluate(()=>/Maths/.test(document.querySelector(".chat-sheet h2").textContent)&&!document.querySelector("#chat [data-chat-option]")));
     await page.click("#x");await page.waitForTimeout(300);
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";nav("learning")});await page.waitForTimeout(500);
-    await page.evaluate(()=>{window.eviaProgressDeep("otj");document.getElementById("pv-otj-pdf").click()});await page.waitForSelector("#eport-save",{timeout:15000});
+    await page.evaluate(()=>window.eviaOpenLearningLogs());await page.waitForSelector("#download-otj",{timeout:5000});
+    await page.evaluate(()=>document.getElementById("download-otj").click());await page.waitForSelector("#eport-save",{timeout:15000});
     check("The OTJ log downloads as a PDF with a preview",await page.evaluate(()=>!!document.getElementById("eport-preview")&&/OTJ PDF/.test(document.querySelector(".eport-status").textContent)));
+    await page.evaluate(()=>window.eviaOpenLearningLogs());await page.waitForTimeout(600);
+    check("Learning logs then only offers new entries, and past downloads can be downloaded again",await page.evaluate(()=>!document.getElementById("download-otj")&&document.querySelectorAll("[data-batch]").length>=1&&/Everything’s downloaded/.test(document.getElementById("screen").innerText)));
     await page.evaluate(()=>nav("home"));await page.waitForTimeout(400);
 
     // Backup and restore: a learner's portfolio survives being restored and the app reloading.

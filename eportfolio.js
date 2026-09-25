@@ -366,10 +366,10 @@
     const learner=readJson("evia7-profile",{}).name||"Apprentice",total=entries.reduce((n,x)=>n+Number(x.n||0),0);
     const sorted=entries.slice().sort((a,b)=>Number(a.createdAt)-Number(b.createdAt));
     $("#page-title").textContent="Off-the-job PDF";
-    $("#screen").innerHTML='<button class="secondary" id="eport-back" type="button">‹ Back to hours</button>'+
+    $("#screen").innerHTML='<button class="secondary" id="eport-back" type="button">‹ Learning logs</button>'+
       '<div class="eport-page"><div class="card eport-intro"><div class="section-title">OFF-THE-JOB LEARNING</div><h2>Your OTJ log</h2><p>'+entries.length+' entr'+(entries.length===1?"y":"ies")+' · '+total.toFixed(2)+' hours. Upload this PDF to Aptem or your e-portfolio so your hours are counted.</p></div>'+
       '<div class="eport-files" id="eport-files"><div class="card eport-pdf"><div class="eport-sheet is-loading" aria-hidden="true"><span></span><span></span><span></span></div><p class="eport-status">Preparing your OTJ PDF…</p></div></div></div>';
-    $("#eport-back").onclick=()=>nav("hours");
+    $("#eport-back").onclick=()=>window.eviaOpenLearningLogs?window.eviaOpenLearningLogs():nav("course");
     let pdf;
     try{const blob=await buildOtjPdf(sorted,createdAt);pdf={pages:blob.evPages,file:new File([blob],slug(learner)+"_OTJ-log_"+isoDate(createdAt)+".pdf",{type:"application/pdf"})}}
     catch(err){console.error("Evia OTJ PDF failed",err);const l=$("#eport-files");if(l)l.innerHTML='<div class="card"><p>'+(/PDF library/.test(err&&err.message)?"The PDF couldn’t be made because part of Evia hasn’t downloaded yet. Open Evia once with signal, then try again.":"Evia couldn’t make the PDF. Please try again.")+'</p></div>';return}

@@ -273,6 +273,45 @@
     scr.querySelectorAll("[data-ev-share]").forEach(b=>b.onclick=()=>{const x=items.find(i=>i.id===b.dataset.evShare);if(x)shareSupporting(x,()=>window.openSupportingEvidence())});
   };
 
+  /* ---------- My course: learning logs and progress reviews, under the units ---------- */
+  const hmText=h=>window.eviaHM?window.eviaHM(h):h+" h";
+  function logsGridHtml(){
+    const last=otjBatches[otjBatches.length-1],cutoff=Number(last?last.cutoff:0),fresh=hours.filter(x=>Number(x.createdAt)>cutoff).length;
+    const reviews=window.eviaGetReviews?window.eviaGetReviews().length:0,total=hours.reduce((n,x)=>n+Number(x.n||0),0);
+    return '<div class="ui-logs-grid" id="ui-logs-grid">'+
+      '<button type="button" class="ui-log-tile" id="ui-open-logs"><span class="ui-log-icon">'+icon(ICONS.clock)+'</span><strong>Learning logs</strong><small>'+(hours.length?escHtml(hmText(total))+" logged":"None yet")+(fresh&&last?" · "+fresh+" new":"")+'</small></button>'+
+      '<button type="button" class="ui-log-tile alt" id="ui-open-reviews"><span class="ui-log-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 1 9-9"/><path d="M12 12l4-3"/></svg></span><strong>Progress reviews</strong><small>'+(reviews?reviews+" saved":"None yet")+'</small></button>'+
+    '</div>';
+  }
+  function bindLogsGrid(){
+    const l=$("#ui-open-logs");if(l)l.onclick=()=>openLearningLogs();
+    const r=$("#ui-open-reviews");if(r)r.onclick=()=>openSavedReviews();
+  }
+  /* Learning logs: every off-the-job entry, one button for the ones not downloaded yet, and past PDFs to get again. */
+  function openLearningLogs(){
+    withFade(()=>{
+      const pb=document.getElementById("profile-btn");if(pb)pb.style.display="none";
+      $("#page-title").textContent="Learning logs";
+      const last=otjBatches[otjBatches.length-1],cutoff=Number(last?last.cutoff:0);
+      const fresh=hours.filter(x=>Number(x.createdAt)>cutoff),total=hours.reduce((n,x)=>n+Number(x.n||0),0);
+      const day=t=>new Date(Number(t)).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
+      const batches=otjBatches.slice().reverse();
+      $("#screen").innerHTML='<button class="secondary ui-back" id="ui-logs-back" type="button">‹ My course</button><h1 class="ui-sub-title">Learning logs</h1>'+
+        '<div class="ui-page">'+
+          '<section class="ui-card ui-hours-sum"><div><strong>'+escHtml(hmText(total))+'</strong><small>logged in total</small></div><div><strong>'+hours.length+'</strong><small>entr'+(hours.length===1?"y":"ies")+'</small></div></section>'+
+          (hours.length?'<section class="ui-card ui-logs-dl"><div><strong>'+(fresh.length?fresh.length+" new entr"+(fresh.length===1?"y":"ies"):"Everything’s downloaded")+'</strong><small>'+(fresh.length?(last?"Since your last download on "+escHtml(savedDay(last.downloadedAt)):"Not downloaded yet"):"New entries will be ready to download here")+'</small></div>'+(fresh.length?'<button type="button" class="primary" id="download-otj">Download PDF</button>':"")+'</section>':"")+
+          (hours.length?'<h2 class="ui-hours-h">Your log</h2><div class="ui-card ui-hours-list">'+hours.slice().sort((a,b)=>Number(b.createdAt)-Number(a.createdAt)).map(x=>{const isNew=Number(x.createdAt)>cutoff;return '<div class="ui-hours-item'+(isNew?"":" done")+'"><span class="ui-hours-n">'+escHtml(hmText(Number(x.n||0)))+'</span><span class="ui-hours-copy"><strong>'+escHtml(x.description||"No description recorded.")+'</strong><small>'+escHtml(day(x.createdAt))+' · '+(isNew?"<em>New</em>":"Downloaded")+'</small></span></div>'}).join("")+'</div>'
+            :'<div class="ui-card ui-empty"><span class="ui-icon-chip">'+icon(ICONS.clock)+'</span><p>No off-the-job learning logged yet. Tap Evia and choose <strong>Log my hours</strong>.</p></div>')+
+          (batches.length?'<h2 class="ui-hours-h">Past downloads</h2><div class="ui-card ui-hours-list">'+batches.map(b=>'<div class="ui-hours-item ui-batch"><span class="ui-hours-copy"><strong>'+escHtml(savedDay(b.downloadedAt))+'</strong><small>'+(b.entryIds||[]).length+' entr'+((b.entryIds||[]).length===1?"y":"ies")+'</small></span><button type="button" class="secondary" data-batch="'+escHtml(b.id)+'">Download again</button></div>').join("")+'</div>':"")+
+        '</div>';
+      $("#ui-logs-back").onclick=()=>nav("course");
+      const dl=$("#download-otj");if(dl)dl.onclick=()=>downloadOTJPDF("new");
+      document.querySelectorAll("[data-batch]").forEach(b=>b.onclick=()=>downloadOTJPDF(b.dataset.batch));
+      window.scrollTo(0,0);
+    });
+  }
+  window.eviaOpenLearningLogs=openLearningLogs;
+
   /* ---------- Evia chat: stats, write-ups and KSB gaps ---------- */
   const chatBox=()=>document.getElementById("chat");
   const scrollChat=()=>{const c=chatBox();if(c)c.scrollTop=c.scrollHeight};
@@ -686,7 +725,7 @@
     if(screen==="learning"||screen==="hours"){
       const pb=document.getElementById("profile-btn");if(pb)pb.style.display=screen==="learning"?"flex":"none";
       document.querySelectorAll("[data-nav]").forEach(b=>b.classList.toggle("active",b.dataset.nav==="learning"));
-      if(screen==="hours")hoursScreen();else if(window.eviaProgressPage&&!document.body.classList.contains("evia-onboarding"))window.eviaProgressPage();else progressScreen(); /* the demo points at KSB tiles on the classic page */
+      if(screen==="hours")hoursScreen();else if(window.eviaProgressPage)window.eviaProgressPage();else progressScreen();
       return;
     }
     originalRender();
@@ -699,6 +738,7 @@
     const head=document.querySelector("#screen > .card:not(.unit-card)");
     if(head)head.remove();
     document.getElementById("screen").insertAdjacentHTML("afterbegin",pageHead("My course").replace('class="ui-page-head"','class="ui-page-head" id="ui-course-head"'));
+    document.getElementById("screen").insertAdjacentHTML("beforeend",logsGridHtml());bindLogsGrid();
     courseNudge();
   };
   window.portfolio=()=>window.courses();

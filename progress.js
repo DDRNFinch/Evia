@@ -192,7 +192,7 @@
   function deep(id,D){
     const {S,a,verdict}=D,T=term();
     if(id==="where"){
-      const p=readJson("evia7-profile",{}),rd=window.eviaReviewDue&&window.eviaReviewDue(),reviews=window.eviaGetReviews?window.eviaGetReviews():[];
+      const p=readJson("evia7-profile",{}),rd=window.eviaReviewDue&&window.eviaReviewDue();
       const el=sheet("MY PROGRESS","Where you are",
         '<div class="pv-deep-hero">'+num(a.ksbPct,"%")+'<span>of '+esc(T.many)+' have evidence</span></div>'+timeline(a.timePct,a.ksbPct,true)+
         '<div class="pv-stats">'+
@@ -204,9 +204,7 @@
           (p.start&&p.end?stat("Course dates",shortDate(p.start)+" – "+longDate(p.end)):"")+
           (rd?stat("Next review",rd.days<0?"Overdue · was due "+shortDate(rd.due):shortDate(rd.due)):"")+
         '</div>'+
-        (reviews.length?'<h3 class="pv-h">Past reviews</h3><div class="pv-list">'+reviews.map(r=>'<button type="button" class="pv-li" data-review="'+esc(r.id||"")+'"><span>Progress review</span><small>'+esc(longDate(r.date))+'</small>'+CHEV+'</button>').join("")+'</div>':"")+
         note(verdict&&verdict.cls==="behind"?"To catch up, start a unit you haven’t touched yet: it ticks off the most in one go. Evia can tell you which one.":"Keep adding evidence as you go. Evia can take you through your progress review when it’s due."));
-      el.querySelectorAll("[data-review]").forEach(b=>b.onclick=()=>{if(window.eviaShowReview)window.eviaShowReview(b.dataset.review)});
     }
     else if(id==="ksb"){
       if(nvqOn()){
@@ -228,9 +226,7 @@
         '<div class="pv-deep-hero">'+hmBig(S.otjTotal)+'<span>logged in total</span></div>'+
         columns(wk.map(w=>w.h),wk.map(w=>shortDate(w.start).split(" ")[0]),Math.max(OTJ_WEEK_GOAL*1.4,...wk.map(w=>w.h)),{h:130,goal:OTJ_WEEK_GOAL,goalLabel:OTJ_WEEK_GOAL+" h a week",aria:"Off-the-job hours each week",highlight:wk.length-1})+
         '<div class="pv-stats">'+stat("This week",hm(S.otjWeek))+stat("This month",hm(S.otjMonth))+stat("Entries",log.length)+'</div>'+
-        (log.length?'<h3 class="pv-h">Your log</h3><div class="pv-list">'+log.map(x=>'<div class="pv-li static"><span class="pv-li-n">'+esc(hm(x.n))+'</span><span class="pv-li-copy"><strong>'+esc(x.description||"")+'</strong><small>'+esc(new Date(Number(x.createdAt)).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}))+'</small></span></div>').join("")+'</div><button type="button" class="pv-link" id="pv-otj-pdf">Download my OTJ log (PDF)</button>':"")+
-        note("Most apprentices need about "+OTJ_WEEK_GOAL+" hours a week; your commitment statement has your exact number. Tell Evia what you did and she’ll log it."));
-      const pdf=el.querySelector("#pv-otj-pdf");if(pdf)pdf.onclick=()=>{const lb=otjBatches[otjBatches.length-1],fresh=hours.some(x=>Number(x.createdAt)>Number(lb?lb.cutoff:0));downloadOTJPDF(fresh?"new":"last")};
+        note("Most apprentices need about "+OTJ_WEEK_GOAL+" hours a week; your commitment statement has your exact number. Tell Evia what you did and she’ll log it. Your full log and its PDFs are in <strong>Learning logs</strong> on My course."));
     }
     else if(id==="tests"){
       const byType={};D.tests.forEach(t=>{(byType[t.type]=byType[t.type]||[]).push(t)});
