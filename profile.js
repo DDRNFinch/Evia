@@ -27,8 +27,8 @@
       group("Apprenticeship",
         '<div class="pf-dates"><label>Started<input id="profile-start" type="date" value="'+esc(p.start)+'"></label><label>Finishes<input id="profile-end" type="date" value="'+esc(p.end)+'"></label></div>'+
         (nvqOn?'<details class="pf-more"><summary>Optional units<span>'+esc(window.eviaNvq.optionalChosen().join(", "))+'</span></summary><div class="nvq-opts" id="profile-nvq-opts">'+window.eviaNvq.optionalHtml()+'</div></details>':"")+
-        sw("profile-maths","Maths","Include maths in tests and reviews")+
-        sw("profile-english","English","Include English in tests and reviews")+
+        sw("profile-maths","Maths","Maths lessons in Teach me, tests and reviews")+
+        sw("profile-english","English","English lessons in Teach me, tests and reviews")+
         '<details class="pf-more pf-change"><summary>Change course<span>Only if you’ve moved course</span></summary><div class="course-options">'+Object.keys(C).map(k=>'<button type="button" class="course-option '+(k===course?"selected":"")+'" data-profile-course="'+k+'">'+esc(C[k].name)+'<span>'+(k===course?"Current":"›")+'</span></button>').join("")+'</div></details>')+
       group("Evia",
         row("open-shape-picker",'<span class="evia-mini"><span class="evia-face"><i></i><i></i></span></span>',"Evia’s shape")+
@@ -80,6 +80,8 @@
     if(window.eviaStorage)window.eviaStorage.bindProfileCard(document.getElementById("modal-root"));
     document.getElementById("profile-maths").checked=!!p.mathsEnabled;
     document.getElementById("profile-english").checked=!!p.englishEnabled;
+    /* The maths and English switches save straight away, so closing the profile doesn't lose them. */
+    [["profile-maths","mathsEnabled"],["profile-english","englishEnabled"]].forEach(([id,key])=>{const el=document.getElementById(id);el.onchange=()=>{set(Object.assign(get(),{[key]:el.checked}));if(typeof render==="function")render()}});
   }
 
   function canvasHasInk(canvas){

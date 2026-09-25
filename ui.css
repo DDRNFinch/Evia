@@ -1509,7 +1509,8 @@ html[data-a11y-motion="reduce"] .tm-confetti{display:none}
 /* Teach me: maths and English, extra pictures */
 .tm-fs-h{margin:28px 4px 4px;font-size:20px;font-weight:800;letter-spacing:-.02em;color:var(--ui-ink)}
 .tm-fs-note{margin:0 4px 12px;font-size:13px;line-height:1.5;color:var(--ui-muted)}
-.tm-unit.fs .tm-unit-head{background:var(--ui-ink,#172033);color:#fff}
+.tm-unit.fs .tm-unit-head{background:var(--soft,#fff7d6);border:2px solid var(--yellow-line,#f1d878);color:var(--yellow-ink)}
+.tm-unit.fs .tm-unit-bar{background:color-mix(in srgb,var(--yellow) 18%,transparent)}.tm-unit.fs .tm-unit-bar i{background:var(--yellow)}
 .tp-tape{fill:var(--yellow);stroke:var(--ui-ink);stroke-width:2}.tp-hub{fill:#fff;stroke:var(--ui-ink);stroke-width:2}
 .tp-blade{fill:#f5e27a;stroke:var(--ui-ink);stroke-width:1.5}.tp-tick{stroke:var(--ui-ink);stroke-width:1.2}
 .tp-wall{fill:#d98d6a;stroke:var(--ui-ink);stroke-width:2}.tp-dim{fill:none;stroke:var(--yellow-ink);stroke-width:2}

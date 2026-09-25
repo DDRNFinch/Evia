@@ -253,6 +253,15 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("Teach me time is logged to off-the-job hours automatically, by the minute",otj.logged&&otj.learned);
     check("Maths lessons are there but don't count towards off-the-job hours",otj.maths&&!otj.mathsTimed);
 
+    // Maths and English: switching one on in the profile works straight away, even if it's closed with ×.
+    const fsOn=await page.evaluate(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms));
+      const p=JSON.parse(localStorage.getItem("evia7-profile")||"{}");p.englishEnabled=false;localStorage.setItem("evia7-profile",JSON.stringify(p));
+      window.eviaOpenProfile();await w(300);const sw=document.getElementById("profile-english");sw.checked=true;sw.dispatchEvent(new Event("change",{bubbles:true}));
+      document.getElementById("profile-close").click();await w(100);
+      window.eviaTeach.open();await w(150);const ok=!!document.querySelector('[data-lesson="en1"]');document.querySelector(".tm-x").click();await w(250);
+      return ok&&JSON.parse(localStorage.getItem("evia7-profile")).englishEnabled===true});
+    check("Switching English on in the profile adds English to Teach me, even when the profile is closed without saving",fsOn);
+
     // Backup and restore: a learner's portfolio survives being restored and the app reloading.
     const keep=await page.evaluate(()=>evidence.length);
     const [bk]=await Promise.all([page.waitForEvent("download",{timeout:20000}),page.evaluate(()=>window.eviaStorage.backup())]);
