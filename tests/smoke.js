@@ -169,17 +169,17 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("Learning logs then only offers new entries, and past downloads can be downloaded again",await page.evaluate(()=>!document.getElementById("download-otj")&&document.querySelectorAll("[data-batch]").length>=1&&/Everything’s downloaded/.test(document.getElementById("screen").innerText)));
     await page.evaluate(()=>nav("home"));await page.waitForTimeout(400);
 
-    // Evidence strength: judged on the unit's prompts, not just counts.
-    check("Evidence strength rewards covering the prompts, not padding",await page.evaluate(()=>{
-      const S=window.eviaStrength,pr={photos:"mixing mortar · ratio · silos",writeup:"ratio · teamwork · PPE · silos"},H=36e5,t=Date.now();
-      const ph=n=>Array.from({length:n},(_,i)=>({takenAt:t-(n-i)*H,q:{b:120,s:40,h:(i*1111111111111111).toString(16).padStart(16,"0").slice(0,16)}}));
-      const pad=S.score({photos:ph(1),write:"brick ".repeat(150)},pr);
-      const good=S.score({photos:ph(8),write:"First I checked the ratio, 1:4, then mixed it with my team. I wore PPE, gloves and goggles, and took sand from the silos. Finally I cleaned the 2 shovels. I learned to gauge carefully and next time I would mix a smaller batch."},pr);
-      return pad.level==="weak"&&good.level==="strong"&&good.written.missing.length===0&&pad.next.length>0;
+    // Evidence strength: photos by count, write-up by the areas it talks about; areas answered with Evia count in full.
+    check("Evidence strength: under 5 photos weak, 10+ strong; areas answered with Evia count in full",await page.evaluate(()=>{
+      const S=window.eviaStrength,pr={writeup:"ratio · teamwork · PPE · silos"},ph=n=>Array.from({length:n},()=>({id:"x"}));
+      const few=S.pack({photos:ph(4),write:"I checked the ratio, worked with my team, wore PPE and used the silos."},pr);
+      const lots=S.pack({photos:ph(10),write:"I checked the ratio, worked with my team, wore PPE and used the silos."},pr);
+      const mid=S.pack({photos:ph(7),write:"I checked the ratio."},pr);
+      const guided=S.pack({photos:ph(10),write:"Some words here.",guide:{answers:{ratio:"a",teamwork:"b",PPE:"c"}}},pr);
+      return few==="weak"&&lots==="strong"&&mid==="weak"&&guided==="strong";
     }));
     await page.evaluate(()=>{course="bricklayer";persist();openUnit(0)});await page.waitForTimeout(700);
-    await page.evaluate(()=>{const w=document.getElementById("write");w.value="I checked the ratio and worked with my team.";w.dispatchEvent(new Event("input"))});await page.waitForTimeout(200);
-    check("The evidence pack shows a live strength meter, with the prompts kept as plain text",await page.evaluate(()=>!!document.querySelector("#st-meter .st-meter-num")&&!!document.querySelector("#st-meter .st-next-i")&&document.querySelectorAll(".writeup-section .compact-prompts").length===1&&!document.querySelector(".compact-prompts .st-chip")));
+    check("The evidence pack shows no score, just a link to how to build a strong portfolio",await page.evaluate(()=>!document.getElementById("st-meter")&&!!document.getElementById("st-how")&&document.querySelectorAll(".writeup-section .compact-prompts").length===1));
     await page.evaluate(()=>{const w=document.getElementById("write");w.value="";w.dispatchEvent(new Event("input"));nav("learning")});await page.waitForTimeout(600);
     await page.evaluate(()=>document.getElementById("pv-guide").click());await page.waitForTimeout(400);
     check("My progress explains how to build a strong portfolio",await page.evaluate(()=>/strong portfolio/.test(document.getElementById("st-title").textContent)&&document.querySelectorAll(".st-tip").length===8));

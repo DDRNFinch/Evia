@@ -106,14 +106,13 @@
     const coursePrompts=LEARNER_PROMPTS[course]||{};
     return coursePrompts[data().u[unit][0]]||{photos:"",writeup:""};
   }
-  let paintStrength=null;
   async function renderPhotos(pack){
     const g=$("#evidence-photos");
     const items=await Promise.all((pack.photos||[]).map(async(p,i)=>{
       try{const rec=p.id?await idbGet(p.id):null,src=rec?URL.createObjectURL(rec.blob):p.src||"";return '<div class="photo-item"><img class="thumb" src="'+src+'" alt="Evidence photo"><button type="button" class="photo-remove" data-remove-photo="'+i+'" aria-label="Remove photo">×</button></div>'}catch(_){return ""}
     }));
     g.innerHTML=items.join("");
-    g.querySelectorAll("[data-remove-photo]").forEach(b=>b.onclick=async()=>{const i=+b.dataset.removePhoto,p=pack.photos[i];if(p&&p.id)await idbDelete(p.id);pack.photos.splice(i,1);await savePack(pack);await renderPhotos(pack);if(paintStrength)paintStrength()});
+    g.querySelectorAll("[data-remove-photo]").forEach(b=>b.onclick=async()=>{const i=+b.dataset.removePhoto,p=pack.photos[i];if(p&&p.id)await idbDelete(p.id);pack.photos.splice(i,1);await savePack(pack);await renderPhotos(pack)});
   }
 
   async function renderPack(pack){
@@ -142,11 +141,11 @@
           '<div class="compact-prompts">'+esc(prompts.writeup)+'</div>'+
           '<textarea id="write" placeholder="Write about the process and what you did…">'+esc(pack.write||"")+'</textarea>'+
         '</section>'+
-        '<div class="st-meter" id="st-meter" aria-live="polite"></div>'+
         '<div class="pack-actions">'+
           '<button class="primary" id="submit-evidence" '+(photos.length&&String(pack.write||"").trim()?"":"disabled")+'>Submit to Portfolio</button>'+
         '</div>'+
         '<p class="submit-hint">Your work saves as you go. Add at least one photo and a write-up to submit.</p>'+
+        (window.eviaStrength?'<button type="button" class="st-how" id="st-how">How to build a strong portfolio ›</button>':"")+
       '</div>';
 
     const addFiles=async files=>{
@@ -155,9 +154,7 @@
         for(const file of files.filter(f=>f&&f.size>0)){
           const blob=await makeThumb(file),id="photo-"+Date.now()+"-"+Math.random().toString(36).slice(2);
           await idbPut({id,blob,addedAt:new Date().toISOString()});
-          /* For the strength rating: when it was taken (start, middle or end of the job) and a quick quality check. */
-          const q=window.eviaStrength?await window.eviaStrength.analyse(blob):null;
-          pack.photos.push({id,addedAt:new Date().toISOString(),takenAt:file.eviaTakenAt||file.lastModified||Date.now(),q:q||undefined});
+          pack.photos.push({id,addedAt:new Date().toISOString(),takenAt:file.eviaTakenAt||file.lastModified||Date.now()});
         }
         await savePack(pack);await renderPack(pack);
       }catch(err){console.error("Evia evidence photo save failed",err);alert("That photo could not be added. Please try again.")}
@@ -168,9 +165,9 @@
     if(camLabel&&window.eviaCamera&&window.eviaCamera.supported())camLabel.onclick=e=>{e.preventDefault();window.eviaCamera.open({title:u[0],prompts:String(prompts.photos||"").split("·"),onDone:files=>addFiles(files)})};
     $("#evidence-gallery").onchange=async e=>{await addFiles([...e.target.files]);e.target.value=""};
     const eg=$("#eg-start");if(eg)eg.onclick=()=>window.eviaGuide.start({unitName:u[0],prompts,pack,addFiles,save:()=>savePack(pack),done:()=>renderPack(pack)});
-    const strength=paintStrength=window.eviaStrength?window.eviaStrength.mount(pack,prompts,{save:()=>savePack(pack),repaint:()=>strength&&strength()}):null;
+    const how=$("#st-how");if(how)how.onclick=()=>window.eviaStrength.guide();
     $("#write").oninput=e=>{
-      pack.write=e.target.value;savePack(pack);if(strength)strength();
+      pack.write=e.target.value;savePack(pack);
       const ready=pack.photos.length>0&&String(pack.write||"").trim();
       const btn=$("#submit-evidence"),hint=document.querySelector(".submit-hint");
       if(btn)btn.disabled=!ready;
@@ -190,7 +187,7 @@
         alert("Evia could not save this evidence to your portfolio. Please try again.");
       }
     };
-    renderPhotos(pack).then(()=>{if(strength)strength()});
+    renderPhotos(pack);
     if(window.eviaSavedTiles)window.eviaSavedTiles(u[0],document.querySelector(".evidence-pack-page"));
   }
 
@@ -243,8 +240,9 @@
       photoIds.push(permanentId);
     }
     evidence.push({id,c:course,u:u[0],d:new Date().toLocaleString("en-GB"),p:[],photoIds,w:pack.write.trim(),k:u[1].map(code),learnerProfile:{name:profile.name||"",start:profile.start||"",end:profile.end||""},signature:profile.signature||"",savedAt:new Date().toISOString(),photoCount:photoIds.length,
-      photoMeta:(pack.photos||[]).filter(p=>p&&p.id).map(p=>({takenAt:p.takenAt||null,q:p.q||null})),
-      strength:window.eviaStrength?(r=>({total:r.total,level:r.level,photos:r.photos.score,written:r.written.score}))(window.eviaStrength.score(pack,learnerPrompts())):undefined});
+      photoTimes:(pack.photos||[]).filter(p=>p&&p.id).map(p=>p.takenAt||null),
+      /* Areas answered with guided Evia count in full towards the unit's strength (strength.js). */
+      guidedAreas:window.eviaStrength?window.eviaStrength.guidedAreas(pack):[]});
     persist();
     await removePack();
     /* Back to the same unit: the new pack shows as the first saved tile. */

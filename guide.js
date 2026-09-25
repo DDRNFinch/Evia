@@ -12,15 +12,33 @@
   const AVATAR='<span class="evia-mini" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span>';
 
   /* ---------- What Evia asks ---------- */
-  /* Photo requests: how many and what kind, so learners get close-ups and the wider view. */
+  /* Photo requests: what to photograph and how to frame it, so learners get the wider view and the detail. */
+  const SHOTS=[
+    [/\bppe\b|\brpe\b/,t=>["Photograph the PPE you wore for this job.","Lay it out, or ask someone to take one of you wearing it: hard hat, hi-vis, boots, gloves and eye protection."]],
+    [/sign/,t=>["Photograph the safety signs around your work area.","Stand back so the sign and the area it protects are both in the picture."]],
+    [/protect/,t=>["Show how you protected the finished work.","Covers, boards or sheeting over the new work, and what they’re protecting."]],
+    [/safe|hazard|risk|barrier/,t=>["Show how your work area was kept safe.","Stand back to get the whole area in: barriers, signs, clear access and materials stacked safely."]],
+    [/drawing|specification|^plans?$/,t=>["Photograph the "+t+" you worked from.","Lay them flat in good light and get close enough to read the measurements. Then take one next to your work."]],
+    [/team|communicat/,t=>["Photograph the team at work.","Show who you worked with and what they were doing. Ask before you photograph anyone."]],
+    [/tool maintenance|maintain/,t=>["Show how you look after your tools.","Your tools cleaned and stored, or you cleaning them at the end of the day."]],
+    [/tool/,t=>["Photograph the "+t+" you used.","Lay them out so each one can be seen clearly, then take one of a tool in use."]],
+    [/^(setting|marking) out\b/,t=>["Photograph yourself "+t+".","Ask someone to take one of you doing it, then take one of the finished set-up with the measurements showing."]],
+    [/^finished\b/,t=>["Photograph the "+t+".","Stand back to get the whole job in, then move in close on the detail you’re proudest of."]],
+    [/setting[- ]?out|marking out|\blevels?\b|laser|profile|gauge rod|squares?\b|\blines?\b|datum|plumb/,t=>[/setting|marking/.test(t)?"Photograph your "+t+".":"Photograph your "+t+" in use.","Get one of the whole set-up, then move in close to show the tape, level bubble or line where it matters."]],
+    [/ratio|quantit|gaug/,t=>["Show how you measured it out.","Photograph the gauge box, buckets or bag labels so the "+t+" is clear. Then one of the finished mix."]],
+    [/hand\/mechanical|mechanical/,t=>["Show how the mixing was done: by hand or with a mixer.","One of the mixing in progress, and one of the equipment you used."]],
+    [/joint finish|half round|flush|weather struck|recessed|bucket handle|struck/,t=>[/joint finish/.test(t)?"Photograph your joint finishes.":"Photograph your "+t+" joints.","Get close, side-on if you can, so the shape of the joint shows. Then one from further back to show it’s even along the wall."]],
+    [/waste|recycl|environment|surface water/,t=>["Photograph how you dealt with waste.","Skips, sorted waste, recycling, or materials kept covered from the weather."]],
+    [/defect|damage|repair/,t=>["Photograph the "+t+" before you started.","Get close enough to see the problem clearly. Then take the same view once you’ve finished."]],
+    [/silo|mixer|drill|saw|cutter|grinder|scaffold|platform|ladder|podium|trestle|plant|pump|jig/,t=>["Photograph the "+t+" you used.","Stand back so the whole thing and where it’s set up are in the picture. Then take one closer showing how you used it: the controls, the outlet or the fixings."]],
+    [/^(bricks?|blocks?|bricks\/blocks|sand|cement|pre-?mix|lime|aggregates?|insulation|materials?|plaster|render|membranes?|adhesive|nails\/screws\/bolts|fixings)$/,t=>["Photograph the "+t+" before you started.","Show any labels, sizes or markings clearly. Then take one of them in place in your work."]],
+    [/^(mixing|cutting|measuring|splicing|scribing|jointing|pointing|laying|fixing|levelling|installing|fitting|building|gauging|hanging|cladding the)\b/,t=>["Photograph yourself "+t+".","Ask someone to take one of you part-way through, then take one of the result."]],
+    [/construction|installation|carcassing|studwork/,t=>["Photograph the "+t+" at each stage.","One at the start, one part-way through and one finished. Photos from the middle of the job matter as much as the end."]]
+  ];
   function photoAsk(term){
     const t=term.toLowerCase();
-    if(/\bppe\b|\brpe\b/.test(t))return {say:"Show me your PPE for this job.",hint:"One photo is fine."};
-    if(/safe|hazard|risk|sign/.test(t))return {say:"Show me how the area was kept safe.",hint:"Barriers, signs, a tidy work area: one or two photos."};
-    if(/drawing|specification|plan\b/.test(t))return {say:"Show me the "+term+" you worked from.",hint:"One photo, close enough to read."};
-    if(/team|communicat/.test(t))return {say:"Show me the team at work.",hint:"One photo. Ask before you photograph anyone."};
-    if(/tool/.test(t))return {say:"Show me the "+term+".",hint:"One photo, laid out so each tool can be seen."};
-    return {say:"Show me the "+term+".",hint:"Take two: a close-up, and one from further back."};
+    for(const [re,fn] of SHOTS)if(re.test(t)){const [say,hint]=fn(term);return {say,hint}}
+    return {say:"Photograph the "+term+" in your work.",hint:"Stand back so it’s clear where the "+term+" sits in the job. Then move in close to show the detail: joints, levels and fixings."};
   }
   /* Questions for the write-up: specific where the topic is common across trades, otherwise how and why. */
   const ASK=[

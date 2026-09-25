@@ -264,7 +264,7 @@
       sheet("MY PROGRESS","Evidence quality",
         (S.coverage!=null?'<div class="pv-dial-big">'+dial(S.coverage)+'<div class="pv-dial-num">'+num(S.coverage,"%")+'<span>key points covered</span></div></div>':'<p class="pv-empty">Submit a unit with a write-up and Evia will score it.</p>')+
         (checks.length?'<div class="pv-rows">'+checks.map((c,i)=>{const p=Math.round(c.covered.length/c.terms.length*100);return '<span class="pv-row"><span class="pv-row-top"><span>'+esc(c.u.name)+'</span><strong>'+p+'%</strong></span>'+bar(p,p<50?"low":p>=80?"good":"",i*50)+'<small class="pv-row-note">'+c.photos+' photo'+(c.photos===1?"":"s")+' · '+c.words+' words'+(c.missing.length?' · missing: '+esc(c.missing.slice(0,4).join(", "))+(c.missing.length>4?"…":""):"")+'</small></span>'}).join("")+'</div>':"")+
-        note("Strong evidence has 6 or more clear photos from the start, middle and end of the job, and a write-up that mentions each key point, explains the steps and says what you learned. Each evidence pack shows its strength as you work."));
+        note("Strong evidence has plenty of photos from the start, middle and end of the job, and a write-up that talks about the things to mention in your own words. Evia can guide you through a pack if you’re not sure where to start."));
     }
     else if(id==="targets"){
       const T2=window.eviaTargets,tg=T2?T2.mine():[];

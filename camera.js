@@ -38,7 +38,7 @@
       (guide?'<div class="cam-guide" aria-live="polite"><span class="evia-mini" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span><div><small class="cam-guide-n"></small><p class="cam-guide-say"></p><span class="cam-guide-hint"></span></div></div>':
        prompts.length?'<div class="cam-prompts"><span class="cam-prompts-h">Things to capture</span><p>'+prompts.map(escHtml).join('<span class="cam-dot" aria-hidden="true"> · </span>')+'</p></div>':"")+
       '<div class="cam-strip" aria-label="Photos taken"></div>'+
-      '<footer class="cam-bottom"><span></span><button type="button" class="cam-shutter" aria-label="Take photo"><i></i></button><button type="button" class="cam-done" disabled>Done</button></footer>');
+      '<footer class="cam-bottom"><label class="cam-gallery"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 16.5l5-5 4 4 3-3 4 4"/></svg><span>Gallery</span><input type="file" accept="image/*" multiple hidden></label><button type="button" class="cam-shutter" aria-label="Take photo"><i></i></button><button type="button" class="cam-done" disabled>Done</button></footer>');
     const video=el.querySelector("video"),strip=el.querySelector(".cam-strip"),count=el.querySelector(".cam-count"),doneBtn=el.querySelector(".cam-done"),shutter=el.querySelector(".cam-shutter");
     const refresh=()=>{
       count.textContent=shots.length+" photo"+(shots.length===1?"":"s");
@@ -66,8 +66,11 @@
       },"image/jpeg",.88);
     };
     shutter.onclick=take;
+    /* Photos already on the phone can be added without leaving the camera (and count for the current guided step). */
+    const pick=el.querySelector(".cam-gallery input");
+    pick.onchange=()=>{[...pick.files].filter(f=>f&&f.size&&/^image\//.test(f.type||"image/")).forEach(f=>shots.push({blob:f,url:URL.createObjectURL(f),takenAt:f.lastModified||Date.now()}));pick.value="";refresh()};
     const finish=keep=>{
-      const files=keep?shots.map((s,i)=>{const f=new File([s.blob],"photo-"+stamp()+"-"+(i+1)+".jpg",{type:"image/jpeg"});f.eviaTakenAt=Date.now();return f}):[];
+      const files=keep?shots.map((s,i)=>{const f=new File([s.blob],"photo-"+stamp()+"-"+(i+1)+".jpg",{type:s.blob.type||"image/jpeg"});f.eviaTakenAt=s.takenAt||Date.now();return f}):[];
       shots.forEach(s=>URL.revokeObjectURL(s.url));closeOverlay(el,stream);
       if((files.length||guide)&&opts.onDone)opts.onDone(files);
     };
