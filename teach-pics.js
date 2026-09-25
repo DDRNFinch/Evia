@@ -265,9 +265,10 @@
       '<rect class="tp-tape" x="14" y="30" width="70" height="62" rx="14"/><circle class="tp-hub" cx="49" cy="61" r="12"/>'+
       '<rect class="tp-blade" x="80" y="52" width="226" height="22" rx="2"/>'+Array.from({length:23},(_,k)=>'<path class="tp-tick" d="M'+(88+k*9.5)+' 52 V'+(k%5===0?66:59)+'"/>').join("")+
       '<text x="88" y="90">0</text><text x="135.5" y="90">50</text><text x="183" y="90">100</text><text x="230.5" y="90">150</text><text x="278" y="90">200 mm</text>',"A tape measure marked in millimetres"),
-    area:()=>svg(320,130,
-      '<rect class="tp-wall" x="70" y="20" width="180" height="72" rx="3"/>'+Array.from({length:5},(_,k)=>'<path class="tp-thin" d="M70 '+(32+k*12)+' H250"/>').join("")+
-      '<path class="tp-dim" d="M70 106 H250 M70 101 V111 M250 101 V111 M262 20 V92 M257 20 H267 M257 92 H267"/><text x="160" y="124">5 m</text><text x="286" y="60">2 m</text>',"A wall 5 metres long and 2 metres high"),
+    /* A room in plan, 4 m by 3 m, drawn to scale (40 px a metre). */
+    area:()=>svg(320,154,'<rect class="tp-floor" x="80" y="10" width="160" height="120" rx="1"/>'+Array.from({length:3},(_,k)=>'<path class="tp-gridl" d="M'+(120+k*40)+' 10 V130"/>').join("")+Array.from({length:2},(_,k)=>'<path class="tp-gridl" d="M80 '+(50+k*40)+' H240"/>').join("")+
+      '<rect class="tp-wallo" x="80" y="10" width="160" height="120"/>'+'<path class="tp-dim" d="M80 0 H240 M80 -4 V4 M240 -4 V4"/>'+t(160,-6,"4 m","tp-sm")+'<path class="tp-dim" d="M256 10 V130 M252 10 H260 M252 130 H260"/>'+t(276,74,"3 m","tp-sm"),
+      "A room in plan 4 metres by 3 metres, with a 1 metre grid showing its 12 square metres","0 -20"),
     write:()=>svg(320,120,
       '<rect class="tp-page" x="70" y="10" width="180" height="104" rx="8"/>'+[0,1,2,3,4].map(k=>'<path class="tp-thin" d="M88 '+(34+k*16)+' H232"/>').join("")+
       '<text class="tp-hand" x="160" y="30">First, I checked the drawings.</text><text class="tp-hand" x="160" y="46">Then I set out the job.</text><text class="tp-hand" x="160" y="62">Finally, I checked the quality.</text>'+
@@ -568,6 +569,50 @@
       return '<g transform="translate('+x+' 6)"><rect class="tp-brick" x="0" y="0" width="60" height="39"/><rect class="tp-brick" x="0" y="45" width="60" height="39"/>'+j[1]+'<path class="tp-face" d="M0 -2 V86"/></g>'+t(x+30,108,j[0],"tp-sm")}).join("")+
       '<path class="tp-thin" d="M124 51 H72"/>'+t(150,54,"15 mm+","tp-xs"),
       "Repointing cut through the wall, face on the left: the joint raked out at least 15 millimetres deep, then refilled with new mortar to the face")
+  });
+  /* ---------- Maths and English ---------- */
+  Object.assign(P,{
+    /* A number line from −6 to 10 with a jump from −2 to 9 (warming by 11 degrees). */
+    numline:()=>{const x=v=>40+(v+6)*15;let o='<path class="tp-line" d="M'+x(-6)+' 60 H'+x(10)+'"/>';
+      for(let v=-6;v<=10;v++)o+='<path class="tp-tickc" d="M'+x(v)+' 55 V'+(v%2?62:65)+'"/>'+(v%2?"":t(x(v),80,String(v).replace("-","−"),"tp-sm"));
+      return svg(320,90,o+'<path class="tp-arrow" d="M'+x(-2)+' 50 Q'+x(3.5)+' 6 '+x(9)+' 50"/><path class="tp-arrowh" d="M'+(x(9)-7)+' 43 L'+x(9)+' 50 L'+(x(9)+2)+' 41"/>'+t(x(3.5),22,"+11","tp-sm"),
+        "A number line from minus 6 to 10 with a jump from minus 2 up to 9, which is 11")},
+    /* The same amount three ways: a bar split into quarters with three shaded. */
+    fdp:()=>svg(320,90,Array.from({length:4},(_,k)=>'<rect class="'+(k<3?"tp-bar":"tp-barx")+'" x="'+(40+k*60)+'" y="14" width="60" height="30"/>').join("")+t(160,70,"¾  =  0.75  =  75%","tp-mid"),"A bar split into four equal parts with three shaded: three quarters, 0.75, 75 percent"),
+    /* Site waste by type: half timber, a quarter bricks, an eighth plasterboard, an eighth other. */
+    pie:()=>{const cx=90,cy=65,R=52,seg=(a0,a1,c)=>{const p=a=>r(cx+R*Math.sin(a*Math.PI/180))+' '+r(cy-R*Math.cos(a*Math.PI/180));return '<path class="'+c+'" d="M'+cx+' '+cy+' L'+p(a0)+' A'+R+' '+R+' 0 '+(a1-a0>180?1:0)+' 1 '+p(a1)+' Z"/>'};
+      const parts=[["Timber",0,180,"tp-pie1"],["Bricks",180,270,"tp-pie2"],["Plasterboard",270,315,"tp-pie3"],["Other",315,360,"tp-pie4"]];
+      return svg(320,130,parts.map(p=>seg(p[1],p[2],p[3])).join("")+parts.map((p,i)=>'<rect class="'+p[3]+'" x="180" y="'+(24+i*22)+'" width="14" height="14" rx="3"/>'+'<text x="202" y="'+(35+i*22)+'" style="text-anchor:start">'+esc(p[0])+'</text>').join(""),
+        "A pie chart of site waste: timber half, bricks a quarter, plasterboard an eighth and other an eighth")},
+    /* Deliveries a day, Monday to Friday: 3, 5, 3, 8, 6. */
+    bars:()=>{const d=[["Mon",3],["Tue",5],["Wed",3],["Thu",8],["Fri",6]],y=v=>110-v*10;let o="";
+      for(let v=0;v<=10;v+=2)o+='<path class="tp-gridl" d="M60 '+y(v)+' H290"/>'+t(48,y(v)+4,String(v),"tp-xs");
+      return svg(320,130,o+d.map((b,i)=>'<rect class="tp-bar" x="'+(74+i*44)+'" y="'+y(b[1])+'" width="28" height="'+b[1]*10+'"/>'+t(88+i*44,124,b[0],"tp-xs")).join("")+'<path class="tp-line" d="M60 6 V110 H290"/>',
+        "A bar chart of deliveries each day: Monday 3, Tuesday 5, Wednesday 3, Thursday 8, Friday 6")},
+    /* A right-angled triangle: 90°, 35° and the unknown angle. */
+    triangle:()=>svg(320,120,'<path class="tp-tri" d="M100 104 H228 L100 14 Z"/><path class="tp-thin" d="M100 92 H112 V104"/><path class="tp-arrow" d="M200 104 A28 28 0 0 0 205.1 88"/>'+t(118,86,"90°","tp-sm")+t(180,98,"35°","tp-sm")+t(112,44,"?","tp-mid"),
+      "A right-angled triangle with angles of 90 degrees and 35 degrees, and the third angle unknown"),
+    /* A concrete trench fill as a box: 10 m long, 0.6 m wide, 0.2 m deep (not to scale). */
+    trench:()=>svg(320,120,'<path class="tp-conc" d="M40 60 H250 L280 40 H70 Z"/><path class="tp-conc" d="M40 60 H250 V84 H40 Z"/><path class="tp-conc" d="M250 60 L280 40 V64 L250 84 Z"/>'+
+      '<path class="tp-dim" d="M40 98 H250 M40 94 V102 M250 94 V102"/>'+t(145,113,"10 m","tp-sm")+'<path class="tp-dim" d="M262 90 L292 70"/>'+t(300,92,"0.6 m","tp-sm")+'<path class="tp-dim" d="M28 60 V84 M24 60 H32 M24 84 H32"/>'+t(30,52,"0.2 m","tp-sm"),
+      "A block of concrete 10 metres long, 0.6 metres wide and 0.2 metres deep"),
+    /* The probability scale from 0 to 1. */
+    probline:()=>{const x=v=>40+v*240;return svg(320,80,'<path class="tp-line" d="M40 34 H280"/>'+[[0,"0","Impossible"],[.5,"½","Even"],[1,"1","Certain"]].map(p=>'<path class="tp-tickc" d="M'+x(p[0])+' 26 V42"/>'+t(x(p[0]),18,p[1],"tp-sm")+t(x(p[0]),60,p[2],"tp-xs")).join("")+
+      '<path class="tp-tickc" d="M'+x(.25)+' 30 V38 M'+x(.75)+' 30 V38"/>'+t(x(.25),60,"Unlikely","tp-xs")+t(x(.75),60,"Likely","tp-xs"),"The probability scale from 0, impossible, through a half, even chance, to 1, certain")},
+    /* A 4.8 m run with posts every 1.2 m: 4 gaps, 5 posts. */
+    posts:()=>svg(320,90,'<path class="tp-rail2" d="M40 30 H280"/>'+[0,1,2,3,4].map(k=>'<rect class="tp-tim2" x="'+(35+k*60)+'" y="20" width="10" height="44"/>').join("")+'<path class="tp-ground" d="M20 64 H300"/>'+
+      '<path class="tp-dim" d="M40 76 H100 M40 72 V80 M100 72 V80"/>'+t(70,88,"1.2 m","tp-xs")+t(210,88,"4.8 m in all","tp-xs"),"A fence 4.8 metres long with posts every 1.2 metres: 4 gaps and 5 posts"),
+    /* A short, well laid-out work email. */
+    email:()=>svg(320,150,'<rect class="tp-page" x="14" y="6" width="292" height="140" rx="8"/><path class="tp-thin" d="M14 44 H306"/>'+
+      '<text x="28" y="22" style="text-anchor:start" class="tp-xs">To: Site office</text><text x="28" y="37" style="text-anchor:start">Subject: Delivery for 14 High St on Friday</text>'+
+      '<text x="28" y="62" style="text-anchor:start">Dear Jo,</text><text x="28" y="80" style="text-anchor:start" class="tp-xs">The bricks will arrive on Friday at 8am.</text>'+
+      '<text x="28" y="94" style="text-anchor:start" class="tp-xs">Please keep the gate open so we can unload.</text><text x="28" y="118" style="text-anchor:start">Kind regards,</text><text x="28" y="134" style="text-anchor:start">Sam</text>',
+      "A work email with a To line, a clear subject line, a greeting, two short lines saying why and what’s needed, and a sign-off with a name"),
+    /* A delivery note. */
+    delnote:()=>{const rows=[["Facing bricks","2,000"],["Wall ties","250"],["Steel lintels","4"],["Building sand","1 bulk bag"],["Cement","10 bags"]];
+      return svg(320,150,'<rect class="tp-page" x="40" y="6" width="240" height="140" rx="6"/>'+t(160,24,"DELIVERY NOTE","tp-sm")+'<path class="tp-thin" d="M40 32 H280 M200 32 V146"/>'+
+        rows.map((w,i)=>'<text x="54" y="'+(52+i*20)+'" style="text-anchor:start" class="tp-xs">'+esc(w[0])+'</text><text x="240" y="'+(52+i*20)+'" class="tp-xs">'+esc(w[1])+'</text>').join(""),
+        "A delivery note listing facing bricks 2,000, wall ties 250, steel lintels 4, building sand 1 bulk bag and cement 10 bags")}
   });
   /* The old simple bucket, kept for any lesson that still uses it. */
   P.sbucket=()=>svg(120,100,sbucket(40,34,"tp-sand"),"A bucket");

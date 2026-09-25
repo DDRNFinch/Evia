@@ -1902,3 +1902,5 @@ html body .tp .tp-mid{font-size:24px;font-weight:800;fill:var(--ui-ink)}html bod
 .tp-trench{fill:#cbb08a;stroke:#8a6d45;stroke-width:1}.tp-bm{fill:var(--ui-ink);stroke:var(--ui-ink);stroke-width:1.6}
 .tp-aircrete{fill:#eceae4;stroke:#8a8f97;stroke-width:.8}.tp-scoop{fill:#c5ccd4;stroke:#4b5563;stroke-width:1.4}.tp-teeth2{fill:none;stroke:#4b5563;stroke-width:1.4;stroke-linejoin:round}
 .tp-rod{fill:none;stroke:#c8935a;stroke-width:4;stroke-linecap:round}.tp-gridl{stroke:rgba(16,24,40,.12);stroke-width:1}.tp-bar{fill:var(--yellow);stroke:var(--yellow-ink);stroke-width:1}
+.tp-floor{fill:#efe6d4}.tp-wallo{fill:none;stroke:var(--ui-ink);stroke-width:4}.tp-barx{fill:none;stroke:var(--yellow-ink);stroke-width:1.5}
+.tp-pie1{fill:#c8935a}.tp-pie2{fill:#b85a3c}.tp-pie3{fill:#dfe3e8;stroke:#9aa1ab}.tp-pie4{fill:#8b939e}.tp-rail2{fill:none;stroke:#cf9b5f;stroke-width:6}
