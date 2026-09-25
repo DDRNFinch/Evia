@@ -35,7 +35,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       hours.push({id:"h1",n:3,description:"Toolbox talk",createdAt:Date.now()});persist();render()});
     await page.waitForTimeout(500);
 
-    check("The app opens on My course; the nav is My course, Evia and My progress",await page.evaluate(()=>screen==="course"&&!!document.getElementById("ui-course-head")&&[...document.querySelectorAll("[data-nav]")].map(b=>b.textContent.trim()).join()==="My course,My progress"));
+    check("The app opens on My course; the nav is Course, Progress, Evia, Teach me and Rewards",await page.evaluate(()=>screen==="course"&&!!document.getElementById("ui-course-head")&&[...document.querySelectorAll("[data-nav]")].map(b=>b.textContent.trim()).join()==="Course,Progress,Teach me,Rewards"));
     for(const s of ["course","progress","portfolio","learning"]){await page.evaluate(s=>nav(s),s);await page.waitForTimeout(450)}
     await page.evaluate(()=>nav("progress"));await page.waitForTimeout(450);
     check("My progress says when the next review is due",await page.evaluate(()=>!window.eviaReviewDue()||!!document.querySelector(".pv-review-line")));
@@ -216,9 +216,10 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     // Teach me: the tile, a lesson played through, and Evia's view in the confidence check.
     await page.evaluate(()=>{course="bricklayer";persist();document.getElementById("modal-root").innerHTML="";nav("course")});await page.waitForTimeout(500);
     await page.evaluate(()=>{window.chat({quiet:true});setTimeout(()=>window.eviaCoachFlows.upskill(),200)});await page.waitForTimeout(2500);
-    await page.evaluate(()=>[...document.querySelectorAll(".ui-replies button")].find(b=>/Teach me/.test(b.textContent)).click());await page.waitForTimeout(2500);
-    check("Upskill me has Teach me, with my course, maths and English, and no tile on My course",await page.evaluate(()=>{const t=[...document.querySelectorAll(".ui-replies button")].map(b=>b.textContent);return ["My course","Maths","English"].every(x=>t.includes(x))&&!document.querySelector(".tm-tile")}));
-    await page.evaluate(()=>[...document.querySelectorAll(".ui-replies button")].find(b=>b.textContent==="My course").click());await page.waitForTimeout(600);
+    const upskillHasTeach=await page.evaluate(()=>[...document.querySelectorAll(".ui-replies button")].some(b=>/Teach me/.test(b.textContent)));
+    await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";nav("teach")});await page.waitForTimeout(600);
+    check("Teach me is a tab with the course, maths and English, and it's no longer in Upskill me",!upskillHasTeach&&await page.evaluate(()=>{const t=[...document.querySelectorAll("[data-go] strong")].map(b=>b.textContent);return t.join()==="Bricklayer,Maths,English"&&!document.querySelector(".tm-tile")}));
+    await page.evaluate(()=>document.querySelector('[data-go="course"]').click());await page.waitForTimeout(600);
     // Teach me: play the whole Mixing mortar unit (every kind of screen, a mistake to fix and a surprise question),
     // then an older-style lesson, then leave one part-way and carry on from the same screen.
     await page.addScriptTag({path:path.join(__dirname,"teach-solver.js")});

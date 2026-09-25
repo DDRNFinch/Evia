@@ -88,7 +88,7 @@
     if(!root)return;document.removeEventListener("keydown",onKey);
     if(window.eviaOtj)window.eviaOtj.flush();
     const r=root;root=null;r.classList.add("tm-out");setTimeout(()=>r.remove(),reduced()?0:200);
-    if(typeof render==="function"&&typeof screen!=="undefined"&&(screen==="course"||screen==="learning"))render();
+    if(typeof render==="function"&&typeof screen!=="undefined"&&["course","learning","teach"].includes(screen))render();
   }
   const LOCK='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="11" width="12" height="9" rx="2"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>';
   /* About how long a lesson takes: teaching screens are quick, games a little longer. */

@@ -1904,3 +1904,17 @@ html body .tp .tp-mid{font-size:24px;font-weight:800;fill:var(--ui-ink)}html bod
 .tp-rod{fill:none;stroke:#c8935a;stroke-width:4;stroke-linecap:round}.tp-gridl{stroke:rgba(16,24,40,.12);stroke-width:1}.tp-bar{fill:var(--yellow);stroke:var(--yellow-ink);stroke-width:1}
 .tp-floor{fill:#efe6d4}.tp-wallo{fill:none;stroke:var(--ui-ink);stroke-width:4}.tp-barx{fill:none;stroke:var(--yellow-ink);stroke-width:1.5}
 .tp-pie1{fill:#c8935a}.tp-pie2{fill:#b85a3c}.tp-pie3{fill:#dfe3e8;stroke:#9aa1ab}.tp-pie4{fill:#8b939e}.tp-rail2{fill:none;stroke:#cf9b5f;stroke-width:6}
+
+/* ---------- Five tabs: Course · Progress · Evia · Teach me · Rewards ---------- */
+html body .bottom-nav{grid-template-columns:1fr 1fr 96px 1fr 1fr}
+html body .bottom-nav .nav-icon svg{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+html body .bottom-nav button{min-width:0}
+@media(max-width:380px){html body .bottom-nav{grid-template-columns:1fr 1fr 84px 1fr 1fr}}
+/* Teach me page: the course, maths and English */
+.tt-list{display:flex;flex-direction:column;border-radius:20px;background:#fff;border:1px solid var(--ui-line,#e8ebef);overflow:hidden;margin-bottom:16px}
+.tt-card{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:16px 14px;cursor:pointer}.tt-card+.tt-card{border-top:1px solid var(--ui-line,#e8ebef)}
+.tt-ic{flex:0 0 auto;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--soft);color:var(--yellow-ink)}
+.tt-ic svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tt-copy{flex:1;min-width:0}.tt-copy strong{display:block;font-size:16px;color:var(--ui-ink,#172033)}.tt-copy small{display:block;font-size:12.5px;color:var(--ui-muted,#667085);margin-top:2px}
+.tt-bar{display:block;height:6px;margin-top:8px;border-radius:3px;background:#eef1f5;overflow:hidden}.tt-bar>i{display:block;height:100%;border-radius:3px;background:var(--yellow)}
+.tt-chev{font-size:22px;color:#b5becb}
