@@ -215,8 +215,10 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
 
     // Teach me: the tile, a lesson played through, and Evia's view in the confidence check.
     await page.evaluate(()=>{course="bricklayer";persist();document.getElementById("modal-root").innerHTML="";nav("course")});await page.waitForTimeout(500);
-    check("My course has a Teach me tile",await page.evaluate(()=>!!document.getElementById("ui-open-teach")));
-    await page.evaluate(()=>document.getElementById("ui-open-teach").click());await page.waitForTimeout(400);
+    await page.evaluate(()=>{window.chat({quiet:true});setTimeout(()=>window.eviaCoachFlows.upskill(),200)});await page.waitForTimeout(2500);
+    await page.evaluate(()=>[...document.querySelectorAll(".ui-replies button")].find(b=>/Teach me/.test(b.textContent)).click());await page.waitForTimeout(2500);
+    check("Upskill me has Teach me, with my course, maths and English, and no tile on My course",await page.evaluate(()=>{const t=[...document.querySelectorAll(".ui-replies button")].map(b=>b.textContent);return ["My course","Maths","English"].every(x=>t.includes(x))&&!document.querySelector(".tm-tile")}));
+    await page.evaluate(()=>[...document.querySelectorAll(".ui-replies button")].find(b=>b.textContent==="My course").click());await page.waitForTimeout(600);
     const played=await page.evaluate(async()=>{
       const w=ms=>new Promise(r=>setTimeout(r,ms)),go=()=>document.querySelector(".tm-go").click();
       const play=async id=>{
@@ -246,21 +248,21 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       O.start("teach|Mixing mortar",{description:"Teach me: interactive lessons with Evia on Mixing mortar"});O._add("teach|Mixing mortar",125000);O.stop("teach|Mixing mortar",{learned:"Mixing it"});
       const e=hours.find(x=>x.auto&&x.autoKey&&x.autoKey.startsWith("teach|Mixing mortar"));
       const p=JSON.parse(localStorage.getItem("evia7-profile")||"{}");p.mathsEnabled=true;localStorage.setItem("evia7-profile",JSON.stringify(p));
-      window.eviaTeach.open();await w(100);const b=document.querySelector('[data-lesson="ma1"]');if(b)b.click();await w(100);
+      window.eviaTeach.open("maths");await w(100);const b=document.querySelector('[data-lesson="ma1"]');if(b)b.click();await w(100);
       const mathsTimed=O.running("teach|Maths");document.querySelector(".tm-x").click();await w(80);document.querySelector(".tm-x").click();await w(250);
       return {logged:!!e&&e.mins===2&&hours.length===before+1,learned:!!e&&/Mixing it/.test(e.learned),maths:!!b,mathsTimed};
     });
     check("Teach me time is logged to off-the-job hours automatically, by the minute",otj.logged&&otj.learned);
     check("Maths lessons are there but don't count towards off-the-job hours",otj.maths&&!otj.mathsTimed);
 
-    // Maths and English: switching one on in the profile works straight away, even if it's closed with ×.
+    // Maths and English lessons are always there from Evia; the profile switch saves straight away.
     const fsOn=await page.evaluate(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms));
       const p=JSON.parse(localStorage.getItem("evia7-profile")||"{}");p.englishEnabled=false;localStorage.setItem("evia7-profile",JSON.stringify(p));
       window.eviaOpenProfile();await w(300);const sw=document.getElementById("profile-english");sw.checked=true;sw.dispatchEvent(new Event("change",{bubbles:true}));
       document.getElementById("profile-close").click();await w(100);
-      window.eviaTeach.open();await w(150);const ok=!!document.querySelector('[data-lesson="en1"]');document.querySelector(".tm-x").click();await w(250);
+      window.eviaTeach.open("english");await w(150);const ok=!!document.querySelector('[data-lesson="en1"]');document.querySelector(".tm-x").click();await w(250);
       return ok&&JSON.parse(localStorage.getItem("evia7-profile")).englishEnabled===true});
-    check("Switching English on in the profile adds English to Teach me, even when the profile is closed without saving",fsOn);
+    check("English lessons open from Teach me, and the profile switch saves even when closed without saving",fsOn);
 
     // Backup and restore: a learner's portfolio survives being restored and the app reloading.
     const keep=await page.evaluate(()=>evidence.length);

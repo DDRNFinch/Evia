@@ -149,11 +149,16 @@
     k.say(k.pick(["Love it. What do you fancy?","Let’s get you better at something. Pick one:"]));
     const list=[{label:"A college task",primary:true,run:upskillTask}];
     if(sp&&sp.total)list.push({label:"A real-life scenario",run:scenario});
-    /* Teach me replaces the quick question where the course has lessons (teach.js). */
-    if(window.eviaTeach&&window.eviaTeach.available())list.push({label:"Teach me",run:()=>{k.closeChat();setTimeout(window.eviaTeach.open,80)}});
+    /* Teach me: short interactive lessons (teach.js) on the course, maths or English. */
+    if(window.eviaTeach)list.push({label:"Teach me",run:teachMe});
     else list.push({label:"A quick question",run:()=>window.eviaTestMe&&window.eviaTestMe({type:"epa",count:1})});
     list.push({label:"Something else",run:k.somethingElse});
     k.replies(list);
+  }
+  function teachMe(){
+    const k=K(),T=window.eviaTeach,go=w=>()=>{k.closeChat();setTimeout(()=>T.open(w),80)};
+    k.say("What would you like me to teach you?");
+    k.replies([{label:"My course",primary:true,run:go("course")},{label:"Maths",run:go("maths")},{label:"English",run:go("english")},{label:"Something else",run:k.somethingElse}]);
   }
   /* A college task as a card in the chat: Evia's pick if the confidence check has low skills, otherwise any. */
   function upskillTask(){

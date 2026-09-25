@@ -160,8 +160,9 @@
   const profile=()=>{try{return JSON.parse(localStorage.getItem("evia7-profile")||"{}")||{}}catch(_){return {}}};
   /* Trade units for the course, then maths and English if they're switched on in the profile. */
   const trade=()=>COURSES[typeof course!=="undefined"?course:""]||[];
-  const units=()=>{const p=profile();return trade().concat(FS.filter(u=>(u.fs==="maths"&&p.mathsEnabled)||(u.fs==="english"&&p.englishEnabled)))};
-  const available=()=>units().length>0;
+  const units=()=>trade().concat(FS);
+  const available=()=>true;
+  const hasCourse=()=>trade().length>0;
   const isDone=(L,l)=>!!(L[l.id]&&L[l.id].done);
   function summary(){
     const L=mine(),all=[].concat(...units().map(u=>u.lessons)),done=all.filter(l=>isDone(L,l)).length;
@@ -191,7 +192,7 @@
     document.body.appendChild(root);
     onKey=e=>{if(e.key==="Escape")close()};document.addEventListener("keydown",onKey);
   }
-  function open(){shell("Teach me");path()}
+  function open(which){section=which==="maths"||which==="english"?which:"course";shell("Teach me");path()}
   function close(){
     if(!root)return;document.removeEventListener("keydown",onKey);
     if(window.eviaOtj)window.eviaOtj.flush();
@@ -210,25 +211,29 @@
           '<span class="tm-label"><strong>'+esc(l.title)+'</strong><small>'+esc(l.blurb)+(r?' · best '+Math.round(r.best*100)+'%':"")+'</small></span></button></li>';
       }).join("")+'</ol></section>';
   }
+  /* Teach me opens on one section, chosen in Evia's chat: the course, maths or English. */
+  let section="course";
+  const sectionUnits=()=>section==="course"?trade():FS.filter(u=>u.fs===section);
   function path(){
-    const L=mine(),tr=trade(),fs=units().filter(u=>u.fs),all=[].concat(...units().map(u=>u.lessons)),s=summary(),p=profile();
-    const name=String(p.name||"").split(/\s+/)[0];
-    const say=s.done===0?"Hi"+(name?" "+esc(name):"")+"! I’ll teach you "+(tr.length?"everything in each unit":"step by step")+", a few minutes at a time. Tap a lesson to start.":
-      s.done===s.total?"You’ve finished every lesson here. Nice work! Replay any lesson to beat your score.":
-      "Welcome back"+(name?", "+esc(name):"")+". Next up: <strong>"+esc(s.next)+"</strong>.";
-    const others=(typeof data==="function"?data().u.map(u=>u[0]):[]).filter(n=>!tr.some(u=>u.unit===n)).slice(0,4);
+    const L=mine(),us=sectionUnits(),all=[].concat(...us.map(u=>u.lessons)),p=profile();
+    const done=all.filter(l=>isDone(L,l)).length,next=all.find(l=>!isDone(L,l)),name=String(p.name||"").split(/\s+/)[0];
+    const title=section==="course"?"Teach me":"Teach me · "+(section==="maths"?"Maths":"English");
+    const say=!all.length?"I don’t have lessons for your course yet, but they’re on the way. You can try maths or English in the meantime.":
+      done===0?"Hi"+(name?" "+esc(name):"")+"! I’ll teach you "+(section==="course"?"everything in each unit":section==="maths"?"the maths you use on site":"clear writing for your portfolio")+", a few minutes at a time. Tap the first lesson to start.":
+      done===all.length?"You’ve finished every lesson here. Nice work! Replay any lesson to beat your score.":
+      "Welcome back"+(name?", "+esc(name):"")+". Next up: <strong>"+esc(next.title)+"</strong>.";
+    const others=section==="course"?(typeof data==="function"?data().u.map(u=>u[0]):[]).filter(n=>!us.some(u=>u.unit===n)).slice(0,4):[];
     const counter={n:0};
-    root.innerHTML='<header class="tm-bar"><button type="button" class="tm-x" aria-label="Close">×</button><strong>Teach me</strong><span class="tm-count">'+s.done+' / '+s.total+'</span></header>'+
+    root.innerHTML='<header class="tm-bar"><button type="button" class="tm-x" aria-label="Close">×</button><strong>'+title+'</strong><span class="tm-count">'+done+' / '+all.length+'</span></header>'+
       '<div class="tm-scroll">'+
         '<section class="tm-hero">'+EVIA+'<p class="tm-say">'+say+'</p></section>'+
-        tr.map(u=>unitHtml(u,L,counter)).join("")+
-        (others.length?'<section class="tm-soon"><h3>'+(tr.length?"Coming next":"Lessons for your units are coming")+'</h3>'+others.map(o=>'<div class="tm-soon-row"><span class="tm-dot sm">'+LOCK+'</span>'+esc(o)+'</div>').join("")+'</section>':"")+
-        (fs.length?'<h2 class="tm-fs-h">Maths and English</h2><p class="tm-fs-note">These help with your maths and English. They don’t count towards your off-the-job hours.</p>'+fs.map(u=>unitHtml(u,L,counter)).join(""):
-          (!p.mathsEnabled&&!p.englishEnabled?'<p class="tm-fs-note">Maths and English lessons can be switched on in your Profile.</p>':""))+
+        (section!=="course"?'<p class="tm-fs-note">Maths and English lessons don’t count towards your off-the-job hours.</p>':"")+
+        us.map(u=>unitHtml(u,L,counter)).join("")+
+        (others.length?'<section class="tm-soon"><h3>'+(us.length?"Coming next":"Lessons for your units are coming")+'</h3>'+others.map(o=>'<div class="tm-soon-row"><span class="tm-dot sm">'+LOCK+'</span>'+esc(o)+'</div>').join("")+'</section>':"")+
       '</div>';
     root.querySelector(".tm-x").onclick=close;
     root.querySelectorAll("[data-lesson]").forEach(b=>b.onclick=()=>{const l=all.find(x=>x.id===b.dataset.lesson);if(l)lesson(l)});
-    const nx=s.done?root.querySelector(".tm-node.next"):null;if(nx)setTimeout(()=>nx.scrollIntoView({block:"center",behavior:reduced()?"auto":"smooth"}),120);
+    const nx=done?root.querySelector(".tm-node.next"):null;if(nx)setTimeout(()=>nx.scrollIntoView({block:"center",behavior:reduced()?"auto":"smooth"}),120);
   }
 
   /* ---------- A lesson ---------- */
@@ -380,5 +385,5 @@
     intro();
   }
 
-  window.eviaTeach={open,available,summary,viewFor,confidence,COURSES,FS};
+  window.eviaTeach={open,available,hasCourse,summary,viewFor,confidence,COURSES,FS};
 })();
