@@ -1133,3 +1133,6 @@ button.primary,button.secondary,.pv-card,.ev-tile-main,.ev-tile-share,.unit-card
 button.primary:active,button.secondary:active,.pv-card:active,.ev-tile-main:active,.ev-tile-share:active,.unit-card:active,.cf-level:active,.hw-preset:active,.bottom-nav button:active,.ui-tile:active,.pr-row:active,.pr-task:active{transform:scale(.97)}
 @media (prefers-reduced-motion:reduce){#modal-root .overlay{animation:none}button,.pv-card,.unit-card{transition:none!important}}
 html[data-a11y-motion="reduce"] #modal-root .overlay{animation:none}
+#chat .ui-actions{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+#chat .ui-action{min-width:0}
+@media (max-width:380px){#chat .ui-action{padding:10px 8px;gap:8px;min-height:52px}#chat .ui-action strong{font-size:13px}.ui-action-icon{width:28px;height:28px}}
