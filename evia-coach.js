@@ -85,6 +85,8 @@
 
   /* ---------- Confidence check: one skill at a time ---------- */
   const LEVELS=["Need more training","Know the basics","Quite confident","Mastered"],SHORT=["Need training","Basics","Confident","Mastered"];
+  /* Evia's view of a skill from Teach me lessons, shown beside the learner's own rating. */
+  const eviaView=area=>{const v=window.eviaTeach&&window.eviaTeach.viewFor(area);return v?'<p class="cf-evia"><span class="evia-mini" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span><span>From your Teach me lessons, Evia says: <strong>'+esc(v.label)+'</strong></span></p>':""};
   function confidence(){
     const k=K(),qs=typeof confidenceQuestions==="function"?confidenceQuestions():[];
     if(!qs.length){k.say("I don’t have a skills list for your course yet.");k.replies([{label:"Something else",run:k.somethingElse}]);return}
@@ -97,7 +99,7 @@
       /* The same slider as the Practice check: four stops, and a faint dot where you were last time. */
       k.widget('<div class="cfc"><div class="cfc-top"><span>'+(i+1)+' of '+qs.length+'</span><span class="cfc-dots" aria-hidden="true">'+qs.map((_,n)=>'<i class="'+(n<i?"done":n===i?"now":"")+'"></i>').join("")+'</span></div>'+
         '<div class="cf-row'+(was?"":" unset")+'"'+(was?' data-level="'+(was<=2?"low":"high")+'"':"")+'><div class="cf-row-top"><strong id="cfc-name-'+i+'">'+esc(area)+'</strong><span class="cf-level">'+(was?esc(SHORT[was-1]):"Slide to rate")+'</span></div>'+
-        '<p class="cf-desc">'+esc(question)+'</p>'+
+        '<p class="cf-desc">'+esc(question)+'</p>'+eviaView(area)+
         '<div class="cf-track" style="--v:'+v+'"><span class="cf-stops" aria-hidden="true"><i></i><i></i><i></i><i></i></span>'+(was?'<span class="cf-last" style="--l:'+was+'" title="Last time: '+esc(LEVELS[was-1])+'"></span>':"")+'<input type="range" min="1" max="4" step="1" value="'+v+'" aria-labelledby="cfc-name-'+i+'" aria-valuetext="'+(was?esc(LEVELS[v-1]):"Not rated")+'"></div>'+
         '<div class="cfc-legend" aria-hidden="true"><span>Need training</span><span>Basics</span><span>Confident</span><span>Mastered</span></div></div>'+
         (was?'<small class="cfc-was">Last time: '+esc(LEVELS[was-1])+' (the faint dot)</small>':"")+
@@ -145,7 +147,10 @@
     k.say(k.pick(["Love it. What do you fancy?","Let’s get you better at something. Pick one:"]));
     const list=[{label:"A college task",primary:true,run:upskillTask}];
     if(sp&&sp.total)list.push({label:"A real-life scenario",run:scenario});
-    list.push({label:"A quick question",run:()=>window.eviaTestMe&&window.eviaTestMe({type:"epa",count:1})},{label:"Something else",run:k.somethingElse});
+    /* Teach me replaces the quick question where the course has lessons (teach.js). */
+    if(window.eviaTeach&&window.eviaTeach.available())list.push({label:"Teach me",run:()=>{k.closeChat();setTimeout(window.eviaTeach.open,80)}});
+    else list.push({label:"A quick question",run:()=>window.eviaTestMe&&window.eviaTestMe({type:"epa",count:1})});
+    list.push({label:"Something else",run:k.somethingElse});
     k.replies(list);
   }
   /* A college task as a card in the chat: Evia's pick if the confidence check has low skills, otherwise any. */

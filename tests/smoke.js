@@ -124,7 +124,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>{document.body.classList.add("evia-onboarding");nav("progress")});await page.waitForTimeout(200);
     check("The first-run demo can point at the KSB card on My progress",!!await page.$("#pv-ksb"));
     await page.evaluate(()=>nav("course"));await page.waitForTimeout(200);
-    check("My course has Learning logs and Progress reviews side by side under the units, for the demo to point at",await page.evaluate(()=>{const g=document.getElementById("ui-logs-grid");return !!g&&g.querySelectorAll("button").length===2&&!!g.previousElementSibling}));
+    check("My course has Learning logs and Progress reviews side by side under the units, for the demo to point at",await page.evaluate(()=>{const g=document.getElementById("ui-logs-grid");return !!g&&g.querySelectorAll(".ui-log-tile").length===2&&!!g.previousElementSibling}));
     await page.evaluate(()=>{document.body.classList.remove("evia-onboarding");nav("home")});await page.waitForTimeout(450);
 
     await page.evaluate(()=>window.eviaStartReview());await page.waitForTimeout(400);
@@ -196,6 +196,32 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>[...document.querySelectorAll(".eg-sheet button")].find(b=>/Use this statement/.test(b.textContent)).click());await page.waitForTimeout(700);
     check("Evia guides a pack through the stages of the job, then the answers become the statement",/step by step/i.test(q1)&&/cavity closure/.test(q1)&&await page.evaluate(()=>document.getElementById("write").value==="I fitted the cavity closer at the reveal.\n\nThe ties go in at 450 centres."));
     await page.evaluate(()=>{const w=document.getElementById("write");w.value="";w.dispatchEvent(new Event("input"))});
+
+    // Teach me: the tile, a lesson played through, and Evia's view in the confidence check.
+    await page.evaluate(()=>{course="bricklayer";persist();document.getElementById("modal-root").innerHTML="";nav("course")});await page.waitForTimeout(500);
+    check("My course has a Teach me tile",await page.evaluate(()=>!!document.getElementById("ui-open-teach")));
+    await page.evaluate(()=>document.getElementById("ui-open-teach").click());await page.waitForTimeout(400);
+    const played=await page.evaluate(async()=>{
+      const w=ms=>new Promise(r=>setTimeout(r,ms)),go=()=>document.querySelector(".tm-go").click();
+      const play=async id=>{
+        document.querySelector('[data-lesson="'+id+'"]').click();await w(100);
+        const L=[].concat(...window.eviaTeach.COURSES.bricklayer.map(u=>u.lessons)).find(l=>l.id===id);
+        for(const s of L.steps){
+          if(s.t==="learn"){go();await w(60);continue}
+          if(s.t==="choice"||s.t==="tf"){const a=s.t==="tf"?(s.a?0:1):s.a;document.querySelector('.tm-opt[data-k="'+a+'"]').click();go();await w(40);go();await w(60);continue}
+          if(s.t==="match"){for(let k=0;k<s.pairs.length;k++){document.querySelector('.tm-m[data-side=l][data-k="'+k+'"]').click();document.querySelector('.tm-m[data-side=r][data-k="'+k+'"]').click()}await w(40);go();await w(60);continue}
+          if(s.t==="order"){for(let k=0;k<s.items.length;k++)document.querySelector('.tm-pool [data-in="'+k+'"]').click();go();await w(40);go();await w(60)}
+        }
+        const ok=/Lesson complete/.test(document.querySelector(".tm").textContent);document.querySelector("#tm-path").click();await w(80);return ok;
+      };
+      const a=await play("mm1"),b=await play("mm2");
+      return a&&b&&document.querySelectorAll(".tm-node.done").length===2&&!!document.querySelector(".tm-node.next");
+    });
+    check("A Teach me lesson plays through (learn, match, choice, true or false) and the path moves on",played);
+    await page.evaluate(()=>document.querySelector(".tm-x").click());await page.waitForTimeout(300);
+    await page.evaluate(()=>window.eviaPractice.openConfidence());await page.waitForTimeout(400);
+    check("The confidence check shows Evia's view from the lessons beside the learner's own rating",await page.evaluate(()=>/Evia says: Mastered|Evia says: Confident/.test((document.querySelector(".cf-evia")||{}).textContent||"")));
+    await page.evaluate(()=>{document.getElementById("modal-root").innerHTML=""});
 
     // Backup and restore: a learner's portfolio survives being restored and the app reloading.
     const keep=await page.evaluate(()=>evidence.length);

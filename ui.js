@@ -279,7 +279,10 @@
     const last=otjBatches[otjBatches.length-1],cutoff=Number(last?last.cutoff:0),fresh=hours.filter(x=>Number(x.createdAt)>cutoff).length;
     const reviews=window.eviaGetReviews?window.eviaGetReviews().length:0,total=hours.reduce((n,x)=>n+Number(x.n||0),0),rd=window.eviaReviewDue&&window.eviaReviewDue();
     const tile=(id,cls,iconSvg,value,label,sub)=>'<button type="button" class="ui-log-tile '+cls+'" id="'+id+'"><span class="ui-log-top"><span class="ui-log-icon">'+iconSvg+'</span><span class="ui-log-chev" aria-hidden="true">›</span></span><b class="ui-log-value">'+value+'</b><strong>'+label+'</strong><small>'+sub+'</small></button>';
-    return '<h2 class="ui-section-label">Learning and reviews</h2><div class="ui-logs-grid" id="ui-logs-grid">'+
+    /* Teach me: short interactive lessons (teach.js), where the course has them. */
+    const T=window.eviaTeach&&window.eviaTeach.available()?window.eviaTeach.summary():null;
+    const teach=T?'<button type="button" class="tm-tile" id="ui-open-teach"><span class="tm-tile-evia evia-mini" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span><span class="tm-tile-copy"><strong>Teach me</strong><small>'+(T.done===T.total?"All "+T.total+" lessons done · replay any time":T.done?"Next: "+escHtml(T.next):"Short lessons with Evia · "+escHtml(T.unit))+'</small><span class="tm-tile-bar"><i style="width:'+Math.round(T.done/T.total*100)+'%"></i></span></span><span class="tm-tile-n">'+T.done+'/'+T.total+'</span></button>':"";
+    return '<h2 class="ui-section-label">Learning and reviews</h2><div class="ui-logs-grid" id="ui-logs-grid">'+teach+
       tile("ui-open-logs","logs",icon(ICONS.clock),hours.length?escHtml(hmText(total)):"0 h","Learning logs",hours.length?(fresh&&last?fresh+" new to download":hours.length+" entr"+(hours.length===1?"y":"ies")):"Log hours with Evia")+
       tile("ui-open-reviews","reviews",'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 1 9-9"/><path d="M12 12l4-3"/></svg>',String(reviews),"Progress reviews",rd?(rd.days<0?"Next one overdue":"Next "+escHtml(new Date(rd.due).toLocaleDateString("en-GB",{day:"numeric",month:"short"}))):"None yet")+
     '</div>';
@@ -287,6 +290,7 @@
   function bindLogsGrid(){
     const l=$("#ui-open-logs");if(l)l.onclick=()=>openLearningLogs();
     const r=$("#ui-open-reviews");if(r)r.onclick=()=>openSavedReviews();
+    const t=$("#ui-open-teach");if(t)t.onclick=()=>window.eviaTeach.open();
   }
   /* Learning logs: every off-the-job entry, one button for the ones not downloaded yet, and past PDFs to get again. */
   function openLearningLogs(){
@@ -771,7 +775,7 @@
     });
   }
   /* Evia steps aside while any panel other than her chat is open. */
-  const panelWatch=()=>{const m=document.getElementById("modal-root");const open=!!(m&&m.querySelector(".overlay,.profile-overlay,.ksb-modal-overlay")&&!m.querySelector(".chat-sheet"))||!!document.querySelector(".dw-overlay");document.body.classList.toggle("ui-panel-open",open)};
+  const panelWatch=()=>{const m=document.getElementById("modal-root");const open=!!(m&&m.querySelector(".overlay,.profile-overlay,.ksb-modal-overlay")&&!m.querySelector(".chat-sheet"))||!!document.querySelector(".dw-overlay,.tm");document.body.classList.toggle("ui-panel-open",open)};
   new MutationObserver(()=>{enhanceDates();panelWatch()}).observe(document.getElementById("modal-root")||document.body,{childList:true,subtree:true});
   new MutationObserver(panelWatch).observe(document.body,{childList:true});
   window.eviaDateWheel=openDateWheel;

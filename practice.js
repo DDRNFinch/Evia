@@ -110,6 +110,8 @@
         return '<li class="cf-row'+(p?"":" unset")+'" data-skill="'+i+'">'+
           '<div class="cf-row-top"><strong id="cf-name-'+i+'">'+escHtml(s.area)+'</strong><span class="cf-level" id="cf-level-'+i+'">'+(p?escHtml(SHORT[v-1]):"Slide to rate")+'</span></div>'+
           '<p class="cf-desc">'+escHtml(s.desc)+'</p>'+
+          /* Evia's view from Teach me lessons, beside the learner's own rating. */
+          ((v=>v?'<p class="cf-evia"><span class="evia-mini" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span><span>From your Teach me lessons, Evia says: <strong>'+escHtml(v.label)+'</strong></span></p>':"")(window.eviaTeach&&window.eviaTeach.viewFor(s.area)))+
           '<div class="cf-track" style="--v:'+v+'">'+
             '<span class="cf-stops" aria-hidden="true"><i></i><i></i><i></i><i></i></span>'+
             (p?'<span class="cf-last" style="--l:'+p.score+'" title="Last time: '+escHtml(RATINGS[p.score-1])+'"></span>':"")+
