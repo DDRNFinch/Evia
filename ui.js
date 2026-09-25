@@ -105,7 +105,7 @@
       const run=kind==="targets"?targetsFromMenu:reviewFromMenu;
       if(inChat)queue=queue.then(run);else{window.chat({quiet:true});setTimeout(run,50)}
     }
-    else if(kind==="scenario")go(()=>window.eviaScenarios&&window.eviaScenarios.openNext());
+    else if(kind==="scenario"){const run=()=>window.eviaCoachFlows&&window.eviaCoachFlows.scenario?window.eviaCoachFlows.scenario():window.eviaScenarios.openNext();if(inChat)queue=queue.then(run);else{window.chat({quiet:true});setTimeout(run,50)}}
     else if(kind==="confidence"){const run=()=>window.eviaCoachFlows&&window.eviaCoachFlows.confidence?window.eviaCoachFlows.confidence():window.eviaPractice.openConfidence();if(inChat)queue=queue.then(run);else{window.chat({quiet:true});setTimeout(run,50)}}
     else if(kind==="test"){
       const t={epa:["epa",20],maths:["maths",5],english:["english",5]}[n.id]||["epa",5];
@@ -498,11 +498,11 @@
   }
   /* Progress review: a short click-through of sections; finishing it sets new targets. */
   function reviewFromMenu(){
-    userSays("Progress review");
+    userSays("Review me");
     const last=(window.eviaGetReviews?window.eviaGetReviews():[])[0],rd=window.eviaReviewDue?window.eviaReviewDue():null;
     if(rd)say(rd.days<0?"Your review was due on <strong>"+rd.due.toLocaleDateString("en-GB",{day:"numeric",month:"long"})+"</strong>, so now’s a good time.":"Your next review is due on <strong>"+rd.due.toLocaleDateString("en-GB",{day:"numeric",month:"long"})+"</strong>"+(rd.days<=14?", so now’s a good time.":". You can do one early whenever you like."));
-    say("I’ll take you through your review in a few short sections: evidence, learning, tests, skills and staying safe. At the end I’ll set your new targets. It takes about 3 minutes."+(last?" Your last review was on "+new Date(last.date).toLocaleDateString("en-GB",{day:"numeric",month:"short"})+".":""));
-    replies([{label:"Start my review",primary:true,run:()=>{closeChat();setTimeout(window.eviaStartReview,80)}},{label:"Not now",run:somethingElse}]);
+    say("We’ll go through it together, right here: where you are, your evidence, learning, tests, skills and staying safe. At the end I’ll set your new targets. It takes about 5 minutes."+(last?" Your last review was on "+new Date(last.date).toLocaleDateString("en-GB",{day:"numeric",month:"short"})+".":""));
+    replies([{label:"Start my review",primary:true,run:()=>{if(window.eviaChatReview)window.eviaChatReview();else{closeChat();setTimeout(window.eviaStartReview,80)}}},{label:"Not now",run:somethingElse}]);
   }
   /* College task: Evia's pick from the confidence check, or the full list if there isn't one. */
   function taskFromMenu(){

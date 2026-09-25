@@ -214,5 +214,8 @@
     play(n.topic,n.topic.scenarios.findIndex(s=>s.id===n.id));
   }
 
-  window.eviaScenarios={openTopics,openNext,progress,topics:TOPICS};
+  /* For Evia's chat: the next scenario to do, saving an answer, and who to talk to. */
+  function nextInfo(){const n=nextScenario();if(!n)return null;const index=n.topic.scenarios.findIndex(s=>s.id===n.id);return {topic:n.topic,index,sc:n}}
+  function record(id,best){const d=done();d[id]={at:Date.now(),best:!!best};localStorage.setItem(KEY,JSON.stringify(d))}
+  window.eviaScenarios={openTopics,openNext,progress,topics:TOPICS,nextInfo,record,contactsHtml,done};
 })();

@@ -1151,3 +1151,31 @@ html[data-a11y-motion="reduce"] #modal-root .overlay{animation:none}
 .mention-count{margin:2px 2px 10px;font-size:12.5px;font-weight:600;color:var(--ui-muted);min-height:1em}
 @media (prefers-reduced-motion:reduce){.mention-pill.pop{animation:none}}
 html[data-a11y-motion="reduce"] .mention-pill.pop{animation:none}
+
+/* Chat bubble sits just above Evia: more room to talk */
+html body .chat-sheet{bottom:128px;height:min(calc(100dvh - 146px),820px)}
+@media (max-width:520px){html body .chat-sheet{bottom:114px;height:calc(100dvh - 128px)}}
+/* Evia steps aside (slides down) while another panel is open, and pops back when it closes */
+html body .evia-fab{transition:translate .32s cubic-bezier(.3,.9,.4,1),opacity .25s ease}
+body:has(#modal-root .overlay:not(:has(.chat-sheet))) .evia-fab{translate:0 160%;opacity:0;pointer-events:none}
+/* Scenario cards in the chat */
+.scc{display:flex;flex-direction:column;gap:8px}
+.scc-kicker{font-size:11.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--ui-muted);margin:0 2px}
+.scc-opt{display:flex;flex-wrap:wrap;align-items:flex-start;gap:10px;width:100%;padding:12px;text-align:left;border-radius:16px;border:1.5px solid var(--ui-line);background:#fff;font:inherit;color:var(--ui-ink);cursor:pointer;transition:transform .12s ease,background .2s ease,border-color .2s ease}
+.scc-opt:active{transform:scale(.98)}
+.scc-letter{flex:0 0 28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#f2f4f7;font-weight:800;font-size:13px}
+.scc-text{flex:1;min-width:0;font-size:14px;font-weight:600;line-height:1.4}
+.scc-why{flex:1 1 100%;padding-left:38px;font-size:13px;line-height:1.45;color:var(--ui-text)}
+.scc-opt.best{background:#e8f7ee;border-color:#17b26a}.scc-opt.best .scc-letter{background:#17b26a;color:#fff}
+.scc-opt.other{opacity:.75}.scc-opt.other.picked{opacity:1;background:#fff4e5;border-color:#f79009}
+#chat .sc-contacts{padding:14px;border-radius:18px;background:#fff;border:1px solid var(--ui-line)}
+#chat .sc-contacts .pr-h{margin-top:0}
+/* Review sections in the chat */
+.rvc{border-radius:20px;background:#fff;border:1px solid var(--ui-line);overflow:hidden}
+.rvc-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:12px 14px 0}
+.rvc-top strong{font-size:16px;color:var(--ui-ink)}
+.rvc-top span{font-size:12px;font-weight:700;color:var(--ui-muted)}
+.rvc .rv-slide{border:0;box-shadow:none;margin:0;padding:10px 14px 14px;background:none}
+.rvc textarea{width:100%;min-height:0}
+@media (prefers-reduced-motion:reduce){html body .evia-fab{transition:none}}
+.scc-opt:disabled{opacity:1;cursor:default;color:var(--ui-ink)}.scc-opt.other:not(.picked){opacity:.7}

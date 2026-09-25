@@ -46,8 +46,30 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>{window.eviaChatKit.userSays("Log my hours");window.eviaCoachFlows.hours()});
     await page.waitForSelector('#chat .chat-pill:has-text("Toolbox talk")',{timeout:8000});await page.click('#chat .chat-pill:has-text("Toolbox talk")');
     await page.waitForSelector("#chat .hw-ok",{timeout:8000});await page.click('#chat [data-preset="1"]');await page.waitForTimeout(500);await page.click("#chat .hw-ok");
-    await page.waitForSelector("#chat .hw-note textarea",{timeout:8000});await page.fill("#chat .hw-note textarea","manual handling");await page.click("#chat .hw-save");await page.waitForTimeout(300);
-    check("Evia logs hours from a chat: what it was, an hours-and-minutes wheel, a few words",await page.evaluate(()=>hours.some(h=>h.n===1&&h.description==="Toolbox talk: manual handling")));
+    await page.waitForSelector("#chat .hw-note textarea",{timeout:8000});await page.fill("#chat .hw-note textarea","manual handling");await page.click("#chat .hw-save");
+    await page.waitForSelector("#chat .ui-widget:last-child .hw-note textarea:not([disabled])",{timeout:8000});await page.fill("#chat .ui-widget:last-child .hw-note textarea","lift with your legs, not your back");await page.click("#chat .ui-widget:last-child .hw-save");await page.waitForTimeout(300);
+    check("Evia logs hours from a chat: what it was, an hours-and-minutes wheel, what you did and what you learned",await page.evaluate(()=>hours.some(h=>h.n===1&&h.description==="Toolbox talk: manual handling. What I learned: lift with your legs, not your back"&&h.learned)));
+    await page.evaluate(()=>{document.getElementById("modal-root").innerHTML=""});
+    const scBefore=await page.evaluate(()=>window.eviaScenarios.progress().done);
+    await page.evaluate(()=>{window.chat({quiet:true});setTimeout(()=>window.eviaCoachFlows.scenario(),50)});
+    await page.waitForSelector("#chat .scc-opt",{timeout:12000});await page.click("#chat .scc-opt");await page.waitForTimeout(300);
+    check("A real-life scenario plays in Evia's chat and is saved",await page.evaluate(b=>window.eviaScenarios.progress().done===b+1&&!!document.querySelector("#chat .scc-why")&&!document.querySelector(".sc-sheet"),scBefore));
+    const rvBefore=await page.evaluate(()=>window.eviaGetReviews().length);
+    await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";window.chat({quiet:true});setTimeout(()=>window.eviaChatReview(),50)});
+    const reviewDone=await page.evaluate(async()=>{
+      const wait=ms=>new Promise(r=>setTimeout(r,ms));
+      for(let n=0;n<40;n++){
+        await wait(700);
+        const b=[...document.querySelectorAll("#chat .ui-replies .chat-pill")].find(x=>/Let’s go|^Next$|Save my review/.test(x.textContent.trim()));
+        if(!b)continue;
+        const save=/Save my review/.test(b.textContent);
+        const ta=document.querySelector("#chat .rvc textarea[data-reflect='wellbeing']:not([disabled])");if(ta)ta.value="All good thanks";
+        b.click();if(save)return true;
+      }
+      return false;
+    });
+    await page.waitForTimeout(400);
+    check("The progress review happens in Evia's chat, section by section, and saves with comments",reviewDone&&await page.evaluate(b=>{const r=window.eviaGetReviews();return r.length===b+1&&r[0].reflection.wellbeing==="All good thanks"&&!document.querySelector(".rv-sheet")},rvBefore));
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML=""});
     await page.evaluate(()=>nav("learning"));await page.waitForTimeout(450);
     await page.evaluate(()=>nav("portfolio"));await page.waitForTimeout(450);

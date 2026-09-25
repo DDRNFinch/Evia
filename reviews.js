@@ -262,6 +262,16 @@
     const fab=document.getElementById("evia-fab");if(fab)fab.classList.remove("chat-active");
     startReview(d||null);
   }
+  /* Signature pads: kept on the review as images; a saved review can still be signed later. */
+  function signKeep(root,r){root.querySelectorAll("[data-sign]").forEach(el=>{const who=el.dataset.sign,cv=el.querySelector("canvas"),name=el.querySelector(".rv-sign-name").value.trim();r.signoff=r.signoff||{};const prev=r.signoff[who]||{};
+    const inked=cv&&cv.dataset.inked==="1";if(inked||name||prev.sig)r.signoff[who]={name:name||prev.name||"",sig:inked?cv.toDataURL("image/png"):prev.sig||"",date:inked?new Date().toISOString():prev.date||""}})}
+  function signBind(root,r){root.querySelectorAll("[data-sign]").forEach(el=>{const cv=el.querySelector("canvas");if(!cv)return;const ctx=cv.getContext("2d");ctx.lineWidth=4;ctx.lineCap="round";ctx.lineJoin="round";ctx.strokeStyle="#172033";
+    const prev=(r.signoff||{})[el.dataset.sign];if(prev&&prev.sig){const im=new Image();im.onload=()=>ctx.drawImage(im,0,0,cv.width,cv.height);im.src=prev.sig}
+    let on=false;const pt=e=>{const b=cv.getBoundingClientRect();return{x:(e.clientX-b.left)*cv.width/b.width,y:(e.clientY-b.top)*cv.height/b.height}};
+    cv.onpointerdown=e=>{on=true;cv.setPointerCapture(e.pointerId);const q=pt(e);ctx.beginPath();ctx.moveTo(q.x,q.y)};
+    cv.onpointermove=e=>{if(!on)return;const q=pt(e);ctx.lineTo(q.x,q.y);ctx.stroke();cv.dataset.inked="1"};
+    cv.onpointerup=cv.onpointercancel=()=>{on=false};
+    el.querySelector(".rv-sign-clear").onclick=()=>{ctx.clearRect(0,0,cv.width,cv.height);cv.dataset.inked="";if(r.signoff&&r.signoff[el.dataset.sign])r.signoff[el.dataset.sign].sig=""}})}
   function openReview(r,readOnly,startAt){
     const list=slides(r,readOnly);let i=0;hideResume();
     const root=document.getElementById("modal-root");
@@ -270,16 +280,8 @@
       '<div class="rv-body pg-animate" id="rv-body"></div>'+
       '<div class="rv-nav"><button type="button" class="secondary" id="rv-back">Back</button><button type="button" class="primary" id="rv-next">Next</button></div></section></div>';
     const body=root.querySelector("#rv-body"),next=root.querySelector("#rv-next"),back=root.querySelector("#rv-back");
-    /* Signature pads: kept on the review as images; a saved review can still be signed later. */
-    const keepSigns=()=>{body.querySelectorAll("[data-sign]").forEach(el=>{const who=el.dataset.sign,cv=el.querySelector("canvas"),name=el.querySelector(".rv-sign-name").value.trim();r.signoff=r.signoff||{};const prev=r.signoff[who]||{};
-      const inked=cv&&cv.dataset.inked==="1";if(inked||name||prev.sig)r.signoff[who]={name:name||prev.name||"",sig:inked?cv.toDataURL("image/png"):prev.sig||"",date:inked?new Date().toISOString():prev.date||""}})};
-    const bindSigns=()=>{body.querySelectorAll("[data-sign]").forEach(el=>{const cv=el.querySelector("canvas");if(!cv)return;const ctx=cv.getContext("2d");ctx.lineWidth=4;ctx.lineCap="round";ctx.lineJoin="round";ctx.strokeStyle="#172033";
-      const prev=(r.signoff||{})[el.dataset.sign];if(prev&&prev.sig){const im=new Image();im.onload=()=>ctx.drawImage(im,0,0,cv.width,cv.height);im.src=prev.sig}
-      let on=false;const pt=e=>{const b=cv.getBoundingClientRect();return{x:(e.clientX-b.left)*cv.width/b.width,y:(e.clientY-b.top)*cv.height/b.height}};
-      cv.onpointerdown=e=>{on=true;cv.setPointerCapture(e.pointerId);const q=pt(e);ctx.beginPath();ctx.moveTo(q.x,q.y)};
-      cv.onpointermove=e=>{if(!on)return;const q=pt(e);ctx.lineTo(q.x,q.y);ctx.stroke();cv.dataset.inked="1"};
-      cv.onpointerup=cv.onpointercancel=()=>{on=false};
-      el.querySelector(".rv-sign-clear").onclick=()=>{ctx.clearRect(0,0,cv.width,cv.height);cv.dataset.inked="";if(r.signoff&&r.signoff[el.dataset.sign])r.signoff[el.dataset.sign].sig=""}})};
+    const keepSigns=()=>signKeep(body,r);
+    const bindSigns=()=>signBind(body,r);
     const saveSignsOnSaved=()=>{if(!readOnly)return;keepSigns();const all=readJson(REVIEWS,[]),k=all.findIndex(x=>x.id===r.id);if(k>=0){all[k].signoff=r.signoff;write(REVIEWS,all)}};
     const keepComments=()=>{keepSigns();saveSignsOnSaved();if(readOnly)return;body.querySelectorAll("[data-reflect]").forEach(t=>{r.reflection=r.reflection||{};r.reflection[t.dataset.reflect]=t.value.trim()})};
     const show=n=>{
@@ -323,16 +325,53 @@
     };
     show(startAt||0);
   }
+  /* The review as a conversation with Evia: each section is her message plus a card, and Next moves on. */
+  function newReview(){
+    const S=stats();if(!S)return null;
+    const base=window.eviaBuildReviewRecord?window.eviaBuildReviewRecord():{course,date:new Date().toISOString()};
+    const targets=suggest(S);
+    return Object.assign(base,{id:"review-"+Date.now(),format:2,snapshot:snapshot(S),targets:targets.map(t=>Object.assign({},t,{reason:t.why,deadline:t.due})),reflection:{}});
+  }
+  function chatReview(){
+    const k=window.eviaChatKit,r=newReview();
+    if(!k||!r){startReview();return}
+    const list=slides(r,false);
+    const QUICK_LATER=[];
+    const step=i=>{
+      const sl=list[i],tmp=document.createElement("div");tmp.innerHTML=sl.body;
+      /* Evia's line on the slide becomes her message; quick actions are offered once the review is saved. */
+      const line=tmp.querySelector(".rv-evia");let words="";if(line){const sp=line.querySelector(":scope > span:last-child");words=sp?sp.innerHTML:"";line.remove()}
+      tmp.querySelectorAll("[data-rv-quick]").forEach(b=>{if(!QUICK_LATER.some(q=>q[0]===b.dataset.rvQuick))QUICK_LATER.push([b.dataset.rvQuick,b.textContent.trim()])});
+      tmp.querySelectorAll(".rv-quick").forEach(x=>x.remove());
+      if(words)k.say(words);
+      k.widget('<div class="rvc"><div class="rvc-top"><strong>'+escHtml(sl.title)+'</strong><span>'+(i+1)+' of '+list.length+'</span></div><div class="pg-card rv-slide">'+tmp.innerHTML+'</div></div>',el=>{
+        signBind(el,r);
+        requestAnimationFrame(()=>requestAnimationFrame(()=>{const c=el.querySelector(".pg-card");if(c)c.classList.add("pg-in")}));
+        el.dataset.rvStep=i;
+      });
+      const keep=()=>{const el=[...document.querySelectorAll("#chat .ui-widget")].reverse().find(w=>w.querySelector(".rvc"));if(!el)return;signKeep(el,r);el.querySelectorAll("[data-reflect]").forEach(t=>{r.reflection[t.dataset.reflect]=t.value.trim();t.disabled=true});el.querySelectorAll("canvas,.rv-sign-name,.rv-sign-clear").forEach(x=>{x.style.pointerEvents="none";x.disabled=true})};
+      const last=i===list.length-1;
+      k.replies(last?[{label:"Save my review",primary:true,run:()=>{keep();finish()}},{label:"Not now",run:()=>{k.say("No problem. We can do it another time.");k.somethingElse()}}]
+        :[{label:i===0?"Let’s go":"Next",primary:true,run:()=>{keep();step(i+1)}},{label:"Stop for now",run:()=>{k.say("No problem. Your review will be here when you’re ready.");k.somethingElse()}}]);
+    };
+    const finish=()=>{
+      save(r);localStorage.removeItem(DRAFT);
+      if(window.eviaMood)window.eviaMood("happy");
+      k.say("That’s your review saved, and your new targets are set. I’ll keep track of them for you.");
+      k.say("Share the PDF with your tutor and employer so they can see it and sign it.");
+      const q={otj:["Log my hours",()=>window.eviaCoachFlows.hours()],quiz:["Test me",()=>window.eviaTestMe&&window.eviaTestMe()],skills:["Confidence check",()=>window.eviaCoachFlows.confidence()],scenario:["A real-life scenario",()=>window.eviaCoachFlows.scenario()]};
+      k.replies([{label:"Open the PDF",primary:true,run:()=>{k.closeChat();setTimeout(()=>window.eviaOpenReviewPdf&&window.eviaOpenReviewPdf(r),120)}}].concat(QUICK_LATER.filter(x=>q[x[0]]).slice(0,2).map(x=>({label:q[x[0]][0],run:q[x[0]][1]})),[{label:"Something else",run:k.somethingElse}]));
+      if(typeof screen!=="undefined"&&(screen==="learning"||screen==="progress"))setTimeout(()=>{if(!document.querySelector(".chat-sheet"))render()},50);
+    };
+    step(0);
+  }
   function save(r){
     const reviews=readJson(REVIEWS,[]);reviews.push(r);write(REVIEWS,reviews.slice(-30));
     setTargets(r.targets.map(t=>Object.assign({},t,{reviewId:r.id,reviewDate:r.date})));
   }
   function startReview(resume){
     if(resume&&resume.type)resume=null; /* called straight from a click */
-    const S=stats();if(!S)return;
-    const base=window.eviaBuildReviewRecord?window.eviaBuildReviewRecord():{course,date:new Date().toISOString()};
-    const targets=suggest(S);
-    const r=Object.assign(base,{id:"review-"+Date.now(),format:2,snapshot:snapshot(S),targets:targets.map(t=>Object.assign({},t,{reason:t.why,deadline:t.due})),reflection:{}});
+    const r=newReview();if(!r)return;
     /* Picking up where they left off: fresh figures (the quick action may have changed them), same comments and step. */
     if(resume){r.reflection=resume.reflection||{};localStorage.removeItem(DRAFT)}
     openReview(r,false,resume?resume.i:0);
@@ -345,6 +384,7 @@
 
   window.eviaTargets={ensure:ensureTargets,mine,progress,cardHtml,bind,check,stats};
   window.eviaStartReview=()=>startReview();
+  window.eviaChatReview=chatReview;
   window.eviaResumeReview=resumeReview;
   /* Reviews are due every 3 calendar months: 3 months after the last one, or after the course start. */
   window.eviaReviewDue=()=>{

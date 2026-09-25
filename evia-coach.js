@@ -47,31 +47,39 @@
     k.say("How long did it take? Scroll to set it, or tap a quick one.");
     k.widget(wheelHtml(),el=>bindWheel(el,start,hrs=>askNote(desc,hrs)));
   }
-  function askNote(desc,hrs){
+  /* Two short questions: what you did, then (more importantly) what you learned. */
+  const DID_HINT={"College day":"cavity walls and wall ties","Toolbox talk":"working at height","Training course":"abrasive wheels","Research and reading":"reading up on mortar mixes","Shadowing":"watching the setting out of a new block"};
+  function textStep(prompt,placeholder,required,done){
     const k=K();
-    k.userSays(hm(hrs));
-    k.say(desc?"Want to add a few words about it? It helps your assessor.":"What did you do? A few words is plenty.");
-    k.widget('<div class="hw-note"><textarea rows="2" placeholder="'+esc(desc?"For example: "+({"College day":"cavity walls and wall ties","Toolbox talk":"working at height","Training course":"abrasive wheels","Research and reading":"reading up on mortar mixes","Shadowing":"watching the setting out of a new block"}[desc]||""):"For example: toolbox talk on manual handling")+'"></textarea><div class="hw-note-actions">'+(desc?'<button type="button" class="chat-pill hw-skip"><strong>Skip</strong></button>':"")+'<button type="button" class="chat-pill ui-pill-primary hw-save"><strong>Save</strong></button></div></div>',el=>{
-      const ta=el.querySelector("textarea");if(!desc)setTimeout(()=>ta.focus(),50);
-      const finish=extra=>{
-        const text=[desc,extra].filter(Boolean).join(": ");
-        if(!text){ta.focus();ta.placeholder="Add a few words first";return}
-        el.querySelectorAll("button").forEach(b=>b.disabled=true);el.classList.add("done");
-        if(extra)k.userSays(extra);
-        save(hrs,text);
+    k.say(prompt);
+    k.widget('<div class="hw-note"><textarea rows="2" placeholder="'+esc(placeholder)+'"></textarea><div class="hw-note-actions">'+(required?"":'<button type="button" class="chat-pill hw-skip"><strong>Skip</strong></button>')+'<button type="button" class="chat-pill ui-pill-primary hw-save"><strong>Next</strong></button></div></div>',el=>{
+      const ta=el.querySelector("textarea");
+      const finish=v=>{
+        if(required&&!v){ta.focus();ta.placeholder="A few words first, please";return}
+        el.querySelectorAll("button").forEach(x=>x.disabled=true);ta.disabled=true;el.classList.add("done");
+        if(v)k.userSays(v);done(v);
       };
       el.querySelector(".hw-save").onclick=()=>finish(ta.value.trim());
       const sk=el.querySelector(".hw-skip");if(sk)sk.onclick=()=>finish("");
     });
   }
-  function save(hrs,text){
+  function askNote(desc,hrs){
+    const k=K();
+    k.userSays(hm(hrs));
+    textStep(desc?"What did you do? A few words is plenty.":"What did you do?","For example: "+(DID_HINT[desc]||"toolbox talk on manual handling"),!desc,did=>
+      textStep("And what did you learn from it? This is the bit your assessor cares about most.","For example: how to space wall ties and why they matter",false,learned=>{
+        const what=[desc,did].filter(Boolean).join(": ")||desc||"Off-the-job learning";
+        save(hrs,what+(learned?". What I learned: "+learned:""),did,learned);
+      }));
+  }
+  function save(hrs,text,did,learned){
     const k=K(),now=Date.now();
-    hours.push({id:"otj-"+now+"-"+Math.random().toString(36).slice(2,8),n:Math.round(hrs*100)/100,description:text,createdAt:now,savedAt:formatDateTime(now)});
+    hours.push({id:"otj-"+now+"-"+Math.random().toString(36).slice(2,8),n:Math.round(hrs*100)/100,description:text,did:did||"",learned:learned||"",createdAt:now,savedAt:formatDateTime(now)});
     persist();
     if(window.eviaCheckTargets)window.eviaCheckTargets();
     const week=hours.filter(x=>Number(x.createdAt)>=weekStart()).reduce((n,x)=>n+Number(x.n||0),0);
     if(window.eviaMood)window.eviaMood("happy");
-    k.say("Logged <strong>"+esc(hm(hrs))+"</strong>. "+(week>=6?"That’s <strong>"+esc(hm(week))+"</strong> this week, which is brilliant.":"That’s <strong>"+esc(hm(week))+"</strong> this week so far."));
+    k.say((learned?k.pick(["Great learning.","That’s a good one to have learned.","Nice, that’s worth knowing."])+" ":"")+"Logged <strong>"+esc(hm(hrs))+"</strong>. "+(week>=6?"That’s <strong>"+esc(hm(week))+"</strong> this week, which is brilliant.":"That’s <strong>"+esc(hm(week))+"</strong> this week so far."));
     k.replies([{label:"Log more",run:logHours},{label:"Something else",run:k.somethingElse}]);
   }
 
@@ -136,7 +144,7 @@
     const k=K(),sp=window.eviaScenarios?window.eviaScenarios.progress():null;
     k.say(k.pick(["Love it. What do you fancy?","Let’s get you better at something. Pick one:"]));
     const list=[{label:"A college task",primary:true,run:upskillTask}];
-    if(sp&&sp.total&&sp.done<sp.total)list.push({label:"A real-life scenario",run:()=>{k.say("These are situations you might meet at work. There’s no pass or fail; just think about what you’d do.");k.replies([{label:"Let’s go",primary:true,run:()=>{k.closeChat();setTimeout(()=>window.eviaScenarios.openNext(),80)}},{label:"Something else",run:k.somethingElse}])}});
+    if(sp&&sp.total)list.push({label:"A real-life scenario",run:scenario});
     list.push({label:"A quick question",run:()=>window.eviaTestMe&&window.eviaTestMe({type:"epa",count:1})},{label:"Something else",run:k.somethingElse});
     k.replies(list);
   }
@@ -150,6 +158,27 @@
       const m=el.querySelector(".ut-more");if(m)m.onclick=()=>{k.closeChat();setTimeout(()=>picks.length?P.openTask(0):P.openAllTasks(),80)};
     });
     k.replies([{label:"Another idea",run:upskillTask},{label:"All college tasks",run:()=>{k.closeChat();setTimeout(P.openAllTasks,80)}},{label:"Something else",run:k.somethingElse}]);
+  }
+
+  /* ---------- Real-life scenarios, told by Evia ---------- */
+  function scenario(){
+    const k=K(),S=window.eviaScenarios,n=S&&S.nextInfo();
+    if(!n){k.say("You’ve done every real-life scenario. Brilliant. Remember: spot it, listen, pass it on.");k.widget(S?S.contactsHtml():"");k.replies([{label:"Something else",run:k.somethingElse}]);return}
+    const {topic,index,sc}=n,order=sc.options.map((_,i)=>i).sort(()=>Math.random()-.5);
+    if(index===0)k.say("This one’s about <strong>"+esc(topic.title.toLowerCase())+"</strong>. There’s no pass or fail. Just think about what you’d really do.");
+    k.say("<strong>"+esc(sc.title)+"</strong><br>"+esc(sc.story));
+    k.widget('<div class="scc"><span class="scc-kicker">What would you do?</span>'+order.map((i,pos)=>'<button type="button" class="scc-opt" data-opt="'+i+'"><span class="scc-letter">'+"ABC"[pos]+'</span><span class="scc-text">'+esc(sc.options[i].t)+'</span></button>').join("")+'</div>',el=>{
+      el.querySelectorAll("[data-opt]").forEach(b=>b.onclick=()=>{
+        const picked=sc.options[+b.dataset.opt];
+        el.querySelectorAll("[data-opt]").forEach(x=>{const o=sc.options[+x.dataset.opt];x.disabled=true;x.classList.add(o.best?"best":"other");if(x===b)x.classList.add("picked");x.insertAdjacentHTML("beforeend",'<span class="scc-why">'+(o.best?"<strong>Best choice.</strong> ":x===b?"<strong>Your choice.</strong> ":"")+esc(o.why)+'</span>')});
+        S.record(sc.id,picked.best);
+        if(window.eviaMood)window.eviaMood(picked.best?"happy":"oops");
+        k.say((picked.best?k.pick(["Spot on.","That’s exactly right.","Good call."]):"Good to think about.")+" "+esc(sc.remember));
+        const last=index===topic.scenarios.length-1;
+        if(last){k.say("That’s <strong>"+esc(topic.title)+"</strong> done. If anything like this ever happens for real, here’s who to talk to.");k.widget(S.contactsHtml(topic.id))}
+        k.replies([{label:last?"Next topic":"Next one",primary:true,run:scenario},{label:"Something else",run:k.somethingElse}]);
+      });
+    });
   }
 
   /* ---------- Check my evidence: unit by unit, plainly ---------- */
@@ -214,5 +243,5 @@
     };
   }
 
-  window.eviaCoachFlows={hours:logHours,confidence,upskill,evidence,input};
+  window.eviaCoachFlows={hours:logHours,confidence,upskill,evidence,input,scenario};
 })();
