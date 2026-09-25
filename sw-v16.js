@@ -37,6 +37,7 @@ const APP_SHELL = [
   "./teach-english.js",
   "./teach-bricklayer.js",
   "./teach-joiner.js",
+  "./teach-site.js",
   "./strength.js",
   "./guide.js",
   "./teach.js",
