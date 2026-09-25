@@ -74,6 +74,17 @@
       '<text class="tp-hand" x="160" y="30">First, I checked the drawings.</text><text class="tp-hand" x="160" y="46">Then I set out the job.</text><text class="tp-hand" x="160" y="62">Finally, I checked the quality.</text>'+
       '<path class="tp-pen" d="M262 94 L292 34 L300 38 L270 98 Z"/>',"A neat write-up in full sentences")
   });
+  /* Brickwork pictures: joint finishes, the three main bonds and a cavity wall section. */
+  const brickRow=(y,pat,x0,h)=>{let x=x0,out="";pat.forEach(w=>{out+='<rect class="tp-brick" x="'+x+'" y="'+y+'" width="'+(w-2)+'" height="'+(h-2)+'" rx="1"/>';x+=w});return out};
+  const bond=(x,label,rows)=>'<g><clipPath id="bc'+x+'"><rect x="'+x+'" y="10" width="92" height="72"/></clipPath><g clip-path="url(#bc'+x+')">'+rows.map((r,i)=>brickRow(10+i*12,r,x+(r.off||0),12)).join("")+'</g><text x="'+(x+46)+'" y="100">'+label+'</text></g>';
+  const S=[24,24,24,24,24],H=[12,12,12,12,12,12,12,12,12];
+  const st=Object.assign([...S],{off:0}),st2=Object.assign([...S,24],{off:-12}),hd=Object.assign([...H],{off:0}),fl=Object.assign([24,12,24,12,24,12,24],{off:0}),fl2=Object.assign([12,24,12,24,12,24,12,24],{off:-6});
+  Object.assign(PICS,{
+    joints:()=>svg(320,120,[["Flush",'<path class="tp-mortar" d="M0 26 H40 V38 H0 Z"/>'],["Half round",'<path class="tp-mortar" d="M0 26 H40 V38 H0 V37 A6 6 0 0 0 0 27 Z"/>'],["Weather struck",'<path class="tp-mortar" d="M7 26 H40 V38 H0 Z"/>'],["Recessed",'<path class="tp-mortar" d="M7 26 H40 V38 H7 Z"/>']].map((j,i)=>{const x=18+i*76;return '<g transform="translate('+x+' 6)"><rect class="tp-brick" x="0" y="0" width="40" height="26"/><rect class="tp-brick" x="0" y="38" width="40" height="26"/>'+j[1]+'<path class="tp-face" d="M0 -2 V66"/></g><text x="'+(x+20)+'" y="88">'+j[0]+'</text>'}).join("")+'<text x="160" y="112">Cut through the wall: the face is on the left</text>',"Flush, half round, weather struck and recessed joints"),
+    bonds:()=>svg(320,110,bond(10,"Stretcher",[st,st2,st,st2,st,st2])+bond(114,"English",[st,hd,st,hd,st,hd])+bond(218,"Flemish",[fl,fl2,fl,fl2,fl,fl2]),"Stretcher, English and Flemish bond"),
+    cavity:()=>svg(320,130,'<rect class="tp-brick" x="70" y="10" width="42" height="96"/><rect class="tp-insul" x="126" y="10" width="26" height="96"/><rect class="tp-block" x="160" y="10" width="54" height="96"/><path class="tp-tie" d="M100 58 L180 62"/><path class="tp-dpc" d="M66 92 H116 M156 92 H218"/>'+
+      '<text x="91" y="122">Brick</text><text x="139" y="122">Insulation</text><text x="187" y="122">Block</text><text x="260" y="64">Wall tie</text><text x="262" y="96">DPC</text><path class="tp-thin" d="M232 60 H184 M244 92 H220"/>',"Cavity wall section: brick, cavity with insulation, block, wall tie and DPC")
+  });
   const pic=name=>PICS[name]?'<div class="tm-pic">'+PICS[name]()+'</div>':"";
 
   /* ---------- Lessons ---------- */
@@ -141,7 +152,9 @@
   }
   /* Evia's view of a confidence skill, from how the lessons went (first-try answers). Needs half the lessons done. */
   function viewFor(area){
-    const u=trade().find(x=>x.skill===area);if(!u)return null;
+    /* Every unit that informs this skill counts (a unit's skill can be one area or a list). */
+    const us=trade().filter(x=>[].concat(x.skill||[]).includes(area));if(!us.length)return null;
+    const u={lessons:[].concat(...us.map(x=>x.lessons))};
     const L=mine(),done=u.lessons.filter(l=>isDone(L,l));
     if(done.length<Math.ceil(u.lessons.length/2))return null;
     /* Rated on first-try accuracy; "Mastered" only once every lesson in the unit is done. */
@@ -288,12 +301,12 @@
       const score=asks?first/asks:1;saveResult(l.id,score);setResume(l.id,null);
       if(otjKey)window.eviaOtj.stop(otjKey,{learned:l.title+": "+l.blurb});
       const all=[].concat(...units().map(u=>u.lessons)),idx=all.findIndex(x=>x.id===l.id),nx=all[idx+1];
-      const view=u&&!u.fs?viewFor(u.skill):null;
+      const sk=u&&!u.fs?[].concat(u.skill||[])[0]:null,view=sk?viewFor(sk):null;
       root.classList.add("tm-happy");
       root.innerHTML='<div class="tm-scroll tm-end"><div class="tm-confetti" aria-hidden="true">'+Array.from({length:18},(_,k)=>'<i style="--k:'+k+'"></i>').join("")+'</div>'+
         EVIA.replace("tm-evia","tm-evia xl")+'<h2>Lesson complete!</h2><p class="tm-end-sub">'+esc(l.title)+'</p>'+
         '<div class="tm-stats"><div><b>'+first+'/'+asks+'</b><span>right first time</span></div><div><b>'+Math.round(score*100)+'%</b><span>score</span></div></div>'+
-        (view?'<p class="tm-view">From your lessons'+(view.soFar?" so far":"")+', Evia rates your <strong>'+esc(u.skill.toLowerCase())+'</strong> as <strong>'+esc(view.label)+'</strong>. You’ll see this next to your own rating in the confidence check.</p>':"")+
+        (view?'<p class="tm-view">From your lessons'+(view.soFar?" so far":"")+', Evia rates your <strong>'+esc(String(sk).toLowerCase())+'</strong> as <strong>'+esc(view.label)+'</strong>. You’ll see this next to your own rating in the confidence check.</p>':"")+
         '</div><footer class="tm-foot">'+(nx?'<button type="button" class="primary tm-go" id="tm-next">Next lesson</button>':"")+'<button type="button" class="'+(nx?"secondary":"primary")+' tm-go" id="tm-path">Back to the path</button></footer>';
       const n=root.querySelector("#tm-next");if(n)n.onclick=()=>{root.classList.remove("tm-happy");lesson(nx)};
       root.querySelector("#tm-path").onclick=()=>{root.classList.remove("tm-happy");path()};

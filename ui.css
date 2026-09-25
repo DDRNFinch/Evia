@@ -1586,3 +1586,6 @@ html body .tp .tp-hand{font-size:10.5px;font-style:italic;fill:var(--ui-ink)}
 .ex-ex{margin:8px 0 0;font-size:13.5px;line-height:1.5;color:#475467}
 .ex-revise ul{margin:6px 0 0;padding-left:18px;font-size:14px;line-height:1.5;color:#344054}
 @media (max-width:380px){html body .ui-hours-item .ui-auto-x{width:26px;height:26px;font-size:16px}html body .ui-hours-item .ui-hours-n{flex-basis:64px}}
+.tp-brick{fill:#c96f4a;stroke:#fff;stroke-width:1}.tp-mortar{fill:#c9c2b4}.tp-block{fill:#b9bec6;stroke:var(--ui-ink);stroke-width:1.5}
+.tp-insul{fill:#f3d36b;stroke:var(--ui-ink);stroke-width:1.2}.tp-tie{fill:none;stroke:#4b5563;stroke-width:3;stroke-linecap:round}.tp-dpc{fill:none;stroke:#111;stroke-width:3}
+.tp-face{fill:none;stroke:var(--yellow-ink);stroke-width:2;stroke-dasharray:3 3}
