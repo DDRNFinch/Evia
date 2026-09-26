@@ -237,12 +237,24 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>{course="bricklayer";persist();openUnit(data().u.findIndex(u=>u[0]==="Cavity opening"))});await page.waitForTimeout(700);
     await page.evaluate(()=>document.getElementById("eg-start").click());await page.waitForTimeout(300);
     await page.evaluate(()=>[...document.querySelectorAll(".eg-sheet button")].find(b=>/questions/.test(b.textContent)).click());await page.waitForTimeout(300);
-    const q1=await page.evaluate(()=>document.querySelector(".eg-q").textContent+" "+(document.querySelector(".eg-think")||{}).textContent);
-    await page.evaluate(()=>{document.getElementById("eg-text").value="I fitted the cavity closer at the reveal.";[...document.querySelectorAll(".eg-sheet button")].find(b=>/Save and continue/.test(b.textContent)).click()});await page.waitForTimeout(300);
-    await page.evaluate(()=>{document.getElementById("eg-text").value="The ties go in at 450 centres.";[...document.querySelectorAll(".eg-sheet button")].find(b=>/Save and continue/.test(b.textContent)).click()});await page.waitForTimeout(300);
-    for(let i=0;i<12;i++){const more=await page.evaluate(()=>{const b=[...document.querySelectorAll(".eg-sheet button")].find(b=>/^Skip$/.test(b.textContent));if(b){b.click();return true}return false});if(!more)break;await page.waitForTimeout(200)}
-    await page.evaluate(()=>[...document.querySelectorAll(".eg-sheet button")].find(b=>/Use this statement/.test(b.textContent)).click());await page.waitForTimeout(700);
-    check("Evia guides a pack through the stages of the job, then the answers become the statement",/step by step/i.test(q1)&&/cavity closure/.test(q1)&&await page.evaluate(()=>document.getElementById("write").value==="I fitted the cavity closer at the reveal.\n\nThe ties go in at 450 centres."));
+    const q1=await page.evaluate(()=>document.querySelector(".eg-q").textContent+" "+[...document.querySelectorAll(".eg-pill")].map(b=>b.textContent).join(" · "));
+    const pick=async(k,text)=>{await page.evaluate(k=>document.querySelectorAll(".eg-pill")[k].click(),k);await page.waitForTimeout(250);
+      await page.evaluate(t=>{document.getElementById("eg-text").value=t;[...document.querySelectorAll(".eg-sheet button")].find(b=>/^Done$/.test(b.textContent)).click()},text);await page.waitForTimeout(250)};
+    const btn=async re=>{await page.evaluate(src=>{const re=new RegExp(src);const b=[...document.querySelectorAll(".eg-sheet button")].find(b=>re.test(b.textContent.trim()));if(b)b.click()},re);await page.waitForTimeout(250)};
+    await pick(0,"I fitted the cavity closer at the reveal.");
+    const ticked=await page.evaluate(()=>document.querySelectorAll(".eg-pill")[0].classList.contains("done"));
+    await btn("^(Next|Finish)$");
+    await pick(0,"The ties go in at 450 centres.");
+    // Stop half-way, come back: Evia picks up at the same question.
+    await page.evaluate(()=>document.getElementById("eg-close").click());await page.waitForTimeout(400);
+    await page.evaluate(()=>document.getElementById("eg-start").click());await page.waitForTimeout(300);
+    const back=await page.evaluate(()=>/Welcome back/.test(document.querySelector(".eg-say").textContent));
+    await btn("Carry on from there");
+    const at2=await page.evaluate(()=>/QUESTION 2 OF/.test(document.querySelector(".eg-sheet .chat-kicker").textContent)&&document.querySelectorAll(".eg-pill.done").length===1);
+    for(let i=0;i<12;i++){const more=await page.evaluate(()=>{const b=[...document.querySelectorAll(".eg-sheet button")].find(b=>/^(Next|Finish)$/.test(b.textContent.trim()));if(b){b.click();return true}return false});if(!more)break;await page.waitForTimeout(200)}
+    await btn("Use this statement");await page.waitForTimeout(500);
+    check("Evia guides a pack through the stages of the job with topic pills, then the answers become the statement",/step by step/i.test(q1)&&/cavity closure/i.test(q1)&&ticked&&await page.evaluate(()=>document.getElementById("write").value==="I fitted the cavity closer at the reveal.\n\nThe ties go in at 450 centres."));
+    check("Guided evidence carries on where the learner left off",back&&at2);
     await page.evaluate(()=>{const w=document.getElementById("write");w.value="";w.dispatchEvent(new Event("input"))});
 
     // Teach me: the tile, a lesson played through, and Evia's view in the confidence check.

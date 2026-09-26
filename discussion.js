@@ -80,17 +80,45 @@
     try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang="en-GB";u.rate=.98;const v=speechSynthesis.getVoices().find(v=>/en-GB/i.test(v.lang));if(v)u.voice=v;speechSynthesis.speak(u)}catch(_){}
   }
   const hush=()=>{try{window.speechSynthesis&&speechSynthesis.cancel()}catch(_){}};
-  /* Keeps listening until stopped (browsers stop after a pause, so it restarts itself). */
+  /* Keeps listening until stopped. Browsers stop listening after each pause, and on Android every restart plays a
+     tone, so restarting straight away beeps every few seconds and sounds like the recording has stopped. So: while
+     the learner is mid-flow it restarts at once; after a quiet spell it waits, listening quietly to the microphone
+     level, and only restarts when they start speaking again. */
+  function waitForVoice(isOn){
+    return new Promise((resolve,reject)=>{
+      if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)return reject(new Error("no level"));
+      navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}}).then(stream=>{
+        const AC=window.AudioContext||window.webkitAudioContext;if(!AC){stream.getTracks().forEach(t=>t.stop());return reject(new Error("no audio"))}
+        const ac=new AC(),an=ac.createAnalyser();an.fftSize=1024;ac.createMediaStreamSource(stream).connect(an);
+        const buf=new Uint8Array(an.fftSize),t0=Date.now();let floor=0,n=0,hits=0;
+        const done=ok=>{clearInterval(iv);stream.getTracks().forEach(t=>t.stop());try{ac.close()}catch(_){}ok?resolve():reject(new Error("stopped"))};
+        const iv=setInterval(()=>{
+          if(!isOn())return done(false);
+          an.getByteTimeDomainData(buf);let sum=0;for(let i=0;i<buf.length;i++){const x=(buf[i]-128)/128;sum+=x*x}const rms=Math.sqrt(sum/buf.length);
+          /* The first moment sets the room's background level; speech is well above it. */
+          if(Date.now()-t0<350){floor=(floor*n+rms)/(n+1);n++;return}
+          hits=rms>Math.max(.025,floor*2.6)?hits+1:0;
+          if(hits>=2)done(true);
+        },60);
+      },reject);
+    });
+  }
   function listener(onText,onFail){
-    let rec=null,on=false,finalText="";
+    let rec=null,on=false,finalText="",heardAt=0,gating=false;
     const start=()=>{
       rec=new SR();rec.lang="en-GB";rec.continuous=true;rec.interimResults=true;
-      rec.onresult=e=>{let interim="";for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)finalText+=(finalText&&!/\s$/.test(finalText)?" ":"")+t.trim()+" ";else interim+=t}onText(finalText,interim)};
+      rec.onresult=e=>{heardAt=Date.now();let interim="";for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)finalText+=(finalText&&!/\s$/.test(finalText)?" ":"")+t.trim()+" ";else interim+=t}onText(finalText,interim)};
       rec.onerror=e=>{if(e.error==="not-allowed"||e.error==="service-not-allowed"||e.error==="audio-capture"){on=false;onFail(e.error)}};
-      rec.onend=()=>{if(on)try{rec.start()}catch(_){}};
+      rec.onend=()=>{
+        if(!on)return;
+        /* Still talking: carry straight on. Gone quiet: wait for their voice before listening again. */
+        if(Date.now()-heardAt<1800){try{rec.start()}catch(_){}return}
+        if(gating)return;gating=true;
+        waitForVoice(()=>on).then(()=>{gating=false;if(on)start()},()=>{gating=false;if(on)setTimeout(()=>{if(on)start()},1500)});
+      };
       try{rec.start()}catch(_){}
     };
-    return {start(){on=true;start()},stop(){on=false;try{rec&&rec.stop()}catch(_){}return finalText.trim()},get text(){return finalText.trim()}};
+    return {start(){on=true;heardAt=0;start()},stop(){on=false;try{rec&&rec.stop()}catch(_){}return finalText.trim()},get text(){return finalText.trim()}};
   }
 
   /* ---------- Answering out loud ----------
@@ -103,7 +131,7 @@
     };
     const idle=msg=>{draw("idle",msg||"Tap the microphone and answer out loud.");foot.innerHTML='<button type="button" class="dr-mic" aria-label="Start answering"><span></span></button>';foot.querySelector(".dr-mic").onclick=start};
     const start=()=>{
-      if(o.onStart)o.onStart();on=true;t0=Date.now();draw("on","Listening… speak naturally.");
+      if(o.onStart)o.onStart();on=true;t0=Date.now();draw("on","Recording… speak naturally. Pauses are fine.");
       foot.innerHTML='<button type="button" class="dr-mic on" aria-label="Stop"><span></span></button>';foot.querySelector(".dr-mic").onclick=stop;
       tick=setInterval(()=>{const t=el.querySelector(".vc-time");if(t)t.textContent=time((Date.now()-t0)/1000)},500);
       live=listener(()=>{},err=>{clearInterval(tick);on=false;t0=0;idle(err==="not-allowed"||err==="service-not-allowed"?"I can’t use the microphone. Allow it in your browser settings, then try again.":"I can’t hear the microphone. Check it and try again.")});
@@ -141,7 +169,7 @@
     const bar=title=>'<header class="dr-bar"><button type="button" class="dr-x" aria-label="Leave">×</button><span class="dr-title">'+title+'</span>'+
       (window.speechSynthesis?'<button type="button" class="dr-voice" aria-pressed="'+!muted+'" aria-label="Evia’s voice">'+(muted?"🔇":"🔊")+'</button>':"")+'</header>';
     const wire=()=>{root.querySelector(".dr-x").onclick=leave;const v=root.querySelector(".dr-voice");if(v)v.onclick=()=>{muted=!muted;try{localStorage.setItem("evia7-discussion-voice",muted?"off":"on")}catch(_){}v.textContent=muted?"🔇":"🔊";v.setAttribute("aria-pressed",!muted);if(muted)hush()}};
-    const face='<span class="dr-evia" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span>';
+    const face='<span class="dr-evia evia-mini" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span>';
 
     const intro=()=>{
       if(!SR){

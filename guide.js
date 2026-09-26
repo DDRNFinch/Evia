@@ -1,11 +1,12 @@
 /* Evia7 guided evidence: Evia walks a learner through one evidence pack, if they want her to.
    window.eviaGuide.start({unitName, prompts, ksbs, pack, addFiles, save, done})
-     1. Photos: Evia's camera follows the job in stages (getting ready, setting out, part-way through, finished),
-        saying what to show at each; take as many as you like, or skip.
-     2. Questions: one per stage, with the things to mention and the unit's skills for that stage as prompts.
+     1. Photos: Evia's camera asks for one thing at a time, in the order of the job (getting ready, setting out,
+        part-way through, finished); take as many as you like, or skip. Each photo is saved as soon as it's taken.
+     2. Questions: one per stage, with that stage's things to mention as pills; tapping one opens a box for it.
      3. Statement: the answers are put together, in the learner's own words, as the pack's write-up,
         which goes on the PDF with the photos as normal.
-   Answers are saved in the pack as they go (pack.guide), so a learner can stop and carry on later. */
+   Answers are saved in the pack as they go (pack.guide), with where the learner got to (pack.guide.at), so a job done
+   over a day can be carried on later from the same place. */
 (function(){
   const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const split=s=>{const seen=new Set();return String(s||"").split("·").map(t=>t.trim()).filter(t=>{const k=t.toLowerCase();if(!t||seen.has(k))return false;seen.add(k);return true})};
@@ -54,7 +55,16 @@
     t=t.replace(/\btheir own\b/gi,"your own").replace(/\bthemselves\b/gi,"yourself").replace(/\btheir\b/gi,"your");
     return t.length>6&&t.length<140?t.charAt(0).toUpperCase()+t.slice(1):"";
   }
-  /* The plan for a pack: which stages to photograph and which to ask about, with what to think about in each. */
+  /* Short tips shown under each photo request, by stage. */
+  const TIP={ready:"Before you start: your area set up safely, with what you need ready.",setout:"Get the tape, level or line in the shot.",
+    doing:"Part-way through. Ask someone to take one of you at work.",finish:"Stand back for the whole job, then move in close on the detail."};
+  /* What to talk about when a stage has nothing more specific. */
+  const TOPICS={ready:["How you got ready"],setout:["How you set it out","How you checked it"],doing:["What you did, step by step"],
+    finish:["How you finished off","How you checked the quality"],know:["Why doing it properly matters"],reflect:["What went well","What you’d do differently"]};
+  const OTHER="Something else";
+  const cap=t=>{t=String(t).trim();return t.charAt(0).toUpperCase()+t.slice(1)};
+  /* The plan for a pack: one photo request at a time (each thing to capture, in the order of the job), and a question
+     for each stage with its topics to pick from. */
   function plan(ctx){
     const caps=split(ctx.prompts&&ctx.prompts.photos),terms=split(ctx.prompts&&ctx.prompts.writeup);
     const ksbs=(ctx.ksbs||[]).filter(k=>/^[SB]\d/.test(String(k)));
@@ -63,62 +73,120 @@
     terms.forEach(t=>by[stageOf(t)].terms.push(t));
     ksbs.forEach(k=>{const p=plain(k);if(p&&!by[stageOf(p)].can.includes(p))by[stageOf(p)].can.push(p)});
     const def=k=>k==="reflect"?REFLECT:STAGES.find(s=>s.key===k);
-    const photos=["ready","setout","doing","finish"].filter(k=>k==="doing"||k==="finish"||k==="ready"||by[k].caps.length).map(k=>{
+    const photos=[];
+    ["ready","setout","doing","finish"].forEach(k=>{
       const s=def(k),c=by[k].caps;
-      return {key:k,say:s.title,hint:s.photo+(c.length?" Try to show "+list(c)+".":"")};
+      if(c.length)c.forEach(item=>photos.push({key:k,say:cap(item),hint:s.title+". "+TIP[k]}));
+      else if(k!=="setout")photos.push({key:k,say:s.title,hint:s.photo});
     });
+    /* Things to capture that belong to the talking stages still get a photo, at the end. */
+    ["know","reflect"].forEach(k=>by[k].caps.forEach(item=>photos.push({key:"finish",say:cap(item),hint:"Anything else that shows the job."})));
     const asks=ORDER.filter(k=>k==="doing"||k==="reflect"||by[k].terms.length||by[k].can.length).map(k=>{
-      const s=def(k);return {key:k,title:s.title,ask:s.ask,terms:by[k].terms,can:by[k].can.slice(0,3)};
+      const s=def(k),t=by[k].terms.map(cap),topics=[...new Set((k==="doing"||k==="reflect"||!t.length?TOPICS[k]:[]).concat(t))];
+      return {key:k,title:s.title,ask:s.ask,terms:by[k].terms,topics:topics.concat(OTHER),can:by[k].can.slice(0,3)};
     });
     return {photos,asks};
   }
 
-  /* ---------- The flow ---------- */
+  /* ---------- The flow ----------
+     Where the learner got to is saved in the pack (guide.at), so a job done over a day can be picked up later: the
+     next photo to take, or the question they were on. Photos are saved to the pack the moment they're taken. */
   const answeredIn=(g,asks)=>asks.filter(a=>String(g.answers[a.key]||"").trim()).length;
+  function load(pack){
+    let g=pack.guide;
+    if(!g||(g.v!==2&&g.v!==3))g={v:3,answers:{},covered:{},topics:{},at:null};
+    if(g.v===2){g.v=3;g.topics={};Object.keys(g.answers||{}).forEach(k=>{if(String(g.answers[k]||"").trim())g.topics[k]={[OTHER]:g.answers[k]}});g.at=null}
+    g.topics=g.topics||{};return pack.guide=g;
+  }
+  const whereText=(P,at)=>at.phase==="photos"?"photo "+(Math.min(at.step,P.photos.length-1)+1)+" of "+P.photos.length+": <strong>"+esc(P.photos[Math.min(at.step,P.photos.length-1)].say)+"</strong>":
+    at.phase==="ask"&&P.asks[at.i]?"question "+(at.i+1)+" of "+P.asks.length+": <strong>"+esc(P.asks[at.i].title)+"</strong>":"your statement";
+  function resume(ctx,P,at){
+    if(at.phase==="photos"&&window.eviaCamera&&window.eviaCamera.supported())return photos(ctx,P,Math.min(at.step,P.photos.length-1));
+    if(at.phase==="ask")return at.topic&&P.asks[at.i]?topic(ctx,P,at.i,at.topic):ask(ctx,P,at.i||0);
+    return review(ctx,P);
+  }
   function start(ctx){
-    const P=plan(ctx);
-    const g=ctx.pack.guide=ctx.pack.guide&&ctx.pack.guide.v===2?ctx.pack.guide:{v:2,answers:{},covered:{}};
-    const answered=answeredIn(g,P.asks);
+    const P=plan(ctx),g=load(ctx.pack),answered=answeredIn(g,P.asks);
     const canCam=window.eviaCamera&&window.eviaCamera.supported();
-    sheet('<p class="eg-say">'+(answered?"Welcome back. You’ve answered "+answered+" of my "+P.asks.length+" questions.":"I’ll guide you through this job from start to finish. First photos of each stage, then a few questions about how it went. I’ll put your answers together into your statement.")+'</p>'+
-      (answered?"":'<ol class="eg-stages">'+P.photos.map(p=>'<li>'+esc(p.say)+'</li>').join("")+'</ol>')+
-      '<p class="eg-small">Skip anything you like. Your answers save as you go.</p>',
+    const at=!g.used&&g.at?g.at:null;
+    if(at){
+      sheet('<p class="eg-say">Welcome back. Last time you got to '+whereText(P,at)+'. Everything you’ve done so far is saved.</p>',
+        [{label:"Carry on from there",primary:true,run:()=>resume(ctx,P,at)},
+         canCam&&at.phase!=="photos"?{label:"Take more photos",run:()=>photos(ctx,P,0)}:null,
+         at.phase==="photos"?{label:"Skip to the questions",run:()=>ask(ctx,P,firstGap(P,g))}:null].filter(Boolean),
+        {kicker:"EVIA · GUIDED EVIDENCE",title:ctx.unitName});
+      return;
+    }
+    sheet('<p class="eg-say">'+(answered?"Welcome back. You’ve answered "+answered+" of my "+P.asks.length+" questions.":"I’ll guide you through this job from start to finish: one photo at a time, then a few questions about how it went. I’ll put your answers together into your statement.")+'</p>'+
+      (answered?"":'<ol class="eg-stages">'+[...new Set(P.photos.map(p=>(STAGES.find(s=>s.key===p.key)||{}).title))].map(t=>'<li>'+esc(t)+'</li>').join("")+'</ol>')+
+      '<p class="eg-small">Skip anything you like. Everything saves as you go, so you can stop and carry on later, even hours later.</p>',
       [answered?{label:"Carry on with the questions",primary:true,run:()=>ask(ctx,P,firstGap(P,g))}:null,
-       canCam?{label:"Start with photos",primary:!answered,run:()=>photos(ctx,P)}:null,
+       canCam?{label:"Start with photos",primary:!answered,run:()=>photos(ctx,P,0)}:null,
        {label:canCam?"Skip to the questions":"Start the questions",primary:!canCam&&!answered,run:()=>ask(ctx,P,answered?firstGap(P,g):0)}].filter(Boolean),
       {kicker:"EVIA · GUIDED EVIDENCE",title:ctx.unitName});
   }
   const firstGap=(P,g)=>{const i=P.asks.findIndex(a=>!String(g.answers[a.key]||"").trim());return i<0?P.asks.length:i};
+  const mark=(ctx,at)=>{ctx.pack.guide.at=at;ctx.save()};
 
-  function photos(ctx,P){
-    close(true);
-    window.eviaCamera.open({title:ctx.unitName,guide:P.photos,progress:{done:0,total:P.photos.length+P.asks.length},onDone:async files=>{
-      if(files.length)await ctx.addFiles(files);
-      setTimeout(()=>{
-        sheet('<p class="eg-say">'+(files.length?"Nice, that’s "+files.length+" photo"+(files.length===1?"":"s")+" added.":"No photos this time. You can add them later.")+' Now a few questions about how the job went. Answer in your own words, as if you were explaining it to someone new.</p>',
-          [{label:"Start the questions",primary:true,run:()=>ask(ctx,P,firstGap(P,ctx.pack.guide))},{label:"Stop for now",run:()=>close()}],
-          {kicker:"EVIA · GUIDED EVIDENCE",title:"Photos done"});
-      },files.length?250:60);
-    }});
+  function photos(ctx,P,from){
+    close(true);let got=0;
+    mark(ctx,{phase:"photos",step:from||0});
+    window.eviaCamera.open({title:ctx.unitName,guide:P.photos,startStep:from||0,progress:{done:0,total:P.photos.length+P.asks.length},
+      onStep:step=>mark(ctx,{phase:"photos",step}),
+      onShot:file=>{got++;ctx.addFiles([file])},
+      onDone:(files,info)=>{
+        if(files.length){got+=files.length;ctx.addFiles(files)}
+        const finished=info&&info.finished;
+        setTimeout(()=>{
+          if(!finished){
+            const step=info?info.step:0;mark(ctx,{phase:"photos",step});
+            sheet('<p class="eg-say">'+(got?"Saved: "+got+" photo"+(got===1?"":"s")+". ":"")+'Stopped for now. When you come back, I’ll pick up at <strong>'+esc(P.photos[step].say)+'</strong>.</p>',
+              [{label:"Close",primary:true,run:()=>close()},{label:"Skip to the questions",run:()=>ask(ctx,P,firstGap(P,ctx.pack.guide))}],
+              {kicker:"EVIA · GUIDED EVIDENCE",title:"Photos paused"});
+            return;
+          }
+          mark(ctx,{phase:"ask",i:firstGap(P,ctx.pack.guide)});
+          sheet('<p class="eg-say">'+(got?"Nice, that’s "+got+" photo"+(got===1?"":"s")+" added.":"No photos this time. You can add them later.")+' Now a few questions about how the job went. Pick the parts you want to talk about and answer in your own words.</p>',
+            [{label:"Start the questions",primary:true,run:()=>ask(ctx,P,firstGap(P,ctx.pack.guide))},{label:"Stop for now",run:()=>close()}],
+            {kicker:"EVIA · GUIDED EVIDENCE",title:"Photos done"});
+        },60);
+      }});
   }
 
+  /* One stage: the question, then its topics as pills. Tapping a pill opens a box just for that topic. */
   function ask(ctx,P,i){
     const g=ctx.pack.guide,n=P.asks.length;
     if(i>=n){review(ctx,P);return}
-    const a=P.asks[i];
+    const a=P.asks[i],T=g.topics[a.key]||{};
+    mark(ctx,{phase:"ask",i});
     const el=sheet(
       '<div class="eg-progress" aria-hidden="true"><i style="width:'+Math.round((P.photos.length+i+1)/(P.photos.length+n)*100)+'%"></i></div>'+
       '<p class="eg-say eg-q">'+esc(a.ask)+'</p>'+
-      (a.terms.length||a.can.length?'<div class="eg-think">'+
-        (a.terms.length?'<p><strong>Think about:</strong> '+esc(a.terms.join(" · "))+'</p>':"")+
-        (a.can.length?'<details><summary>What good looks like</summary><ul>'+a.can.map(c=>'<li>'+esc(c)+'</li>').join("")+'</ul></details>':"")+
-      '</div>':"")+
-      '<textarea class="eg-text" id="eg-text" data-otj="'+esc(ctx.unitName)+'" rows="6" placeholder="In your own words…" aria-label="'+esc(a.ask)+'">'+esc(g.answers[a.key]||"")+'</textarea>',
-      [{label:"Skip",run:()=>{save();ask(ctx,P,i+1)}},{label:i===n-1?"Save and finish":"Save and continue",primary:true,run:()=>{save();ask(ctx,P,i+1)}}],
-      {kicker:"EVIA · QUESTION "+(i+1)+" OF "+n,title:a.title,back:i>0?()=>{save();ask(ctx,P,i-1)}:null,keep:true,full:true});
+      '<p class="eg-small">Tap the things you want to talk about. Do as many as you like.</p>'+
+      '<div class="eg-pills">'+a.topics.map((t,k)=>{const txt=String(T[t]||"").trim();
+        return '<button type="button" class="eg-pill'+(txt?" done":"")+(t===OTHER?" other":"")+'" data-topic="'+k+'"><span class="eg-pill-t">'+(txt?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>':"")+esc(t)+'</span>'+(txt?'<small>'+esc(txt.length>70?txt.slice(0,70)+"…":txt)+'</small>':"")+'</button>'}).join("")+'</div>'+
+      (a.can.length?'<details class="eg-good"><summary>What good looks like</summary><ul>'+a.can.map(c=>'<li>'+esc(c)+'</li>').join("")+'</ul></details>':""),
+      [{label:i===n-1?"Finish":"Next",primary:true,run:()=>ask(ctx,P,i+1)}],
+      {kicker:"EVIA · QUESTION "+(i+1)+" OF "+n,title:a.title,back:i>0?()=>ask(ctx,P,i-1):null,keep:true,full:true,compact:true});
+    el.querySelectorAll("[data-topic]").forEach(b=>b.onclick=()=>topic(ctx,P,i,a.topics[+b.dataset.topic]));
+  }
+  /* The stage's answer is its topics in order, so the statement reads well and counts what was covered. */
+  function store(ctx,a){
+    const g=ctx.pack.guide,T=g.topics[a.key]||{},parts=a.topics.map(t=>String(T[t]||"").trim()).filter(Boolean);
+    g.answers[a.key]=parts.map(p=>/[.!?]$/.test(p)?p:p+".").join(" ");
+    g.covered[a.key]=a.terms.filter(t=>String(T[cap(t)]||"").trim());
+    ctx.save();
+  }
+  function topic(ctx,P,i,t){
+    const g=ctx.pack.guide,a=P.asks[i];g.topics[a.key]=g.topics[a.key]||{};
+    mark(ctx,{phase:"ask",i,topic:t});
+    const el=sheet(
+      '<p class="eg-ctx">'+esc(a.ask)+'</p>'+
+      '<textarea class="eg-text" id="eg-text" data-otj="'+esc(ctx.unitName)+'" rows="6" placeholder="'+esc(t===OTHER?"Anything else about this part of the job…":"Tell me about "+t.charAt(0).toLowerCase()+t.slice(1)+"…")+'" aria-label="'+esc(t)+'">'+esc(g.topics[a.key][t]||"")+'</textarea>',
+      [{label:"Done",primary:true,run:()=>{save();ask(ctx,P,i)}}],
+      {kicker:"EVIA · "+a.title.toUpperCase(),title:t,back:()=>{save();ask(ctx,P,i)},backLabel:"‹ Topics",keep:true,full:true,compact:true});
     const box=el.querySelector("#eg-text");
-    /* An answered stage counts in full for the things to mention it covers (strength.js). */
-    function save(){g.answers[a.key]=box.value.trim();g.covered[a.key]=g.answers[a.key]?a.terms.slice():[];ctx.save()}
+    function save(){g.topics[a.key][t]=box.value.trim();store(ctx,a)}
     let timer=null;box.oninput=()=>{clearTimeout(timer);timer=setTimeout(save,400)};
     setTimeout(()=>box.focus({preventScroll:true}),reduced()?0:220);
   }
@@ -131,17 +199,18 @@
   }
   function review(ctx,P){
     const text=compile(ctx,P),n=answeredIn(ctx.pack.guide,P.asks);
+    mark(ctx,{phase:"review"});
     if(!text){
       sheet('<p class="eg-say">You skipped all the questions, so there’s nothing to put together yet. You can come back to me any time, or write it yourself.</p>',[{label:"Close",primary:true,run:()=>close()}],{kicker:"EVIA · GUIDED EVIDENCE",title:"Your statement"});return;
     }
     const el=sheet('<p class="eg-say">Here’s your statement, made from your '+n+' answer'+(n===1?"":"s")+'. Read it through and change anything you like. It goes in your write-up and on the PDF with your photos.</p>'+
       '<textarea class="eg-text eg-final" id="eg-final" rows="12" aria-label="Your statement">'+esc(text)+'</textarea>',
-      [{label:"Back",run:()=>ask(ctx,P,P.asks.length-1)},{label:"Use this statement",primary:true,run:()=>{
-        ctx.pack.write=el.querySelector("#eg-final").value.trim();ctx.pack.guide.used=new Date().toISOString();
+      [{label:"Use this statement",primary:true,run:()=>{
+        ctx.pack.write=el.querySelector("#eg-final").value.trim();ctx.pack.guide.used=new Date().toISOString();ctx.pack.guide.at=null;
         ctx.save();close();ctx.done();
         if(typeof showEvidenceToast==="function")setTimeout(()=>showEvidenceToast("Statement added to your write-up"),250);
       }}],
-      {kicker:"EVIA · GUIDED EVIDENCE",title:"Your statement",keep:true,full:true});
+      {kicker:"EVIA · GUIDED EVIDENCE",title:"Your statement",back:()=>ask(ctx,P,P.asks.length-1),keep:true,full:true,compact:true});
   }
 
   /* ---------- Sheet ---------- */
@@ -150,7 +219,7 @@
     fit(false);
     root.innerHTML='<div class="overlay eg-overlay'+(o.full?" eg-full":"")+'"><section class="sheet pr-sheet eg-sheet" role="dialog" aria-modal="true" aria-labelledby="eg-title">'+
       '<div class="sheet-head"><div class="eg-head">'+AVATAR+'<div><div class="chat-kicker">'+esc(o.kicker)+'</div><h2 id="eg-title">'+esc(o.title)+'</h2></div></div><button class="close" id="eg-close" type="button" aria-label="Close">×</button></div>'+
-      '<div class="pr-body">'+body+'<div class="pr-actions eg-actions">'+(o.back?'<button type="button" class="eg-back" id="eg-back">‹ Back</button>':"")+buttons.map((b,i)=>'<button type="button" class="'+(b.primary?"primary":"secondary")+'" data-eg="'+i+'">'+esc(b.label)+'</button>').join("")+'</div></div></section></div>';
+      '<div class="pr-body">'+body+'<div class="pr-actions eg-actions'+(o.compact?" eg-compact":"")+'">'+(o.back?'<button type="button" class="eg-back" id="eg-back">'+esc(o.backLabel||"‹ Back")+'</button>':"")+buttons.map((b,i)=>'<button type="button" class="'+(b.primary?"primary":"secondary")+'" data-eg="'+i+'">'+esc(b.label)+'</button>').join("")+'</div></div></section></div>';
     const el=root.querySelector(".eg-sheet");
     /* Full screens keep the buttons outside the scrolling part, so they sit just above the keyboard. */
     if(o.full){el.appendChild(el.querySelector(".eg-actions"));fit(true)}

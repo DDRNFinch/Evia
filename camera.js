@@ -30,7 +30,10 @@
     const prompts=(opts.prompts||[]).map(p=>String(p).trim()).filter(Boolean);
     /* Guided mode (guide.js): opts.guide=[{say,hint}] — Evia asks for one thing at a time; Skip or Next moves on. */
     const guide=Array.isArray(opts.guide)&&opts.guide.length?opts.guide:null;
-    const shots=[];let stream=null,step=0;
+    /* opts.startStep picks up a guide part-way; opts.onStep(step) hears each move; opts.onShot(file) takes each photo
+       as it's taken (so nothing is lost if the learner stops), and onDone(files,{finished,step}) then gets none. */
+    const shots=[];let stream=null,step=guide?Math.max(0,Math.min(opts.startStep||0,guide.length-1)):0;
+    const asFile=(s,i)=>{const f=new File([s.blob],"photo-"+stamp()+"-"+(i+1)+".jpg",{type:s.blob.type||"image/jpeg"});f.eviaTakenAt=s.takenAt||Date.now();return f};
     const el=overlay("cam-photo",
       '<header class="cam-top"><button type="button" class="cam-icon" data-cam-close aria-label="Close camera">'+X+'</button><strong>'+escHtml(opts.title||"Camera")+'</strong><span class="cam-count" aria-live="polite">0 photos</span></header>'+
       (guide?'<div class="cam-progress" aria-hidden="true"><i></i></div>':"")+
@@ -52,7 +55,7 @@
         el.querySelector(".cam-progress i").style.width=Math.round((P.done+step+1)/P.total*100)+"%";
         doneBtn.disabled=false;doneBtn.textContent=last?"Finish":"Next";
       }else{doneBtn.disabled=!shots.length;doneBtn.textContent=shots.length?"Done ("+shots.length+")":"Done"}
-      strip.innerHTML=shots.map((s,i)=>'<span class="cam-thumb"><img src="'+s.url+'" alt="Photo '+(i+1)+'"><button type="button" data-remove="'+i+'" aria-label="Remove photo '+(i+1)+'">'+X+'</button></span>').join("");
+      strip.innerHTML=shots.map((s,i)=>'<span class="cam-thumb"><img src="'+s.url+'" alt="Photo '+(i+1)+'">'+(opts.onShot?"":'<button type="button" data-remove="'+i+'" aria-label="Remove photo '+(i+1)+'">'+X+'</button>')+'</span>').join("");
       strip.querySelectorAll("[data-remove]").forEach(b=>b.onclick=()=>{const [s]=shots.splice(+b.dataset.remove,1);if(s)URL.revokeObjectURL(s.url);refresh()});
       strip.scrollLeft=strip.scrollWidth;
     };
@@ -64,23 +67,23 @@
       buzz(12);shutter.classList.add("snap");setTimeout(()=>shutter.classList.remove("snap"),160);
       c.toBlob(b=>{
         if(!b)return;
-        shots.push({blob:b,url:URL.createObjectURL(b)});refresh();
+        shots.push({blob:b,url:URL.createObjectURL(b)});if(opts.onShot)opts.onShot(asFile(shots[shots.length-1],shots.length-1));refresh();
       },"image/jpeg",.88);
     };
     shutter.onclick=take;
     /* Photos already on the phone can be added without leaving the camera (including mid-guide). */
     const pick=el.querySelector(".cam-gallery input");
-    pick.onchange=()=>{[...pick.files].filter(f=>f&&f.size&&/^image\//.test(f.type||"image/")).forEach(f=>shots.push({blob:f,url:URL.createObjectURL(f),takenAt:f.lastModified||Date.now()}));pick.value="";refresh()};
-    const finish=keep=>{
-      const files=keep?shots.map((s,i)=>{const f=new File([s.blob],"photo-"+stamp()+"-"+(i+1)+".jpg",{type:s.blob.type||"image/jpeg"});f.eviaTakenAt=s.takenAt||Date.now();return f}):[];
+    pick.onchange=()=>{[...pick.files].filter(f=>f&&f.size&&/^image\//.test(f.type||"image/")).forEach(f=>{shots.push({blob:f,url:URL.createObjectURL(f),takenAt:f.lastModified||Date.now()});if(opts.onShot)opts.onShot(f)});pick.value="";refresh()};
+    const finish=(keep,finished)=>{
+      const files=keep&&!opts.onShot?shots.map(asFile):[];
       shots.forEach(s=>URL.revokeObjectURL(s.url));closeOverlay(el,stream);
-      if((files.length||guide)&&opts.onDone)opts.onDone(files);
+      if((files.length||guide)&&opts.onDone)opts.onDone(files,{finished:!!finished,step});
     };
     doneBtn.onclick=()=>{
-      if(guide&&step<guide.length-1){step++;refresh();buzz(8);return}
-      finish(true);
+      if(guide&&step<guide.length-1){step++;if(opts.onStep)opts.onStep(step);refresh();buzz(8);return}
+      finish(true,true);
     };
-    el.querySelector("[data-cam-close]").onclick=()=>{if(shots.length&&!confirm("Keep the "+shots.length+" photo"+(shots.length===1?"":"s")+" you’ve taken?")){finish(false);return}finish(true)};
+    el.querySelector("[data-cam-close]").onclick=()=>{if(!opts.onShot&&shots.length&&!confirm("Keep the "+shots.length+" photo"+(shots.length===1?"":"s")+" you’ve taken?")){finish(false);return}finish(true,!guide)};
     navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:1920},height:{ideal:1920}},audio:false})
       .then(s=>{stream=s;video.srcObject=s;return video.play().catch(()=>{})})
       .catch(err=>{console.error("Evia camera failed",err);denied(el,err,"camera");shutter.disabled=true});
