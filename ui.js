@@ -64,16 +64,17 @@
     const el=document.getElementById("ui-evia-bubble");
     if(el){el.classList.remove("show");setTimeout(()=>el.remove(),260)}
   }
-  function eviaSay(html,actions){
+  function eviaSay(html,actions,o){
     hideBubble();
     const el=document.createElement("div");
-    el.id="ui-evia-bubble";el.className="ui-evia-bubble";el.setAttribute("role","status");el.setAttribute("aria-live","polite");
+    el.id="ui-evia-bubble";el.className="ui-evia-bubble";if(o&&o.keep)el.dataset.keep="1";el.setAttribute("role","status");el.setAttribute("aria-live","polite");
     el.innerHTML='<p>'+html+'</p>'+(actions&&actions.length?'<div class="ui-evia-bubble-actions">'+actions.map((a,i)=>'<button type="button" class="'+(a.primary?"primary":"secondary")+'" data-bubble-action="'+i+'">'+escHtml(a.label)+'</button>').join("")+'</div>':"");
     document.body.appendChild(el);
     el.querySelectorAll("[data-bubble-action]").forEach(b=>b.onclick=()=>{const a=actions[+b.dataset.bubbleAction];hideBubble();a.run&&a.run()});
     requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add("show")));
     if(window.eviaMood)window.eviaMood("happy");
   }
+  window.eviaSay=eviaSay;
   /* One nudge a day on Course: the most useful thing from My stats. Achievements are celebrated first. */
   function courseNudge(){
     hideBubble();
@@ -825,7 +826,7 @@
   window.portfolio=()=>window.courses();
   /* Evia's bubble belongs to the course list: it goes when anything else (a unit, supporting evidence) replaces it. */
   const scrEl=document.getElementById("screen");
-  if(scrEl)new MutationObserver(()=>{if(!document.getElementById("ui-course-head")&&document.getElementById("ui-evia-bubble"))hideBubble()}).observe(scrEl,{childList:true});
+  if(scrEl)new MutationObserver(()=>{const bb=document.getElementById("ui-evia-bubble");if(!document.getElementById("ui-course-head")&&bb&&!bb.dataset.keep)hideBubble()}).observe(scrEl,{childList:true});
   /* Page changes fade: the current page fades out, the new one fades in. */
   const reduced=()=>window.eviaAccessibility?window.eviaAccessibility.reducedMotion():matchMedia("(prefers-reduced-motion: reduce)").matches;
   let fadeTimer=null;

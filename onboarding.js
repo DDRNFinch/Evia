@@ -1,4 +1,4 @@
-/* Evia7 first-run demo: choose a course, complete the one-time PPE unit, then a guided tour of Progress, Portfolio and Profile. */
+/* Evia7 first-run demo: choose a course, complete the one-time PPE unit, then a guided tour of Progress, My course, Teach me, Rewards, Evia and Profile. */
 (function(){
   const KEY="evia7-onboarding";
   const PPE_UNIT="Personal protective equipment";
@@ -112,8 +112,8 @@
       course=b.dataset.onboardCourse;persist();
       const nvq=nvqOn();
       writeState(nvq?"optional":"unit");
-      root.classList.add("leaving");
-      setTimeout(()=>{root.remove();nvq?showOptionalPicker():pickersThen(showPpeUnit)},320);
+      const next=()=>nvq?showOptionalPicker():pickersThen(showPpeUnit);
+      if(window.eviaHandoff)window.eviaHandoff(root,next);else{root.remove();next()}
     });
   }
 
@@ -151,8 +151,8 @@
     go.onclick=()=>{
       window.eviaNvq.setOptional(window.eviaNvq.readOptional(root));
       writeState("unit");
-      root.classList.add("leaving");
-      setTimeout(()=>{root.remove();pickersThen(showPpeUnit)},320);
+      const next=()=>pickersThen(showPpeUnit);
+      if(window.eviaHandoff)window.eviaHandoff(root,next);else{root.remove();next()}
     };
   }
   /* After the course: Evia's shape and colour, if not chosen yet, then carry on. */
@@ -284,10 +284,32 @@
         const grid=document.getElementById("ui-logs-grid");
         if(grid)grid.scrollIntoView({block:"center",behavior:"smooth"});
         guide('Your <strong>learning logs</strong> (off-the-job hours) are kept here too, ready to download for your assessor. Progress reviews are at the top of <strong>My progress</strong>.',{
-          targets:[grid],button:"Next",onNext:()=>{writeState("evia");showEviaStep()}
+          targets:[grid],button:"Next",onNext:()=>{writeState("teach");showTeachStep()}
         });
       }
     });
+  }
+
+  /* ---------- Teach me and Rewards ---------- */
+  function showTeachStep(){
+    document.body.classList.add("evia-onboarding");closePanels();
+    nav("teach");window.scrollTo(0,0);
+    setTimeout(()=>{
+      const list=document.querySelector("#screen .tt-list");
+      guide('This is <strong>Teach me</strong>: short lessons for your course, maths and English, with quick games to check what you know. Every lesson earns you <strong>coins</strong>.',{
+        targets:[list],button:"Next",onNext:()=>{writeState("rewards");showRewardsStep()}
+      });
+    },450);
+  }
+  function showRewardsStep(){
+    document.body.classList.add("evia-onboarding");closePanels();
+    nav("rewards");window.scrollTo(0,0);
+    setTimeout(()=>{
+      const bal=document.querySelector("#screen .rw-bal");
+      guide('And this is <strong>Rewards</strong>. Spend your coins on new looks for me, loot boxes and mini games. You earn them from lessons, your off-the-job hours and good evidence.',{
+        targets:[bal],button:"Next",onNext:()=>{writeState("evia");showEviaStep()}
+      });
+    },450);
   }
 
   /* ---------- Step 5: Evia ---------- */
@@ -370,6 +392,8 @@
     else if(stage==="unit")showPpeUnit();
     else if(stage==="progress")showProgressStep();
     else if(stage==="portfolio")showPortfolioStep();
+    else if(stage==="teach")showTeachStep();
+    else if(stage==="rewards")showRewardsStep();
     else if(stage==="evia")showEviaStep();
     else if(stage==="profile")showProfileStep();
   }

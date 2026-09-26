@@ -81,7 +81,7 @@
   function work(){
     const out=[],c=typeof course!=="undefined"?course:"";
     const ev=typeof evidence!=="undefined"?evidence:[],S=window.eviaStrength;
-    if(S)[...new Set(ev.filter(e=>e.c===c&&e.u).map(e=>e.u))].forEach(u=>{const lv=S.unit(u);if(lv)out.push({key:"ev|"+c+"|"+u,coins:EV_PAY[lv],why:lv.charAt(0).toUpperCase()+lv.slice(1)+" evidence: "+u})});
+    if(S)[...new Set(ev.filter(e=>e.c===c&&e.u).map(e=>e.u))].forEach(u=>{const lv=S.unit(u);if(lv)out.push({key:"ev|"+c+"|"+u,coins:EV_PAY[lv],why:lv.charAt(0).toUpperCase()+lv.slice(1)+" evidence: "+u,unit:u,lv})});
     const hs=typeof hours!=="undefined"?hours:[],wk={};
     hs.forEach(h=>{const t=Number(h.createdAt)||Date.parse(h.savedAt||"");if(!t)return;const w=weekOf(t);wk[w]=(wk[w]||0)+Number(h.n||0)});
     Object.keys(wk).forEach(w=>{const n=Math.min(OTJ_WEEK,Math.floor(wk[w]*OTJ_HOUR));if(n)out.push({key:"otj|"+w,coins:n,why:"Off-the-job hours"})});
@@ -109,7 +109,20 @@
       const n=first?Math.min(due,back):due;if(first)back-=n;
       r.paid[w.key]=first?w.coins:(r.paid[w.key]||0)+due;if(n>0){r.bank+=n;if(!first)gained.push({n,why:w.why})}});
     r.workV=1;
-    write(r);badge();if(gained.length){toast(gained);if(isOpen())setTimeout(page,0)}return r;
+    /* A unit reaching strong evidence for the first time earns a free loot box, and Evia says it's ready for the
+       online portfolio. Units already strong before this came in are counted as seen, so nobody gets a flood. */
+    r.strong=r.strong||{};const fresh=[],quiet=!r.strongV;
+    work().forEach(w=>{if(w.lv!=="strong"||r.strong[w.key])return;r.strong[w.key]=1;if(!quiet&&!first)fresh.push(w.unit)});
+    r.strongV=1;if(fresh.length)r.freeBox=(r.freeBox||0)+fresh.length;
+    write(r);badge();if(gained.length){toast(gained);if(isOpen())setTimeout(page,0)}
+    if(fresh.length)setTimeout(()=>strongNews(fresh),gained.length?3200:600);
+    return r;
+  }
+  function strongNews(units){
+    const u=units[units.length-1],n=units.length,say=window.eviaSay;
+    const msg='<strong>'+esc(u)+'</strong>'+(n>1?" and "+(n-1)+" more":"")+' now '+(n>1?"have":"has")+' strong evidence, so '+(n>1?"they’re":"it’s")+' ready to add to your <strong>online portfolio</strong> for your assessor. You’ve earned a <strong>free loot box</strong> too!';
+    if(!say){toast([{n:0,why:"Free loot box earned"}]);return}
+    say(msg,[{label:"Add to portfolio",primary:true,run:()=>{if(window.eviaOpenSendToPortfolio)window.eviaOpenSendToPortfolio(u)}},{label:"Open my box",run:()=>openBox(true)}],{keep:true});
   }
   /* Mini games pay a few coins each, up to GAME_DAILY a day (they can be played again and again). */
   const GAME_DAILY=60;
@@ -238,9 +251,9 @@
   const inUse=it=>it.kind==="game"?false:it.kind==="expr"?read().expr===it.key:it.kind==="hat"?read()[it.slot||"hat"]===it.id:it.kind==="shape"?window.eviaCurrentShape&&window.eviaCurrentShape()===it.key:window.eviaCurrentTheme&&window.eviaCurrentTheme()===it.key;
   /* A loot box: roll a rarity from the odds (an epic or better is guaranteed after 9 without one), then an item of
      that rarity the learner doesn't have yet. If they have them all, they get tokens back instead. */
-  function openBox(){
-    const r=read();if(balance()<BOX)return;
-    r.spent+=BOX;
+  function openBox(free){
+    const r=read();free=free===true&&(r.freeBox||0)>0;if(!free&&balance()<BOX)return;
+    if(free)r.freeBox-=1;else r.spent+=BOX;
     let roll=Math.random()*100,rar="common",acc=0;
     for(const k of ORDER){acc+=RARITY[k].odds;if(roll<acc){rar=k;break}}
     if(r.pity>=9&&(rar==="common"||rar==="rare"))rar="epic";
@@ -249,7 +262,7 @@
     let won=null,refund=0;
     if(pool.length){won=pool[Math.floor(Math.random()*pool.length)];r.owned.push(won.id)}
     else{refund=RARITY[rar].refund;r.bank+=refund}
-    write(r);
+    write(r);badge();
     boxAnim(()=>{if(won){reveal(won,true)}else reveal({label:"Duplicate",rarity:rar,refund},true)});
   }
 
@@ -273,10 +286,10 @@
     const r=sync(),bal=balance(),all=catalogue(),got=all.filter(x=>r.owned.includes(x.id)).length;
     const list=all.filter(x=>x.kind===tab).sort((a,b)=>ORDER.indexOf(a.rarity)-ORDER.indexOf(b.rarity));
     scr().innerHTML='<div id="rw-page"><header class="ui-page-head"><h1>Rewards</h1><span>'+got+' of '+all.length+' collected</span></header>'+
-      '<section class="rw-bal"><div>'+coin+'<b>'+bal+'</b></div><p>Coins</p><details class="rw-earn"><summary>How to earn coins</summary><ul>'+EARN.map(e=>'<li><span>'+e[0]+'</span><b>'+e[1]+'</b></li>').join("")+'</ul><p>Improve your evidence later and you get the difference.</p></details></section>'+
+      '<section class="rw-bal"><div>'+coin+'<b>'+bal+'</b></div><p>Coins</p><details class="rw-earn"><summary>How to earn coins</summary><ul>'+EARN.map(e=>'<li><span>'+e[0]+'</span><b>'+e[1]+'</b></li>').join("")+'</ul><p>Improve your evidence later and you get the difference. A unit reaching strong evidence also wins a free loot box.</p></details></section>'+
       '<section class="rw-box"><div class="rw-box-art" aria-hidden="true">'+GIFT+'</div><div class="rw-box-copy"><strong>Loot box</strong><small>Win something you don’t have yet. Duplicates give coins back, and 10 boxes always include an Epic or better.</small>'+
         '<div class="rw-odds">'+ORDER.map(k=>'<span class="r-'+k+'">'+RARITY[k].label+' '+RARITY[k].odds+'%</span>').join("")+'</div>'+
-        '<button type="button" class="rw-btn buy" id="rw-open"'+(bal>=BOX?"":" disabled")+'>'+coin+BOX+' · Open</button></div></section>'+
+        (r.freeBox>0?'<button type="button" class="rw-btn buy rw-free" id="rw-open">Open your free box'+(r.freeBox>1?" ("+r.freeBox+")":"")+'</button>':'<button type="button" class="rw-btn buy" id="rw-open"'+(bal>=BOX?"":" disabled")+'>'+coin+BOX+' · Open</button>')+'</div></section>'+
       '<div class="rw-tabs" role="tablist">'+[["hat","Kit"],["expr","Faces"],["shape","Shapes"],["colour","Colours"],["game","Games"]].map(t=>'<button type="button" role="tab" aria-selected="'+(tab===t[0])+'" class="'+(tab===t[0]?"on":"")+'" data-tab="'+t[0]+'">'+t[1]+'</button>').join("")+'</div>'+
       '<div class="rw-grid">'+list.map(it=>{const own=r.owned.includes(it.id),on=own&&inUse(it),price=RARITY[it.rarity].price;
         return '<div class="rw-item r-'+it.rarity+(own?" own":"")+(on?" on":"")+'" id="rw-'+it.id+'">'+tag(it.rarity)+preview(it)+'<strong>'+esc(it.label)+'</strong><small>'+esc(it.about)+'</small>'+
@@ -284,7 +297,7 @@
             :price?'<button type="button" class="rw-btn buy" data-buy="'+it.id+'"'+(bal>=price?"":" disabled")+'>'+coin+price+'</button>':'<span class="rw-only">Loot box only</span>')+'</div>'}).join("")+'</div>'+
       (tab==="shape"||tab==="colour"?'<p class="rw-note">Circle, Squircle and Cloud, and Yellow, Green and Blue, are always free.</p>':tab==="expr"?'<p class="rw-note">Evia’s classic face is always free. Tap “In use” to go back to it.</p>':tab==="game"?'<p class="rw-note">Games you unlock are in the Teach me tab too. Each game pays a few coins, up to '+GAME_DAILY+' a day.</p>':"")+'</div>';
     requestAnimationFrame(()=>fitAll(scr()));
-    scr().querySelector("#rw-open").onclick=openBox;
+    scr().querySelector("#rw-open").onclick=()=>openBox(r.freeBox>0);
     scr().querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{tab=b.dataset.tab;page()});
     scr().querySelectorAll("[data-buy]").forEach(b=>b.onclick=()=>buy(b.dataset.buy));
     scr().querySelectorAll("[data-use]").forEach(b=>b.onclick=()=>use(b.dataset.use));
@@ -318,7 +331,7 @@
   }
 
   /* A dot on the Rewards tab when a loot box can be opened. */
-  function badge(){const b=document.querySelector('[data-nav="rewards"]');if(b)b.classList.toggle("rw-dot",balance()>=BOX)}
+  function badge(){const b=document.querySelector('[data-nav="rewards"]');if(b)b.classList.toggle("rw-dot",balance()>=BOX||(read().freeBox||0)>0)}
 
   /* The expression in use goes on <html>, so every Evia in the app shows it (moods still win for a moment). */
   function applyExpr(){const r=read(),on=r.expr&&owns("expr-"+r.expr);if(on)document.documentElement.setAttribute("data-evia-expr",r.expr);else document.documentElement.removeAttribute("data-evia-expr")}

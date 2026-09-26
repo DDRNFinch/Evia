@@ -202,8 +202,7 @@
     const finish=name=>{
       if(name)setShape(name);
       markShapePicked();
-      root.classList.add("leaving");
-      setTimeout(()=>{root.remove();if(onDone)onDone();},320);
+      handoff(root,onDone);
     };
     root.querySelectorAll("[data-shape]").forEach(b=>b.onclick=()=>{if(b.classList.contains("locked")){finish(null);setTimeout(()=>R()&&R().openItem("shape-"+b.dataset.shape),350);return}finish(b.dataset.shape)});
     document.getElementById("evia-shape-close").onclick=()=>finish(null);
@@ -227,8 +226,7 @@
     const finish=name=>{
       if(name)setTheme(name);
       markPicked();
-      root.classList.add("leaving");
-      setTimeout(()=>{root.remove();if(onDone)onDone();},320);
+      handoff(root,onDone);
     };
     root.querySelectorAll("[data-theme]").forEach(b=>b.onclick=()=>{if(b.classList.contains("locked")){finish(null);setTimeout(()=>R()&&R().openItem("colour-"+b.dataset.theme),350);return}finish(b.dataset.theme)});
     document.getElementById("evia-theme-close").onclick=()=>finish(null);
@@ -237,6 +235,15 @@
   window.eviaThemes=THEMES;
   window.eviaSetTheme=setTheme;
   window.eviaCurrentTheme=currentTheme;
+  /* One full-screen step hands over to the next: the next one fades in on top, then the old one goes, so the app
+     behind never flashes through. When nothing follows, the step just fades out. */
+  function handoff(root,next){
+    if(next)next();
+    const newer=[...document.querySelectorAll("#evia-theme-screen,#evia-onboard-course")].some(el=>el!==root);
+    if(newer){root.style.zIndex="10030";root.style.transition="none";setTimeout(()=>root.remove(),450);return}
+    root.classList.add("leaving");setTimeout(()=>root.remove(),320);
+  }
+  window.eviaHandoff=handoff;
   window.eviaShowThemePicker=showPicker;
   window.eviaThemeHasBeenPicked=hasPickedTheme;
   window.eviaShapes=SHAPES;
