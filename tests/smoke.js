@@ -334,12 +334,16 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       for(const k of word)document.querySelector('[data-k="'+k+'"]').click();document.querySelector('[data-k="⏎"]').click();await w(1600);
       const end=document.querySelector(".gm-end");out.brickle=!!end&&/\+7/.test(end.querySelector(".gm-end-coins").textContent)&&!!end.querySelector(".gm-learn");
       document.querySelector('.gm-end [data-a="done"]').click();await w(200);
-      const r=JSON.parse(localStorage.getItem("evia7-rewards"));r.owned.push("game-hazard","game-flappy");localStorage.setItem("evia7-rewards",JSON.stringify(r));
-      G.open("hazard");await w(300);
-      const svg=document.querySelector(".hz svg"),m=svg.getScreenCTM(),sc=G.SCENES[G.group()==="bench"?1:0];
-      sc.hazards.forEach(h=>{const p=new DOMPoint(h.x,h.y).matrixTransform(m);svg.dispatchEvent(new PointerEvent("pointerdown",{clientX:p.x,clientY:p.y,bubbles:true}))});await w(900);
-      const e2=document.querySelector(".gm-end");out.hazard=!!e2&&/All 6 found/.test(e2.textContent)&&e2.querySelectorAll(".gm-list li.ok").length===6&&/\+9/.test(e2.querySelector(".gm-end-coins").textContent);
-      out.cap=R.gameCoins(100)===4&&R.gameRoom()===0;
+      const r=JSON.parse(localStorage.getItem("evia7-rewards"));r.owned.push("game-crossword","game-flappy");localStorage.setItem("evia7-rewards",JSON.stringify(r));
+      G.open("crossword");await w(300);
+      const cells=[...document.querySelectorAll(".cw-c")];out.cwGrid=cells.length>10&&/Across|Down/.test(document.querySelector(".cw-clue").textContent);
+      document.querySelector('[data-t="reveal"]').click();await w(50);
+      for(let n=0;n<cells.length&&!document.querySelector(".gm-end");n++){const b=[...document.querySelectorAll(".cw-c")].find(c=>!c.querySelector("b").textContent);if(!b)break;b.click();document.querySelector('[data-t="reveal"]').click();await w(20)}
+      await w(900);
+      const e2=document.querySelector(".gm-end");out.crossword=!!e2&&e2.querySelectorAll(".gm-list li").length===7&&/\+0/.test(e2.querySelector(".gm-end-coins").textContent);
+      const mg=JSON.parse(localStorage.getItem("evia7-rewards"));mg.owned.push("game-hazard");localStorage.setItem("evia7-rewards",JSON.stringify(mg));
+      out.migrated=R.owns("game-crossword")&&!R.owns("game-hazard");
+      out.cap=R.gameCoins(100)===13&&R.gameRoom()===0;
       document.querySelector(".gm-x").click();G.open("flappy");await w(400);
       out.flappy=!!document.querySelector(".gm-flappy canvas")&&!!document.querySelector(".fl-tip");
       document.querySelector(".gm-x").click();await w(100);
@@ -347,7 +351,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       if(keep)localStorage.setItem("evia7-rewards",keep);else localStorage.removeItem("evia7-rewards");
       return out;
     });
-    check("Mini games: locked until bought in Rewards, then Brickle, Hazard spotter and Flappy Evia play from Teach me and pay capped coins",Object.values(gm).every(Boolean),JSON.stringify(gm));
+    check("Mini games: locked until bought in Rewards, then Brickle, the crossword and Flappy Evia play from Teach me and pay capped coins",Object.values(gm).every(Boolean),JSON.stringify(gm));
     check("Expressions: seven faces (heart eyes loot box only); using one shows it on Evia, and tapping again goes back to classic",rw.faces&&rw.expr&&rw.exprOff,JSON.stringify(rw));
     await page.evaluate(()=>nav("teach"));await page.waitForTimeout(600);
     await page.evaluate(()=>document.querySelector('[data-go="course"]').click());await page.waitForTimeout(600);

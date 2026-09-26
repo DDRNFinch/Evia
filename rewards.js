@@ -11,7 +11,9 @@
   const KEY="evia7-rewards",DAILY=60,ACH_TOKENS=25,BOX=60;
   const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const blank=()=>({bank:0,spent:0,owned:[],hat:"",pity:0,seenAch:[]});
-  const read=()=>{try{return Object.assign(blank(),JSON.parse(localStorage.getItem(KEY)||"{}")||{})}catch(_){return blank()}};
+  /* Hazard spotter was swapped for the Crossword: anyone who had it gets the Crossword. */
+  const migrate=r=>{const i=r.owned.indexOf("game-hazard");if(i>=0){r.owned.splice(i,1);if(!r.owned.includes("game-crossword"))r.owned.push("game-crossword")}return r};
+  const read=()=>{try{return migrate(Object.assign(blank(),JSON.parse(localStorage.getItem(KEY)||"{}")||{}))}catch(_){return blank()}};
   const write=r=>{try{localStorage.setItem(KEY,JSON.stringify(r))}catch(_){}};
   const today=()=>{const d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()};
 

@@ -1,7 +1,7 @@
 /* Evia7 mini games: short games that teach without feeling like lessons. Unlocked in Rewards, played from Teach me.
      Brickle         guess the trade word in six tries (like Wordle); the word's meaning is shown at the end, and as a
                      clue after four tries.
-     Hazard spotter  tap the hazards in a site or workshop picture before time runs out; each one says why.
+     Crossword       a new small crossword each time from the trade's terms; the clues are what each term means.
      Flappy Evia     fly Evia through the scaffold; every few gaps a safety gate asks a true-or-false question.
    Games pay a few coins each (rewards.js caps game coins at 20 a day).
    window.eviaGames: {GAMES, open(key), iconFor(key)} */
@@ -16,12 +16,12 @@
 
   const ICONS={
     brickle:'<svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="5.5" height="6" rx="1.2"/><rect x="9.25" y="5" width="5.5" height="6" rx="1.2"/><rect x="16" y="5" width="5.5" height="6" rx="1.2"/><rect x="2.5" y="13" width="5.5" height="6" rx="1.2"/><rect x="9.25" y="13" width="5.5" height="6" rx="1.2"/><rect x="16" y="13" width="5.5" height="6" rx="1.2"/></svg>',
-    hazard:'<svg viewBox="0 0 24 24"><path d="M12 3.5 21.5 20h-19Z"/><path d="M12 10v4.5M12 17.2v.1"/></svg>',
+    crossword:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="9" y="3" width="6" height="6" rx="1"/><rect x="15" y="3" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/><rect x="9" y="15" width="6" height="6" rx="1"/><rect x="15" y="15" width="6" height="6" rx="1"/></svg>',
     flappy:'<svg viewBox="0 0 24 24"><circle cx="13" cy="12" r="7"/><path d="M11 11v1.5M15 11v1.5M2.5 9h3M2 12.5h3.5M2.5 16h3"/></svg>'
   };
   const GAMES=[
     {id:"game-brickle",key:"brickle",label:"Brickle",rarity:"common",about:"Guess the trade word in six tries."},
-    {id:"game-hazard",key:"hazard",label:"Hazard spotter",rarity:"common",about:"Find the hazards before time runs out."},
+    {id:"game-crossword",key:"crossword",label:"Crossword",rarity:"common",about:"Fill in the trade words from what they mean."},
     {id:"game-flappy",key:"flappy",label:"Flappy Evia",rarity:"rare",about:"Fly through the scaffold and pass the safety gates."}
   ];
 
@@ -162,119 +162,153 @@
     }
   }
 
-  /* ---------- Hazard spotter ----------
-     Two pictures, drawn in a 360 × 300 box. Each hazard has a tap zone (x, y, r) and says why it's a hazard. */
-  const person=(x,y,o)=>{o=o||{};const hv=o.vest||"#ffb300";
-    return '<g class="hz-man" transform="translate('+x+' '+y+')">'+
-      '<rect x="-7" y="30" width="6" height="26" rx="2.5" fill="#26324a"/><rect x="1" y="30" width="6" height="26" rx="2.5" fill="#26324a"/>'+
-      '<rect x="-8.5" y="54" width="8" height="4" rx="2" fill="#3b2f25"/><rect x="0.5" y="54" width="8" height="4" rx="2" fill="#3b2f25"/>'+
-      '<rect x="-10" y="8" width="20" height="25" rx="7" fill="'+hv+'"/><path d="M-10 21h20M-10 26h20" stroke="#e8edf3" stroke-width="2"/>'+
-      '<rect x="-14" y="10" width="5" height="18" rx="2.5" fill="'+hv+'"/><rect x="9" y="10" width="5" height="18" rx="2.5" fill="'+hv+'"/>'+
-      '<circle cx="0" cy="0" r="8.5" fill="#f1c7a3"/>'+
-      (o.hat===false?'<path d="M-8.5 -1.5c0-6 3.5-8.5 8.5-8.5s8.5 2.5 8.5 8.5c-2-3-5-4-8.5-4s-6.5 1-8.5 4Z" fill="#5a3b22"/>':
-        '<path d="M-9 -2a9 9 0 0 1 18 0Z" fill="'+(o.hat||"#2f6fcf")+'"/><rect x="-11.5" y="-3" width="23" height="3" rx="1.5" fill="'+(o.hat||"#2f6fcf")+'"/>')+
-      '<circle cx="-3" cy="1.5" r="1" fill="#263040"/><circle cx="3" cy="1.5" r="1" fill="#263040"/></g>'};
-  const SCENES=[
-    {id:"site",title:"On site",svg:()=>{
-      let bricks="";for(let r=0;r<15;r++){const y=40+r*10;for(let c=-1;c<13;c++){const x=150+c*16+(r%2?8:0);bricks+='<rect x="'+x+'" y="'+y+'" width="15" height="9" rx="1"/>'}}
-      return '<defs><clipPath id="hzWall"><rect x="150" y="40" width="200" height="150"/></clipPath></defs>'+
-        '<rect width="360" height="300" fill="#dcefff"/><circle cx="46" cy="42" r="18" fill="#fff4c2"/>'+
-        '<path d="M0 190h360v110H0Z" fill="#d8c69e"/><path d="M0 232h360v28H0Z" fill="#cbb78c"/>'+
-        '<rect x="150" y="40" width="200" height="150" fill="#b8573a"/><g clip-path="url(#hzWall)" fill="#c9683f" stroke="#a24a2f" stroke-width=".6">'+bricks+'</g>'+
-        '<rect x="262" y="60" width="44" height="34" fill="#9fd0ef" stroke="#eee" stroke-width="3"/><rect x="262" y="128" width="44" height="34" fill="#9fd0ef" stroke="#eee" stroke-width="3"/>'+
-        /* scaffold */
-        '<g stroke="#8d99a8" stroke-width="3.2" stroke-linecap="round"><path d="M152 26V192M246 26V192M340 26V192"/><path d="M150 150h192M150 86h192"/></g>'+
-        '<g fill="#c99a57" stroke="#9c7338" stroke-width="1"><rect x="146" y="112" width="198" height="7" rx="1.5"/><rect x="146" y="50" width="198" height="7" rx="1.5"/></g>'+
-        '<rect x="146" y="105" width="198" height="7" fill="#e0b56c" stroke="#9c7338" stroke-width=".8"/>'+
-        '<g stroke="#8d99a8" stroke-width="2.6" stroke-linecap="round"><path d="M150 92h192M150 100h192"/><path d="M246 30h96M246 40h96"/></g>'+
-        '<rect x="246" y="43" width="96" height="7" fill="#e0b56c" stroke="#9c7338" stroke-width=".8"/>'+
-        /* bricks stacked over the end of the lift */
-        '<g fill="#c9683f" stroke="#8f3f28" stroke-width=".8"><rect x="326" y="96" width="18" height="8"/><rect x="330" y="88" width="18" height="8"/><rect x="334" y="80" width="18" height="8"/><rect x="340" y="72" width="16" height="8"/></g>'+
-        /* short ladder */
-        '<g stroke="#b88a3e" stroke-width="3" stroke-linecap="round"><path d="M108 192 132 126M121 192 145 126"/></g><g stroke="#b88a3e" stroke-width="2.2"><path d="M112 180h13M116 168h13M121 155h13M126 142h13M130 131h13"/></g>'+
-        /* mixer and cable */
-        '<g><path d="M38 192l10-26h30l10 26" fill="none" stroke="#56606e" stroke-width="3"/><ellipse cx="63" cy="158" rx="26" ry="20" fill="#f28c28" stroke="#c46a12" stroke-width="2" transform="rotate(-20 63 158)"/><ellipse cx="45" cy="146" rx="8" ry="11" fill="#5b4636" transform="rotate(-20 45 146)"/><circle cx="44" cy="193" r="5" fill="#333"/><circle cx="82" cy="193" r="5" fill="#333"/></g>'+
-        '<path d="M86 186c14 16 4 40 30 52s40 8 64 10 40-8 66-4" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/><rect x="244" y="239" width="12" height="9" rx="2" fill="#1f2937"/>'+
-        /* skip */
-        '<path d="M8 258h54l-6 32H14Z" fill="#f5c400" stroke="#b28f00" stroke-width="2"/><path d="M14 262h42" stroke="#b28f00" stroke-width="1.5"/>'+
-        /* open trench, no barrier */
-        '<path d="M272 262h66l-6 24h-54Z" fill="#4b3a2a"/><path d="M272 262h66" stroke="#8a6d49" stroke-width="3"/><path d="M270 258c8-6 18-7 26-3" fill="#bca678"/>'+
-        person(220,205,{hat:false})+person(92,214,{hat:"#2f6fcf"});
-    },hazards:[
-      {x:198,y:36,r:26,label:"No guard rail on the top lift",why:"Anyone on the top lift could fall. Guard rails and toe boards are needed along every open edge."},
-      {x:133,y:138,r:22,label:"The ladder is too short",why:"A ladder should stick out about 1 metre above the platform, so you have something to hold as you step off, and be tied."},
-      {x:340,y:88,r:20,label:"Bricks stacked over the edge",why:"They could fall on someone below. Keep loads away from the edge, behind a brick guard."},
-      {x:150,y:244,r:24,label:"Cable trailing across the walkway",why:"It’s a trip hazard and can get damaged. Run cables overhead or along the edge, or use a cable cover."},
-      {x:220,y:204,r:16,label:"No hard hat",why:"Hard hats must be worn on site. Something could fall from the scaffold."},
-      {x:305,y:272,r:24,label:"Open trench with no barrier",why:"People could fall in. Trenches and holes need barriers or covers, and signs."}
-    ]},
-    {id:"shop",title:"In the workshop",svg:()=>{
-      let planks="";for(let i=0;i<7;i++)planks+='<path d="M0 '+(214+i*14)+'h360" stroke="#c4ab82" stroke-width="1"/>';
-      return '<rect width="360" height="300" fill="#eceff3"/><path d="M0 200h360v100H0Z" fill="#d9c39c"/>'+planks+
-        '<rect x="0" y="196" width="360" height="6" fill="#b8c0cb"/>'+
-        '<rect x="120" y="28" width="92" height="56" rx="3" fill="#b9dcf2" stroke="#fff" stroke-width="4"/><path d="M166 28v56" stroke="#fff" stroke-width="3"/>'+
-        /* fire exit, blocked */
-        '<rect x="18" y="86" width="64" height="112" fill="#d2d8e0" stroke="#aab3bf" stroke-width="2"/><rect x="22" y="60" width="56" height="20" rx="2" fill="#16a34a"/><path d="M30 70h14m-5-5 5 5-5 5" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="62" y="75" fill="#fff" font-size="10" font-weight="800" text-anchor="middle" font-family="sans-serif">EXIT</text>'+
-        '<g fill="#c8965a" stroke="#8d6434" stroke-width="1.2"><rect x="16" y="160" width="36" height="38"/><rect x="50" y="170" width="36" height="28"/><rect x="26" y="130" width="32" height="30"/></g><path d="M16 172h36M50 180h36M26 142h32" stroke="#8d6434" stroke-width="1"/>'+
-        /* extinguisher (fine) */
-        '<rect x="96" y="160" width="12" height="30" rx="5" fill="#dc2626"/><path d="M99 160v-5h6v5M105 156h6" stroke="#333" stroke-width="2" fill="none"/>'+
-        /* bench, drill with damaged cable, chisel over the edge */
-        '<rect x="118" y="136" width="120" height="10" rx="2" fill="#b9854d" stroke="#8d6434"/><rect x="124" y="146" width="7" height="52" fill="#8d6434"/><rect x="225" y="146" width="7" height="52" fill="#8d6434"/>'+
-        '<g><rect x="132" y="122" width="30" height="12" rx="4" fill="#0e9f9a"/><rect x="146" y="126" width="14" height="10" rx="2" fill="#0b7b77"/><rect x="118" y="126" width="16" height="4" rx="1" fill="#6b7280"/></g>'+
-        '<path d="M156 136c4 10-2 20 4 30" stroke="#1f2937" stroke-width="3" fill="none"/><path d="M160 166l-4 4M160 166l3 5M160 166l0 6" stroke="#dc2626" stroke-width="1.6" stroke-linecap="round"/><path d="M158 172c-2 14 8 22 12 28" stroke="#1f2937" stroke-width="3" fill="none"/>'+
-        '<g transform="rotate(-6 236 133)"><rect x="214" y="130" width="18" height="6" rx="2.5" fill="#d97706"/><rect x="232" y="131.5" width="22" height="3" fill="#9ca3af"/></g>'+
-        /* table saw with no guard, sawdust and offcuts */
-        '<rect x="262" y="148" width="86" height="8" rx="2" fill="#9aa3ae" stroke="#6b7280"/><rect x="270" y="156" width="70" height="42" rx="3" fill="#4b5563"/>'+
-        '<path d="M281 148a15 15 0 0 1 30 0Z" fill="#cbd5e1" stroke="#64748b" stroke-width="1.2"/><path d="M283 142l-3-2M288 136l-2-3M296 134v-3M304 136l2-3M309 142l3-2" stroke="#64748b" stroke-width="1.6"/>'+
-        '<ellipse cx="305" cy="274" rx="40" ry="9" fill="#e8d4a4"/><g fill="#b9854d" stroke="#8d6434" stroke-width=".8"><rect x="282" y="262" width="26" height="6" transform="rotate(12 295 265)"/><rect x="306" y="270" width="22" height="5" transform="rotate(-18 317 272)"/><rect x="292" y="276" width="18" height="5"/></g>'+
-        /* sockets: extension leads plugged into each other */
-        '<rect x="176" y="170" width="14" height="12" rx="2" fill="#fff" stroke="#9aa3ae"/><path d="M183 182c0 30 -20 40 -30 62" stroke="#f8fafc" stroke-width="3" fill="none"/><path d="M183 182c0 30 -20 40 -30 62" stroke="#94a3b8" stroke-width="1" fill="none"/>'+
-        '<rect x="132" y="240" width="40" height="11" rx="3" fill="#f8fafc" stroke="#94a3b8"/><rect x="162" y="252" width="40" height="11" rx="3" fill="#f8fafc" stroke="#94a3b8"/><path d="M168 244c14 0 10 10 14 8" stroke="#94a3b8" stroke-width="3" fill="none"/><rect x="190" y="264" width="30" height="10" rx="3" fill="#f8fafc" stroke="#94a3b8"/><path d="M198 257c12 2 6 10 10 7" stroke="#94a3b8" stroke-width="3" fill="none"/>'+
-        '<rect x="322" y="92" width="26" height="36" rx="3" fill="#fff" stroke="#16a34a" stroke-width="2"/><path d="M335 101v18M326 110h18" stroke="#16a34a" stroke-width="4"/>';
-    },hazards:[
-      {x:50,y:160,r:30,label:"Fire exit blocked",why:"Fire exits must be kept clear at all times, so everyone can get out fast."},
-      {x:296,y:140,r:20,label:"Saw blade with no guard",why:"Always set the crown guard and riving knife before using a table saw, and use a push stick."},
-      {x:160,y:170,r:16,label:"Damaged cable on the drill",why:"Bare wires can give an electric shock. Take it out of use, label it and report it."},
-      {x:243,y:132,r:15,label:"Chisel hanging over the edge",why:"It could fall and cut someone. Keep chisels flat, away from the edge, in a roll or rack."},
-      {x:175,y:256,r:28,label:"Extension leads plugged into each other",why:"Daisy-chaining leads can overload them and start a fire. Use one lead, fully unwound."},
-      {x:305,y:272,r:26,label:"Offcuts and sawdust on the floor",why:"A slip and trip hazard, and a fire risk. Clear up as you go."}
-    ]}
-  ];
-  let sceneN=0;
-  function hazard(ctx){
-    const pref=group()==="bench"?1:0,sc=SCENES[(pref+sceneN++)%SCENES.length],TIME=60;
-    const found=new Set();let misses=0,left=TIME,t0=Date.now(),done=false;
-    ctx.body.innerHTML='<div class="hz"><div class="hz-top"><p class="hz-say"><strong>'+esc(sc.title)+':</strong> tap the <b>'+sc.hazards.length+'</b> hazards.</p><span class="hz-count"><b>0</b>/'+sc.hazards.length+'</span></div>'+
-      '<div class="hz-time"><i></i></div><div class="hz-pic"><svg viewBox="0 0 360 300" role="img" aria-label="'+esc(sc.title)+' picture">'+sc.svg()+'<g class="hz-marks"></g></svg></div>'+
-      '<div class="hz-info" aria-live="polite"><p>Look carefully: some things are safe.</p></div></div>';
-    const svg=ctx.body.querySelector("svg"),marks=svg.querySelector(".hz-marks"),info=ctx.body.querySelector(".hz-info"),bar=ctx.body.querySelector(".hz-time i");
-    const mark=(h,i,cls)=>{marks.insertAdjacentHTML("beforeend",'<g class="hz-ring '+cls+'"><circle cx="'+h.x+'" cy="'+h.y+'" r="'+Math.max(13,h.r*.75)+'"/><text x="'+h.x+'" y="'+(h.y-h.r*.75-4)+'">'+(i+1)+'</text></g>')};
-    svg.addEventListener("pointerdown",e=>{
-      if(done)return;
-      const m=svg.getScreenCTM();if(!m)return;const pt=new DOMPoint(e.clientX,e.clientY).matrixTransform(m.inverse());
-      const i=sc.hazards.findIndex((h,k)=>!found.has(k)&&Math.hypot(h.x-pt.x,h.y-pt.y)<=h.r+6);
-      if(i<0){
-        if(sc.hazards.some((h,k)=>found.has(k)&&Math.hypot(h.x-pt.x,h.y-pt.y)<=h.r))return;
-        misses++;buzz(30);marks.insertAdjacentHTML("beforeend",'<g class="hz-miss"><path d="M'+(pt.x-6)+' '+(pt.y-6)+'l12 12M'+(pt.x+6)+' '+(pt.y-6)+'l-12 12"/></g>');
-        const x=marks.lastChild;setTimeout(()=>x.remove(),700);
-        info.innerHTML='<p>That one’s safe. Keep looking.</p>';return;
+  /* ---------- Crossword ----------
+     A fresh small crossword each time, built from the trade's terms. The clues are what each term means, so filling it
+     in is learning the words. Tap a square to pick a word (tap again to switch across/down), type with the keys. */
+  const CLUES={
+    brick:[
+      ["MORTAR","Sand, cement and water, mixed to bed and joint the bricks"],["TROWEL","The tool for spreading and cutting mortar"],
+      ["LINTEL","A beam over a window or door that carries the brickwork above"],["DATUM","A fixed height that all levels are measured from"],
+      ["QUOIN","The outside corner of a wall, built before the rest"],["GAUGE","Keeping courses the same height: 75 mm for a brick and its joint"],
+      ["PLUMB","Perfectly upright"],["LEVEL","The tool that checks each course is flat"],["ARRIS","The sharp edge where two faces of a brick meet"],
+      ["HEADER","A brick laid with its end showing on the face"],["STRETCHER","A brick laid lengthways along the wall"],
+      ["BOLSTER","A wide chisel for cutting bricks with a club hammer"],["CAVITY","The gap between the two leaves of an outside wall"],
+      ["TIES","Metal fixings that join the two leaves of a cavity wall"],["FROG","The dent in the top of some bricks"],
+      ["PERPEND","An upright joint between two bricks"],["CORBEL","Brickwork that steps out from the face of the wall"],
+      ["COPING","The top layer of a free-standing wall that throws off the rain"],["HOD","A tray on a pole for carrying bricks or mortar"],
+      ["BOND","The pattern bricks are laid in, so the joints don’t line up"],["LINE","Pinned between the corners to keep each course straight"],
+      ["PIER","A thicker column of brickwork that stiffens a wall"],["JOINT","The mortar between bricks, usually 10 mm"]
+    ],
+    site:[
+      ["JOIST","A timber beam that carries a floor, usually at 400 mm centres"],["RAFTER","A sloping timber that carries the roof covering"],
+      ["TRUSS","A factory-made triangle frame that holds up a roof"],["RIDGE","The top line of a roof, where the two slopes meet"],
+      ["EAVES","The lower edge of a roof that overhangs the wall"],["PURLIN","A roof beam that supports the rafters halfway up"],
+      ["FASCIA","The board fixed to the rafter ends that carries the gutter"],["SOFFIT","The board under the roof overhang, between the fascia and the wall"],
+      ["TREAD","The part of a stair step you stand on"],["RISER","The upright part between two stair treads"],
+      ["NEWEL","The big post at the top or bottom of a staircase"],["STRING","The board each side of a staircase that carries the treads"],
+      ["ARCHITRAVE","The trim round a door lining that covers the joint with the wall"],["SKIRTING","The board fixed along the bottom of a wall"],
+      ["STUD","An upright timber in a partition wall"],["NOGGING","A short timber fixed between studs to stiffen the wall"],
+      ["LINING","The frame of boards fixed in a doorway that the door hangs in"],["HINGE","Fire doors hang on three of these"],
+      ["MITRE","A joint cut at 45° on each piece, like skirting on an outside corner"],["SCRIBE","To cut one piece to fit the shape of another"],
+      ["PLUMB","Perfectly upright"],["LATCH","Holds a door shut until you turn the handle"],["JAMB","An upright side of a door frame"]
+    ],
+    bench:[
+      ["TENON","The tongue on the end of a rail that fits into a mortice"],["MORTICE","A rectangular hole cut to take a tenon"],
+      ["DOWEL","A round wooden pin glued into holes to join two pieces"],["STILE","An upright side piece of a door or frame"],
+      ["RAIL","A cross piece of a door or frame, joined into the stiles"],["MUNTIN","An upright bar between the rails in the middle of a door"],
+      ["PLANE","Shaves timber smooth, straight and to size"],["GRAIN","The way the wood fibres run: plane and sand with it"],
+      ["KNOT","Where a branch grew; big loose ones weaken timber"],["BEVEL","A sloping edge, or the tool for marking angles"],
+      ["CRAMP","What joiners call a clamp"],["REBATE","A step cut along the edge of timber, for glass or a door"],
+      ["HOUSING","A groove cut across the grain for another piece to fit into"],["DOVETAIL","A strong fan-shaped joint used on drawers"],
+      ["VENEER","A thin sheet of wood glued onto a panel"],["PLYWOOD","Board made of thin layers glued with the grain crossing"],
+      ["SASH","The part of a window that opens"],["ARRIS","The sharp edge between two faces"],["CHISEL","Cuts mortices and pares joints to fit"],
+      ["MITRE","A joint cut at 45° on each piece to turn a corner"],["TEMPLATE","A pattern used to mark out the same shape many times"],
+      ["ROD","A full-size drawing of a job, used to set out joinery"],["GLUE","Holds a joint together once it’s cramped up"]
+    ]
+  };
+  /* Build a crossword: words placed across and down, only touching where they cross. Tries a few times and keeps the
+     one with the most words that still fits a phone (up to 11 squares wide). */
+  function build(list,want){
+    const N=21,M=10;let best=null;
+    for(let tries=0;tries<40;tries++){
+      const pool=list.slice().sort(()=>Math.random()-.5),grid=Array.from({length:N},()=>Array(N).fill("")),placed=[];
+      const at=(r,c)=>r>=0&&c>=0&&r<N&&c<N?grid[r][c]:"";
+      const fits=(w,r,c,d)=>{
+        const dr=d?1:0,dc=d?0:1;let cross=0;
+        if(at(r-dr,c-dc)||at(r+dr*w.length,c+dc*w.length))return -1;
+        for(let i=0;i<w.length;i++){
+          const rr=r+dr*i,cc=c+dc*i;if(rr<0||cc<0||rr>=N||cc>=N)return -1;const g=grid[rr][cc];
+          if(g){if(g!==w[i])return -1;cross++}
+          else if(at(rr+dc,cc+dr)||at(rr-dc,cc-dr))return -1;
+        }
+        return cross;
+      };
+      const put=(w,r,c,d,clue)=>{for(let i=0;i<w.length;i++)grid[r+(d?i:0)][c+(d?0:i)]=w[i];placed.push({w,r,c,d,clue})};
+      const first=pool.find(p=>p[0].length>=5&&p[0].length<=M)||pool[0];put(first[0],10,10-Math.floor(first[0].length/2),0,first[1]);
+      for(const [w,clue] of pool){
+        if(placed.length>=want)break;if(placed.some(p=>p.w===w)||w.length>M)continue;
+        const opts=[];
+        for(const p of placed)for(let i=0;i<p.w.length;i++)for(let j=0;j<w.length;j++){
+          if(p.w[i]!==w[j])continue;const d=p.d?0:1,r=p.d?p.r+i:p.r-j,c=p.d?p.c-j:p.c+i,x=fits(w,r,c,d);if(x>0)opts.push({r,c,d,x});
+        }
+        if(!opts.length)continue;
+        /* Prefer more crossings, then staying compact. */
+        const box=o=>{const rs=placed.map(p=>[p.r,p.r+(p.d?p.w.length-1:0)]).flat().concat([o.r,o.r+(o.d?w.length-1:0)]),cs=placed.map(p=>[p.c,p.c+(p.d?0:p.w.length-1)]).flat().concat([o.c,o.c+(o.d?0:w.length-1)]);return Math.max(Math.max(...rs)-Math.min(...rs),Math.max(...cs)-Math.min(...cs))};
+        opts.sort((a,b)=>b.x-a.x||box(a)-box(b));const o=opts[0];if(box(o)>=M+1)continue;put(w,o.r,o.c,o.d,clue);
       }
-      found.add(i);buzz(12);mark(sc.hazards[i],i,"ok");
-      ctx.body.querySelector(".hz-count b").textContent=found.size;
-      info.innerHTML='<strong>'+esc(sc.hazards[i].label)+'</strong><p>'+esc(sc.hazards[i].why)+'</p>';
-      if(found.size===sc.hazards.length)end();
+      if(!best||placed.length>best.length)best=placed;if(best.length>=want)break;
+    }
+    const r0=Math.min(...best.map(p=>p.r)),c0=Math.min(...best.map(p=>p.c));
+    const words=best.map(p=>Object.assign({},p,{r:p.r-r0,c:p.c-c0}));
+    const rows=Math.max(...words.map(p=>p.r+(p.d?p.w.length:1))),cols=Math.max(...words.map(p=>p.c+(p.d?1:p.w.length)));
+    /* Number the squares where words start, top to bottom, left to right. */
+    const starts=[...new Set(words.map(p=>p.r*100+p.c))].sort((a,b)=>a-b);
+    words.forEach(p=>p.n=starts.indexOf(p.r*100+p.c)+1);
+    words.sort((a,b)=>a.d-b.d||a.n-b.n);
+    return {words,rows,cols};
+  }
+  function crossword(ctx){
+    const pz=build(CLUES[group()],7),{words,rows,cols}=pz,sol={},val={},wrong=new Set();
+    words.forEach(p=>{for(let i=0;i<p.w.length;i++)sol[(p.r+(p.d?i:0))+","+(p.c+(p.d?0:i))]=p.w[i]});
+    let cur=0,pos=0,reveals=0,over=false;
+    const cells=p=>Array.from({length:p.w.length},(_,i)=>(p.r+(p.d?i:0))+","+(p.c+(p.d?0:i)));
+    const KB=["QWERTYUIOP","ASDFGHJKL","ZXCVBNM⌫"];
+    const num={};words.forEach(p=>{num[p.r+","+p.c]=p.n});
+    ctx.body.innerHTML='<div class="cw"><div class="cw-grid" style="--cols:'+cols+'">'+
+      Array.from({length:rows*cols},(_,k)=>{const r=Math.floor(k/cols),c=k%cols,key=r+","+c;
+        return sol[key]?'<button type="button" class="cw-c" data-c="'+key+'" aria-label="Square '+(r+1)+', '+(c+1)+'">'+(num[key]?'<i>'+num[key]+'</i>':"")+'<b></b></button>':'<span class="cw-x"></span>'}).join("")+'</div>'+
+      '<div class="cw-clue"><button type="button" class="cw-nav" data-nav="-1" aria-label="Previous clue">‹</button><p aria-live="polite"></p><button type="button" class="cw-nav" data-nav="1" aria-label="Next clue">›</button></div>'+
+      '<div class="cw-tools"><button type="button" data-t="check">Check</button><button type="button" data-t="reveal">Reveal a letter</button><span class="cw-msg" aria-live="polite"></span></div>'+
+      '<div class="bk-kb">'+KB.map(r=>'<div>'+[...r].map(k=>'<button type="button" data-k="'+k+'" class="'+(k==="⌫"?"wide":"")+'" aria-label="'+(k==="⌫"?"Delete":k)+'">'+k+'</button>').join("")+'</div>').join("")+'</div></div>';
+    const $=q=>ctx.body.querySelector(q),cellEl=k=>ctx.body.querySelector('[data-c="'+k+'"]'),msg=t=>{$(".cw-msg").textContent=t||""};
+    function paint(){
+      const cs=cells(words[cur]);
+      ctx.body.querySelectorAll(".cw-c").forEach(b=>{const k=b.dataset.c;b.querySelector("b").textContent=val[k]||"";b.classList.toggle("in",cs.includes(k));b.classList.toggle("on",cs[pos]===k);b.classList.toggle("bad",wrong.has(k));b.classList.toggle("ok",over)});
+      const p=words[cur];$(".cw-clue p").innerHTML='<strong>'+p.n+(p.d?" Down":" Across")+'</strong> '+esc(p.clue)+' <span>('+p.w.length+')</span>';
+    }
+    const select=(i,at)=>{cur=(i+words.length)%words.length;const cs=cells(words[cur]);pos=at!=null?at:Math.max(0,cs.findIndex(k=>!val[k]));paint()};
+    ctx.body.querySelectorAll(".cw-c").forEach(b=>b.onclick=()=>{
+      if(over)return;const k=b.dataset.c,cs=cells(words[cur]);
+      if(cs.includes(k)&&cs[pos]===k){const o=words.findIndex((p,i)=>i!==cur&&cells(p).includes(k));if(o>=0)return select(o,cells(words[o]).indexOf(k))}
+      if(cs.includes(k)){pos=cs.indexOf(k);return paint()}
+      const i=words.findIndex(p=>cells(p).includes(k));select(i,cells(words[i]).indexOf(k));
     });
-    const tick=()=>{if(done)return;left=Math.max(0,TIME-(Date.now()-t0)/1000);bar.style.width=(left/TIME*100)+"%";bar.classList.toggle("low",left<15);if(left<=0)end()};
-    const iv=setInterval(tick,200);ctx.stops.push(()=>clearInterval(iv));
+    ctx.body.querySelectorAll("[data-nav]").forEach(b=>b.onclick=()=>select(cur+Number(b.dataset.nav)));
+    const full=()=>Object.keys(sol).every(k=>val[k]);
+    const right=()=>Object.keys(sol).every(k=>val[k]===sol[k]);
+    function after(){
+      if(!full())return;
+      if(right()){over=true;paint();buzz([10,40,10]);setTimeout(end,reduced()?150:700)}
+      else msg("Nearly! Something’s not right. Tap Check.");
+    }
+    function type(ch){
+      if(over)return;const cs=cells(words[cur]);
+      if(ch==="⌫"){if(!val[cs[pos]]&&pos>0)pos--;delete val[cs[pos]];wrong.delete(cs[pos]);msg();return paint()}
+      val[cs[pos]]=ch;wrong.delete(cs[pos]);buzz(5);msg();
+      if(pos<cs.length-1)pos++;
+      else if(cs.every(k=>val[k])){const nx=words.findIndex((p,i)=>i>cur&&cells(p).some(k=>!val[k])),n2=nx>=0?nx:words.findIndex(p=>cells(p).some(k=>!val[k]));if(n2>=0){paint();return setTimeout(()=>{select(n2);},120)}}
+      paint();after();
+    }
+    ctx.body.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>type(b.dataset.k));
+    ctx.body.querySelector('[data-t="check"]').onclick=()=>{
+      Object.keys(val).forEach(k=>{if(val[k]!==sol[k])wrong.add(k)});paint();
+      msg(wrong.size?wrong.size+(wrong.size===1?" letter isn’t right.":" letters aren’t right."):Object.keys(val).length?"All correct so far.":"Fill in some squares first.");
+    };
+    ctx.body.querySelector('[data-t="reveal"]').onclick=()=>{
+      if(over)return;const cs=cells(words[cur]),k=cs.find(x=>val[x]!==sol[x]);if(!k)return;
+      val[k]=sol[k];wrong.delete(k);reveals++;pos=cs.indexOf(k);msg("That letter costs a coin.");paint();after();
+    };
+    const kd=e=>{if(e.ctrlKey||e.metaKey||e.altKey||over)return;const k=e.key.toUpperCase();
+      if(/^[A-Z]$/.test(k)){e.preventDefault();type(k)}else if(k==="BACKSPACE"){e.preventDefault();type("⌫")}
+      else if(e.key==="ArrowRight"||e.key==="ArrowDown"||e.key==="Tab"){e.preventDefault();select(cur+1)}else if(e.key==="ArrowLeft"||e.key==="ArrowUp"){e.preventDefault();select(cur-1)}};
+    document.addEventListener("keydown",kd);ctx.stops.push(()=>document.removeEventListener("keydown",kd));
+    select(0,0);
     function end(){
-      if(done)return;done=true;clearInterval(iv);
-      sc.hazards.forEach((h,i)=>{if(!found.has(i))mark(h,i,"missed")});
-      const all=found.size===sc.hazards.length,secs=Math.round(TIME-left);
-      setTimeout(()=>finish(ctx,{title:all?"All "+found.size+" found!":found.size+" of "+sc.hazards.length+" found",
-        sub:all?"In "+secs+" seconds"+(misses?", with "+misses+(misses===1?" wrong tap.":" wrong taps."):", with no wrong taps."):"Time’s up. The ones you missed are circled in red.",
-        coins:found.size+(all?3:0),
-        html:'<ol class="gm-list">'+sc.hazards.map((h,i)=>'<li class="'+(found.has(i)?"ok":"no")+'"><strong>'+esc(h.label)+'</strong><span>'+esc(h.why)+'</span></li>').join("")+'</ol>',
-        again:()=>hazard(ctx)}),all?500:900);
+      document.removeEventListener("keydown",kd);
+      finish(ctx,{title:reveals?"Crossword done!":"Solved it yourself!",sub:reveals?"With "+reveals+(reveals===1?" letter":" letters")+" revealed.":"No letters revealed. Top work.",
+        coins:reveals*2>=Object.keys(sol).length?0:Math.max(2,8-reveals),
+        html:'<ol class="gm-list">'+words.map(p=>'<li class="ok"><strong>'+p.w+'</strong><span>'+esc(p.clue)+'</span></li>').join("")+'</ol>',
+        again:()=>crossword(ctx)});
     }
   }
 
@@ -384,7 +418,7 @@
     raf=requestAnimationFrame(step);
   }
 
-  const RUN={brickle,hazard,flappy};
+  const RUN={brickle,crossword,flappy};
   function open(key){const g=GAMES.find(x=>x.key===key);if(!g||!RUN[key])return;const ctx=shell(g);RUN[key](ctx)}
-  window.eviaGames={GAMES,open,group,iconFor:k=>ICONS[k]||"",WORDS,SCENES,GATES,score};
+  window.eviaGames={GAMES,open,group,iconFor:k=>ICONS[k]||"",WORDS,CLUES,build,GATES,score};
 })();
