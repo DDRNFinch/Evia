@@ -8,7 +8,14 @@
     red:{label:"Red",accent:"#e2483d",soft:"#fdeceb",line:"#f5b6af",ink:"#a32921",bg:"#fff9f8"},
     orange:{label:"Orange",accent:"#f47c20",soft:"#fff1e6",line:"#fbc79a",ink:"#9a4a0b",bg:"#fffbf7"},
     teal:{label:"Teal",accent:"#0fa3a3",soft:"#e3f7f7",line:"#9edede",ink:"#0b6464",bg:"#f7fdfd"},
-    midnight:{label:"Midnight",accent:"#334155",soft:"#eef1f6",line:"#c6cfdc",ink:"#1e293b",bg:"#f8fafc"}
+    midnight:{label:"Midnight",accent:"#334155",soft:"#eef1f6",line:"#c6cfdc",ink:"#1e293b",bg:"#f8fafc"},
+    sky:{label:"Sky",accent:"#0ea5e9",soft:"#e3f5fd",line:"#a5dcf6",ink:"#075985",bg:"#f7fcff"},
+    coral:{label:"Coral",accent:"#f26b5b",soft:"#feeeec",line:"#f9c1ba",ink:"#a13a2e",bg:"#fffaf9"},
+    gold:{label:"Gold",accent:"#c99a2e",soft:"#faf3e0",line:"#e9d3a0",ink:"#7a5a12",bg:"#fffdf7"},
+    forest:{label:"Forest",accent:"#2f7d4f",soft:"#e8f3ec",line:"#b3d6c0",ink:"#1d4f32",bg:"#f8fbf9"},
+    rose:{label:"Rose",accent:"#d9466f",soft:"#fcebf0",line:"#f2b8c9",ink:"#97244a",bg:"#fff9fb"},
+    navy:{label:"Navy",accent:"#24407a",soft:"#e9eef8",line:"#b8c6e3",ink:"#172a52",bg:"#f8f9fc"},
+    graphite:{label:"Graphite",accent:"#4b5563",soft:"#eef0f3",line:"#cbd0d7",ink:"#1f2937",bg:"#f9fafb"}
   };
   /* Free for everyone and shown on the first-run pickers; the rest are unlocked in Rewards (rewards.js). */
   const FREE_THEMES=["yellow","green","blue"],FREE_SHAPES=["circle","squircle","cloud"];
@@ -25,6 +32,11 @@
     oval:{label:"Oval",className:"oval",svg:true},
     hex:{label:"Hexagon",className:"hex",svg:true},
     shield:{label:"Shield",className:"shield",svg:true},
+    ghost:{label:"Ghost",className:"ghost",svg:true},
+    cat:{label:"Cat",className:"cat",svg:true},
+    dog:{label:"Dog",className:"dog",svg:true},
+    robot:{label:"Robot",className:"robot",svg:true},
+    alien:{label:"Alien",className:"alien",svg:true},
     /* Advanced Evias (legendary): animated orbs, drawn by orbs.js. */
     "particle-aqua":{label:"Aqua particle",className:"particle-aqua",svg:true,orb:{style:"particle",c:"#3ee6ff",d:"#04141d"}},
     "particle-violet":{label:"Violet particle",className:"particle-violet",svg:true,orb:{style:"particle",c:"#b8a2ff",d:"#0f0a26"}},
@@ -40,7 +52,13 @@
     gear:{body:["M43.8 12.5L45.0 3.3A47 47 0 0 1 55.0 3.3L56.2 12.5A38 38 0 0 1 67.0 16.0L73.4 9.2A47 47 0 0 1 81.5 15.1L77.0 23.3A38 38 0 0 1 83.7 32.5L92.9 30.8A47 47 0 0 1 96.0 40.3L87.6 44.3A38 38 0 0 1 87.6 55.7L96.0 59.7A47 47 0 0 1 92.9 69.2L83.7 67.5A38 38 0 0 1 77.0 76.7L81.5 84.9A47 47 0 0 1 73.4 90.8L67.0 84.0A38 38 0 0 1 56.2 87.5L55.0 96.7A47 47 0 0 1 45.0 96.7L43.8 87.5A38 38 0 0 1 33.0 84.0L26.6 90.8A47 47 0 0 1 18.5 84.9L23.0 76.7A38 38 0 0 1 16.3 67.5L7.1 69.2A47 47 0 0 1 4.0 59.7L12.4 55.7A38 38 0 0 1 12.4 44.3L4.0 40.3A47 47 0 0 1 7.1 30.8L16.3 32.5A38 38 0 0 1 23.0 23.3L18.5 15.1A47 47 0 0 1 26.6 9.2L33.0 16.0A38 38 0 0 1 43.8 12.5Z"]},
     oval:{body:["M4 50A46 34 0 1 1 96 50A46 34 0 1 1 4 50Z"]},
     hex:{body:["M30 9Q28 9 27 10.7L8.2 47.4Q7 50 8.2 52.6L27 89.3Q28 91 30 91H70Q72 91 73 89.3L91.8 52.6Q93 50 91.8 47.4L73 10.7Q72 9 70 9Z"]},
-    shield:{body:["M50 7C62 12 75 13 88 11Q91 11 91 14V47C91 71 74 86 51.5 94.5Q50 95 48.5 94.5C26 86 9 71 9 47V14Q9 11 12 11C25 13 38 12 50 7Z"]}
+    shield:{body:["M50 7C62 12 75 13 88 11Q91 11 91 14V47C91 71 74 86 51.5 94.5Q50 95 48.5 94.5C26 86 9 71 9 47V14Q9 11 12 11C25 13 38 12 50 7Z"]},
+    /* Characters: parts behind the head (ears, antennae) come first, so the head's outline sits on top. */
+    ghost:{body:["M18 90V46C18 24 32 8 50 8C68 8 82 24 82 46V90C78 94 74 94 71 89C68 84 64 84 61 89C58 94 54 94 50 89C46 94 42 94 39 89C36 84 32 84 29 89C26 94 22 94 18 90Z"]},
+    cat:{body:["M14 44L15 11Q16 6 20.5 8.5L38 22Q50 18 62 22L79.5 8.5Q84 6 85 11L86 44Q92 56 88 68Q82 88 50 90Q18 88 12 68Q8 56 14 44Z"]},
+    dog:{body:["M27 20C12 15 3 30 4.5 50C5.5 63 14 66 18.5 57C20 45 22 33 31 25Z","M73 20C88 15 97 30 95.5 50C94.5 63 86 66 81.5 57C80 45 78 33 69 25Z","M50 16C72 16 84 32 84 54C84 76 70 90 50 90C30 90 16 76 16 54C16 32 28 16 50 16Z"]},
+    robot:{body:["M48.5 25V12H51.5V25Z","M5 48H13V66H5Q3 66 3 64V50Q3 48 5 48Z","M95 48H87V66H95Q97 66 97 64V50Q97 48 95 48Z","M20 24H80Q88 24 88 32V80Q88 88 80 88H20Q12 88 12 80V32Q12 24 20 24Z"],dots:[[50,9,4.5]]},
+    alien:{body:["M34 17L25.5 6L28 4.4L36.5 15.4Z","M66 17L74.5 6L72 4.4L63.5 15.4Z","M50 14C75 14 92 28 92 46C92 66 70 90 50 90C30 90 8 66 8 46C8 28 25 14 50 14Z"],dots:[[25.5,5,4],[74.5,5,4]]}
   };
   /* An advanced Evia's still picture: a dark sphere with a glowing rim, and either particle rings or a glass sheen and
      a light line. orbs.js animates the larger ones (a canvas of particles, or the moving line). */

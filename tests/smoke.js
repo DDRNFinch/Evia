@@ -45,7 +45,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("Each section's buttons are inside its deep dive",deepActs.review.includes("Start my review")&&deepActs.otj.includes("Log hours")&&deepActs.conf.includes("Find a college task"),JSON.stringify(deepActs));
     check("My progress shows a chart card for each area, with no action buttons",await page.evaluate(()=>screen==="learning"&&["where","ksb","otj","tests","conf","act","quality","targets","ach"].every(id=>document.getElementById("pv-"+id))&&!document.querySelector("#screen .primary,#screen .pg-action")));
     await page.click("#pv-otj");await page.waitForTimeout(500);
-    check("Tapping a card opens its deep dive with a how-to note",await page.evaluate(()=>/Off-the-job hours/.test(document.getElementById("pv-sheet-title").textContent)&&!!document.querySelector(".pv-sheet .pv-note")&&!!document.querySelector(".pv-sheet .pv-cols")));
+    check("Tapping a card opens its deep dive with a how-to note",await page.evaluate(()=>/Learning hours/.test(document.getElementById("pv-sheet-title").textContent)&&!!document.querySelector(".pv-sheet .pv-note")&&!!document.querySelector(".pv-sheet .pv-cols")));
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";window.chat({quiet:true})});await page.waitForTimeout(300);
     await page.evaluate(()=>{window.eviaChatKit.userSays("Log my hours");window.eviaCoachFlows.hours()});
     await page.waitForSelector('#chat .chat-pill:has-text("Toolbox talk")',{timeout:8000});await page.click('#chat .chat-pill:has-text("Toolbox talk")');
@@ -96,7 +96,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>window.chat());
     await page.waitForFunction(()=>{const c=document.getElementById("chat");return c&&!c.querySelector(".evia-thinking")},null,{timeout:15000});
     await page.waitForSelector("#chat .ui-action",{timeout:15000});
-    check("Evia opens with a catch-up and her four actions",await page.evaluate(()=>{const t=[...document.querySelectorAll("#chat .ui-action")].map(b=>b.innerText.trim());return t.join()==="Evidence check,Quick review,Show targets,EPA mocks"&&/off-the-job/.test(document.getElementById("chat").innerText)&&!document.querySelector(".chat-sheet .ui-ask")}));
+    check("Evia opens with a catch-up and her four actions",await page.evaluate(()=>{const t=[...document.querySelectorAll("#chat .ui-action")].map(b=>b.innerText.trim());return t.join()==="Evidence check,Quick review,Show targets,EPA mocks"&&/learning hours|of learning/i.test(document.getElementById("chat").innerText)&&!document.querySelector(".chat-sheet .ui-ask")}));
     await page.click('#chat .ui-action[data-action="evidence"]');
     await page.waitForFunction(()=>[...document.querySelectorAll("#chat .ui-replies button")].length>=2,null,{timeout:15000});
     await page.evaluate(()=>document.querySelector("#chat .ui-replies button").click());
@@ -212,7 +212,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";nav("learning")});await page.waitForTimeout(500);
     await page.evaluate(()=>window.eviaOpenLearningLogs());await page.waitForSelector("#download-otj",{timeout:5000});
     await page.evaluate(()=>document.getElementById("download-otj").click());await page.waitForSelector("#eport-save",{timeout:15000});
-    check("The OTJ log downloads as a PDF with a preview",await page.evaluate(()=>!!document.getElementById("eport-preview")&&/OTJ PDF/.test(document.querySelector(".eport-status").textContent)));
+    check("The OTJ log downloads as a PDF with a preview",await page.evaluate(()=>!!document.getElementById("eport-preview")&&/Learning hours PDF/.test(document.querySelector(".eport-status").textContent)));
     await page.evaluate(()=>window.eviaOpenLearningLogs());await page.waitForTimeout(600);
     check("Learning logs then only offers new entries, and past downloads can be downloaded again",await page.evaluate(()=>!document.getElementById("download-otj")&&document.querySelectorAll("[data-batch]").length>=1&&/Everything’s downloaded/.test(document.getElementById("screen").innerText)));
     await page.evaluate(()=>nav("home"));await page.waitForTimeout(400);
@@ -276,14 +276,14 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       localStorage.setItem("evia7-rewards",JSON.stringify({bank:1000,spent:0,owned:[],hat:"",pity:0,seenAch:[],lastXp:0,day:""}));
       out.free=!R.locked("shape","cloud")&&!R.locked("colour","green")&&R.locked("shape","gear")==="epic"&&R.locked("colour","orange")==="common";
       nav("rewards");await w(500);
-      out.page=!!document.getElementById("rw-page")&&document.querySelectorAll(".rw-item").length===10&&/Loot box only/.test(document.getElementById("rw-hat-glow").textContent);
+      out.page=!!document.getElementById("rw-page")&&document.querySelectorAll(".rw-item").length===16&&/Loot box only/.test(document.getElementById("rw-hat-glow").textContent);
       document.querySelector('[data-buy="hat-blue"]').click();await w(300);
       out.bought=JSON.parse(localStorage.getItem("evia7-rewards")).owned.includes("hat-blue")&&!!document.querySelector("#evia-fab .evia-kit");
       document.querySelectorAll(".rw-over").forEach(o=>o.remove());
       const box=async()=>{document.getElementById("rw-open").click();await w(1700);document.querySelectorAll(".rw-over").forEach(o=>o.remove())};
       Math.random=()=>0.01;await box();
       const s1=JSON.parse(localStorage.getItem("evia7-rewards"));
-      out.dupe=["shape-oval","colour-orange","expr-wink","expr-surprised","ppe-specs","ppe-hivis"].some(id=>s1.owned.includes(id));
+      out.dupe=window.eviaRewards.catalogue().filter(x=>x.rarity==="common"&&x.id!=="hat-blue").some(x=>s1.owned.includes(x.id));
       for(let k=0;k<5;k++)await box();
       const s2=JSON.parse(localStorage.getItem("evia7-rewards"));out.refund=s2.bank>1000;
       const st=JSON.parse(localStorage.getItem("evia7-rewards"));st.pity=9;localStorage.setItem("evia7-rewards",JSON.stringify(st));
@@ -301,7 +301,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       window.eviaSetShape(shapeBefore);await w(100);
       const s4=JSON.parse(localStorage.getItem("evia7-rewards"));s4.owned.push("expr-wink");localStorage.setItem("evia7-rewards",JSON.stringify(s4));
       nav("rewards");await w(400);document.querySelector('[data-tab="expr"]').click();await w(200);
-      out.faces=document.querySelectorAll(".rw-item").length===7&&/Loot box only/.test(document.getElementById("rw-expr-hearts").textContent);
+      out.faces=document.querySelectorAll(".rw-item").length===12&&/Loot box only/.test(document.getElementById("rw-expr-hearts").textContent);
       document.querySelector('[data-use="expr-wink"]').click();await w(200);
       out.expr=document.documentElement.getAttribute("data-evia-expr")==="wink";
       document.querySelector('[data-use="expr-wink"]').click();await w(200);
@@ -368,7 +368,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       return out;
     });
     check("Mini games: locked until bought in Rewards, then Brickle, the crossword and Flappy Evia play from Teach me and pay capped coins",Object.values(gm).every(Boolean),JSON.stringify(gm));
-    check("Expressions: seven faces (heart eyes loot box only); using one shows it on Evia, and tapping again goes back to classic",rw.faces&&rw.expr&&rw.exprOff,JSON.stringify(rw));
+    check("Expressions: twelve faces (heart eyes loot box only); using one shows it on Evia, and tapping again goes back to classic",rw.faces&&rw.expr&&rw.exprOff,JSON.stringify(rw));
     await page.evaluate(()=>nav("teach"));await page.waitForTimeout(600);
     await page.evaluate(()=>document.querySelector('[data-go="course"]').click());await page.waitForTimeout(600);
     // Teach me: play the whole Mixing mortar unit (every kind of screen, a mistake to fix and a surprise question),

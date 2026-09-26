@@ -134,7 +134,7 @@
     root.className="welcome";
     const I=d=>'<svg viewBox="0 0 24 24" aria-hidden="true">'+d+'</svg>';
     root.innerHTML='<section class="ew-hero">'+
-        '<div class="ew-evia-wrap ew-in" style="--d:0"><span class="evia-mini ew-evia" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span><span class="ew-wave" aria-hidden="true">👋</span></div><br>'+
+        '<div class="ew-evia-wrap ew-in" style="--d:0"><span class="evia-mini ew-evia" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span></div><br>'+
         '<div class="ew-say ew-in" style="--d:1">Hi, I’m Evia!</div>'+
         '<h1 class="ew-title ew-in" style="--d:2">Your apprenticeship, <span>sorted</span></h1>'+
         '<p class="ew-sub ew-in" style="--d:3">I’ll help you build your portfolio, learn your trade and get ready for your end-point assessment.</p>'+
@@ -324,7 +324,7 @@
       targets:[tile],button:"Next",onNext:()=>{
         const grid=document.getElementById("ui-logs-grid");
         if(grid)grid.scrollIntoView({block:"center",behavior:"smooth"});
-        guide('Your <strong>learning logs</strong> (off-the-job hours) are kept here too, ready to download for your assessor. Progress reviews are at the top of <strong>My progress</strong>.',{
+        guide('Your <strong>learning logs</strong> (learning hours) are kept here too, ready to download for your assessor. Progress reviews are at the top of <strong>My progress</strong>.',{
           targets:[grid],button:"Next",onNext:()=>{writeState("teach");showTeachStep()}
         });
       }
@@ -347,7 +347,7 @@
     nav("rewards");window.scrollTo(0,0);
     setTimeout(()=>{
       const bal=document.querySelector("#screen .rw-bal");
-      guide('And this is <strong>Rewards</strong>. Spend your coins on new looks for me, loot boxes and mini games. You earn them from lessons, your off-the-job hours and good evidence.',{
+      guide('And this is <strong>Rewards</strong>. Spend your coins on new looks for me, loot boxes and mini games. You earn them from lessons, your learning hours and good evidence.',{
         targets:[bal],button:"Next",onNext:()=>{writeState("evia");showEviaStep()}
       });
     },450);

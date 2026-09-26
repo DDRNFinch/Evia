@@ -319,7 +319,7 @@
     const total=entries.reduce((n,x)=>n+Number(x.n||0),0);
     let y=M;
     const label=(t,x,yy)=>{doc.setFont("helvetica","bold");doc.setFontSize(7.5);doc.setTextColor(...muted);doc.setCharSpace(.35);doc.text(pdfText(t).toUpperCase(),x,yy);doc.setCharSpace(0)};
-    label("Evia · Off-the-job learning",M,y+3);y+=6;
+    label("Evia · Learning hours",M,y+3);y+=6;
     doc.setFont("helvetica","bold");doc.setFontSize(21);doc.setTextColor(...ink);doc.text(pdfText(learner),M,y+7);y+=11;
     const details=[["Course",data().name],["Standard",data().std],["Entries",String(entries.length)],["Total hours",total.toFixed(2)]];
     if(profile.start)details.push(["Start date",ukDate(profile.start)]);
@@ -351,7 +351,7 @@
     const pages=doc.getNumberOfPages();
     for(let n=1;n<=pages;n++){
       doc.setPage(n);doc.setFont("helvetica","normal");doc.setFontSize(7.5);doc.setTextColor(...muted);
-      doc.text(pdfText(learner+" · Off-the-job learning"),M,H-9);
+      doc.text(pdfText(learner+" · Learning hours"),M,H-9);
       doc.text("Page "+n+" of "+pages,W-M,H-9,{align:"right"});
       const brand="Created using Evia",bw=doc.getTextWidth(brand),sq=3.4,bx=W/2-(sq+1.6+bw)/2,by=H-9-2.6;
       doc.setFillColor(229,188,2);doc.roundedRect(bx,by,sq,sq,.7,.7,"F");
@@ -365,10 +365,10 @@
     const profileBtn=document.getElementById("profile-btn");if(profileBtn)profileBtn.style.display="none";
     const learner=readJson("evia7-profile",{}).name||"Apprentice",total=entries.reduce((n,x)=>n+Number(x.n||0),0);
     const sorted=entries.slice().sort((a,b)=>Number(a.createdAt)-Number(b.createdAt));
-    $("#page-title").textContent="Off-the-job PDF";
+    $("#page-title").textContent="Learning hours PDF";
     $("#screen").innerHTML='<button class="secondary" id="eport-back" type="button">‹ Learning logs</button>'+
-      '<div class="eport-page"><div class="card eport-intro"><div class="section-title">OFF-THE-JOB LEARNING</div><h2>Your OTJ log</h2><p>'+entries.length+' entr'+(entries.length===1?"y":"ies")+' · '+total.toFixed(2)+' hours. Upload this PDF to Aptem or your e-portfolio so your hours are counted.</p></div>'+
-      '<div class="eport-files" id="eport-files"><div class="card eport-pdf"><div class="eport-sheet is-loading" aria-hidden="true"><span></span><span></span><span></span></div><p class="eport-status">Preparing your OTJ PDF…</p></div></div></div>';
+      '<div class="eport-page"><div class="card eport-intro"><div class="section-title">LEARNING HOURS</div><h2>Your learning hours</h2><p>'+entries.length+' entr'+(entries.length===1?"y":"ies")+' · '+total.toFixed(2)+' hours. Upload this PDF to Aptem or your e-portfolio so your hours are counted.</p></div>'+
+      '<div class="eport-files" id="eport-files"><div class="card eport-pdf"><div class="eport-sheet is-loading" aria-hidden="true"><span></span><span></span><span></span></div><p class="eport-status">Preparing your learning hours PDF…</p></div></div></div>';
     $("#eport-back").onclick=()=>window.eviaOpenLearningLogs?window.eviaOpenLearningLogs():nav("course");
     let pdf;
     try{const blob=await buildOtjPdf(sorted,createdAt);pdf={pages:blob.evPages,file:new File([blob],slug(learner)+"_OTJ-log_"+isoDate(createdAt)+".pdf",{type:"application/pdf"})}}
@@ -377,15 +377,15 @@
     if(onReady)onReady();
     const shareOk=canShareFiles([pdf.file]);
     $("#eport-files").innerHTML='<div class="card eport-pdf">'+
-      '<button type="button" class="eport-sheet" id="eport-preview" aria-label="Open the full OTJ PDF">'+
-        '<span class="eport-sheet-kicker">EVIA · OFF-THE-JOB LEARNING</span>'+
+      '<button type="button" class="eport-sheet" id="eport-preview" aria-label="Open the full learning hours PDF">'+
+        '<span class="eport-sheet-kicker">EVIA · LEARNING HOURS</span>'+
         '<strong class="eport-sheet-title">'+escHtml(learner)+'</strong>'+
         '<span class="eport-sheet-sub">'+entries.length+' entr'+(entries.length===1?"y":"ies")+' · '+total.toFixed(2)+' hours</span>'+
         '<span class="eport-sheet-rule"></span>'+
         sorted.slice(0,3).map(x=>'<span class="eport-sheet-text"><b>'+escHtml(ukDate(Number(x.createdAt)))+' · '+Number(x.n||0).toFixed(2)+' h</b> '+escHtml(String(x.description||"").slice(0,70))+'</span>').join("")+
         '<span class="eport-sheet-open">Tap to open the full PDF</span>'+
       '</button>'+
-      '<p class="eport-status"><strong>OTJ PDF</strong> · '+pdf.pages+' page'+(pdf.pages===1?"":"s")+' · '+formatBytes(pdf.file.size)+'</p>'+
+      '<p class="eport-status"><strong>Learning hours PDF</strong> · '+pdf.pages+' page'+(pdf.pages===1?"":"s")+' · '+formatBytes(pdf.file.size)+'</p>'+
       '<div class="eport-main'+(shareOk?"":" single")+'">'+(shareOk?'<button type="button" class="primary" id="eport-share">'+icon.share+'Share PDF</button>':"")+'<button type="button" class="'+(shareOk?"secondary":"primary")+'" id="eport-save">'+icon.save+'Save PDF</button></div></div>';
     const url=URL.createObjectURL(pdf.file);
     $("#eport-preview").onclick=()=>{const w=window.open(url,"_blank");if(!w)saveFile(pdf.file)};
@@ -453,7 +453,7 @@
     const tiles=[
       [(nvq?"Criteria":"KSBs")+" evidenced",s.met+"/"+s.total,tp!=null?"Expected about "+tp+"%":"Add course dates to compare",s.ksbPct,tp==null?null:s.ksbPct>=tp-10,false],
       [nvq?"Site jobs started":"Units started",s.unitsStarted+"/"+s.unitsTotal,expUnits!=null?"Expected about "+expUnits:"",s.unitsTotal?s.unitsStarted/s.unitsTotal*100:0,expUnits==null?null:s.unitsStarted>=expUnits,false],
-      ["Off-the-job hours",String(s.otjTotal),s.otjExpected!=null?"Planned about "+s.otjExpected+" by now":s.otjMonth+" this month",s.otjExpected?s.otjTotal/s.otjExpected*100:0,s.otjExpected==null?null:s.otjTotal>=s.otjExpected*.9,false],
+      ["Learning hours",String(s.otjTotal),s.otjExpected!=null?"Planned about "+s.otjExpected+" by now":s.otjMonth+" this month",s.otjExpected?s.otjTotal/s.otjExpected*100:0,s.otjExpected==null?null:s.otjTotal>=s.otjExpected*.9,false],
       [nvq?"Knowledge test":"EPA practice",knowledge?knowledge.latest+"%":"Not yet","Target 70% or more",knowledge?knowledge.latest:0,knowledge?knowledge.latest>=70:null,!knowledge],
       nvq&&s.nvqQ?["Knowledge questions",s.nvqQ.done+"/"+s.nvqQ.total,"Answered in own words",s.nvqQ.total?s.nvqQ.done/s.nvqQ.total*100:0,tp==null?null:s.nvqQ.done/Math.max(1,s.nvqQ.total)*100>=tp-15,false]:null,
       s.maths||maths?["Maths",maths?maths.latest+"%":"Not yet","Target 70% or more",maths?maths.latest:0,maths?maths.latest>=70:null,!maths]:null,
@@ -490,13 +490,13 @@
     {const checks=nvq?[
         ["All criteria evidenced",s.met>=s.total],
         ["Knowledge questions answered",s.nvqQ?s.nvqQ.done>=s.nvqQ.total:false],
-        ["Off-the-job hours on plan",s.otjExpected!=null&&s.otjTotal>=s.otjExpected*.9],
+        ["Learning hours on plan",s.otjExpected!=null&&s.otjTotal>=s.otjExpected*.9],
         ["Witness testimony added","na"],
         ["Staying safe scenarios done",scTotal>0&&scDone===scTotal]
       ]:[
         ["All KSBs evidenced",s.met>=s.total],
         ["Practice test 70%+",!!knowledge&&knowledge.latest>=70],
-        ["Off-the-job hours on plan",s.otjExpected!=null&&s.otjTotal>=s.otjExpected*.9],
+        ["Learning hours on plan",s.otjExpected!=null&&s.otjTotal>=s.otjExpected*.9],
         ["English and maths",(!s.maths||!!maths&&maths.latest>=70)&&(!s.english||!!english&&english.latest>=70)],
         ["Staying safe scenarios done",scTotal>0&&scDone===scTotal]
       ];
@@ -533,7 +533,7 @@
     });
     y+=2;
     // Off-the-job plan
-    section("Off-the-job training",22);
+    section("Learning hours",22);
     {const exp=s.otjExpected,got=s.otjTotal,short=exp!=null?Math.max(0,Math.round((exp-got)*10)/10):null;
      const endMs=Date.parse(profile.end||""),weeks=isNaN(endMs)?null:Math.max(1,Math.round((endMs-Date.now())/(7*864e5)));
      box(M,y,CW,16,[250,251,252],line,3);
@@ -555,7 +555,7 @@
     y+=2;
     // Employer and tutor
     section("Employer and training provider comments",26);
-    {const hw=(CW-gap)/2;[["Employer","Progress at work, support, off-the-job time"],["Tutor / assessor","Progress, English and maths, "+(nvq?"completion":"gateway")]].forEach(([q,sub],i)=>{const x=M+i*(hw+gap);box(x,y,hw,24,[255,255,255],line,2.5);T(q,x+4,y+4.5,7.6,"bold",ink);T(sub,x+4,y+8,6.6,"normal",faint);doc.setDrawColor(...line);doc.setLineWidth(.2);[14,19].forEach(o=>doc.line(x+4,y+o,x+hw-4,y+o))});y+=27}
+    {const hw=(CW-gap)/2;[["Employer","Progress at work, support, learning hours"],["Tutor / assessor","Progress, English and maths, "+(nvq?"completion":"gateway")]].forEach(([q,sub],i)=>{const x=M+i*(hw+gap);box(x,y,hw,24,[255,255,255],line,2.5);T(q,x+4,y+4.5,7.6,"bold",ink);T(sub,x+4,y+8,6.6,"normal",faint);doc.setDrawColor(...line);doc.setLineWidth(.2);[14,19].forEach(o=>doc.line(x+4,y+o,x+hw-4,y+o))});y+=27}
     // Signatures
     section("Signed and agreed by all three",31);
     {const sw=(CW-gap*2)/3,so=r.signoff||{};

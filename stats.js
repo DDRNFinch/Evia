@@ -74,8 +74,8 @@
     {id:"all-units",label:"All-rounder",desc:"Evidence in every unit",test:s=>s.a.units.length>0&&s.unitsLeft===0},
     {id:"streak-4",label:"On a roll",desc:"Active 4 weeks in a row",test:s=>s.longest>=4},
     {id:"streak-12",label:"Steady worker",desc:"Active 12 weeks in a row",test:s=>s.longest>=12},
-    {id:"otj-10",label:"Learning logged",desc:"10 hours of off-the-job learning",test:s=>s.otjTotal>=10},
-    {id:"otj-50",label:"Dedicated learner",desc:"50 hours of off-the-job learning",test:s=>s.otjTotal>=50},
+    {id:"otj-10",label:"Learning logged",desc:"10 learning hours logged",test:s=>s.otjTotal>=10},
+    {id:"otj-50",label:"Dedicated learner",desc:"50 learning hours logged",test:s=>s.otjTotal>=50},
     {id:"first-test",label:"Test taker",desc:"Completed your first test",test:s=>s.testCount>=1},
     {id:"test-80",label:"Top marks",desc:"Scored 80% or more in a test",test:s=>s.bestTest>=80},
     {id:"confidence",label:"Know yourself",desc:"Completed a confidence check",test:s=>s.confidence.sessions>=1},
@@ -124,7 +124,7 @@
     const rd=window.eviaReviewDue?window.eviaReviewDue():null,dueTxt=rd?rd.due.toLocaleDateString("en-GB",{day:"numeric",month:"short"}):"";
     if(rd&&rd.days<=14&&(s.packs>=1||!rd.first))list.push({id:"review",text:rd.days<0?"Your progress review was due on "+dueTxt+". It takes about 3 minutes and sets your next targets.":rd.days===0?"Your progress review is due today. It takes about 3 minutes and sets your next targets.":"Your next progress review is due on "+dueTxt+". It takes about 3 minutes and sets your next targets.",action:{label:"Start a review",kind:"review"}});
     else if(!rd&&s.packs>=2&&(lastReview==null||daysAgo(lastReview)>70))list.push({id:"review",text:lastReview?"It’s been over 10 weeks since your last progress review. It takes about 3 minutes and sets your next targets.":"Ready for your first progress review? It takes about 3 minutes and sets your targets.",action:{label:"Start a review",kind:"review"}});
-    if(s.otjWeek===0&&(day===0||day>=4))list.push({id:"otj-week",text:"No off-the-job learning logged this week yet. Training, toolbox talks and research all count.",action:{label:"Log OTJ hours",kind:"learning"}});
+    if(s.otjWeek===0&&(day===0||day>=4))list.push({id:"otj-week",text:"No learning hours logged this week yet. Training, toolbox talks and research all count.",action:{label:"Log learning hours",kind:"learning"}});
     const timePct=s.a.timePct;
     if(timePct!=null&&timePct>=75&&!(window.eviaNvq&&window.eviaNvq.on())){ /* NVQs have no end-point assessment */
       const gap=timePct>=90?7:14;
@@ -189,7 +189,7 @@
     const hrs=Math.round(s.otjTotal*10)/10,wk=Math.round(s.otjWeek*10)/10;
     const tile=(id,icon,value,label,sub,flag)=>'<button type="button" class="ui-tile-stat" data-tile="'+id+'" id="lt-'+id+'"><span class="pg-icon">'+svg(ICON[icon])+'</span><strong>'+value+(flag?' <em class="pg-x-new">'+flag+'</em>':"")+'</strong><span>'+label+'</span><small>'+sub+'</small></button>';
     const out=[
-      tile("hours","clock",hrs+'<small> hrs</small>',"Off-the-job hours",wk?"+"+wk+" this week":"None this week"),
+      tile("hours","clock",hrs+'<small> hrs</small>',"Learning hours",wk?"+"+wk+" this week":"None this week"),
       tile("tests","tests",lastPct!=null?lastPct+"%":"–",nvq?"Knowledge tests":"Tests and EPA mocks",s.testCount?"Last score · "+s.testCount+" taken":"None taken yet",epaDue?"Due":""),
       nvq&&window.eviaNvq.myQuestions?(()=>{const qs=window.eviaNvq.myQuestions(),ans=window.eviaNvq.answers(),d=qs.filter(q=>ans[q]&&String(ans[q].t).trim().split(/\s+/).length>=12).length;return tile("knowledge","quality",d+'<small> / '+qs.length+'</small>',"Knowledge questions","Answered")})():"",
       tile("skills","skills",s.confidence.last?String(low):"–","Skills to practise",s.confidence.last?"Rated "+escHtml(ago(s.confidence.last).toLowerCase()):"Rate your skills",s.confidence.last&&Date.now()-s.confidence.last>30*DAY?"Due":""),

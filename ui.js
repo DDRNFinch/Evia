@@ -302,8 +302,8 @@
           '<section class="ui-card ui-hours-sum"><div><strong>'+escHtml(hmText(total))+'</strong><small>logged in total</small></div><div><strong>'+hours.length+'</strong><small>entr'+(hours.length===1?"y":"ies")+'</small></div></section>'+
           (hours.length?'<section class="ui-card ui-logs-dl"><div><strong>'+(fresh.length?fresh.length+" new entr"+(fresh.length===1?"y":"ies"):"Everything’s downloaded")+'</strong><small>'+(fresh.length?(last?"Since your last download on "+escHtml(savedDay(last.downloadedAt)):"Not downloaded yet"):"New entries will be ready to download here")+'</small></div>'+(fresh.length?'<button type="button" class="primary" id="download-otj">Download PDF</button>':"")+'</section>':"")+
           (hours.length?'<h2 class="ui-hours-h">Your log</h2><div class="ui-card ui-hours-list">'+hours.slice().sort((a,b)=>Number(b.createdAt)-Number(a.createdAt)).map(x=>{const isNew=Number(x.createdAt)>cutoff;return '<div class="ui-hours-item'+(isNew?"":" done")+'"><span class="ui-hours-n">'+escHtml(hmText(Number(x.n||0)))+'</span><span class="ui-hours-copy"><strong>'+escHtml(x.description||"No description recorded.")+'</strong><small>'+escHtml(day(x.createdAt))+' · '+(isNew?"<em>New</em>":"Downloaded")+(x.auto?' · <span class="ui-auto-tag">Logged by Evia</span>':"")+'</small></span>'+(x.auto&&isNew?'<button type="button" class="ui-auto-x" data-rm-auto="'+escHtml(x.id)+'" aria-label="Remove this entry">×</button>':"")+'</div>'}).join("")+'</div>'+
-            (hours.some(x=>x.auto)?'<p class="ui-auto-note">Evia logs Teach me lessons and writing up your evidence automatically, counting only the time you’re actively working. Off-the-job training only counts in your paid working hours (or if your employer gives you the time back), so remove any entry that doesn’t.</p>':"")
-            :'<div class="ui-card ui-empty"><span class="ui-icon-chip">'+icon(ICONS.clock)+'</span><p>No off-the-job learning logged yet. Tap <strong>Log hours</strong> above to add some.</p></div>')+
+            (hours.some(x=>x.auto)?'<p class="ui-auto-note">Evia logs Teach me lessons and writing up your evidence automatically, counting only the time you’re actively working. Learning hours only count in your paid working hours (or if your employer gives you the time back), so remove any entry that doesn’t.</p>':"")
+            :'<div class="ui-card ui-empty"><span class="ui-icon-chip">'+icon(ICONS.clock)+'</span><p>No learning hours logged yet. Tap <strong>Log hours</strong> above to add some.</p></div>')+
           (batches.length?'<h2 class="ui-hours-h">Past downloads</h2><div class="ui-card ui-hours-list">'+batches.map(b=>'<div class="ui-hours-item ui-batch"><span class="ui-hours-copy"><strong>'+escHtml(savedDay(b.downloadedAt))+'</strong><small>'+(b.entryIds||[]).length+' entr'+((b.entryIds||[]).length===1?"y":"ies")+'</small></span><button type="button" class="secondary" data-batch="'+escHtml(b.id)+'">Download again</button></div>').join("")+'</div>':"")+
         '</div>';
       $("#ui-logs-back").onclick=()=>nav("course");
@@ -533,7 +533,7 @@
     const lines=[];
     lines.push("Last upload: <strong>"+escHtml(S.ago(st.lastUpload))+"</strong>"+(st.packsThisMonth?" · "+plural(st.packsThisMonth,"pack")+" this month":""));
     lines.push(st.streak?"You’ve been active <strong>"+plural(st.streak,"week")+" in a row</strong>."+(st.activeThisWeek?"":" Add something this week to keep it going."):"No streak yet. Add evidence or log learning each week to start one.");
-    lines.push("Off-the-job: <strong>"+hrsText(st.otjWeek)+"</strong> this week, "+hrsText(st.otjTotal)+" in total.");
+    lines.push("Learning hours: <strong>"+hrsText(st.otjWeek)+"</strong> this week, "+hrsText(st.otjTotal)+" in total.");
     say(lines.join("<br>"));
     if(st.weeksPerUnit!=null)say("You’ve got about <strong>"+plural(st.weeksLeft,"week")+"</strong> left and <strong>"+plural(st.unitsLeft,"unit")+"</strong> still to start. That’s about <strong>"+plural(Math.max(1,Math.floor(st.weeksPerUnit)),"week")+" per unit</strong>"+(st.weeksPerUnit>=2?", which is very doable.":st.weeksPerUnit>=1?", so keep a steady pace.":", so capture every suitable job you get."));
     else if(!st.a.endDate)say("Add your apprenticeship dates in Profile and I’ll work out how many weeks you’ve got per unit.");
@@ -623,7 +623,7 @@
   function catchUp(){
     try{
       const S=window.eviaStats.compute(),bits=[],rd=window.eviaReviewDue&&window.eviaReviewDue();
-      bits.push(S.otjWeek?"You’ve logged <strong>"+(window.eviaHM?window.eviaHM(S.otjWeek):S.otjWeek+" h")+"</strong> of off-the-job this week.":"No off-the-job hours this week yet.");
+      bits.push(S.otjWeek?"You’ve logged <strong>"+(window.eviaHM?window.eviaHM(S.otjWeek):S.otjWeek+" h")+"</strong> of learning this week.":"No learning hours this week yet.");
       if(rd)bits.push(rd.days<0?"Your progress review is <strong>overdue</strong>.":rd.days<=14?"Your progress review is due in <strong>"+plural(rd.days,"day")+"</strong>.":"");
       return bits.filter(Boolean).join(" ");
     }catch(_){return""}
@@ -702,17 +702,18 @@
     const week=hours.filter(x=>Number(x.createdAt)>=weekStart).reduce((n,x)=>n+Number(x.n||0),0);
     const fmt=n=>Math.round(n*100)/100;
     const day=t=>new Date(Number(t)).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
-    $("#screen").innerHTML='<button class="secondary ui-back" id="ui-hours-back" type="button">‹ My progress</button><h1 class="ui-sub-title">Off-the-job hours</h1>'+
+    $("#screen").innerHTML='<button class="secondary ui-back" id="ui-hours-back" type="button">‹ My progress</button><h1 class="ui-sub-title">Learning hours</h1>'+
+      '<p class="ui-hours-what">'+(window.eviaNvq&&window.eviaNvq.on()?"Your guided learning hours (GLH): the time you spend learning, like college, training and research.":"Your off-the-job training: time in your paid hours spent learning, like college, training and research.")+'</p>'+
       '<div class="ui-page">'+
         '<section class="ui-card ui-hours-sum"><div><strong>'+fmt(total)+'</strong><small>hours logged</small></div><div><strong>'+fmt(week)+'</strong><small>this week</small></div></section>'+
         '<section class="ui-card ui-hours-log">'+
-          '<h2>Log off-the-job hours</h2>'+
+          '<h2>Log learning hours</h2>'+
           '<div class="ui-hours-chips" role="group" aria-label="Hours">'+[0.5,1,2,3,7.5].map(n=>'<button type="button" class="ui-hours-chip" data-hrs="'+n+'">'+n+'</button>').join("")+'<input id="hrs" type="number" min="0" step=".25" inputmode="decimal" placeholder="Other" aria-label="Hours"></div>'+
           '<textarea id="otj-description" rows="2" placeholder="What did you do or learn? For example: toolbox talk on working at height"></textarea>'+
           '<button class="primary" id="add" type="button">Save hours</button>'+
           '<p class="ui-hours-hint">College days, training, toolbox talks, research and shadowing all count.</p>'+
         '</section>'+
-        (pending||lastBatch?'<div class="ui-hours-pdf"><span>'+(pending?"<strong>"+pending+" new "+(pending===1?"entry":"entries")+"</strong> for your OTJ PDF":"All entries are in your last PDF")+'</span>'+(pending?'<button class="secondary" id="download-otj" type="button">Download PDF</button>':'<button class="secondary" id="download-last-otj" type="button">Last PDF again</button>')+'</div>':"")+
+        (pending||lastBatch?'<div class="ui-hours-pdf"><span>'+(pending?"<strong>"+pending+" new "+(pending===1?"entry":"entries")+"</strong> for your learning hours PDF":"All entries are in your last PDF")+'</span>'+(pending?'<button class="secondary" id="download-otj" type="button">Download PDF</button>':'<button class="secondary" id="download-last-otj" type="button">Last PDF again</button>')+'</div>':"")+
         (hours.length?'<h2 class="ui-hours-h">Your log</h2><div class="ui-card ui-hours-list">'+hours.slice().reverse().map(x=>'<div class="ui-hours-item"><span class="ui-hours-n">'+fmt(Number(x.n||0))+'<small>hrs</small></span><span class="ui-hours-copy"><strong>'+escHtml(x.description||"No description recorded.")+'</strong><small>'+escHtml(day(x.createdAt))+(Number(x.createdAt)>cutoff&&lastBatch?' · <em>New</em>':"")+'</small></span></div>').join("")+'</div>':"")+
       '</div>';
     const input=$("#hrs");

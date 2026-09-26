@@ -53,7 +53,7 @@
     }else if(a.ksbPct<100){
       const n=Math.min(6,a.total-a.met);add("ksb","Get evidence for "+plural(n,"more KSB"),"Every unit has evidence; now fill the KSB gaps. Ask Evia “Which KSBs am I missing?”",n,a.met,6);
     }
-    if(S.otjMonth<8)add("otj","Log 10 off-the-job hours","You’ve logged "+(Math.round(S.otjMonth*10)/10)+" hours this month. Training, toolbox talks and research all count.",10,S.otjTotal,6);
+    if(S.otjMonth<8)add("otj","Log 10 learning hours","You’ve logged "+(Math.round(S.otjMonth*10)/10)+" hours this month. Training, toolbox talks and research all count.",10,S.otjTotal,6);
     const epaBest=bestTestSince(["epa"],0,true);
     if((window.eviaNvq&&window.eviaNvq.on())){} /* NVQs have no end-point assessment */
     else if(a.timePct!=null&&a.timePct>=60)add("epa","Score 70% or more on a full EPA mock",epaBest>=0?"Your best full mock so far is "+epaBest+"%.":"You haven’t tried a full EPA mock yet, and your end-point assessment is getting closer.",70,0,4);
@@ -199,10 +199,10 @@
       say((s.strongest?"Your strongest write-up is <strong>"+escHtml(s.strongest)+"</strong>. ":"")+(s.weakest?"<strong>"+escHtml(s.weakest)+"</strong> needs the most work"+(s.weakestMissing.length?": mention "+escHtml(s.weakestMissing.join(", "))+" next time.":"."):s.packs?"":"Capture your first unit and Evia will start checking your write-ups."))});
     const otjDue=s.weeksIn!=null?Math.round(s.weeksIn*6):null;
     out.push({title:"Learning and activity",body:
-      '<div class="rv-bigs">'+big(s.otjTotal,"OTJ hours")+big(s.otjMonth,"this month")+big(s.streak,"week streak")+'</div>'+
-      goals([otjDue!=null&&["OTJ hours in total",s.otjTotal,"About "+otjDue,s.otjTotal>=otjDue*.9,s.otjTotal>=otjDue*1.2&&otjDue>0],["OTJ hours this month",s.otjMonth,"About 26",s.otjMonth>=22],["Weeks active in a row",s.streak,"Every week",s.streak>=2]])+
-      say((s.lastUpload?"Your last upload was "+escHtml(window.eviaStats.ago(s.lastUpload).toLowerCase())+". ":"")+(s.otjMonth<22?"Try to log a bit more off-the-job learning each month.":"Good off-the-job learning this month.")+" The OTJ targets assume about 6 hours a week. Your commitment statement says exactly how many you need.")+
-      quick(readOnly,[["otj","Log OTJ hours"]])});
+      '<div class="rv-bigs">'+big(s.otjTotal,"learning hours")+big(s.otjMonth,"this month")+big(s.streak,"week streak")+'</div>'+
+      goals([otjDue!=null&&["Learning hours in total",s.otjTotal,"About "+otjDue,s.otjTotal>=otjDue*.9,s.otjTotal>=otjDue*1.2&&otjDue>0],["Learning hours this month",s.otjMonth,"About 26",s.otjMonth>=22],["Weeks active in a row",s.streak,"Every week",s.streak>=2]])+
+      say((s.lastUpload?"Your last upload was "+escHtml(window.eviaStats.ago(s.lastUpload).toLowerCase())+". ":"")+(s.otjMonth<22?"Try to log a few more learning hours each month.":"Good learning hours this month.")+" The OTJ targets assume about 6 hours a week. Your commitment statement says exactly how many you need.")+
+      quick(readOnly,[["otj","Log learning hours"]])});
     out.push({title:"Tests",body:
       goals(s.tests.map(t=>[escHtml(t.name),t.latest+"%","70% or more",t.latest>=70]).concat([!nvq&&tp!=null&&tp>=75&&!s.tests.some(t=>/EPA/.test(t.name))&&["Full EPA mock","Not yet","Taken by now",false]]))+
       (s.tests.length?s.tests.map((t,i)=>row(escHtml(t.name),t.latest+"% <small>best "+t.best+"%</small>",bar(t.latest,t.latest>=70?"good":t.latest<50?"low":"",i*100))).join(""):'<p class="pg-note">No tests taken yet.</p>')+

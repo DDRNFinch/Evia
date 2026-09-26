@@ -208,7 +208,7 @@
       const deadline=new Date(now);deadline.setDate(deadline.getDate()+weeks*7);
       targets.push({title,reason,deadline:deadline.toISOString().slice(0,10),kind,targetValue:targetValue||null,measure:measure||null});
     };
-    add("Gather 15 learning hours","Build your off-the-job learning record.",8,"otj_hours",15,"otj_hours");
+    add("Gather 15 learning hours","Build up your learning hours.",8,"otj_hours",15,"otj_hours");
     if(metrics.unitGap>0)add("Capture evidence for your next outstanding unit","You have "+metrics.unitGap+" course unit"+(metrics.unitGap===1?"":"s")+" without saved evidence.",2,"units");
     else if(metrics.weakUnits>0)add("Strengthen weaker evidence","Some started units need additional photos or written detail.",2,"portfolio");
     if(academicEnabled("maths"))add(metrics.mathsPct!==null&&metrics.mathsPct<70?"Practise Maths Level 2":"Maintain Maths Level 2 practice",metrics.mathsPct===null?"No Maths test has been recorded yet.":"Your latest Maths result was "+metrics.mathsPct+"%.",6,"maths");
@@ -344,7 +344,7 @@
     const name=String(read("evia7-profile",{}).name||"").split(/\s+/)[0];
     const test=latestTests();
     const testSummary=["epa","maths","english"].filter(t=>test[t]).map(t=>testLabel(t)+" "+test[t].pct+"%").join(" · ");
-    reply('<strong>Progress review'+(name?", "+escLocal(name):"")+'</strong><br>Course evidence: '+m.completion+'% ('+m.covered+'/'+m.units+' units).<br>Off-the-job learning: '+m.totalOTJ.toFixed(1)+(m.otjTarget?" / "+m.otjTarget:"")+" hours."+(testSummary?"<br>Test results: "+escLocal(testSummary)+".":"")+
+    reply('<strong>Progress review'+(name?", "+escLocal(name):"")+'</strong><br>Course evidence: '+m.completion+'% ('+m.covered+'/'+m.units+' units).<br>Learning hours: '+m.totalOTJ.toFixed(1)+(m.otjTarget?" / "+m.otjTarget:"")+" hours."+(testSummary?"<br>Test results: "+escLocal(testSummary)+".":"")+
       '<br><br><strong>Quick target</strong><br>I’ve set a target to help you catch up: '+escLocal(target.title)+'. Aim to complete it by '+escLocal(new Date(target.deadline+"T00:00:00").toLocaleDateString("en-GB"))+'.<br><br><button class="chat-pill" id="start-full-review"><strong>Start full review</strong></button>');
     setTimeout(()=>{const b=$("#start-full-review");if(b)b.onclick=()=>fullReview();},950);
   }

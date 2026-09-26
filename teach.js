@@ -126,7 +126,7 @@
         '<span class="tm-pill fire'+(me.today?" lit":"")+'" title="Day streak" aria-label="'+me.streak+' day streak">'+(ICON.flame||"")+'<b>'+me.streak+'</b></span><span class="tm-pill coins" title="Your coins" aria-label="'+coins()+' coins">'+COIN()+'<b>'+coins()+'</b></span></header>'+
       '<div class="tm-scroll">'+
         '<section class="tm-hero">'+EVIA+'<p class="tm-say">'+say+'</p></section>'+
-        (section!=="course"?'<p class="tm-fs-note">Maths and English lessons don’t count towards your off-the-job hours.</p>':"")+
+        (section!=="course"?'<p class="tm-fs-note">Maths and English lessons don’t count towards your learning hours.</p>':"")+
         us.map(u=>unitHtml(u,L,counter)).join("")+
         (others.length?'<section class="tm-soon"><h3>'+(us.length?"Coming next":"Lessons for your units are coming")+'</h3>'+others.map(o=>'<div class="tm-soon-row"><span class="tm-dot sm">'+LOCK+'</span>'+esc(o)+'</div>').join("")+'</section>':"")+
       '</div>';

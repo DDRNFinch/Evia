@@ -152,3 +152,22 @@ html body .rw-item{border:1px solid var(--pm-hair);box-shadow:var(--pm-shadow);b
 html body .rw-item.r-rare,html body .rw-item.r-epic{border-color:var(--pm-hair)}
 html body .rw-item.r-legendary{border-color:color-mix(in srgb,var(--yellow) 35%,transparent);background:linear-gradient(180deg,color-mix(in srgb,var(--yellow) 6%,#fff),#fff)}
 html body .rw-bal{background:linear-gradient(180deg,#fff,var(--soft));border-color:var(--yellow-line);box-shadow:var(--pm-shadow)}
+.ui-hours-what{margin:-4px 4px 14px;font-size:13.5px;line-height:1.45;color:var(--ui-muted)}
+/* The shape picker clips its avatars to their shape; Evias wearing kit must never be clipped (hats sit above the head). */
+html body .rw-evia,html body .evia-shape-avatar:has(.evia-kit),html body .evia-theme-avatar:has(.evia-kit){overflow:visible!important}
+
+/* ---------- New expressions (same pattern as ui.css: the learner's resting look, or data-x on a preview) ---------- */
+html[data-evia-expr="tiny"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i,html body .evia-face[data-x="tiny"] i{scale:.58 calc(.58 * var(--evia-sy,1))}
+html[data-evia-expr="big"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i,html body .evia-face[data-x="big"] i{scale:1.32 calc(1.32 * var(--evia-sy,1))}
+html[data-evia-expr="dots"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i,html body .evia-face[data-x="dots"] i{border-radius:50%!important;aspect-ratio:1;height:auto!important;background:var(--yellow)!important;scale:.62 calc(.62 * var(--evia-sy,1))}
+html[data-evia-expr="dots"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i:after,html body .evia-face[data-x="dots"] i:after{display:none!important}
+html[data-evia-expr="robot"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i,html body .evia-face[data-x="robot"] i{border-radius:22%!important;aspect-ratio:1;height:auto!important}
+html[data-evia-expr="sideeye"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i,html body .evia-face[data-x="sideeye"] i{clip-path:inset(34% -20% -20% -20%);background:radial-gradient(circle at 74% 64%,var(--yellow) 0 30%,transparent 33%)!important}
+html[data-evia-expr="sideeye"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i:after,html body .evia-face[data-x="sideeye"] i:after{display:none!important}
+
+/* ---------- Sunglasses: the specs frame with dark lenses ---------- */
+html body .ek-eyes.sun .ek-lens{background:linear-gradient(165deg,#3a4353 0%,#161b24 60%,#0c1016 100%);border-color:#0f131a;border-radius:28% 28% 42% 42%;box-shadow:inset 2px 2px 0 rgba(255,255,255,.18)}
+html body .ek-eyes.sun .ek-bridge,html body .ek-eyes.sun .ek-arm{background:#0f131a}
+
+/* Darker new colours carry white text on accent buttons. */
+html[data-evia-theme="forest"],html[data-evia-theme="navy"],html[data-evia-theme="graphite"],html[data-evia-theme="rose"],html[data-evia-theme="midnight"],html[data-evia-theme="teal"]{--ui-on-accent:#fff}

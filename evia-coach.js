@@ -67,9 +67,9 @@
   function askNote(desc,hrs){
     const k=K();
     k.userSays(hm(hrs));
-    textStep(desc?"What did you do? A few words is plenty.":"What did you do?","For example: "+(DID_HINT[desc]||"toolbox talk on manual handling"),!desc,did=>
-      textStep("And what did you learn from it? This is the bit your assessor cares about most.","For example: how to space wall ties and why they matter",false,learned=>{
-        const what=[desc,did].filter(Boolean).join(": ")||desc||"Off-the-job learning";
+    textStep(desc?"What did you do? A few words is plenty.":"What did you do?","For example: "+(DID_HINT[desc]||"toolbox talk on manual handling"),true,did=>
+      textStep("And what did you learn from it? This is the bit your assessor cares about most.","For example: how to space wall ties and why they matter",true,learned=>{
+        const what=[desc,did].filter(Boolean).join(": ")||desc||"Learning hours";
         save(hrs,what+(learned?". What I learned: "+learned:""),did,learned);
       }));
   }
@@ -211,7 +211,7 @@
   function understand(text){
     const k=K(),t=text.toLowerCase();
     const flows=window.eviaCoachFlows;
-    if(/\b(otj|off.?the.?job|hours?|log|toolbox|college day)\b/.test(t))return logHours();
+    if(/\b(otj|glh|off.?the.?job|learning hours|hours?|log|toolbox|college day)\b/.test(t))return logHours();
     if(/\b(test|quiz|question me|mock|exam|epa)\b/.test(t))return window.eviaTestMe&&window.eviaTestMe();
     if(/\b(review)\b/.test(t))return K().reviewFromMenu();
     if(/\b(confiden|rate|rating)\w*/.test(t))return flows.confidence();
@@ -309,7 +309,7 @@
     const gap=a.timePct==null?0:a.timePct-a.ksbPct;
     add("where","Evidence",gap<=10,a.ksbPct+"% of "+(window.eviaTerm?window.eviaTerm().many:"KSBs")+" have evidence"+(gap>10?", a little behind for this point in your course":a.timePct!=null?", on track":""));
     add("quality","Evidence quality",S.coverage!=null&&S.coverage>=70,S.coverage==null?"No write-ups checked yet":"Write-ups cover "+S.coverage+"% of the things to mention");
-    add("otj","Off-the-job hours",S.otjWeek>=6,S.otjWeek?hm(S.otjWeek)+" this week (aim for 6 h)":"Nothing logged this week");
+    add("otj","Learning hours",S.otjWeek>=6,S.otjWeek?hm(S.otjWeek)+" this week (aim for 6 h)":"Nothing logged this week");
     const sc=S.confidence.scores,low=sc.filter(x=>x.score<=2);
     add("conf","Confidence",sc.length>=3&&!low.length,sc.length<3?"Skills not rated yet":low.length?"Low in "+K().listText(low.slice(0,2).map(x=>x.area)):"Confident across your skills");
     const T=window.eviaTeach,st=T&&T.stats?T.stats():{days:{}},sum=T&&T.summary?T.summary():{done:0,total:0};

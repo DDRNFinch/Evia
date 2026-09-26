@@ -1,5 +1,5 @@
 /* Evia7 Rewards: tokens, the collection, the loot box and Evia's kit.
-   Coins (called tokens in the code): real work (evidence, off-the-job hours, targets), Teach me (1 for every 5 XP, no
+   Coins (called tokens in the code): real work (evidence, learning hours, targets), Teach me (1 for every 5 XP, no
    daily limit), mini games (up to 60 a day) and achievements. See "Coins" below. Coins aren't meant to be scarce:
    learning matters more than saving them.
    Items have a rarity (common, rare, epic, legendary). Three shapes and three colours are free; everything else is
@@ -25,7 +25,10 @@
     "hat-blue":{label:"Blue hard hat",rarity:"common",about:"The colour site operatives wear."},
     "hat-silver":{label:"Silver hard hat",rarity:"rare",about:"A trophy hat for a hard worker."},
     "hat-gold":{label:"Gold hard hat",rarity:"epic",about:"For the very best on site."},
-    "hat-glow":{label:"Glowing hard hat",rarity:"legendary",about:"Legendary. Only from a loot box."}
+    "hat-glow":{label:"Glowing hard hat",rarity:"legendary",about:"Legendary. Only from a loot box."},
+    "hat-beanie":{label:"Beanie",rarity:"common",about:"For the frosty mornings on site."},
+    "hat-cap":{label:"Sideways cap",rarity:"common",about:"Worn the cool way round."},
+    "hat-cowboy":{label:"Cowboy hat",rarity:"rare",about:"The wild west of the building site."}
   };
   /* PPE, one per slot, worn with any hard hat. */
   const PPE={
@@ -34,9 +37,13 @@
     "ppe-ears":{slot:"ears",label:"Ear defenders",rarity:"rare",about:"For the noisy jobs, like breakers and saws."},
     "ppe-ears-gold":{slot:"ears",label:"Gold ear defenders",rarity:"epic",about:"Top-spec hearing protection."},
     "ppe-hivis":{slot:"body",label:"Hi-vis vest",rarity:"common",about:"Be seen on site, every day."},
-    "ppe-hivis-glow":{slot:"body",label:"Glowing hi-vis",rarity:"legendary",about:"Legendary. Only from a loot box."}
+    "ppe-hivis-glow":{slot:"body",label:"Glowing hi-vis",rarity:"legendary",about:"Legendary. Only from a loot box."},
+    /* Accessories, for fun: sunglasses sit on the eyes; a moustache or beard goes on the face. */
+    "acc-sunglasses":{slot:"eyes",label:"Sunglasses",rarity:"rare",about:"Summer on the scaffold."},
+    "acc-moustache":{slot:"face",label:"Moustache",rarity:"common",about:"A proper tash."},
+    "acc-beard":{slot:"face",label:"Beard",rarity:"rare",about:"Full, fluffy and very wise."}
   };
-  const SHAPE_R={oval:"common",splat:"rare",hex:"rare",gear:"epic",shield:"epic","particle-aqua":"legendary","particle-violet":"legendary","particle-ember":"legendary","glass-aqua":"legendary","glass-violet":"legendary","glass-ember":"legendary"};
+  const SHAPE_R={ghost:"common",cat:"rare",dog:"rare",robot:"epic",alien:"epic",oval:"common",splat:"rare",hex:"rare",gear:"epic",shield:"epic","particle-aqua":"legendary","particle-violet":"legendary","particle-ember":"legendary","glass-aqua":"legendary","glass-violet":"legendary","glass-ember":"legendary"};
   /* Expressions: Evia's resting look. Her moods (happy when you save something, sleepy when idle) still take over
      for a moment. "classic" is the free default. */
   const EXPR={
@@ -46,9 +53,14 @@
     sleepy:{label:"Sleepy",rarity:"rare",about:"Early start on site."},
     focused:{label:"Focused",rarity:"epic",about:"Locked in and ready to learn."},
     stars:{label:"Star eyes",rarity:"epic",about:"Star struck."},
-    hearts:{label:"Heart eyes",rarity:"legendary",about:"Legendary. Only from a loot box."}
+    hearts:{label:"Heart eyes",rarity:"legendary",about:"Legendary. Only from a loot box."},
+    tiny:{label:"Tiny eyes",rarity:"common",about:"Small but mighty."},
+    big:{label:"Big eyes",rarity:"common",about:"All ears. Well, all eyes."},
+    dots:{label:"Dot eyes",rarity:"rare",about:"Simple and sweet."},
+    robot:{label:"Robot eyes",rarity:"rare",about:"Beep boop, ready to learn."},
+    sideeye:{label:"Side eye",rarity:"epic",about:"Did someone leave the mixer running?"}
   };
-  const COLOUR_R={orange:"common",purple:"rare",pink:"rare",red:"rare",teal:"epic",midnight:"epic"};
+  const COLOUR_R={orange:"common",sky:"common",coral:"common",purple:"rare",pink:"rare",red:"rare",gold:"rare",forest:"rare",rose:"rare",teal:"epic",midnight:"epic",navy:"epic",graphite:"epic"};
   function catalogue(){
     const out=[],S=window.eviaShapes||{},T=window.eviaThemes||{};
     Object.keys(HATS).forEach(id=>out.push(Object.assign({id,kind:"hat",slot:"hat"},HATS[id])));
@@ -69,7 +81,7 @@
   }
 
   /* ---------- Coins ----------
-     Real work pays the most: unit evidence by strength (an upgrade pays the difference), off-the-job hours (5 an hour,
+     Real work pays the most: unit evidence by strength (an upgrade pays the difference), learning hours (5 an hour,
      up to 40 a week) and each target met. Progress reviews don't pay: they only count when an assessor does them.
      Teach me pays 1 for every 5 XP, with no daily limit. Every payment is remembered, so nothing is paid twice. */
   const EV_PAY={weak:10,good:30,strong:60},OTJ_HOUR=5,OTJ_WEEK=40,TARGET_PAY=20,BACKFILL=300;
@@ -84,7 +96,7 @@
     if(S)[...new Set(ev.filter(e=>e.c===c&&e.u).map(e=>e.u))].forEach(u=>{const lv=S.unit(u);if(lv)out.push({key:"ev|"+c+"|"+u,coins:EV_PAY[lv],why:lv.charAt(0).toUpperCase()+lv.slice(1)+" evidence: "+u,unit:u,lv})});
     const hs=typeof hours!=="undefined"?hours:[],wk={};
     hs.forEach(h=>{const t=Number(h.createdAt)||Date.parse(h.savedAt||"");if(!t)return;const w=weekOf(t);wk[w]=(wk[w]||0)+Number(h.n||0)});
-    Object.keys(wk).forEach(w=>{const n=Math.min(OTJ_WEEK,Math.floor(wk[w]*OTJ_HOUR));if(n)out.push({key:"otj|"+w,coins:n,why:"Off-the-job hours"})});
+    Object.keys(wk).forEach(w=>{const n=Math.min(OTJ_WEEK,Math.floor(wk[w]*OTJ_HOUR));if(n)out.push({key:"otj|"+w,coins:n,why:"Learning hours"})});
     try{(window.eviaTargets?window.eviaTargets.mine():[]).filter(t=>t&&t.done).forEach(t=>out.push({key:"tg|"+t.id,coins:TARGET_PAY,why:"Target met: "+t.title}))}catch(_){}
     return out;
   }
@@ -152,10 +164,12 @@
     splat:{cx:50,y:17,w:66,a:0},
     gear:{cx:50,y:6,w:80,a:0},
     hex:{cx:50,y:5,w:86,a:0},
-    shield:{cx:50,y:3,w:92,a:0}
+    shield:{cx:50,y:3,w:92,a:0},
+    ghost:{cx:50,y:7,w:70,a:0},cat:{cx:50,y:18,w:64,a:0},dog:{cx:50,y:11,w:74,a:0},robot:{cx:50,y:19,w:86,a:0},alien:{cx:50,y:12,w:80,a:0}
   };
   let uid=0;
   function hatSvg(shape,hat){
+    if(OTHER_HATS[hat])return OTHER_HATS[hat](FIT[shape]||FIT.circle,"evh"+(++uid));
     const f=FIT[shape]||FIT.circle,w=f.w,x1=f.cx-w*.39,x2=f.cx+w*.39,top=f.y-w*.4,bh=w*.085,id="evh"+(++uid);
     const grad={"hat-blue":["#3a86d6","#1c5ea8","#123f73"],"hat-silver":["#f4f6f8","#b8c0ca","#6b7480"],"hat-gold":["#ffe58a","#e0a800","#8a6400"],"hat-glow":["#fffbe0","#ffd84a","#ff9d00"]}[hat]||["#3a86d6","#1c5ea8","#123f73"];
     return '<svg class="evia-hat '+hat+'" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="'+id+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+grad[0]+'"/><stop offset="1" stop-color="'+grad[1]+'"/></linearGradient></defs>'+
@@ -165,6 +179,35 @@
       '<path class="eh-shine" d="M'+(f.cx-w*.26)+' '+(f.y-w*.08)+' C'+(f.cx-w*.26)+' '+(top+w*.14)+' '+(f.cx-w*.16)+' '+(top+w*.07)+' '+(f.cx-w*.08)+' '+(top+w*.06)+'"/>'+
       '<rect class="eh-brim" fill="url(#'+id+')" stroke="'+grad[2]+'" x="'+(f.cx-w/2)+'" y="'+(f.y-bh/2)+'" width="'+w+'" height="'+bh+'" rx="'+bh/2+'"/></g></svg>';
   }
+  /* Hats that aren't hard hats, fitted to the same spot on each shape (f: brim centre, height, width and tilt). */
+  const R=v=>Math.round(v*10)/10;
+  const OTHER_HATS={
+    "hat-cap":(f,id)=>{const w=f.w*.84,x1=f.cx-w/2,x2=f.cx+w/2,top=f.y-w*.4,y=f.y;
+      return '<svg class="evia-hat hat-cap" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="'+id+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#46546e"/><stop offset="1" stop-color="#27313f"/></linearGradient></defs><g transform="rotate('+f.a+' '+f.cx+' '+f.y+')">'+
+        '<path fill="#1f2733" stroke="#121821" d="M'+R(x2-w*.12)+' '+R(y-w*.02)+' C'+R(x2+w*.12)+' '+R(y-w*.1)+' '+R(x2+w*.4)+' '+R(y-w*.02)+' '+R(x2+w*.36)+' '+R(y+w*.08)+' C'+R(x2+w*.3)+' '+R(y+w*.14)+' '+R(x2+w*.02)+' '+R(y+w*.1)+' '+R(x2-w*.14)+' '+R(y+w*.06)+' Z"/>'+
+        '<path fill="url(#'+id+')" stroke="#121821" d="M'+R(x1)+' '+R(y)+' C'+R(x1)+' '+R(top+w*.08)+' '+R(f.cx-w*.3)+' '+R(top)+' '+R(f.cx)+' '+R(top)+' C'+R(f.cx+w*.3)+' '+R(top)+' '+R(x2)+' '+R(top+w*.08)+' '+R(x2)+' '+R(y)+' Z"/>'+
+        '<path fill="none" stroke="#121821" stroke-opacity=".45" d="M'+R(f.cx)+' '+R(top)+' V'+R(y)+' M'+R(f.cx-w*.26)+' '+R(top+w*.07)+' Q'+R(f.cx-w*.22)+' '+R(y-w*.12)+' '+R(f.cx-w*.2)+' '+R(y)+' M'+R(f.cx+w*.26)+' '+R(top+w*.07)+' Q'+R(f.cx+w*.22)+' '+R(y-w*.12)+' '+R(f.cx+w*.2)+' '+R(y)+'"/>'+
+        '<rect fill="#1f2733" x="'+R(x1)+'" y="'+R(y-w*.05)+'" width="'+R(w)+'" height="'+R(w*.07)+'" rx="'+R(w*.03)+'"/><circle fill="#dfe3ea" stroke="#121821" cx="'+R(f.cx)+'" cy="'+R(top+w*.01)+'" r="'+R(w*.045)+'"/></g></svg>'},
+    "hat-cowboy":(f,id)=>{const bw=f.w*1.3,cw=f.w*.66,y=f.y+f.w*.02,top=y-f.w*.52,cx=f.cx;
+      return '<svg class="evia-hat hat-cowboy" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="'+id+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cf9b5c"/><stop offset="1" stop-color="#94622f"/></linearGradient></defs><g transform="rotate('+f.a+' '+f.cx+' '+f.y+')">'+
+        '<path fill="url(#'+id+')" stroke="#5e3b17" d="M'+R(cx-cw/2)+' '+R(y)+' L'+R(cx-cw*.44)+' '+R(top+f.w*.08)+' Q'+R(cx-cw*.24)+' '+R(top-f.w*.03)+' '+R(cx)+' '+R(top+f.w*.07)+' Q'+R(cx+cw*.24)+' '+R(top-f.w*.03)+' '+R(cx+cw*.44)+' '+R(top+f.w*.08)+' L'+R(cx+cw/2)+' '+R(y)+' Z"/>'+
+        '<rect fill="#3b2616" x="'+R(cx-cw/2)+'" y="'+R(y-f.w*.11)+'" width="'+R(cw)+'" height="'+R(f.w*.07)+'"/>'+
+        '<path fill="url(#'+id+')" stroke="#5e3b17" d="M'+R(cx-bw/2)+' '+R(y-f.w*.12)+' Q'+R(cx-bw*.4)+' '+R(y+f.w*.06)+' '+R(cx)+' '+R(y+f.w*.05)+' Q'+R(cx+bw*.4)+' '+R(y+f.w*.06)+' '+R(cx+bw/2)+' '+R(y-f.w*.12)+' Q'+R(cx+bw*.34)+' '+R(y-f.w*.02)+' '+R(cx)+' '+R(y-f.w*.03)+' Q'+R(cx-bw*.34)+' '+R(y-f.w*.02)+' '+R(cx-bw/2)+' '+R(y-f.w*.12)+' Z"/></g></svg>'},
+    "hat-beanie":(f,id)=>{const w=f.w*.86,x1=f.cx-w/2,x2=f.cx+w/2,y=f.y+f.w*.04,top=y-w*.5;let ribs="";for(let k=-3;k<=3;k++)ribs+='M'+R(f.cx+k*w*.12)+' '+R(top+w*.1+Math.abs(k)*w*.03)+' V'+R(y-w*.16);
+      return '<svg class="evia-hat hat-beanie" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="'+id+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6b778b"/><stop offset="1" stop-color="#465164"/></linearGradient></defs><g transform="rotate('+f.a+' '+f.cx+' '+f.y+')">'+
+        '<circle fill="#eceef2" stroke="#8a93a1" cx="'+R(f.cx)+'" cy="'+R(top-w*.03)+'" r="'+R(w*.11)+'"/>'+
+        '<path fill="url(#'+id+')" stroke="#2f3846" d="M'+R(x1)+' '+R(y)+' C'+R(x1)+' '+R(top+w*.1)+' '+R(f.cx-w*.3)+' '+R(top)+' '+R(f.cx)+' '+R(top)+' C'+R(f.cx+w*.3)+' '+R(top)+' '+R(x2)+' '+R(top+w*.1)+' '+R(x2)+' '+R(y)+' Z"/>'+
+        '<path fill="none" stroke="#2f3846" stroke-opacity=".35" d="'+ribs+'"/>'+
+        '<rect fill="#556175" stroke="#2f3846" x="'+R(x1-1)+'" y="'+R(y-w*.19)+'" width="'+R(w+2)+'" height="'+R(w*.21)+'" rx="'+R(w*.06)+'"/></g></svg>'}
+  };
+  /* A moustache or a beard, on the lower face (the beard is clipped to Evia's outline, like the vest). */
+  function faceSvg(shape,id){
+    if(id==="acc-moustache")return '<svg class="evia-ppe ek-face" viewBox="0 0 100 100" aria-hidden="true"><path fill="#5a3d27" stroke="#2c1d12" stroke-width="1.2" stroke-linejoin="round" d="M50 66C44 61 36 61 31 65C27.5 68 24 67.5 21.5 64C21 71 27.5 75.5 36 73.5C42 72 46 70 50 68C54 70 58 72 64 73.5C72.5 75.5 79 71 78.5 64C76 67.5 72.5 68 69 65C64 61 56 61 50 66Z"/></svg>';
+    const o=outlinePath(shape),cid="evb"+(++uid);
+    return '<svg class="evia-ppe ek-face" viewBox="0 0 100 100" aria-hidden="true"><defs><clipPath id="'+cid+'">'+o.clip+'</clipPath></defs><g clip-path="url(#'+cid+')">'+
+      '<path fill="#6b4a2f" fill-rule="evenodd" stroke="#3f2a18" stroke-width="1.2" d="M4 60C12 68 22 72 31 71C38 70 43 66 50 66C57 66 62 70 69 71C78 72 88 68 96 60L112 60L112 130L-12 130L-12 60Z M42 78.5a8 4.2 0 1 0 16 0a8 4.2 0 1 0 -16 0Z"/>'+
+      '<path fill="none" stroke="#3f2a18" stroke-opacity=".35" stroke-linecap="round" d="M20 80q2 4 0 8M32 86q2 4 0 8M50 88q2 4 0 8M68 86q2 4 0 8M80 80q2 4 0 8"/></g></svg>';
+  }
   const hatHtml=(shape,hat)=>hat?'<span class="evia-kit" aria-hidden="true">'+hatSvg(shape,hat)+'</span>':"";
 
   /* ---------- PPE, fitted to each shape ----------
@@ -173,13 +216,15 @@
   const BODY={
     circle:{L:1,R:99,top:0,clip:'<circle cx="50" cy="50" r="50"/>',line:'<circle cx="50" cy="50" r="48"/>'},
     squircle:{L:1,R:99,top:0,clip:'<rect x="0" y="0" width="100" height="100" rx="30"/>',line:'<rect x="2" y="2" width="96" height="96" rx="28"/>'},
-    cloud:{L:-7,R:108,top:8},oval:{L:-3,R:103,top:11},splat:{L:3,R:96,top:0},gear:{L:2,R:98,top:1},hex:{L:-4,R:104,top:-2},shield:{L:-2,R:102,top:-4}
+    cloud:{L:-7,R:108,top:8},oval:{L:-3,R:103,top:11},splat:{L:3,R:96,top:0},gear:{L:2,R:98,top:1},hex:{L:-4,R:104,top:-2},shield:{L:-2,R:102,top:-4},
+    ghost:{L:9,R:91,top:-3},cat:{L:0,R:100,top:12},dog:{L:6,R:94,top:6},robot:{L:1,R:99,top:16},alien:{L:-3,R:103,top:5}
   };
   function outlinePath(shape){
     const b=BODY[shape]||BODY.circle;if(b.clip)return {clip:b.clip,line:b.line};
-    const svg=window.eviaOutlineSvg?window.eviaOutlineSvg(shape):"",d=(svg.match(/ d="([^"]+)"/)||[])[1]||"";
-    const k=shape==="oval"?1.16:1.28,o=shape==="oval"?-8:-14,p='<path transform="translate('+o+' '+o+') scale('+k+')" d="'+d+'"/>';
-    return {clip:p,line:p};
+    const svg=window.eviaOutlineSvg?window.eviaOutlineSvg(shape):"",ds=[...svg.matchAll(/ d="([^"]+)"/g)].map(m=>m[1]);
+    const k=shape==="oval"?1.16:1.28,o=shape==="oval"?-8:-14,p=ds.map(d=>'<path transform="translate('+o+' '+o+') scale('+k+')" d="'+d+'"/>').join("");
+    /* The outline line only follows the head (the last part), so ears and antennae don't cut across the kit. */
+    return {clip:p,line:ds.length?'<path transform="translate('+o+' '+o+') scale('+k+')" d="'+ds[ds.length-1]+'"/>':""};
   }
   function earsSvg(shape,id){
     const b=BODY[shape]||BODY.circle,gold=id==="ppe-ears-gold",cup=gold?["#ffe58a","#e0a800","#8a6400"]:["#ff6b5c","#d8342a","#7a1a14"],cx=50;
@@ -196,7 +241,7 @@
   }
   /* Everything worn on one Evia: body and ears under the hat. Eye PPE is placed on the eyes by fitEyes(). */
   function kitHtml(shape,w){
-    const out=(w.body?vestSvg(shape,w.body):"")+(w.ears?earsSvg(shape,w.ears):"")+(w.hat?hatSvg(shape,w.hat):"");
+    const out=(w.body?vestSvg(shape,w.body):"")+(w.face?faceSvg(shape,w.face):"")+(w.ears?earsSvg(shape,w.ears):"")+(w.hat?hatSvg(shape,w.hat):"");
     return out?'<span class="evia-kit" aria-hidden="true">'+out+'</span>':"";
   }
   /* Specs and goggles sit on Evia's actual eyes (measured, so they fit at every size and with every face). */
@@ -207,9 +252,9 @@
     const w=eyes[0].offsetWidth,h=eyes[0].offsetHeight,gap=Math.max(0,eyes[1].offsetLeft-eyes[0].offsetLeft-w);
     const bw=Math.max(1.3,w*.13),pad=Math.max(1.5,Math.min(w*.3,(gap-bw*1.5)/2));
     const box=e=>({x:e.offsetLeft-pad,y:e.offsetTop-pad,w:e.offsetWidth+pad*2,h:e.offsetHeight+pad*2});
-    const a=box(eyes[0]),b=box(eyes[1]),goggles=id==="ppe-goggles";
+    const a=box(eyes[0]),b=box(eyes[1]),goggles=id==="ppe-goggles",sun=id==="acc-sunglasses";
     if(!g){g=document.createElement("span");g.className="ek-eyes";g.setAttribute("aria-hidden","true");face.appendChild(g)}
-    g.className="ek-eyes "+(goggles?"goggles":"specs");g.style.setProperty("--bw",bw+"px");
+    g.className="ek-eyes "+(goggles?"goggles":sun?"specs sun":"specs");g.style.setProperty("--bw",bw+"px");
     const px=v=>Math.round(v*10)/10+"px";
     g.innerHTML=goggles?
       '<b class="ek-strap" style="left:'+px(-face.offsetLeft-4)+';right:'+px(-(host.offsetWidth-face.offsetLeft-face.offsetWidth)-4)+';top:'+px(a.y+a.h/2-bw)+';height:'+px(bw*2)+'"></b>'+
@@ -222,9 +267,9 @@
   /* Put what's worn on the Evia button (and keep it there when her shape changes). */
   function wearOn(){
     const r=read(),shape=window.eviaCurrentShape?window.eviaCurrentShape():"circle",ok=id=>id&&owns(id)?id:"";
-    const w={hat:ok(r.hat),eyes:ok(r.eyes),ears:ok(r.ears),body:ok(r.body)};
+    const w={hat:ok(r.hat),eyes:ok(r.eyes),ears:ok(r.ears),body:ok(r.body),face:ok(r.face)};
     document.querySelectorAll(".evia-fab").forEach(el=>{
-      let k=el.querySelector(":scope > .evia-kit");const sig=shape+"|"+w.hat+"|"+w.ears+"|"+w.body;
+      let k=el.querySelector(":scope > .evia-kit");const sig=shape+"|"+w.hat+"|"+w.ears+"|"+w.body+"|"+w.face;
       if(!(k&&k.dataset.sig===sig)){if(k)k.remove();const html=kitHtml(shape,w);if(html){el.insertAdjacentHTML("beforeend",html);el.lastElementChild.dataset.sig=sig}}
       if(w.eyes)el.dataset.eyes=w.eyes;else delete el.dataset.eyes;
       fitEyes(el);
@@ -280,7 +325,7 @@
     return '<span class="rw-evia evia-shape-avatar shape-'+shape+'"'+col+(wear.eyes?' data-eyes="'+wear.eyes+'"':"")+'><span class="evia-face"'+x+'><i></i><i></i></span>'+kitHtml(shape,wear)+'</span>';
   }
   const tag=r=>'<span class="rw-tag r-'+r+'">'+RARITY[r].label+'</span>';
-  const EARN=[["Strong evidence for a unit",EV_PAY.strong],["Good evidence for a unit",EV_PAY.good],["Weak evidence for a unit",EV_PAY.weak],["Off-the-job learning, per hour",OTJ_HOUR+" (up to "+OTJ_WEEK+" a week)"],["Target met",TARGET_PAY],["Achievement on My progress",ACH_TOKENS],["Teach me: each right answer","2, plus bonuses"],["Mini games","up to "+GAME_DAILY+" a day"]];
+  const EARN=[["Strong evidence for a unit",EV_PAY.strong],["Good evidence for a unit",EV_PAY.good],["Weak evidence for a unit",EV_PAY.weak],["Each learning hour",OTJ_HOUR+" (up to "+OTJ_WEEK+" a week)"],["Target met",TARGET_PAY],["Achievement on My progress",ACH_TOKENS],["Teach me: each right answer","2, plus bonuses"],["Mini games","up to "+GAME_DAILY+" a day"]];
   let tab="hat";
   function page(){
     const r=sync(),bal=balance(),all=catalogue(),got=all.filter(x=>r.owned.includes(x.id)).length;

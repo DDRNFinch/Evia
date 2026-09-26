@@ -168,10 +168,10 @@
       const all=allK(),g=[["K","Knowledge"],["S","Skills"],["B","Behaviours"]].map(([l,n])=>{const items=all.filter(x=>x[0].startsWith(l)),d=items.filter(x=>a.evidenced.has(x[0])).length;return {n,d,t:items.length,p:items.length?Math.round(d/items.length*100):0}}).filter(x=>x.t);
       out.push(card("ksb",esc(T.Many),num(a.met)+'<small> / '+a.total+'</small>',"with evidence",'<span class="pv-rings">'+g.map(x=>'<span class="pv-ring-item">'+ring(x.p,74,8,x.p+"%")+'<small>'+x.n+'</small></span>').join("")+'</span>'));
     }
-    // Off-the-job hours
+    // Learning hours
     const wk=D.otjWeeks;
-    out.push(card("otj","Off-the-job hours",hmBig(S.otjTotal),S.otjWeek?"+"+hm(S.otjWeek)+" this week":"Nothing logged this week yet",
-      wk.some(w=>w.h>0)?columns(wk.map(w=>w.h),wk.map((w,i)=>i===wk.length-1?"This wk":i%2===1?shortDate(w.start):""),Math.max(OTJ_WEEK_GOAL*1.4,...wk.map(w=>w.h)),{goal:OTJ_WEEK_GOAL,goalLabel:OTJ_WEEK_GOAL+" h a week",aria:"Off-the-job hours for each of the last 8 weeks",highlight:wk.length-1}):empty("Your weekly hours will chart here.")));
+    out.push(card("otj","Learning hours",hmBig(S.otjTotal),S.otjWeek?"+"+hm(S.otjWeek)+" this week":"Nothing logged this week yet",
+      wk.some(w=>w.h>0)?columns(wk.map(w=>w.h),wk.map((w,i)=>i===wk.length-1?"This wk":i%2===1?shortDate(w.start):""),Math.max(OTJ_WEEK_GOAL*1.4,...wk.map(w=>w.h)),{goal:OTJ_WEEK_GOAL,goalLabel:OTJ_WEEK_GOAL+" h a week",aria:"Learning hours for each of the last 8 weeks",highlight:wk.length-1}):empty("Your weekly hours will chart here.")));
     // Tests
     const tests=D.tests,last=tests[tests.length-1];
     out.push(card("tests",nvqOn()?"Knowledge tests":"Tests",last?num(testPct(last),"%"):"–",last?"last score · best "+S.bestTest+"% · "+tests.length+" taken":"No tests taken yet",
@@ -260,9 +260,9 @@
     }
     else if(id==="otj"){
       const wk=D.otjWeeks,log=hours.slice().sort((x,y)=>Number(y.createdAt)-Number(x.createdAt));
-      const el=sheet("MY PROGRESS","Off-the-job hours",
+      const el=sheet("MY PROGRESS","Learning hours",
         '<div class="pv-deep-hero">'+hmBig(S.otjTotal)+'<span>logged in total</span></div>'+
-        (wk.some(w=>w.h>0)?'<p class="pv-caption">Each bar is a week, Monday to Sunday.</p>'+columns(wk.map(w=>w.h),wk.map((w,i)=>i===wk.length-1?"This wk":i%2===1?shortDate(w.start):""),Math.max(OTJ_WEEK_GOAL*1.4,...wk.map(w=>w.h)),{h:130,goal:OTJ_WEEK_GOAL,goalLabel:OTJ_WEEK_GOAL+" h a week",aria:"Off-the-job hours each week",highlight:wk.length-1}):'<span class="pv-empty">Nothing logged in the last 8 weeks.</span>')+
+        (wk.some(w=>w.h>0)?'<p class="pv-caption">Each bar is a week, Monday to Sunday.</p>'+columns(wk.map(w=>w.h),wk.map((w,i)=>i===wk.length-1?"This wk":i%2===1?shortDate(w.start):""),Math.max(OTJ_WEEK_GOAL*1.4,...wk.map(w=>w.h)),{h:130,goal:OTJ_WEEK_GOAL,goalLabel:OTJ_WEEK_GOAL+" h a week",aria:"Learning hours each week",highlight:wk.length-1}):'<span class="pv-empty">Nothing logged in the last 8 weeks.</span>')+
         '<div class="pv-stats">'+stat("This week",hm(S.otjWeek))+stat("This month",hm(S.otjMonth))+stat("Entries",log.length)+'</div>'+
         note("Most apprentices need about "+OTJ_WEEK_GOAL+" hours a week; your commitment statement has your exact number. Tell Evia what you did and she’ll log it. Your full log and its PDFs are in <strong>Learning logs</strong> on My course."));
     }
@@ -289,7 +289,7 @@
       const yr=new Date().getFullYear(),last=monthCounts(D.counts,yr-1).reduce((n,v)=>n+v,0),total=monthCounts(D.counts,yr).reduce((n,v)=>n+v,0);
       sheet("MY PROGRESS","Activity",
         '<div class="pv-deep-hero">'+num(total)+'<span>things added in '+yr+'</span></div>'+
-        '<p class="pv-caption">Each bar is a month. It counts the evidence packs, off-the-job entries and supporting files you added.</p>'+
+        '<p class="pv-caption">Each bar is a month. It counts the evidence packs, learning hours entries and supporting files you added.</p>'+
         (total?'<span class="pv-year">'+yr+'</span>'+yearBars(D.counts,yr,150):'<span class="pv-empty">Nothing added yet this year.</span>')+
         (last?'<h3 class="pv-h">'+(yr-1)+'</h3>'+columns(monthCounts(D.counts,yr-1),"JFMAMJJASOND".split(""),Math.max(4,...monthCounts(D.counts,yr-1))*1.15,{h:110,aria:"Things added each month in "+(yr-1)}):"")+
         '<div class="pv-stats">'+stat("Weeks in a row",S.streak)+stat("Longest run",S.longest+" week"+(S.longest===1?"":"s"))+stat("Evidence packs",S.allPacks)+stat("Last upload",S.lastUpload?shortDate(S.lastUpload):"None yet")+'</div>'+
