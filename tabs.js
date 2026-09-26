@@ -19,7 +19,11 @@
     const trade=(T&&T.COURSES&&T.COURSES[course])||[],fs=f=>(E.fs||[]).filter(u=>u.fs===f);
     const card=(id,title,c)=>'<button type="button" class="tt-card" data-go="'+id+'"><span class="tt-ic" aria-hidden="true">'+ICON[id]+'</span><span class="tt-copy"><strong>'+esc(title)+'</strong><small>'+c.done+' of '+c.total+' lessons</small>'+
       '<i class="tt-bar"><i style="width:'+(c.total?Math.round(c.done/c.total*100):0)+'%"></i></i></span><span class="tt-chev" aria-hidden="true">›</span></button>';
-    scr().innerHTML=head("Teach me")+'<div class="tt-list">'+card("course",courseName()||"Your course",count(trade))+card("maths","Maths",count(fs("maths")))+card("english","English",count(fs("english")))+'</div>'+games();
+    const cs=[count(trade),count(fs("maths")),count(fs("english"))],done=cs.reduce((n,c)=>n+c.done,0),total=cs.reduce((n,c)=>n+c.total,0),R=window.eviaRewards;
+    /* The summary at the top, in the same card style as My progress. */
+    const hero='<div class="pv-card pv-alert ui-hero"><span class="pv-head"><span class="pv-title">Lessons done</span></span><span class="pv-big">'+done+'<small> / '+total+'</small></span>'+
+      '<span class="pv-sub">'+(done?"1 coin for every "+((R&&R.XP_PER_COIN)||5)+" XP you earn":"Start with your course lessons. Each one earns coins.")+'</span><i class="pv-bar ui-hero-bar"><i style="width:'+(total?Math.round(done/total*100):0)+'%"></i></i></div>';
+    scr().innerHTML=head("Teach me")+hero+'<h2 class="ui-section-label">Subjects</h2><div class="tt-list">'+card("course",courseName()||"Your course",cs[0])+card("maths","Maths",cs[1])+card("english","English",cs[2])+'</div>'+games();
     scr().querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{if(T)T.open(b.dataset.go)});
     scr().querySelectorAll("[data-game]").forEach(b=>b.onclick=()=>{const R=window.eviaRewards,id=b.dataset.game;
       if(R&&R.owns(id))window.eviaGames.open(b.dataset.key);else if(R)R.openItem(id)});
@@ -29,7 +33,7 @@
   function games(){
     const G=window.eviaGames,R=window.eviaRewards;if(!G||!R)return "";
     const PRICE={common:30,rare:80,epic:180},room=R.gameRoom(),earned=R.GAME_DAILY-room;
-    return '<section class="tt-games"><div class="tt-games-head"><h2>Mini games</h2><span>'+(room?earned+" of "+R.GAME_DAILY+" game coins today":"Today’s game coins collected")+'</span></div><div class="tt-list">'+
+    return '<section class="tt-games"><div class="tt-games-head"><h2 class="ui-section-label">Mini games</h2><span>'+(room?earned+" of "+R.GAME_DAILY+" game coins today":"Today’s game coins collected")+'</span></div><div class="tt-list">'+
       G.GAMES.map(g=>{const own=R.owns(g.id);
         return '<button type="button" class="tt-card tt-game'+(own?"":" locked")+'" data-game="'+g.id+'" data-key="'+g.key+'"><span class="tt-ic" aria-hidden="true">'+G.iconFor(g.key)+'</span><span class="tt-copy"><strong>'+esc(g.label)+'</strong><small>'+esc(own?g.about:"Unlock it in Rewards")+'</small></span>'+
           (own?'<span class="tt-play">Play</span>':'<span class="tt-lock">'+LOCK+(PRICE[g.rarity]?'<b>'+PRICE[g.rarity]+'</b>':"")+'</span>')+'</button>'}).join("")+'</div></section>';

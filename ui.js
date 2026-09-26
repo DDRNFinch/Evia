@@ -807,10 +807,21 @@
     document.getElementById("screen").insertAdjacentHTML("afterbegin",pageHead("My course").replace('class="ui-page-head"','class="ui-page-head" id="ui-course-head"'));
     /* The units sit together in one grouped list. */
     const scr=document.getElementById("screen"),units=[...scr.querySelectorAll(":scope > .unit-card[data-u]")];
-    if(units.length){const list=document.createElement("div");list.className="ui-unit-list";units[0].before(list);units.forEach(u=>list.appendChild(u))}
+    if(units.length){const list=document.createElement("div");list.className="ui-unit-list";units[0].before(list);units.forEach((u,i)=>{u.insertAdjacentHTML("afterbegin",'<span class="ui-unit-no" aria-hidden="true">'+(i+1)+'</span>');list.appendChild(u)});
+      list.insertAdjacentHTML("beforebegin",'<h2 class="ui-section-label">Units</h2>')}
+    /* Supporting evidence sits in its own grouped list, like the units. */
+    const sup=scr.querySelector(":scope > .supporting-course-card");
+    if(sup){const box=document.createElement("div");box.className="ui-unit-list ui-sup-list";sup.before(box);box.appendChild(sup);box.insertAdjacentHTML("beforebegin",'<h2 class="ui-section-label">Workplace evidence</h2>')}
+    /* The summary at the top, in the same card style as My progress. */
+    const top=document.getElementById("ui-course-head");if(top)top.insertAdjacentHTML("afterend",courseHero());
     scr.insertAdjacentHTML("beforeend",logsGridHtml());bindLogsGrid();
     courseNudge();
   };
+  function courseHero(){
+    const nvq=window.eviaNvq&&window.eviaNvq.on(),us=data().u,lv=us.map(u=>unitStrengthForCourse(u[0])),n=lv.filter(Boolean).length,c=k=>lv.filter(l=>l===k).length,pct=us.length?Math.round(n/us.length*100):0;
+    return '<div class="pv-card pv-alert ui-hero"><span class="pv-head"><span class="pv-title">'+(nvq?"Site jobs with evidence":"Units with evidence")+'</span></span><span class="pv-big">'+n+'<small> / '+us.length+'</small></span>'+
+      '<span class="pv-sub">'+(n?c("strong")+" strong · "+c("good")+" good · "+c("weak")+" weak":"Open a "+(nvq?"job":"unit")+" to capture your first evidence")+'</span><i class="pv-bar ui-hero-bar"><i style="width:'+pct+'%"></i></i></div>';
+  }
   window.portfolio=()=>window.courses();
   /* Evia's bubble belongs to the course list: it goes when anything else (a unit, supporting evidence) replaces it. */
   const scrEl=document.getElementById("screen");
