@@ -1,6 +1,7 @@
 /* Evia7 Rewards: tokens, the collection, the loot box and Evia's kit.
-   Coins (called tokens in the code): real work (evidence, off-the-job hours, reviews, targets), Teach me (up to 60 a
-   day) and achievements. See "Coins" below.
+   Coins (called tokens in the code): real work (evidence, off-the-job hours, targets), Teach me (1 for every 5 XP, no
+   daily limit), mini games (up to 60 a day) and achievements. See "Coins" below. Coins aren't meant to be scarce:
+   learning matters more than saving them.
    Items have a rarity (common, rare, epic, legendary). Three shapes and three colours are free; everything else is
    bought with tokens (common to epic) or won in a loot box (legendary only comes from boxes).
    Loot boxes cost tokens only, show their odds, refund tokens for a duplicate, and guarantee an epic or better
@@ -8,7 +9,7 @@
    Store "evia7-rewards": {bank, spent, lastXp, day, dayEarned, owned[], hat, expr, pity, seenAch[]}.
    window.eviaRewards: page(), locked(kind,name), openItem(id), hatHtml(shape,hat), wearOn(), sync(), balance(). */
 (function(){
-  const KEY="evia7-rewards",DAILY=60,ACH_TOKENS=25,BOX=60;
+  const KEY="evia7-rewards",XP_PER_COIN=5,ACH_TOKENS=25,BOX=60;
   const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const blank=()=>({bank:0,spent:0,owned:[],hat:"",pity:0,seenAch:[]});
   /* Hazard spotter was swapped for the Crossword: anyone who had it gets the Crossword. */
@@ -69,9 +70,9 @@
 
   /* ---------- Coins ----------
      Real work pays the most: unit evidence by strength (an upgrade pays the difference), off-the-job hours (5 an hour,
-     up to 40 a week), each progress review done on time, and each target met. Teach me pays 1 for every 10 XP, up to
-     60 a day. Every payment is remembered, so nothing is paid twice. */
-  const EV_PAY={weak:10,good:30,strong:60},OTJ_HOUR=5,OTJ_WEEK=40,REVIEW_PAY=50,TARGET_PAY=20,BACKFILL=300;
+     up to 40 a week) and each target met. Progress reviews don't pay: they only count when an assessor does them.
+     Teach me pays 1 for every 5 XP, with no daily limit. Every payment is remembered, so nothing is paid twice. */
+  const EV_PAY={weak:10,good:30,strong:60},OTJ_HOUR=5,OTJ_WEEK=40,TARGET_PAY=20,BACKFILL=300;
   const xp=()=>window.eviaTeach&&window.eviaTeach.stats?window.eviaTeach.stats().xp:0;
   const achievements=()=>{try{const S=window.eviaStats.compute();return window.eviaStats.achievements(S).list.filter(a=>a.earned).map(a=>a.id)}catch(_){return []}};
   const weekOf=t=>{const d=new Date(t);d.setHours(0,0,0,0);d.setDate(d.getDate()-(d.getDay()+6)%7);return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()};
@@ -84,12 +85,6 @@
     const hs=typeof hours!=="undefined"?hours:[],wk={};
     hs.forEach(h=>{const t=Number(h.createdAt)||Date.parse(h.savedAt||"");if(!t)return;const w=weekOf(t);wk[w]=(wk[w]||0)+Number(h.n||0)});
     Object.keys(wk).forEach(w=>{const n=Math.min(OTJ_WEEK,Math.floor(wk[w]*OTJ_HOUR));if(n)out.push({key:"otj|"+w,coins:n,why:"Off-the-job hours"})});
-    /* Reviews are due 3 months after the last one (or the course start); up to a week late still counts. */
-    const p=readJ("evia7-profile",{});let from=p.start?new Date(p.start+"T12:00:00"):null;
-    readJ("evia7-progress-reviews",[]).filter(x=>x&&x.course===c&&x.date).sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(x=>{
-      const d=new Date(x.date);let ok=true;if(from&&!isNaN(from)){const due=new Date(from);due.setMonth(due.getMonth()+3);ok=d<=new Date(+due+7*864e5)}
-      if(ok)out.push({key:"rev|"+(x.id||x.date),coins:REVIEW_PAY,why:"Progress review on time"});from=d;
-    });
     try{(window.eviaTargets?window.eviaTargets.mine():[]).filter(t=>t&&t.done).forEach(t=>out.push({key:"tg|"+t.id,coins:TARGET_PAY,why:"Target met: "+t.title}))}catch(_){}
     return out;
   }
@@ -98,13 +93,13 @@
     if(r.day!==d){r.day=d;r.dayEarned=0}
     /* The first time: tokens for what they've already done (up to 200), and keep anything already chosen. */
     if(r.lastXp==null){
-      r.bank+=Math.min(200,Math.floor(x/10));r.lastXp=x;
+      r.bank+=Math.min(200,Math.floor(x/XP_PER_COIN));r.lastXp=x;
       const F=window.eviaFree||{themes:[],shapes:[]},sh=window.eviaCurrentShape&&window.eviaCurrentShape(),th=window.eviaCurrentTheme&&window.eviaCurrentTheme();
       if(sh&&SHAPE_R[sh]&&!r.owned.includes("shape-"+sh))r.owned.push("shape-"+sh);
       if(th&&COLOUR_R[th]&&!r.owned.includes("colour-"+th))r.owned.push("colour-"+th);
     }else if(x>r.lastXp){
-      const t=Math.min(Math.floor((x-r.lastXp)/10),Math.max(0,DAILY-(r.dayEarned||0)));
-      r.bank+=t;r.dayEarned=(r.dayEarned||0)+t;r.lastXp=x-((x-r.lastXp)%10);
+      const t=Math.floor((x-r.lastXp)/XP_PER_COIN);
+      r.bank+=t;r.dayEarned=(r.dayEarned||0)+t;r.lastXp=x-((x-r.lastXp)%XP_PER_COIN);
     }else if(x<r.lastXp)r.lastXp=x;
     const got=achievements().filter(id=>!r.seenAch.includes(id));
     got.forEach(id=>{r.seenAch.push(id);r.bank+=ACH_TOKENS});
@@ -116,15 +111,13 @@
     r.workV=1;
     write(r);badge();if(gained.length){toast(gained);if(isOpen())setTimeout(page,0)}return r;
   }
-  /* Mini games pay a few coins each, up to GAME_DAILY a day. */
-  const GAME_DAILY=20;
+  /* Mini games pay a few coins each, up to GAME_DAILY a day (they can be played again and again). */
+  const GAME_DAILY=60;
   const gameRoom=()=>{const r=read();return r.gDay===today()?Math.max(0,GAME_DAILY-(r.gEarned||0)):GAME_DAILY};
   function gameCoins(n){
     const r=read(),d=today();if(r.gDay!==d){r.gDay=d;r.gEarned=0}
     const got=Math.max(0,Math.min(Math.floor(n)||0,GAME_DAILY-r.gEarned));r.gEarned+=got;r.bank+=got;write(r);badge();return got;
   }
-  /* Room left today for Teach me coins. */
-  const room=()=>{const r=read();return r.day===today()?Math.max(0,DAILY-(r.dayEarned||0)):DAILY};
   /* A small note when real work pays out. */
   function toast(g){
     const n=g.reduce((a,x)=>a+x.n,0),t=document.createElement("div");t.className="rw-toast";t.setAttribute("role","status");
@@ -274,7 +267,7 @@
     return '<span class="rw-evia evia-shape-avatar shape-'+shape+'"'+col+(wear.eyes?' data-eyes="'+wear.eyes+'"':"")+'><span class="evia-face"'+x+'><i></i><i></i></span>'+kitHtml(shape,wear)+'</span>';
   }
   const tag=r=>'<span class="rw-tag r-'+r+'">'+RARITY[r].label+'</span>';
-  const EARN=[["Strong evidence for a unit",EV_PAY.strong],["Good evidence for a unit",EV_PAY.good],["Weak evidence for a unit",EV_PAY.weak],["Off-the-job learning, per hour",OTJ_HOUR+" (up to "+OTJ_WEEK+" a week)"],["Progress review on time",REVIEW_PAY],["Target met",TARGET_PAY],["Achievement on My progress",ACH_TOKENS],["Teach me lessons","up to "+DAILY+" a day"]];
+  const EARN=[["Strong evidence for a unit",EV_PAY.strong],["Good evidence for a unit",EV_PAY.good],["Weak evidence for a unit",EV_PAY.weak],["Off-the-job learning, per hour",OTJ_HOUR+" (up to "+OTJ_WEEK+" a week)"],["Target met",TARGET_PAY],["Achievement on My progress",ACH_TOKENS],["Teach me: each right answer","2, plus bonuses"],["Mini games","up to "+GAME_DAILY+" a day"]];
   let tab="hat";
   function page(){
     const r=sync(),bal=balance(),all=catalogue(),got=all.filter(x=>r.owned.includes(x.id)).length;
@@ -330,7 +323,7 @@
   /* The expression in use goes on <html>, so every Evia in the app shows it (moods still win for a moment). */
   function applyExpr(){const r=read(),on=r.expr&&owns("expr-"+r.expr);if(on)document.documentElement.setAttribute("data-evia-expr",r.expr);else document.documentElement.removeAttribute("data-evia-expr")}
   applyExpr();
-  window.eviaRewards={coin:()=>coin,gameCoins,gameRoom,GAME_DAILY,owns,page,room,later,EV_PAY,applyExpr,kitHtml,fitAll,locked,openItem,hatHtml,hatSvg,wearOn,sync,balance,catalogue,FIT};
+  window.eviaRewards={coin:()=>coin,gameCoins,gameRoom,GAME_DAILY,owns,page,later,XP_PER_COIN,EV_PAY,applyExpr,kitHtml,fitAll,locked,openItem,hatHtml,hatSvg,wearOn,sync,balance,catalogue,FIT};
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)sync()});
   setTimeout(()=>{sync();wearOn()},500);
   /* Keep the hat on when Evia's shape changes. */

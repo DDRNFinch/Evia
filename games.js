@@ -3,7 +3,8 @@
                      clue after four tries.
      Crossword       a new small crossword each time from the trade's terms; the clues are what each term means.
      Flappy Evia     fly Evia through the scaffold; every few gaps a safety gate asks a true-or-false question.
-   Games pay a few coins each (rewards.js caps game coins at 20 a day).
+   Games pay a few coins each, even when you don't win (rewards.js caps game coins at 60 a day). Hints are free:
+   learning matters more than coins.
    window.eviaGames: {GAMES, open(key), iconFor(key)} */
 (function(){
   const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -33,7 +34,7 @@
     o.innerHTML='<header class="gm-bar"><button type="button" class="gm-x" aria-label="Close">×</button><strong>'+esc(g.label)+'</strong><span class="gm-coins" title="Game coins today">'+coinSvg()+'<b></b></span></header><div class="gm-body"></div>';
     document.body.appendChild(o);document.documentElement.classList.add("gm-open");
     const ctx={o,g,body:o.querySelector(".gm-body"),stops:[],
-      coins(){const b=o.querySelector(".gm-coins b"),rm=R()&&R().gameRoom?R().gameRoom():0;b.textContent=(R()?R().GAME_DAILY:20)-rm+"/"+(R()?R().GAME_DAILY:20);o.querySelector(".gm-coins").setAttribute("aria-label","Game coins today: "+b.textContent)},
+      coins(){const b=o.querySelector(".gm-coins b"),rm=R()&&R().gameRoom?R().gameRoom():0;b.textContent=(R()?R().GAME_DAILY:60)-rm+"/"+(R()?R().GAME_DAILY:60);o.querySelector(".gm-coins").setAttribute("aria-label","Game coins today: "+b.textContent)},
       close(){ctx.stops.forEach(f=>{try{f()}catch(_){}});o.remove();document.removeEventListener("keydown",esc2);if(cur===ctx)cur=null;if(!document.querySelector(".gm"))document.documentElement.classList.remove("gm-open");if(typeof screen!=="undefined"&&screen==="teach"&&window.render)window.render()}};
     const esc2=e=>{if(e.key==="Escape")ctx.close()};document.addEventListener("keydown",esc2);
     o.querySelector(".gm-x").onclick=()=>ctx.close();ctx.coins();cur=ctx;return ctx;
@@ -156,7 +157,7 @@
       document.removeEventListener("keydown",kd);
       finish(ctx,{title:won?(rows.length<=2?"Brilliant!":rows.length<=4?"Nice one!":"Got it!"):"The word was "+word,
         sub:won?"You got <strong>"+word+"</strong> in "+rows.length+(rows.length===1?" try.":" tries."):"Here’s what it means, for next time.",
-        coins:won?Math.max(2,8-rows.length):0,
+        coins:won?Math.max(4,9-rows.length):2,
         html:'<div class="gm-learn"><strong>'+word+'</strong><p>'+esc(pair[1])+'</p></div>',
         again:()=>brickle(ctx)});
     }
@@ -296,7 +297,7 @@
     };
     ctx.body.querySelector('[data-t="reveal"]').onclick=()=>{
       if(over)return;const cs=cells(words[cur]),k=cs.find(x=>val[x]!==sol[x]);if(!k)return;
-      val[k]=sol[k];wrong.delete(k);reveals++;pos=cs.indexOf(k);msg("That letter costs a coin.");paint();after();
+      val[k]=sol[k];wrong.delete(k);reveals++;pos=cs.indexOf(k);msg("");paint();after();
     };
     const kd=e=>{if(e.ctrlKey||e.metaKey||e.altKey||over)return;const k=e.key.toUpperCase();
       if(/^[A-Z]$/.test(k)){e.preventDefault();type(k)}else if(k==="BACKSPACE"){e.preventDefault();type("⌫")}
@@ -306,7 +307,7 @@
     function end(){
       document.removeEventListener("keydown",kd);
       finish(ctx,{title:reveals?"Crossword done!":"Solved it yourself!",sub:reveals?"With "+reveals+(reveals===1?" letter":" letters")+" revealed.":"No letters revealed. Top work.",
-        coins:reveals*2>=Object.keys(sol).length?0:Math.max(2,8-reveals),
+        coins:8,
         html:'<ol class="gm-list">'+words.map(p=>'<li class="ok"><strong>'+p.w+'</strong><span>'+esc(p.clue)+'</span></li>').join("")+'</ol>',
         again:()=>crossword(ctx)});
     }
@@ -366,7 +367,7 @@
       state="over";buzz([30,40,30]);
       const best=Math.max(s.score,Number(localStorage.getItem("evia7-flappy-best")||0));try{localStorage.setItem("evia7-flappy-best",best)}catch(_){}
       setTimeout(()=>finish(ctx,{title:"Score: "+s.score,sub:(s.score>=best&&s.score?"A new best!":"Best: "+best)+(s.gates?" · Safety gates: "+s.right+" of "+s.gates:""),
-        coins:Math.min(10,Math.floor(s.score/3)),again:()=>flappy(ctx)}),500);
+        coins:Math.min(15,Math.floor(s.score/2)+s.right),again:()=>flappy(ctx)}),500);
       return true;
     }
     /* Drawing: sky, buildings and a crane far away, scaffold towers, the ground, and Evia. */

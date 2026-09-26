@@ -149,8 +149,8 @@
   function lesson(l){
     const G=T.games||{},res=resumeOf(l.id),r2=res&&res.v===2?res:null;
     const st={i:r2?Math.min(r2.i,l.steps.length):0,xp:r2?r2.xp:0,first:r2?r2.first:0,asks:r2?r2.asks:0,misses:r2?r2.misses:0,review:r2?r2.review:[],time:r2?r2.time:0};
-    /* Coins this lesson: 1 for every 10 XP, within what's left of today's Teach me coins. */
-    const room0=RW()&&RW().room?RW().room():60,lessonCoins=()=>Math.min(room0,Math.floor(st.xp/10));
+    /* Coins this lesson: 1 for every 5 XP (rewards.js). */
+    const perCoin=RW()&&RW().XP_PER_COIN||5,lessonCoins=()=>Math.floor(st.xp/perCoin);
     let queue=l.steps.slice(st.i).map(s=>({s,kind:"main"})),combo=0,best=0,surprised=false,bonusRight=false,inReview=false,fixed=0,fixTotal=0,fast=false,t0=Date.now();
     let hard=l.steps.slice(0,st.i).some(s=>s.t==="banner"&&s.kind==="challenge");
     /* Off-the-job time: trade lessons only (maths and English don't count). The timer runs quietly in otj-auto.js. */
@@ -188,7 +188,7 @@
     /* XP floats up from what you tapped; a burst on a right answer; a flame for answers in a row. */
     const pop=(txt,el,coin)=>{if(!el||reduced())return;const r=el.getBoundingClientRect(),p=document.createElement("span");p.className="tm-pop"+(coin?" coin":"");p.innerHTML=(coin?COIN():"")+esc(txt);p.style.left=(r.left+r.width/2)+"px";p.style.top=(r.top+Math.min(r.height/2,36))+"px";root.appendChild(p);setTimeout(()=>p.remove(),950)};
     const burst=el=>{if(!el||reduced())return;const r=el.getBoundingClientRect(),b=document.createElement("span");b.className="tm-burst";b.style.left=(r.left+r.width/2)+"px";b.style.top=(r.top+r.height/2)+"px";b.innerHTML=Array.from({length:10},(_,k)=>'<i style="--a:'+(k*36)+'deg"></i>').join("");root.appendChild(b);setTimeout(()=>b.remove(),700)};
-    /* XP still drives the coins (1 for every 10), but learners only see coins: the pill bumps when a coin lands. */
+    /* XP still drives the coins (1 for every 5), but learners only see coins: the pill bumps when a coin lands. */
     const award=(n,el)=>{if(!n)return;const was=lessonCoins();st.xp+=n;const now=lessonCoins(),x=$(".tm-xp");
       if(x&&now>was){x.querySelector("b").textContent=now;x.setAttribute("aria-label",now+" coins this lesson");x.classList.remove("bump");void x.offsetWidth;x.classList.add("bump");pop("+"+(now-was),x,true)}};
     const setCombo=()=>{const e=$(".tm-combo");if(!e)return;e.hidden=combo<2;e.innerHTML=ICON.flame+"<b>"+combo+"</b>";e.setAttribute("aria-label",combo+" in a row");if(combo>=2){e.classList.remove("bump");void e.offsetWidth;e.classList.add("bump")}};
@@ -271,7 +271,7 @@
       const score=st.asks?st.first/st.asks:1,perfect=st.asks>0&&!st.misses;
       saveResult(l.id,score);setResume(l.id,null);
       if(otjKey)window.eviaOtj.stop(otjKey,{learned:l.title+": "+l.blurb});
-      const before=coins(),earned=st.xp+XP.done+(perfect?XP.perfect:0)+(l.challenge?XP.unit:0),me=addXp(earned),got=Math.max(0,coins()-before),full=RW()&&RW().room&&!RW().room();
+      const before=coins(),earned=st.xp+XP.done+(perfect?XP.perfect:0)+(l.challenge?XP.unit:0),me=addXp(earned),got=Math.max(0,coins()-before);
       const secs=Math.max(1,Math.round((st.time+(Date.now()-t0))/1000));
       const badges=[l.challenge&&["trophy",(u?u.unit:"Unit")+": complete"],perfect&&["star","Perfect lesson"],best>=5&&["flame",best+" in a row"],fast&&["bolt","Quick hands"],fixTotal&&fixed>=fixTotal&&["again","Fixed every mistake"],bonusRight&&["gift","Surprise solved"]].filter(Boolean);
       const all=[].concat(...units().map(x=>x.lessons)),idx=all.findIndex(x=>x.id===l.id),nx=all[idx+1];
@@ -283,7 +283,6 @@
         EVIA.replace("tm-evia","tm-evia xl")+'<h2>'+(l.challenge?"Unit complete!":"Lesson complete!")+'</h2><p class="tm-end-sub">'+esc(l.title)+'</p>'+
         '<div class="tm-stats three"><div class="xp">'+COIN()+'<b data-count="'+got+'">'+got+'</b><span>'+(got===1?"coin":"coins")+'</span></div><div>'+ICON.target+'<b>'+Math.round(score*100)+'%</b><span>accuracy</span></div><div>'+ICON.clock+'<b>'+mmss(secs)+'</b><span>time</span></div></div>'+
         '<div class="tm-streak'+(me.extended?" up":"")+'"><div class="tm-streak-top">'+ICON.flame+'<b>'+me.n+'</b><span>day streak'+(me.extended?(me.n>1?" · kept going!":" · started!"):"")+'</span></div><div class="tm-week">'+week+'</div></div>'+
-        (full?'<p class="tm-view">That’s today’s Teach me coins collected. Evidence, off-the-job hours and targets still earn coins.</p>':"")+
         (badges.length?'<div class="tm-badges">'+badges.map((b,k)=>'<span class="tm-badge" style="--k:'+k+'">'+ICON[b[0]]+esc(b[1])+'</span>').join("")+'</div>':"")+
         (view?'<p class="tm-view">From your lessons'+(view.soFar?" so far":"")+', Evia rates your <strong>'+esc(String(sk).toLowerCase())+'</strong> as <strong>'+esc(view.label)+'</strong>. You’ll see this next to your own rating in the confidence check.</p>':"")+
         '</div><footer class="tm-foot">'+(nx?'<button type="button" class="primary tm-go" id="tm-next">Next lesson</button>':"")+'<button type="button" class="'+(nx?"secondary":"primary")+' tm-go" id="tm-path">Back to the path</button></footer>';
