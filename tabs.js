@@ -26,6 +26,7 @@
 
   const prev=window.render;
   window.render=function(){
+    if(window.eviaRewards&&window.eviaRewards.later)window.eviaRewards.later();
     if(screen!=="teach"&&screen!=="rewards")return prev();
     const pb=document.getElementById("profile-btn");if(pb)pb.style.display="flex";
     document.querySelectorAll("[data-nav]").forEach(b=>b.classList.toggle("active",b.dataset.nav===screen));

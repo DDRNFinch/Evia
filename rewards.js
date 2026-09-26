@@ -1,5 +1,6 @@
 /* Evia7 Rewards: tokens, the collection, the loot box and Evia's kit.
-   Tokens: 1 for every 10 Teach me XP (up to 60 a day), and 25 for each achievement on My progress.
+   Coins (called tokens in the code): real work (evidence, off-the-job hours, reviews, targets), Teach me (up to 60 a
+   day) and achievements. See "Coins" below.
    Items have a rarity (common, rare, epic, legendary). Three shapes and three colours are free; everything else is
    bought with tokens (common to epic) or won in a loot box (legendary only comes from boxes).
    Loot boxes cost tokens only, show their odds, refund tokens for a duplicate, and guarantee an epic or better
@@ -63,11 +64,34 @@
     if(F.themes.includes(name)||owns("colour-"+name))return false;return COLOUR_R[name]||false;
   }
 
-  /* ---------- Tokens ---------- */
+  /* ---------- Coins ----------
+     Real work pays the most: unit evidence by strength (an upgrade pays the difference), off-the-job hours (5 an hour,
+     up to 40 a week), each progress review done on time, and each target met. Teach me pays 1 for every 10 XP, up to
+     60 a day. Every payment is remembered, so nothing is paid twice. */
+  const EV_PAY={weak:10,good:30,strong:60},OTJ_HOUR=5,OTJ_WEEK=40,REVIEW_PAY=50,TARGET_PAY=20,BACKFILL=300;
   const xp=()=>window.eviaTeach&&window.eviaTeach.stats?window.eviaTeach.stats().xp:0;
   const achievements=()=>{try{const S=window.eviaStats.compute();return window.eviaStats.achievements(S).list.filter(a=>a.earned).map(a=>a.id)}catch(_){return []}};
+  const weekOf=t=>{const d=new Date(t);d.setHours(0,0,0,0);d.setDate(d.getDate()-(d.getDay()+6)%7);return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()};
+  const readJ=(k,f)=>{try{return JSON.parse(localStorage.getItem(k)||"null")||f}catch(_){return f}};
+  /* What real work has earned so far: [{key, coins, why}] with each key's full value (paid ones are skipped later). */
+  function work(){
+    const out=[],c=typeof course!=="undefined"?course:"";
+    const ev=typeof evidence!=="undefined"?evidence:[],S=window.eviaStrength;
+    if(S)[...new Set(ev.filter(e=>e.c===c&&e.u).map(e=>e.u))].forEach(u=>{const lv=S.unit(u);if(lv)out.push({key:"ev|"+c+"|"+u,coins:EV_PAY[lv],why:lv.charAt(0).toUpperCase()+lv.slice(1)+" evidence: "+u})});
+    const hs=typeof hours!=="undefined"?hours:[],wk={};
+    hs.forEach(h=>{const t=Number(h.createdAt)||Date.parse(h.savedAt||"");if(!t)return;const w=weekOf(t);wk[w]=(wk[w]||0)+Number(h.n||0)});
+    Object.keys(wk).forEach(w=>{const n=Math.min(OTJ_WEEK,Math.floor(wk[w]*OTJ_HOUR));if(n)out.push({key:"otj|"+w,coins:n,why:"Off-the-job hours"})});
+    /* Reviews are due 3 months after the last one (or the course start); up to a week late still counts. */
+    const p=readJ("evia7-profile",{});let from=p.start?new Date(p.start+"T12:00:00"):null;
+    readJ("evia7-progress-reviews",[]).filter(x=>x&&x.course===c&&x.date).sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(x=>{
+      const d=new Date(x.date);let ok=true;if(from&&!isNaN(from)){const due=new Date(from);due.setMonth(due.getMonth()+3);ok=d<=new Date(+due+7*864e5)}
+      if(ok)out.push({key:"rev|"+(x.id||x.date),coins:REVIEW_PAY,why:"Progress review on time"});from=d;
+    });
+    try{(window.eviaTargets?window.eviaTargets.mine():[]).filter(t=>t&&t.done).forEach(t=>out.push({key:"tg|"+t.id,coins:TARGET_PAY,why:"Target met: "+t.title}))}catch(_){}
+    return out;
+  }
   function sync(){
-    const r=read(),x=xp(),d=today();
+    const r=read(),x=xp(),d=today(),gained=[];
     if(r.day!==d){r.day=d;r.dayEarned=0}
     /* The first time: tokens for what they've already done (up to 200), and keep anything already chosen. */
     if(r.lastXp==null){
@@ -81,8 +105,24 @@
     }else if(x<r.lastXp)r.lastXp=x;
     const got=achievements().filter(id=>!r.seenAch.includes(id));
     got.forEach(id=>{r.seenAch.push(id);r.bank+=ACH_TOKENS});
-    write(r);badge();return r;
+    /* Real work. The first time this runs, work already done pays out too (up to 300 in all). */
+    r.paid=r.paid||{};const first=!r.workV;let back=BACKFILL;
+    work().forEach(w=>{const due=w.coins-(r.paid[w.key]||0);if(due<=0)return;
+      const n=first?Math.min(due,back):due;if(first)back-=n;
+      r.paid[w.key]=first?w.coins:(r.paid[w.key]||0)+due;if(n>0){r.bank+=n;if(!first)gained.push({n,why:w.why})}});
+    r.workV=1;
+    write(r);badge();if(gained.length){toast(gained);if(isOpen())setTimeout(page,0)}return r;
   }
+  /* Room left today for Teach me coins. */
+  const room=()=>{const r=read();return r.day===today()?Math.max(0,DAILY-(r.dayEarned||0)):DAILY};
+  /* A small note when real work pays out. */
+  function toast(g){
+    const n=g.reduce((a,x)=>a+x.n,0),t=document.createElement("div");t.className="rw-toast";t.setAttribute("role","status");
+    t.innerHTML=coin+'<b>+'+n+'</b><span>'+esc(g.length>1?g.length+" things done":g[0].why)+'</span>';
+    document.body.appendChild(t);setTimeout(()=>t.classList.add("out"),2600);setTimeout(()=>t.remove(),3000);
+  }
+  /* Real work may have changed after any screen: check quietly a moment later. */
+  let st=0;const later=()=>{clearTimeout(st);st=setTimeout(sync,400)};
   const balance=()=>{const r=read();return Math.max(0,r.bank-r.spent)};
 
   /* ---------- Hard hats, fitted to each shape ----------
@@ -222,13 +262,14 @@
     return '<span class="rw-evia evia-shape-avatar shape-'+shape+'"'+col+(wear.eyes?' data-eyes="'+wear.eyes+'"':"")+'><span class="evia-face"'+x+'><i></i><i></i></span>'+kitHtml(shape,wear)+'</span>';
   }
   const tag=r=>'<span class="rw-tag r-'+r+'">'+RARITY[r].label+'</span>';
+  const EARN=[["Strong evidence for a unit",EV_PAY.strong],["Good evidence for a unit",EV_PAY.good],["Weak evidence for a unit",EV_PAY.weak],["Off-the-job learning, per hour",OTJ_HOUR+" (up to "+OTJ_WEEK+" a week)"],["Progress review on time",REVIEW_PAY],["Target met",TARGET_PAY],["Achievement on My progress",ACH_TOKENS],["Teach me lessons","up to "+DAILY+" a day"]];
   let tab="hat";
   function page(){
     const r=sync(),bal=balance(),all=catalogue(),got=all.filter(x=>r.owned.includes(x.id)).length;
     const list=all.filter(x=>x.kind===tab).sort((a,b)=>ORDER.indexOf(a.rarity)-ORDER.indexOf(b.rarity));
     scr().innerHTML='<div id="rw-page"><header class="ui-page-head"><h1>Rewards</h1><span>'+got+' of '+all.length+' collected</span></header>'+
-      '<section class="rw-bal"><div>'+coin+'<b>'+bal+'</b></div><p>Tokens</p><small>Earn them in Teach me (up to '+DAILY+' a day) and from achievements on My progress.</small></section>'+
-      '<section class="rw-box"><div class="rw-box-art" aria-hidden="true">'+GIFT+'</div><div class="rw-box-copy"><strong>Loot box</strong><small>Win something you don’t have yet. Duplicates give tokens back, and 10 boxes always include an Epic or better.</small>'+
+      '<section class="rw-bal"><div>'+coin+'<b>'+bal+'</b></div><p>Coins</p><details class="rw-earn"><summary>How to earn coins</summary><ul>'+EARN.map(e=>'<li><span>'+e[0]+'</span><b>'+e[1]+'</b></li>').join("")+'</ul><p>Improve your evidence later and you get the difference.</p></details></section>'+
+      '<section class="rw-box"><div class="rw-box-art" aria-hidden="true">'+GIFT+'</div><div class="rw-box-copy"><strong>Loot box</strong><small>Win something you don’t have yet. Duplicates give coins back, and 10 boxes always include an Epic or better.</small>'+
         '<div class="rw-odds">'+ORDER.map(k=>'<span class="r-'+k+'">'+RARITY[k].label+' '+RARITY[k].odds+'%</span>').join("")+'</div>'+
         '<button type="button" class="rw-btn buy" id="rw-open"'+(bal>=BOX?"":" disabled")+'>'+coin+BOX+' · Open</button></div></section>'+
       '<div class="rw-tabs" role="tablist">'+[["hat","Kit"],["expr","Faces"],["shape","Shapes"],["colour","Colours"]].map(t=>'<button type="button" role="tab" aria-selected="'+(tab===t[0])+'" class="'+(tab===t[0]?"on":"")+'" data-tab="'+t[0]+'">'+t[1]+'</button>').join("")+'</div>'+
@@ -261,7 +302,7 @@
   function reveal(it,fromBox){
     const dup=it.refund!=null;
     const o=overlay('<div class="rw-reveal r-'+it.rarity+'"><span class="rw-burst" aria-hidden="true"></span>'+tag(it.rarity)+
-      (dup?'<div class="rw-dup">'+coin+'</div><h2>You have them all</h2><p>Every '+RARITY[it.rarity].label.toLowerCase()+' item is already yours, so here’s <strong>'+it.refund+' tokens</strong> back.</p>'
+      (dup?'<div class="rw-dup">'+coin+'</div><h2>You have them all</h2><p>Every '+RARITY[it.rarity].label.toLowerCase()+' item is already yours, so here’s <strong>'+it.refund+' coins</strong> back.</p>'
           :'<div class="rw-big">'+preview(it)+'</div><h2>'+esc(it.label)+'</h2><p>'+(fromBox?"New in your collection!":"It’s yours.")+'</p>')+
       '<div class="rw-reveal-btns">'+(dup?"":'<button type="button" class="rw-btn buy" data-go="use">'+(it.kind==="hat"?"Wear it":"Use it")+'</button>')+'<button type="button" class="rw-btn" data-go="ok">'+(dup?"OK":"Later")+'</button></div></div>');
     requestAnimationFrame(()=>fitAll(o));
@@ -277,7 +318,7 @@
   /* The expression in use goes on <html>, so every Evia in the app shows it (moods still win for a moment). */
   function applyExpr(){const r=read(),on=r.expr&&owns("expr-"+r.expr);if(on)document.documentElement.setAttribute("data-evia-expr",r.expr);else document.documentElement.removeAttribute("data-evia-expr")}
   applyExpr();
-  window.eviaRewards={page,applyExpr,kitHtml,fitAll,locked,openItem,hatHtml,hatSvg,wearOn,sync,balance,catalogue,FIT};
+  window.eviaRewards={coin:()=>coin,page,room,later,EV_PAY,applyExpr,kitHtml,fitAll,locked,openItem,hatHtml,hatSvg,wearOn,sync,balance,catalogue,FIT};
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)sync()});
   setTimeout(()=>{sync();wearOn()},500);
   /* Keep the hat on when Evia's shape changes. */

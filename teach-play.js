@@ -413,7 +413,7 @@
     function start(){
       c.el.innerHTML='<div class="tm-qf"><div class="tm-timer"><i></i></div><div class="tm-qf-top"><span class="tm-qf-n"></span><span class="tm-qf-s"></span></div><div class="tm-qf-card"></div><div class="tm-qf-btns"></div></div>';
       const bar=c.el.querySelector(".tm-timer i");bar.style.transitionDuration=total+"s";requestAnimationFrame(()=>requestAnimationFrame(()=>bar.style.width="0%"));
-      timer=setTimeout(()=>{late=true;c.el.querySelector(".tm-timer").classList.add("late");const n=c.el.querySelector(".tm-qf-s");if(n)n.textContent="Time’s up: finish these for XP"},total*1000);
+      timer=setTimeout(()=>{late=true;c.el.querySelector(".tm-timer").classList.add("late");const n=c.el.querySelector(".tm-qf-s");if(n)n.textContent="Time’s up: finish these anyway"},total*1000);
       c.button(null);ask();
     }
     function ask(){
@@ -433,7 +433,7 @@
   /* A splash between parts of a lesson: a quick challenge, a surprise, fixing mistakes, or the unit challenge. */
   G.banner=c=>{
     const s=c.s,kind=s.kind||"challenge",ic={challenge:ICON.bolt,surprise:ICON.gift,review:ICON.again,trophy:ICON.trophy}[kind]||ICON.bolt;
-    c.el.innerHTML='<div class="tm-banner '+kind+'"><div class="tm-banner-ic"><i class="tm-rays" aria-hidden="true"></i>'+ic+'</div><h2>'+esc(s.title)+'</h2>'+(s.text?'<p>'+fmt(s.text)+'</p>':"")+(s.xp?'<span class="tm-banner-xp">'+ICON.bolt+esc(s.xp)+'</span>':"")+'</div>';
+    c.el.innerHTML='<div class="tm-banner '+kind+'"><div class="tm-banner-ic"><i class="tm-rays" aria-hidden="true"></i>'+ic+'</div><h2>'+esc(s.title)+'</h2>'+(s.text?'<p>'+fmt(s.text)+'</p>':"")+(s.xp?'<span class="tm-banner-xp">'+(window.eviaRewards&&window.eviaRewards.coin?window.eviaRewards.coin().replace('class="rw-coin"','class="rw-coin tm-coin"'):"")+esc(s.xp)+'</span>':"")+'</div>';
     c.sound(kind==="surprise"?"surprise":"banner");
     c.button(s.go||"Let’s go",c.next,true);
   };

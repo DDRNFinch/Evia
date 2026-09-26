@@ -12,6 +12,10 @@
   const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const reduced=()=>window.eviaAccessibility?window.eviaAccessibility.reducedMotion():matchMedia("(prefers-reduced-motion: reduce)").matches;
   const buzz=ms=>{try{navigator.vibrate&&navigator.vibrate(ms)}catch(_){}};
+  /* Coins (rewards.js): the balance, and the coin picture. */
+  const RW=()=>window.eviaRewards;
+  const coins=()=>{const R=RW();if(!R)return 0;R.sync();return R.balance()};
+  const COIN=()=>RW()&&RW().coin?RW().coin().replace('class="rw-coin"','class="rw-coin tm-coin"'):"";
   const fmt=U.fmt||esc,sound=k=>{if(U.sound)U.sound(k)};
   const LEVELS=["Need training","Basics","Confident","Mastered"];
   const KEY="evia7-teach";
@@ -119,7 +123,7 @@
     const counter={n:0};
     const me=stats();
     root.innerHTML='<header class="tm-bar"><button type="button" class="tm-x" aria-label="Close">×</button><strong>'+title+'</strong>'+
-        '<span class="tm-pill fire'+(me.today?" lit":"")+'" title="Day streak" aria-label="'+me.streak+' day streak">'+(ICON.flame||"")+'<b>'+me.streak+'</b></span><span class="tm-pill xp" title="Total XP" aria-label="'+me.xp+' XP">'+(ICON.bolt||"")+'<b>'+me.xp+'</b></span></header>'+
+        '<span class="tm-pill fire'+(me.today?" lit":"")+'" title="Day streak" aria-label="'+me.streak+' day streak">'+(ICON.flame||"")+'<b>'+me.streak+'</b></span><span class="tm-pill coins" title="Your coins" aria-label="'+coins()+' coins">'+COIN()+'<b>'+coins()+'</b></span></header>'+
       '<div class="tm-scroll">'+
         '<section class="tm-hero">'+EVIA+'<p class="tm-say">'+say+'</p></section>'+
         (section!=="course"?'<p class="tm-fs-note">Maths and English lessons don’t count towards your off-the-job hours.</p>':"")+
@@ -145,6 +149,8 @@
   function lesson(l){
     const G=T.games||{},res=resumeOf(l.id),r2=res&&res.v===2?res:null;
     const st={i:r2?Math.min(r2.i,l.steps.length):0,xp:r2?r2.xp:0,first:r2?r2.first:0,asks:r2?r2.asks:0,misses:r2?r2.misses:0,review:r2?r2.review:[],time:r2?r2.time:0};
+    /* Coins this lesson: 1 for every 10 XP, within what's left of today's Teach me coins. */
+    const room0=RW()&&RW().room?RW().room():60,lessonCoins=()=>Math.min(room0,Math.floor(st.xp/10));
     let queue=l.steps.slice(st.i).map(s=>({s,kind:"main"})),combo=0,best=0,surprised=false,bonusRight=false,inReview=false,fixed=0,fixTotal=0,fast=false,t0=Date.now();
     let hard=l.steps.slice(0,st.i).some(s=>s.t==="banner"&&s.kind==="challenge");
     /* Off-the-job time: trade lessons only (maths and English don't count). The timer runs quietly in otj-auto.js. */
@@ -154,7 +160,7 @@
     const save=()=>setResume(l.id,st.i>0||st.review.length?{v:2,i:st.i,xp:st.xp,first:st.first,asks:st.asks,misses:st.misses,review:st.review,time:st.time+(Date.now()-t0)}:null);
     const leave=()=>{save();if(otjKey)window.eviaOtj.stop(otjKey);current=null;root.classList.remove("tm-happy","tm-oops");path()};
     root.innerHTML='<header class="tm-bar tm-lbar"><button type="button" class="tm-x" aria-label="Leave lesson">×</button><span class="tm-prog" aria-hidden="true"><i></i></span>'+
-      '<span class="tm-combo" hidden></span><button type="button" class="tm-snd"></button><span class="tm-xp" title="XP this lesson">'+(ICON.bolt||"")+'<b>'+st.xp+'</b></span></header>'+
+      '<span class="tm-combo" hidden></span><button type="button" class="tm-snd"></button><span class="tm-xp" title="Coins this lesson" aria-label="'+lessonCoins()+' coins this lesson">'+COIN()+'<b>'+lessonCoins()+'</b></span></header>'+
       '<div class="tm-scroll tm-step" aria-live="polite"></div><div class="tm-toast" aria-live="polite"></div>'+
       '<footer class="tm-foot"><div class="tm-fb" hidden></div><div class="tm-btns"></div></footer>';
     root.querySelector(".tm-x").onclick=leave;
@@ -180,19 +186,21 @@
     const clearFb=()=>{const f=fb();f.hidden=true;f.innerHTML="";root.classList.remove("tm-happy","tm-oops")};
 
     /* XP floats up from what you tapped; a burst on a right answer; a flame for answers in a row. */
-    const pop=(txt,el)=>{if(!el||reduced())return;const r=el.getBoundingClientRect(),p=document.createElement("span");p.className="tm-pop";p.textContent=txt;p.style.left=(r.left+r.width/2)+"px";p.style.top=(r.top+Math.min(r.height/2,36))+"px";root.appendChild(p);setTimeout(()=>p.remove(),950)};
+    const pop=(txt,el,coin)=>{if(!el||reduced())return;const r=el.getBoundingClientRect(),p=document.createElement("span");p.className="tm-pop"+(coin?" coin":"");p.innerHTML=(coin?COIN():"")+esc(txt);p.style.left=(r.left+r.width/2)+"px";p.style.top=(r.top+Math.min(r.height/2,36))+"px";root.appendChild(p);setTimeout(()=>p.remove(),950)};
     const burst=el=>{if(!el||reduced())return;const r=el.getBoundingClientRect(),b=document.createElement("span");b.className="tm-burst";b.style.left=(r.left+r.width/2)+"px";b.style.top=(r.top+r.height/2)+"px";b.innerHTML=Array.from({length:10},(_,k)=>'<i style="--a:'+(k*36)+'deg"></i>').join("");root.appendChild(b);setTimeout(()=>b.remove(),700)};
-    const award=(n,el)=>{if(!n)return;st.xp+=n;const x=$(".tm-xp");if(x){x.querySelector("b").textContent=st.xp;x.classList.remove("bump");void x.offsetWidth;x.classList.add("bump")}pop("+"+n+" XP",el||x)};
+    /* XP still drives the coins (1 for every 10), but learners only see coins: the pill bumps when a coin lands. */
+    const award=(n,el)=>{if(!n)return;const was=lessonCoins();st.xp+=n;const now=lessonCoins(),x=$(".tm-xp");
+      if(x&&now>was){x.querySelector("b").textContent=now;x.setAttribute("aria-label",now+" coins this lesson");x.classList.remove("bump");void x.offsetWidth;x.classList.add("bump");pop("+"+(now-was),x,true)}};
     const setCombo=()=>{const e=$(".tm-combo");if(!e)return;e.hidden=combo<2;e.innerHTML=ICON.flame+"<b>"+combo+"</b>";e.setAttribute("aria-label",combo+" in a row");if(combo>=2){e.classList.remove("bump");void e.offsetWidth;e.classList.add("bump")}};
     const toast=html=>{const t=$(".tm-toast");if(!t)return;t.innerHTML=html;t.classList.remove("on");void t.offsetWidth;t.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("on"),1400)};
-    const gotOne=()=>{combo++;best=Math.max(best,combo);setCombo();if([3,5,8,12,20].includes(combo)){award(XP.combo,$(".tm-combo"));toast(ICON.flame+"<b>"+combo+" in a row!</b><span>+"+XP.combo+" XP</span>");setTimeout(()=>sound("combo"),260)}};
+    const gotOne=()=>{combo++;best=Math.max(best,combo);setCombo();if([3,5,8,12,20].includes(combo)){award(XP.combo,$(".tm-combo"));toast(ICON.flame+"<b>"+combo+" in a row!</b>");setTimeout(()=>sound("combo"),260)}};
     const lost=()=>{combo=0;setCombo()};
     /* Now and then, after three in a row, a surprise: a trickier question for double XP. */
     const maybeSurprise=cur=>{
       if(!l.surprise||surprised||cur.kind!=="main"||combo<3)return;
       const chance=typeof T.surpriseChance==="number"?T.surpriseChance:.35;if(Math.random()>=chance)return;
       surprised=true;
-      queue.splice(1,0,{s:{t:"banner",kind:"surprise",title:"Surprise challenge!",text:"You’re on a roll. Here’s a tricky one for double XP.",go:"Bring it on"},kind:"banner"},{s:l.surprise,kind:"bonus"});
+      queue.splice(1,0,{s:{t:"banner",kind:"surprise",title:"Surprise challenge!",text:"You’re on a roll. Here’s a tricky one for double coins.",go:"Bring it on"},kind:"banner"},{s:l.surprise,kind:"bonus"});
     };
     const progress=()=>{const p=$(".tm-prog");if(!p)return;p.classList.toggle("rev",inReview);p.querySelector("i").style.width=(inReview?100:Math.round(st.i/l.steps.length*100))+"%"};
 
@@ -216,7 +224,7 @@
             award(cur.kind==="bonus"?(firstTry?XP.bonus:0):cur.kind==="review"?XP.fixed:firstTry?(hard?XP.hard:XP.first):XP.retry,o.el);
             burst(o.el);sound("ok");buzz(12);
             if(firstTry&&cur.kind!=="review")gotOne();
-            feedback(true,why,"Continue",advance,cur.kind==="review"?{title:"Fixed it!"}:cur.kind==="bonus"&&firstTry?{title:"Double XP!"}:null);
+            feedback(true,why,"Continue",advance,cur.kind==="review"?{title:"Fixed it!"}:cur.kind==="bonus"&&firstTry?{title:"Double coins!"}:null);
             if(firstTry)maybeSurprise(cur);
             return;
           }
@@ -263,7 +271,7 @@
       const score=st.asks?st.first/st.asks:1,perfect=st.asks>0&&!st.misses;
       saveResult(l.id,score);setResume(l.id,null);
       if(otjKey)window.eviaOtj.stop(otjKey,{learned:l.title+": "+l.blurb});
-      const earned=st.xp+XP.done+(perfect?XP.perfect:0)+(l.challenge?XP.unit:0),me=addXp(earned);
+      const before=coins(),earned=st.xp+XP.done+(perfect?XP.perfect:0)+(l.challenge?XP.unit:0),me=addXp(earned),got=Math.max(0,coins()-before),full=RW()&&RW().room&&!RW().room();
       const secs=Math.max(1,Math.round((st.time+(Date.now()-t0))/1000));
       const badges=[l.challenge&&["trophy",(u?u.unit:"Unit")+": complete"],perfect&&["star","Perfect lesson"],best>=5&&["flame",best+" in a row"],fast&&["bolt","Quick hands"],fixTotal&&fixed>=fixTotal&&["again","Fixed every mistake"],bonusRight&&["gift","Surprise solved"]].filter(Boolean);
       const all=[].concat(...units().map(x=>x.lessons)),idx=all.findIndex(x=>x.id===l.id),nx=all[idx+1];
@@ -273,14 +281,15 @@
       root.classList.remove("tm-oops");root.classList.add("tm-happy");
       root.innerHTML='<div class="tm-scroll tm-end"><div class="tm-confetti" aria-hidden="true">'+Array.from({length:18},(_,k)=>'<i style="--k:'+k+'"></i>').join("")+'</div>'+
         EVIA.replace("tm-evia","tm-evia xl")+'<h2>'+(l.challenge?"Unit complete!":"Lesson complete!")+'</h2><p class="tm-end-sub">'+esc(l.title)+'</p>'+
-        '<div class="tm-stats three"><div class="xp">'+ICON.bolt+'<b data-count="'+earned+'">'+earned+'</b><span>XP earned</span></div><div>'+ICON.target+'<b>'+Math.round(score*100)+'%</b><span>accuracy</span></div><div>'+ICON.clock+'<b>'+mmss(secs)+'</b><span>time</span></div></div>'+
+        '<div class="tm-stats three"><div class="xp">'+COIN()+'<b data-count="'+got+'">'+got+'</b><span>'+(got===1?"coin":"coins")+'</span></div><div>'+ICON.target+'<b>'+Math.round(score*100)+'%</b><span>accuracy</span></div><div>'+ICON.clock+'<b>'+mmss(secs)+'</b><span>time</span></div></div>'+
         '<div class="tm-streak'+(me.extended?" up":"")+'"><div class="tm-streak-top">'+ICON.flame+'<b>'+me.n+'</b><span>day streak'+(me.extended?(me.n>1?" · kept going!":" · started!"):"")+'</span></div><div class="tm-week">'+week+'</div></div>'+
+        (full?'<p class="tm-view">That’s today’s Teach me coins collected. Evidence, off-the-job hours and targets still earn coins.</p>':"")+
         (badges.length?'<div class="tm-badges">'+badges.map((b,k)=>'<span class="tm-badge" style="--k:'+k+'">'+ICON[b[0]]+esc(b[1])+'</span>').join("")+'</div>':"")+
         (view?'<p class="tm-view">From your lessons'+(view.soFar?" so far":"")+', Evia rates your <strong>'+esc(String(sk).toLowerCase())+'</strong> as <strong>'+esc(view.label)+'</strong>. You’ll see this next to your own rating in the confidence check.</p>':"")+
         '</div><footer class="tm-foot">'+(nx?'<button type="button" class="primary tm-go" id="tm-next">Next lesson</button>':"")+'<button type="button" class="'+(nx?"secondary":"primary")+' tm-go" id="tm-path">Back to the path</button></footer>';
-      /* The XP counts up. */
+      /* The coins count up. */
       const cnt=root.querySelector("[data-count]");
-      if(cnt&&!reduced()){const t1=performance.now(),dur=900;cnt.textContent="0";const step=t=>{const k=Math.min(1,(t-t1)/dur);cnt.textContent=Math.round(earned*(1-Math.pow(1-k,3)));if(k<1&&cnt.isConnected)requestAnimationFrame(step)};requestAnimationFrame(step)}
+      if(cnt&&got&&!reduced()){const t1=performance.now(),dur=900;cnt.textContent="0";const step=t=>{const k=Math.min(1,(t-t1)/dur);cnt.textContent=Math.round(got*(1-Math.pow(1-k,3)));if(k<1&&cnt.isConnected)requestAnimationFrame(step)};requestAnimationFrame(step)}
       const n=root.querySelector("#tm-next");if(n)n.onclick=()=>{root.classList.remove("tm-happy");lesson(nx)};
       root.querySelector("#tm-path").onclick=()=>{root.classList.remove("tm-happy");path()};
       sound("done");buzz([10,40,10,40,30]);

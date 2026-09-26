@@ -298,6 +298,26 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("PPE: specs, ear defenders and hi-vis can be worn together on Evia, with a hard hat",rw.ppe,JSON.stringify(rw));
     check("Loot boxes give items you don't have, refund tokens for duplicates, and guarantee an epic after 9 without one",rw.dupe&&rw.refund&&rw.pity,JSON.stringify(rw));
     check("Advanced Evias: six legendary orbs, drawn on the Evia button with the particle sphere animated",rw.orbLocked&&rw.orb,JSON.stringify(rw));
+    // Coins: real work pays (evidence by strength, upgrades pay the difference, off-the-job hours capped per week), and Teach me shows coins, not XP.
+    const cn=await page.evaluate(async()=>{
+      const w=ms=>new Promise(r=>setTimeout(r,ms)),R=window.eviaRewards,out={},keep=localStorage.getItem("evia7-rewards"),hs=hours.slice();
+      const reset=(paid,seenAch)=>localStorage.setItem("evia7-rewards",JSON.stringify({bank:0,spent:0,owned:[],hat:"",pity:0,seenAch:seenAch||[],lastXp:1e9,day:"",workV:1,paid}));
+      const u=[...new Set(evidence.filter(e=>e.c===course).map(e=>e.u))].find(n=>window.eviaStrength.unit(n)),lv=window.eviaStrength.unit(u),key="ev|"+course+"|"+u;
+      hours.length=0;const now=Date.now();hours.push({id:"a",n:3,createdAt:now},{id:"b",n:20,createdAt:now});
+      reset({});const r1=R.sync();
+      out.ev=r1.paid[key]===R.EV_PAY[lv];out.otjCap=Object.entries(r1.paid).some(([k,v])=>k.startsWith("otj|")&&v===40);
+      const b1=r1.bank;out.once=R.sync().bank===b1;
+      const p=Object.assign({},r1.paid);p[key]=10;reset(p,r1.seenAch);const r2=R.sync();out.upgrade=r2.bank===R.EV_PAY[lv]-10;
+      out.toast=!!document.querySelector(".rw-toast");
+      hours.length=0;hs.forEach(h=>hours.push(h));
+      nav("teach");await w(400);document.querySelector('[data-go="course"]').click();await w(700);
+      out.pill=!!document.querySelector(".tm-pill.coins .rw-coin")&&!document.querySelector(".tm-pill.xp");
+      const x=document.querySelector(".tm-x");if(x)x.click();await w(300);
+      if(keep)localStorage.setItem("evia7-rewards",keep);else localStorage.removeItem("evia7-rewards");
+      document.querySelectorAll(".rw-toast").forEach(t=>t.remove());
+      return out;
+    });
+    check("Coins: evidence pays by strength, an upgrade pays the difference, hours are capped at 40 a week, and Teach me shows coins",cn.ev&&cn.otjCap&&cn.once&&cn.upgrade&&cn.toast&&cn.pill,JSON.stringify(cn));
     check("Expressions: seven faces (heart eyes loot box only); using one shows it on Evia, and tapping again goes back to classic",rw.faces&&rw.expr&&rw.exprOff,JSON.stringify(rw));
     await page.evaluate(()=>nav("teach"));await page.waitForTimeout(600);
     await page.evaluate(()=>document.querySelector('[data-go="course"]').click());await page.waitForTimeout(600);

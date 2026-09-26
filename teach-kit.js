@@ -38,7 +38,7 @@
     LD:(q,into,items,need,why,hint)=>({t:"load",q,into,items,need,why,hint}),
     QF:items=>({t:"quick",items:items.map(i=>({q:i[0],a:i[1]}))}),
     CHAL:()=>({t:"banner",kind:"challenge",title:"Quick challenge",text:"A couple of harder ones to finish. Show what you’ve got!"}),
-    TROPHY:n=>({t:"banner",kind:"trophy",title:"Unit challenge",text:(n||8)+" new questions from across the unit, getting harder as you go. It’s all you!",go:"I’m ready",xp:"+50 XP for finishing"}),
+    TROPHY:n=>({t:"banner",kind:"trophy",title:"Unit challenge",text:(n||8)+" new questions from across the unit, getting harder as you go. It’s all you!",go:"I’m ready",xp:"Bonus coins for finishing"}),
     lesson:(id,title,blurb,steps,more)=>x({id,title,blurb,steps},more),
     unit:(unit,skill,lessons,extra)=>Object.assign({unit,skill,lessons},extra||{}),
     add:(course,units)=>{T.courses[course]=(T.courses[course]||[]).concat(units)}

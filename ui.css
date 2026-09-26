@@ -2043,7 +2043,7 @@ body.evia-epa .chat-sheet::after{background:#2b2f36!important;border-color:#2b2f
 .rw-coin{width:18px;height:18px;flex:0 0 auto;fill:var(--yellow);stroke:color-mix(in srgb,var(--yellow) 70%,#000);stroke-width:1.2}.rw-coin .rw-star{fill:#fff;stroke:none}
 .rw-bal{text-align:center;padding:20px 18px 16px;margin:0 0 14px;border-radius:24px;background:linear-gradient(180deg,#fff,var(--soft));border:1px solid var(--yellow-line)}
 .rw-bal div{display:flex;align-items:center;justify-content:center;gap:10px}.rw-bal .rw-coin{width:36px;height:36px}
-.rw-bal b{font-size:42px;line-height:1;font-weight:800;color:var(--ui-ink);letter-spacing:-.03em}
+.rw-bal>div b{font-size:42px;line-height:1;font-weight:800;color:var(--ui-ink);letter-spacing:-.03em}
 .rw-bal p{margin:6px 0 2px;font-weight:800;color:var(--yellow-ink)}.rw-bal small{color:var(--ui-muted);font-size:13px}
 .rw-box{display:flex;gap:14px;align-items:center;padding:16px;margin:0 0 18px;border-radius:22px;background:linear-gradient(135deg,#2a1f4a,#17122b);color:#fff;box-shadow:0 10px 26px rgba(40,20,90,.25)}
 .rw-box-art svg,.rw-shake svg{width:84px;height:84px}
@@ -2136,3 +2136,20 @@ html body .evia-fab.evia-orb-host .evia-orb{filter:drop-shadow(0 0 10px color-mi
 html body .evia-orb-host .evia-face i{filter:drop-shadow(0 0 2px var(--orb)) drop-shadow(0 0 5px color-mix(in srgb,var(--orb) 60%,transparent))}
 html body .evia-orb-host:has(> .orb-glass) .evia-face{translate:0 -9%}
 html body .evia-orb-host .ek-lens,html body .evia-orb-host .ek-gog{border-color:#e6ebf2}html body .evia-orb-host .ek-bridge,html body .evia-orb-host .ek-arm{background:#e6ebf2}
+/* Coins in Teach me (the XP pills became coins) */
+.rw-coin.tm-coin{fill:#f5b800;stroke:#b07f00}
+.tm-pop.coin{display:inline-flex;align-items:center;gap:3px;color:#8a6400}.tm-pop.coin svg{width:16px;height:16px}
+.tm-stats .xp .rw-coin{width:24px;height:24px}
+/* A small note when real work pays coins */
+.rw-toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:8px;max-width:calc(100vw - 32px);padding:10px 16px 10px 12px;border-radius:999px;background:var(--ui-ink,#172033);color:#fff;font-size:14px;font-weight:700;box-shadow:0 10px 28px rgba(0,0,0,.22);animation:rwToastIn .3s ease-out;transition:opacity .35s,transform .35s}
+.rw-toast .rw-coin{width:20px;height:20px;fill:#f5b800;stroke:#b07f00}.rw-toast b{color:#ffd84a}.rw-toast span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rw-toast.out{opacity:0;transform:translate(-50%,8px)}
+@keyframes rwToastIn{from{opacity:0;transform:translate(-50%,10px)}}
+@media (prefers-reduced-motion:reduce){.rw-toast{animation:none;transition:none}}
+/* How to earn coins, on Rewards */
+.rw-earn{margin:12px auto 0;max-width:360px;text-align:left}
+.rw-earn summary{cursor:pointer;text-align:center;color:var(--yellow-ink);font-weight:700;font-size:14px;list-style:none}.rw-earn summary::-webkit-details-marker{display:none}
+.rw-earn summary::after{content:" ›";display:inline-block;transition:transform .2s}.rw-earn[open] summary::after{transform:rotate(90deg)}
+.rw-earn ul{list-style:none;margin:10px 0 6px;padding:0;display:grid;gap:6px}
+.rw-earn li{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;color:var(--ui-ink);padding:7px 10px;border-radius:10px;background:#fff}
+.rw-earn li b{white-space:nowrap;color:var(--yellow-ink);font-size:13.5px;font-weight:800;text-align:right}.rw-earn p{margin:4px 0 0;font-size:12.5px;color:var(--ui-muted);text-align:center}

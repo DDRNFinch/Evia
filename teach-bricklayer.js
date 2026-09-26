@@ -161,7 +161,7 @@
     ]},
     /* 6: the challenge asks about the unit from new angles, not the same questions again. */
     {id:"mm6",title:"Unit challenge",blurb:"Ten new questions from across the unit",challenge:true,steps:[
-      {t:"banner",kind:"trophy",title:"Unit challenge",text:"Ten new questions from across the unit, getting harder as you go. No teaching this time: it’s all you!",go:"I’m ready",xp:"+50 XP for finishing"},
+      {t:"banner",kind:"trophy",title:"Unit challenge",text:"Ten new questions from across the unit, getting harder as you go. No teaching this time: it’s all you!",go:"I’m ready",xp:"Bonus coins for finishing"},
       {t:"choice",q:"The spec says *1:½:4½* (cement : lime : sand). How much lime goes with 1 bucket of cement?",opts:["Half a bucket","4½ buckets","1 bucket","None"],a:0,why:"Cement, lime, sand: the middle number, ½, is the lime."},
       {t:"load",q:"You need a bigger batch. Load a *1:4* mix using *2* buckets of cement.",into:"Mixer",items:[bk("cement"),bk("sand")],need:{cement:2,sand:8},hint:"Twice the cement means twice the sand.",why:"2 of cement means 2 × 4 = 8 of sand. Same ratio, bigger batch."},
       {t:"scene",who:"Jay",say:"I tipped the cement into the empty drum first, then the sand and water.",q:"What’s likely to happen?",opts:[
