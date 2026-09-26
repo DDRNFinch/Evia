@@ -74,7 +74,7 @@ html.evia-booting body{visibility:hidden}
 </nav>
 </div>
 <div id="modal-root"></div>
-<script src="storage.js?v=storage-v3" data-app-scripts="nvq-data.js?v=nvq-data-v1 nvq.js?v=nvq-v5 app.js polish.js theme.js?v=evia-theme-v8 accessibility.js?v=a11y-v1 onboarding.js?v=onboarding-v11 profile.js?v=profile-v6 eportfolio.js?v=eport-v9 test-banks.js review.js?v=tests-v6 repair.js?v=a11y-v1 provider.js?v=provider-v2 practice-tasks.js?v=tasks-v1 otj-auto.js?v=otj-v1 teach-kit.js?v=tk-v3 teach-pics.js?v=tp-v8 teach-play.js?v=tg-v3 teach-maths.js?v=tm-v2 teach-english.js?v=te-v2 teach-edi.js?v=edi-v2 teach-bricklayer.js?v=tb-v6 teach-joiner.js?v=tj-v3 teach-site.js?v=ts-v3 teach-trowel3.js?v=t3-v2 strength.js?v=strength-v1 guide.js?v=guide-v2 teach.js?v=teach-v9 exam.js?v=exam-v1 scenarios.js?v=scenarios-v2 stats.js?v=stats-v9 practice.js?v=practice-v6 reviews.js?v=reviews-v7 ui.js?v=ui-v22 progress.js?v=pv-v3 epa-guide.js?v=guide-v1 discussion.js?v=disc-v4 evia-coach.js?v=coach-v6 camera.js?v=camera-v2 writing.js?v=writing-v2 evia-alive.js?v=alive-v3 tabs.js?v=tabs-v7 games.js?v=games-v3 rewards.js?v=rw-v10 orbs.js?v=orbs-v2"></script>
+<script src="storage.js?v=storage-v3" data-app-scripts="nvq-data.js?v=nvq-data-v1 nvq.js?v=nvq-v5 app.js polish.js theme.js?v=evia-theme-v8 accessibility.js?v=a11y-v1 onboarding.js?v=onboarding-v12 profile.js?v=profile-v6 eportfolio.js?v=eport-v9 test-banks.js review.js?v=tests-v6 repair.js?v=a11y-v1 provider.js?v=provider-v2 practice-tasks.js?v=tasks-v1 otj-auto.js?v=otj-v1 teach-kit.js?v=tk-v3 teach-pics.js?v=tp-v8 teach-play.js?v=tg-v3 teach-maths.js?v=tm-v2 teach-english.js?v=te-v2 teach-edi.js?v=edi-v2 teach-bricklayer.js?v=tb-v6 teach-joiner.js?v=tj-v3 teach-site.js?v=ts-v3 teach-trowel3.js?v=t3-v2 strength.js?v=strength-v1 guide.js?v=guide-v3 teach.js?v=teach-v9 exam.js?v=exam-v1 scenarios.js?v=scenarios-v2 stats.js?v=stats-v9 practice.js?v=practice-v6 reviews.js?v=reviews-v7 ui.js?v=ui-v22 progress.js?v=pv-v3 epa-guide.js?v=guide-v1 discussion.js?v=disc-v4 evia-coach.js?v=coach-v6 camera.js?v=camera-v2 photo-tips.js?v=tips-v1 writing.js?v=writing-v2 evia-alive.js?v=alive-v3 tabs.js?v=tabs-v7 games.js?v=games-v3 rewards.js?v=rw-v10 orbs.js?v=orbs-v2"></script>
 <script>
 (function(){
   if (!("serviceWorker" in navigator)) return;
@@ -84,7 +84,7 @@ html.evia-booting body{visibility:hidden}
   navigator.serviceWorker.addEventListener("controllerchange",function(){if(reloading||!hadController||Date.now()-openedAt>8000)return;reloading=true;window.location.reload();});
   window.addEventListener("load", async function(){
     try {
-      const registration=await navigator.serviceWorker.register("./sw-v16.js?v=evia7-v129",{updateViaCache:"none"});
+      const registration=await navigator.serviceWorker.register("./sw-v16.js?v=evia7-v130",{updateViaCache:"none"});
       await registration.update().catch(()=>{}); /* fails harmlessly with no signal */
       const activateWaiting=worker=>{if(!worker)return;worker.postMessage({type:"SKIP_WAITING"});};
       if(registration.waiting) activateWaiting(registration.waiting);

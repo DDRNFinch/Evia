@@ -62,6 +62,8 @@
   const TOPICS={ready:["How you got ready"],setout:["How you set it out","How you checked it"],doing:["What you did, step by step"],
     finish:["How you finished off","How you checked the quality"],know:["Why doing it properly matters"],reflect:["What went well","What you’d do differently"]};
   const OTHER="Something else";
+  /* A little detail for each photo: what this one should show (photo-tips.js), or the stage's tip. */
+  const tip=(item,k)=>window.eviaPhotoTip&&window.eviaPhotoTip(item)||TIP[k];
   const cap=t=>{t=String(t).trim();return t.charAt(0).toUpperCase()+t.slice(1)};
   /* The plan for a pack: one photo request at a time (each thing to capture, in the order of the job), and a question
      for each stage with its topics to pick from. */
@@ -76,11 +78,11 @@
     const photos=[];
     ["ready","setout","doing","finish"].forEach(k=>{
       const s=def(k),c=by[k].caps;
-      if(c.length)c.forEach(item=>photos.push({key:k,say:cap(item),hint:s.title+". "+TIP[k]}));
+      if(c.length)c.forEach(item=>photos.push({key:k,say:cap(item),hint:tip(item,k)}));
       else if(k!=="setout")photos.push({key:k,say:s.title,hint:s.photo});
     });
     /* Things to capture that belong to the talking stages still get a photo, at the end. */
-    ["know","reflect"].forEach(k=>by[k].caps.forEach(item=>photos.push({key:"finish",say:cap(item),hint:"Anything else that shows the job."})));
+    ["know","reflect"].forEach(k=>by[k].caps.forEach(item=>photos.push({key:"finish",say:cap(item),hint:tip(item,"finish")})));
     const asks=ORDER.filter(k=>k==="doing"||k==="reflect"||by[k].terms.length||by[k].can.length).map(k=>{
       const s=def(k),t=by[k].terms.map(cap),topics=[...new Set((k==="doing"||k==="reflect"||!t.length?TOPICS[k]:[]).concat(t))];
       return {key:k,title:s.title,ask:s.ask,terms:by[k].terms,topics:topics.concat(OTHER),can:by[k].can.slice(0,3)};
