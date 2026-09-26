@@ -21,7 +21,7 @@
   function teachPage(){
     const T=window.eviaTeach,E=window.EVIA_TEACH||{fs:[]},R=window.eviaRewards,I=(E.ui&&E.ui.ICON)||{};
     const trade=(T&&T.COURSES&&T.COURSES[course])||[],fs=f=>(E.fs||[]).filter(u=>u.fs===f);
-    const subjects=[["course",courseName()||"Your course",count(trade)],["maths","Maths",count(fs("maths"))],["english","English",count(fs("english"))],["edi","EDI",count(fs("edi"))]].filter(x=>x[2].total||x[0]==="course");
+    const subjects=[["course",courseName()||"Your course",count(trade)],["maths","Maths",count(fs("maths"))],["english","English",count(fs("english"))],["edi","EDI and safeguarding",count(fs("edi"))]].filter(x=>x[2].total||x[0]==="course");
     const me=T&&T.stats?T.stats():{xp:0,streak:0,today:false},lvl=1+Math.floor(me.xp/LEVEL_XP),inLvl=me.xp%LEVEL_XP,bal=R&&R.balance?R.balance():0;
     /* The player card: Evia, the level and XP to the next one, the day streak and coins. */
     const player='<section class="tg-player"><div class="tg-me"><span class="tg-evia evia-mini" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span><span class="tg-lvl">Level '+lvl+'</span></div>'+

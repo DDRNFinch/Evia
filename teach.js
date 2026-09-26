@@ -114,9 +114,9 @@
   function path(){
     const L=mine(),us=sectionUnits(),all=[].concat(...us.map(u=>u.lessons)),p=profile();
     const done=all.filter(l=>isDone(L,l)).length,next=all.find(l=>!isDone(L,l)),name=String(p.name||"").split(/\s+/)[0];
-    const title=section==="course"?"Teach me":"Teach me · "+({maths:"Maths",english:"English",edi:"EDI"}[section]);
+    const title=section==="course"?"Teach me":"Teach me · "+({maths:"Maths",english:"English",edi:"EDI and safeguarding"}[section]);
     const say=!all.length?"I don’t have lessons for your course yet, but they’re on the way. You can try maths or English in the meantime.":
-      done===0?"Hi"+(name?" "+esc(name):"")+"! I’ll teach you "+(section==="course"?"everything in each unit":section==="maths"?"Level 2 maths, with examples from site":section==="edi"?"equality, diversity and inclusion: your rights at work, and treating others fairly":"Level 2 reading, writing, speaking and listening")+", a few minutes at a time. Tap "+(section==="course"?"the first lesson":"any lesson")+" to start.":
+      done===0?"Hi"+(name?" "+esc(name):"")+"! I’ll teach you "+(section==="course"?"everything in each unit":section==="maths"?"Level 2 maths, with examples from site":section==="edi"?"equality and diversity, safeguarding, Prevent, British values, wellbeing and your rights as an apprentice":"Level 2 reading, writing, speaking and listening")+", a few minutes at a time. Tap "+(section==="course"?"the first lesson":"any lesson")+" to start.":
       done===all.length?"You’ve finished every lesson here. Nice work! Replay any lesson to beat your score.":
       "Welcome back"+(name?", "+esc(name):"")+". Next up: <strong>"+esc(next.title)+"</strong>.";
     const others=section==="course"&&!(window.eviaNvq&&window.eviaNvq.on())?courseOrder().filter(n=>!us.some(u=>u.unit===n)).slice(0,4):[];
