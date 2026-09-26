@@ -80,7 +80,7 @@
     ]),
     unit("Straight flights of stairs","Stairs",[
       lesson("sc-stair1","Fitting a straight flight","Fixing, levels and the rules",[
-        EX("The parts","Tap each part.","stair",[[60,110,"String","The side board that carries the steps."],[150,44,"Tread","What you step on."],[87,80,"Riser","The upright between treads."],[34,86,"Nosing","The front edge of each tread."]]),
+        EX("The parts","Tap each part.","stair",[[152,56,"String","The side board that carries the steps."],[141,38,"Tread","What you step on."],[86,95,"Riser","The upright between treads."],[82,74,"Nosing","The front edge of each tread."]]),
         O("Put fitting a flight in order",["Check the opening and total rise","Offer up the flight and check it’s level","Fix the top to the trimmer","Fix the wall string","Fit newels and protect the treads"],"Check before you fix."),
         TE("The rules","For private stairs: rise up to 220 mm, going at least 220 mm, pitch up to 42°, and at least 2 m headroom."),
         G("The maximum rise on a private stair is [220] mm.",["250","180"],"And the going at least 220 mm."),
@@ -95,7 +95,7 @@
       lesson("sc-stair3","Unit challenge","Stairs",[
         TROPHY(5),
         Q("Total rise 2,640 mm with 12 risers. Each rise is…",["220 mm, right at the limit","200 mm","240 mm, too steep","264 mm"],"2,640 ÷ 12 = 220 mm."),
-        HOT("Tap the riser","stair",[[87,80,12,"Upright between steps"],[150,44,14,"Top of a step"],[60,110,16,"Side board"],[34,86,12,"Front edge"]],0,"The upright between treads."),
+        HOT("Tap the riser","stair",[[86,95,9,"Upright between steps"],[141,38,11,"Top of a step"],[152,56,14,"Side board"],[82,74,9,"Front edge"]],0,"The upright between treads."),
         T("Headroom over a private stair must be at least 2 m.",true,"Measured from the pitch line."),
         SP("Kai’s stair fit. Tap the mistake.",["Checked the total rise","Fixed the top to the trimmer","Worked from last month’s drawing","Protected the treads"],2,"Check the latest revision."),
         B("Build the rule","Check the latest drawing first",["old","later"],"Revisions change sizes.")
@@ -125,7 +125,7 @@
     ]),
     unit("Cladding","Cladding",[
       lesson("sc-clad1","Fitting timber cladding","Battens, gaps, fixings and profiles",[
-        EX("Cladding in section","Tap each layer.","cladding",[[82,40,"Breathable membrane","Keeps rain off the wall but lets vapour out."],[91,25,"Batten","Holds the boards off the wall."],[105,70,"Cladding boards","Overlap so rain runs off."],[91,96,"Ventilated gap","Air flows up behind the boards so they dry out."]]),
+        EX("Cladding in section","Tap each layer.","cladding",[[120,45,"Breathable membrane","Keeps rain off the wall but lets vapour out."],[127,28,"Batten","Holds the boards off the wall. Battens run up and down so air can rise between them."],[142,72,"Cladding boards","Feather-edge boards, thin edge up, each overlapping the one below so rain runs off."],[127,94,"Ventilated gap","Air flows up behind the boards so they dry out."]]),
         Q("Why leave a ventilated gap behind cladding?",["So moisture dries out and the timber doesn’t rot","To save boards","For cables","It isn’t needed"],"Airflow keeps the back dry."),
         M("Match the profile",[["Shiplap","Rebated boards that overlap neatly"],["Feather-edge","Tapered boards that overlap"],["Board-on-board","Vertical boards with gaps covered by others"],["Tongue and groove","Boards that lock edge to edge"]],"Profiles look and shed water differently."),
         TE("Fixings","Use stainless steel fixings with cedar and oak: their tannins react with plain steel and stain black. Leave movement gaps and fit insect mesh at the vents."),
@@ -140,7 +140,7 @@
       lesson("sc-clad3","Unit challenge","Cladding",[
         TROPHY(5),
         Q("Black streaks have appeared round the nails in new cedar cladding. What happened?",["Plain steel nails reacted with the tannins","It rained","The boards are too dry","Bad paint"],"Use stainless steel fixings."),
-        HOT("Tap the ventilated gap","cladding",[[91,96,6,"Gap behind the boards"],[50,60,26,"Wall"],[105,70,8,"Boards"],[82,20,4,"Membrane"]],0,"The gap behind the boards, between the battens."),
+        HOT("Tap the ventilated gap","cladding",[[127,94,7,"Gap behind the boards"],[92,61,22,"Wall"],[142,72,6,"Boards"],[120,45,5,"Membrane"]],0,"The gap behind the boards, between the battens."),
         T("Feather-edge boards are tapered and overlap.",true,"Thick edge over thin."),
         SP("Jay’s cladding. Tap the mistake.",["Fitted the membrane","Used battens for a gap","Fixed the boards tight together","Used stainless nails"],2,"Leave movement gaps."),
         B("Build the rule","Leave a gap for air behind",["no","front"],"So the boards dry out.")

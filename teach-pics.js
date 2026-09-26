@@ -18,10 +18,19 @@
     glass:["d",0,"#f3fafe",.5,"#d4ebf7",1,"#b6d9ec"],
     bkt:["h",0,"#525a65",.3,"#3a4049",1,"#1e2227"],tubk:["h",0,"#4a515b",.3,"#343a42",1,"#1c2025"],
     red:["h",0,"#ef5f50",.35,"#d52b1e",1,"#9e1b11"],copper:["h",0,"#e8a068",.4,"#c8793c",1,"#96521f"],
-    tarp:[0,"#4388d1",1,"#22579a"],sack:[0,"#f4eddf",1,"#d9cfbb"],
+    tarp:[0,"#4388d1",1,"#22579a"],sack:[0,"#f4eddf",1,"#d9cfbb"],hatb:[0,"#5a9be6",1,"#1f5eab"],
+    /* Tools keep their real colours whatever the learner's theme: tool yellow, red rubber, dark forged steel, brass. */
+    tool:[0,"#fde68f",.5,"#f2c12e",1,"#d29c10"],rubr:[0,"#ea5a48",1,"#a92a1c"],hhead:[0,"#5d646e",1,"#2c3138"],brass:[0,"#f1d489",1,"#b98f2e"],
     /* The Evia colour, for kit whose colour carries no meaning, follows the learner's theme. */
     yel:[0,"color-mix(in srgb,var(--yellow) 66%,#fff)",.5,"var(--yellow)",1,"color-mix(in srgb,var(--yellow) 88%,#000)"]
   };
+  /* Textures laid over a material to make it read as the real thing: concrete aggregate, block speckle, soil, and the
+     grain of timber along its length (h across the page, v up and down). */
+  const PATTERNS='<pattern id="tpp-conc" width="18" height="16" patternUnits="userSpaceOnUse"><g fill="#7d848c" fill-opacity=".45"><circle cx="3" cy="4" r="1.1"/><circle cx="12" cy="2.5" r=".8"/><path d="M8 9 l2.4 -.6 l-.7 2.2 z"/><circle cx="15" cy="11" r="1"/><circle cx="4" cy="13" r=".7"/><path d="M13 14.5 l1.8 .2 l-1 1.3 z"/></g></pattern>'+
+    '<pattern id="tpp-block" width="12" height="11" patternUnits="userSpaceOnUse"><g fill="#6d747d" fill-opacity=".35"><circle cx="2" cy="3" r=".7"/><circle cx="8" cy="1.6" r=".5"/><circle cx="6" cy="7" r=".8"/><circle cx="10.5" cy="9" r=".5"/><circle cx="1.5" cy="9.5" r=".5"/></g></pattern>'+
+    '<pattern id="tpp-soil" width="16" height="12" patternUnits="userSpaceOnUse"><g fill="none" stroke="#5e4630" stroke-opacity=".38" stroke-width=".9" stroke-linecap="round"><path d="M2 3 h3 M10 2 h2.5 M6 8 h3.5 M13 9 h2 M1 11 h2"/></g></pattern>'+
+    '<pattern id="tpp-grainh" width="90" height="12" patternUnits="userSpaceOnUse"><g fill="none" stroke="#8b5a2b" stroke-opacity=".22" stroke-width=".8"><path d="M0 3 C20 1.5 40 4.5 60 3 S85 1.8 90 3"/><path d="M0 8.5 C18 10 44 7 62 8.6 S84 9.8 90 8.5"/></g></pattern>'+
+    '<pattern id="tpp-grainv" width="12" height="90" patternUnits="userSpaceOnUse"><g fill="none" stroke="#8b5a2b" stroke-opacity=".22" stroke-width=".8"><path d="M3 0 C1.5 20 4.5 40 3 60 S1.8 85 3 90"/><path d="M8.5 0 C10 18 7 44 8.6 62 S9.8 84 8.5 90"/></g></pattern>';
   function gradients(){
     return Object.keys(GRAD).map(k=>{let g=GRAD[k],dir="v";if(typeof g[0]==="string"){dir=g[0];g=g.slice(1)}
       const xy=dir==="h"?'x1="0" y1="0" x2="1" y2="0"':dir==="d"?'x1="0" y1="0" x2="1" y2="1"':'x1="0" y1="0" x2="0" y2="1"';let st="";
@@ -31,10 +40,15 @@
   function defs(){
     if(typeof document==="undefined"||!document.body||document.getElementById("tp-defs"))return;
     const d=document.createElementNS("http://www.w3.org/2000/svg","svg");d.id="tp-defs";d.setAttribute("aria-hidden","true");d.setAttribute("focusable","false");
-    d.style.cssText="position:absolute;width:0;height:0;overflow:hidden;pointer-events:none";d.innerHTML="<defs>"+gradients()+"</defs>";
+    d.style.cssText="position:absolute;width:0;height:0;overflow:hidden;pointer-events:none";d.innerHTML="<defs>"+gradients()+PATTERNS+"</defs>";
     document.body.appendChild(d);
   }
-  const svg=(w,h,body,label,at)=>{defs();return '<svg class="tp" viewBox="'+(at||"0 0")+' '+w+' '+h+'" role="img" aria-label="'+esc(label)+'">'+body+'</svg>'};
+  /* A picture with a view tag (section, plan, elevation) grows a 12 px band above the drawing for it, so the tag never
+     sits on the drawing. The drawing keeps its coordinates, so tap spots don't move. */
+  const BAND=12;
+  const svg=(w,h,body,label,at)=>{defs();let o=(at||"0 0").split(" ").map(Number);
+    if(body.indexOf('class="tp-view"')>=0){o[1]-=BAND;h+=BAND;body=body.replace(/(<text class="tp-view" x="[\d.]+" y=")[\d.-]+"/,"$1"+r(o[1]+9)+'"')}
+    return '<svg class="tp" viewBox="'+o[0]+' '+o[1]+' '+w+' '+h+'" role="img" aria-label="'+esc(label)+'">'+body+'</svg>'};
   const t=(x,y,s,c)=>'<text x="'+x+'" y="'+y+'"'+(c?' class="'+c+'"':"")+'>'+esc(s)+'</text>';
   const t2=(x,y,a,b,c)=>'<text x="'+x+'" y="'+y+'"'+(c?' class="'+c+'"':"")+'>'+esc(a)+'<tspan x="'+x+'" dy="12">'+esc(b)+'</tspan></text>';
   let uid=0;
@@ -111,35 +125,50 @@
      Each is drawn in its own small space and placed with at(x,y,scale). A lighter line (tp-shine) catches the
      light along the top and a see-through darker shape (tp-shade) shades the lower side, like the reference art. */
   const at=(x,y,k,body,rot)=>'<g transform="translate('+r(x)+' '+r(y)+')'+(rot?' rotate('+rot+')':"")+(k&&k!==1?' scale('+k+')':"")+'">'+body+'</g>';
+  /* A callout: the label at (tx,ty) with a thin leader line to the point (px,py), ending in a dot. The text sits on the
+     side away from the point, so the line never runs through it. */
+  const call=(label,tx,ty,px,py,cls,anch)=>{const right=anch?anch==="start":tx>=px,ex=right?tx-3:tx+3,ey=ty-3.4,L=String(label).split("\n");
+    return '<path class="tp-lead" d="M'+r(px)+' '+r(py)+' L'+r(ex)+' '+r(ey)+'"/><circle class="tp-leaddot" cx="'+r(px)+'" cy="'+r(py)+'" r="1.7"/>'+
+      '<text x="'+r(tx)+'" y="'+r(ty)+'" class="'+(cls||"tp-sm")+' tp-cl" style="text-anchor:'+(right?"start":"end")+'">'+esc(L[0])+'</text>'+
+      L.slice(1).map((l,i)=>'<text x="'+r(tx)+'" y="'+r(ty+11*(i+1))+'" class="tp-xs tp-cl" style="text-anchor:'+(right?"start":"end")+'">'+esc(l)+'</text>').join("")};
+  /* What kind of drawing it is (section, plan, elevation), in the top corner. */
+  const view=(label,x,y)=>'<text class="tp-view" x="'+(x||4)+'" y="'+(y||10)+'">'+esc(label)+'</text>';
   const shadow=(cx,cy,rx,ry)=>'<ellipse class="tp-shadow" cx="'+r(cx)+'" cy="'+r(cy)+'" rx="'+r(rx)+'" ry="'+r(ry||rx/7)+'"/>';
   /* A thick line (a rail, a spindle, a pipe) with an outline: a darker, wider copy underneath. */
   const olLine=(cls,d,w,o)=>'<path class="tp-olw'+(o?" "+o:"")+'" style="stroke-width:'+r(w+2.4)+'" d="'+d+'"/><path class="'+cls+'" d="'+d+'"/>';
   /* A pencil, eraser end at 0 and the point at 70. */
   const pencil=()=>'<rect class="tp-eraser" x="0" y="-4" width="7" height="8" rx="2"/><rect class="tp-steel" x="6" y="-4.2" width="6" height="8.4"/>'+
     '<path class="tp-pen" d="M12 -4 H56 V4 H12 Z"/><path class="tp-shade" d="M12 1.3 H56 V4 H12 Z"/><path class="tp-woodtip" d="M56 -4 L68 -1 V1 L56 4 Z"/><path class="tp-lead2" d="M66 -1.4 L70 0 L66 1.4 Z"/>';
-  /* A brick trowel from above: the tip on the left, 101 long. */
-  const trowelTop=()=>'<path class="tp-steel" d="M0 0 C14 -4 34 -10 52 -12 Q60 -13 62 -6 V6 Q60 13 52 12 C34 10 14 4 0 0 Z"/>'+
-    '<path class="tp-shade" d="M0 0 C14 4 34 10 52 12 Q60 13 62 6 V0 Z"/><path class="tp-shine" d="M8 -.8 L56 -2.6"/>'+
-    '<rect class="tp-steeld" x="61" y="-2.6" width="7" height="5.2" rx="1"/><rect class="tp-steel" x="67" y="-4.6" width="6" height="9.2" rx="1.5"/>'+
-    '<path class="tp-wood" d="M73 -4.6 H96 Q101 -4.6 101 0 Q101 4.6 96 4.6 H73 Z"/><path class="tp-shine" d="M76 -2.4 H95"/>';
-  /* A spirit level, w long and 12 deep, with a level vial in the middle and a plumb vial near the end. */
-  const levelTool=w=>'<rect class="tp-lvl" x="0" y="0" width="'+w+'" height="12" rx="2"/><path class="tp-shine" d="M7 2.6 H'+(w-7)+'"/><path class="tp-shade" d="M1 8 H'+(w-1)+' V10 Q'+(w-1)+' 12 '+(w-3)+' 12 H3 Q1 12 1 10 Z"/>'+
-    '<rect class="tp-cap" x="0" y="0" width="6" height="12" rx="2"/><rect class="tp-cap" x="'+(w-6)+'" y="0" width="6" height="12" rx="2"/>'+
-    '<rect class="tp-vialw" x="'+(w/2-10)+'" y="2.2" width="20" height="7.6" rx="3.8"/><rect class="tp-vial" x="'+(w/2-7.5)+'" y="3.6" width="15" height="4.8" rx="2.4"/><circle class="tp-bub" cx="'+(w/2)+'" cy="6" r="1.7"/>'+
-    '<path class="tp-vialx" d="M'+(w/2-3)+' 3.6 V8.4 M'+(w/2+3)+' 3.6 V8.4"/>'+
-    '<circle class="tp-vialw" cx="16" cy="6" r="4.2"/><circle class="tp-vial" cx="16" cy="6" r="2.6"/>';
-  /* A steel line pin, point down, 30 long. */
-  const linePin=()=>'<rect class="tp-steeld" x="-4.5" y="0" width="9" height="3.4" rx="1.2"/><path class="tp-steel" d="M-3.6 3 H3.6 L1.3 25 L0 30 L-1.3 25 Z"/><path class="tp-shade" d="M0 3 H3.6 L1.3 25 L0 30 Z"/>';
-  /* A bolster: striking end at the top, rubber hand guard, wide blade at the bottom. 50 tall. */
-  const bolsterTool=()=>'<rect class="tp-steeld" x="-4.2" y="0" width="8.4" height="6" rx="1.8"/><rect class="tp-steel" x="-3.4" y="5" width="6.8" height="37"/>'+
-    '<rect class="tp-grip2" x="-6" y="9" width="12" height="18" rx="3"/><path class="tp-grip2" d="M-11.5 30 Q0 23.5 11.5 30 L9.5 33 Q0 28.5 -9.5 33 Z"/><path class="tp-shine" d="M-3.4 12 V24"/>'+
-    '<path class="tp-steel" d="M-3.4 40 L-13 46 V50 H13 V46 L3.4 40 Z"/><path class="tp-shade" d="M0 40 H3.4 L13 46 V50 H0 Z"/><path class="tp-edgel" d="M-13 47.4 H13"/>';
-  /* A club hammer: handle on the left, the heavy head on the right. 80 long. */
-  const clubHammer=()=>'<path class="tp-wood" d="M1 -3 Q-1.5 0 1 3 L58 3.6 V-3.6 Z"/><path class="tp-shine" d="M4 -1.6 H54"/>'+
-    '<path class="tp-steeld" d="M58 -10 H78 L80 -8 V8 L78 10 H58 L56 8 V-8 Z"/><path class="tp-shade" d="M56 2 H80 V8 L78 10 H58 L56 8 Z"/><path class="tp-shine" d="M59.5 -7 V6"/>';
-  /* A brick jointer: a curved steel bar with a small handle, 60 across. */
-  const jointerTool=()=>'<path class="tp-olk" stroke-width="6.2" d="M0 14 C6 14 7 6 15 6 H45 C53 6 54 14 60 14"/><path class="tp-stl" stroke-width="3.8" d="M0 14 C6 14 7 6 15 6 H45 C53 6 54 14 60 14"/>'+
-    '<rect class="tp-steel" x="21" y="-2" width="3.6" height="8"/><rect class="tp-steel" x="35.4" y="-2" width="3.6" height="8"/><rect class="tp-wood" x="17" y="-9" width="26" height="8" rx="4"/><path class="tp-shine" d="M21 -6.8 H39"/>';
+  /* ---------- Hand tools, drawn from real sizes in millimetres (place them with at(x,y,scale)) ---------- */
+  /* A London pattern brick trowel from above: 280 mm blade (one straight edge, one curved), tip at 0, handle to 420. */
+  const trowelTop=()=>'<path class="tp-steel" d="M0 0 L262 -52 Q282 -54 284 -34 V36 Q282 56 262 56 C190 50 80 26 0 0 Z"/>'+
+    '<path class="tp-shade" d="M0 0 H284 V36 Q282 56 262 56 C190 50 80 26 0 0 Z"/><path class="tp-shine" d="M34 -5 L258 -46"/>'+
+    '<path class="tp-steeld" d="M280 -10 H312 V10 H280 Z"/><rect class="tp-brass" x="308" y="-19" width="22" height="38" rx="6"/>'+
+    '<path class="tp-wood" d="M328 -18 C352 -20 388 -22 406 -20 Q424 -18 424 0 Q424 18 406 20 C388 22 352 20 328 18 Z"/><path class="tp-shine" d="M340 -10 C360 -12 390 -13 408 -11"/>';
+  /* A 600 mm box-section spirit level from the front: rubber end caps, hand holes, a plumb vial and a level vial. */
+  const levelTool=()=>'<rect class="tp-tool" x="0" y="0" width="600" height="70" rx="8"/><path class="tp-shade" d="M4 46 H596 V62 Q596 70 588 70 H12 Q4 70 4 62 Z"/><path class="tp-shine" d="M40 12 H560"/>'+
+    '<rect class="tp-cap" x="0" y="0" width="34" height="70" rx="8"/><rect class="tp-cap" x="566" y="0" width="34" height="70" rx="8"/>'+
+    '<rect class="tp-slotd" x="150" y="20" width="84" height="30" rx="15"/><rect class="tp-slotd" x="366" y="20" width="84" height="30" rx="15"/>'+
+    '<rect class="tp-vialw" x="256" y="13" width="88" height="44" rx="14"/><rect class="tp-vial" x="268" y="24" width="64" height="22" rx="11"/><circle class="tp-bub" cx="300" cy="35" r="7"/><path class="tp-vialx" d="M288 24 V46 M312 24 V46"/>'+
+    '<rect class="tp-vialw" x="62" y="9" width="46" height="52" rx="12"/><rect class="tp-vial" x="74" y="16" width="22" height="38" rx="11"/><circle class="tp-bub" cx="85" cy="35" r="6"/><path class="tp-vialx" d="M74 29 H96 M74 41 H96"/>';
+  /* A flat steel line pin from the side, 110 mm, point down. */
+  const linePin=()=>'<path class="tp-steeld" d="M-16 0 H16 Q18 0 18 3 V11 H-18 V3 Q-18 0 -16 0 Z"/><path class="tp-steel" d="M-13 10 H13 L6 84 L0 110 L-6 84 Z"/><path class="tp-shade" d="M0 10 H13 L6 84 L0 110 Z"/><path class="tp-shine" d="M-7 18 L-3 80"/>';
+  /* A 100 mm brick bolster, striking end at the top, 216 mm long: hexagon bar, rubber hand guard, wide fan-shaped blade. */
+  const bolsterTool=()=>'<path class="tp-steel" d="M-9.5 146 C-10 165 -48 178 -50 192 V214 Q-50 216 -48 216 H48 Q50 216 50 214 V192 C48 178 10 165 9.5 146 Z"/>'+
+    '<path class="tp-shade" d="M0 146 H9.5 C10 165 48 178 50 192 V214 Q50 216 48 216 H0 Z"/><path class="tp-edgel" d="M-50 205 H50"/>'+
+    '<rect class="tp-steel" x="-9.5" y="10" width="19" height="140"/><path class="tp-facet" d="M-3.5 12 V148 M3.5 12 V148"/><path class="tp-shine" d="M-6.5 84 V144"/>'+
+    '<path class="tp-steel" d="M-9.5 4 Q-9.5 0 -5.5 0 H5.5 Q9.5 0 9.5 4 V12 H-9.5 Z"/>'+
+    '<path class="tp-guard2" d="M-13 26 C-18 27 -38 58 -38 72 V78 H38 V72 C38 58 18 27 13 26 Z"/><path class="tp-shade" d="M0 26 H13 C18 27 38 58 38 72 V78 H0 Z"/><path class="tp-shine" d="M-12 36 C-20 46 -27 58 -29 68"/>';
+  /* A club hammer from the side, 260 mm: fibreglass handle with a rubber grip, and the heavy head across the end. */
+  const clubHammer=()=>'<path class="tp-tool" d="M5 -15 C60 -15 150 -12.5 185 -12.5 C200 -12.5 208 -15 216 -16 V16 C208 15 200 12.5 185 12.5 C150 12.5 60 15 5 15 Q0 15 0 10 V-10 Q0 -15 5 -15 Z"/>'+
+    '<path class="tp-rubber" d="M5 -16 C40 -16 80 -15.5 106 -15 V15 C80 15.5 40 16 5 16 Q0 16 0 11 V-11 Q0 -16 5 -16 Z"/><path class="tp-ribw" d="M22 -15 V15 M38 -15 V15 M54 -15 V15 M70 -15 V15 M86 -15 V15"/>'+
+    '<path class="tp-shine" d="M112 -8 C140 -8.5 170 -8 200 -9"/>'+
+    '<path class="tp-hhead" d="M220 -52 H255 L260 -47 V47 L255 52 H220 L215 47 V-47 Z"/><path class="tp-steel" d="M220 -52 H255 L260 -47 H215 Z M215 47 H260 L255 52 H220 Z"/>'+
+    '<path class="tp-shine" d="M222 -40 V40"/><path class="tp-shade" d="M240 -47 H260 V47 H240 Z"/>';
+  /* A sled-runner brick jointer, 250 mm, with its handle on two posts. */
+  const jointerTool=()=>'<path class="tp-olk" stroke-width="16" d="M0 58 C24 58 28 26 60 26 H190 C222 26 226 58 250 58"/><path class="tp-stl" stroke-width="11" d="M0 58 C24 58 28 26 60 26 H190 C222 26 226 58 250 58"/>'+
+    '<rect class="tp-steel" x="86" y="-4" width="12" height="28"/><rect class="tp-steel" x="152" y="-4" width="12" height="28"/>'+
+    '<path class="tp-wood" d="M70 -8 Q70 -30 92 -30 H158 Q180 -30 180 -8 Q180 0 172 0 H78 Q70 0 70 -8 Z"/><path class="tp-shine" d="M86 -22 H164"/>';
   /* A work glove, back of the hand, fingers up: about 50 wide and 72 tall. */
   const gloveKit=()=>'<rect class="tp-glove" x="-20" y="8" width="9" height="36" rx="4.5"/><rect class="tp-glove" x="-10.5" y="2" width="9" height="40" rx="4.5"/>'+
     '<rect class="tp-glove" x="-1" y="5" width="9" height="38" rx="4.5"/><rect class="tp-glove" x="8.5" y="14" width="8" height="30" rx="4"/>'+
@@ -386,15 +415,37 @@
       at(70,26,1.02,gloveKit())+at(177,58,1,specsKit())+at(282,60,1,maskKit())+
       '<text x="68" y="116">Gloves</text><text x="177" y="116">Eye protection</text><text x="282" y="116">Dust mask</text>',"Gloves, eye protection and a dust mask"),
     /* Joint finishes in section: the face of the wall is on the left. */
-    joints:()=>svg(320,124,[["Flush","",'<path class="tp-mortar" d="M0 34 H56 V50 H0 Z"/>'],["Half round","(bucket handle)",'<path class="tp-mortar" d="M0 34 H56 V50 H0 V49 A7.5 7.5 0 0 0 0 35 Z"/>'],["Weather","struck",'<path class="tp-mortar" d="M6 34 H56 V50 H0 Z"/>'],["Recessed","",'<path class="tp-mortar" d="M6 34 H56 V50 H6 Z"/>']].map((j,i)=>{const x=14+i*78;return '<g transform="translate('+x+' 4)"><rect class="tp-brick" x="0" y="0" width="56" height="34"/><rect class="tp-brick" x="0" y="50" width="56" height="34"/>'+j[2]+'<path class="tp-face" d="M0 -2 V86"/></g>'+t(x+28,102,j[0],"tp-sm")+(j[1]?t(x+28,114,j[1],"tp-xs"):"")}).join(""),"Joint finishes cut through the wall with the face on the left: flush, half round, weather struck and recessed"),
+    joints:()=>svg(320,124,view("Section")+[["Flush","",'<path class="tp-mortar" d="M0 34 H56 V50 H0 Z"/>'],["Half round","(bucket handle)",'<path class="tp-mortar" d="M0 34 H56 V50 H0 V49 A7.5 7.5 0 0 0 0 35 Z"/>'],["Weather","struck",'<path class="tp-mortar" d="M6 34 H56 V50 H0 Z"/>'],["Recessed","",'<path class="tp-mortar" d="M6 34 H56 V50 H6 Z"/>']].map((j,i)=>{const x=14+i*78;return '<g transform="translate('+x+' 4)"><rect class="tp-brick" x="0" y="0" width="56" height="34"/><rect class="tp-brick" x="0" y="50" width="56" height="34"/>'+j[2]+'<path class="tp-face" d="M0 -2 V86"/></g>'+t(x+28,102,j[0],"tp-sm")+(j[1]?t(x+28,114,j[1],"tp-xs"):"")}).join(""),"Joint finishes cut through the wall with the face on the left: flush, half round, weather struck and recessed"),
     /* The three main bonds, to scale, each with a stopped end on the left: half bats in stretcher bond, a header
        and queen closer starting the header courses of English bond and every other course of Flemish bond. */
     bonds:()=>svg(320,108,bondPanel(8,"Stretcher","half-brick wall",BOND.stretcher)+bondPanel(112,"English","one-brick wall",BOND.english)+bondPanel(216,"Flemish","one-brick wall",BOND.flemish),
       "Stretcher bond, English bond and Flemish bond, each with a stopped end on the left"),
-    /* Cavity wall section. Wall ties lie level or fall to the outside leaf, never towards the inside, with the drip in the cavity. */
-    cavity:()=>svg(320,130,'<rect class="tp-brick" x="70" y="10" width="42" height="96"/><rect class="tp-insul" x="126" y="10" width="26" height="96"/><rect class="tp-block" x="160" y="10" width="54" height="96"/><path class="tp-tie" d="M98 58 H116 L119 64 L122 58 H182"/><path class="tp-dpc" d="M66 92 H116 M156 92 H218"/>'+
-      '<text x="91" y="122">Brick</text><text x="187" y="122">Block</text><text x="270" y="32">Insulation</text><text x="260" y="64">Wall tie</text><text x="262" y="96">DPC</text><path class="tp-thin" d="M236 28 H146 M232 60 H186 M244 92 H220"/>',"Cavity wall section: brick, cavity with insulation, block, a level wall tie with its drip in the cavity, and DPC")
+    cavity:()=>{const M=scaler(108,132,.3),W=[0,102.5,152.5,252.5,352.5],zb=-70,zt=415;
+      return svg(320,150,view("Section")+leaf(M,W[0],W[1],zb,zt,65,"tp-bu")+pir(M,W[2],W[3],zb,zt)+'<path class="tp-foil" d="M'+M.X(W[2])+' '+M.Y(220)+' H'+M.X(W[3])+'"/>'+
+        leaf(M,W[3],W[4],zb,zt,215,"tp-block","tp-x-block")+dpcIn(M,W[0],W[1],-10)+dpcIn(M,W[3],W[4],-10)+wallTie(M,40,305,220,127.5,W[2])+
+        call("Outer leaf: brick",98,30,M.X(51),M.Y(330))+call("Clear cavity",98,62,M.X(127.5),M.Y(290))+call("DPC",98,140,M.X(30),M.Y(-5))+
+        call("Insulation",224,30,M.X(202.5),M.Y(330))+call("Inner leaf: block",224,62,M.X(302.5),M.Y(300))+call("Wall tie",224,100,M.X(127.5),+M.Y(220)+4.2),
+        "A cavity wall cut through: a brick outer leaf and a block inner leaf, insulation boards held tight to the inner leaf, a clear cavity, a wall tie bedded in both leaves with its drip in the clear cavity, and the DPC in both leaves")},
   });
+  /* ---------- Walls in section, to scale ----------
+     A section cuts through a wall, so each leaf shows its courses: 65 mm bricks or 215 mm blocks, each on a 10 mm bed
+     joint, coursed up from z = 0 (the top of a bed joint). Sizes are in millimetres; X and Y turn them into the picture. */
+  const scaler=(ox,oy,s)=>({X:x=>r(ox+x*s),Y:z=>r(oy-z*s),s});
+  function leaf(M,x1,x2,z1,z2,uh,cls,tex,base){
+    const c=uh+10;base=base||0;z1-=base;z2-=base;const M0=M;M={X:M0.X,Y:z=>M0.Y(z+base),s:M0.s};let o='<rect class="tp-mortar" x="'+M.X(x1)+'" y="'+M.Y(z2)+'" width="'+r(M.X(x2)-M.X(x1))+'" height="'+r(M.Y(z1)-M.Y(z2))+'"/>';
+    for(let k=Math.floor(z1/c)-1;k*c<z2;k++){const a=Math.max(z1,k*c),b=Math.min(z2,k*c+uh);
+      if(b>a)o+='<rect class="'+cls+'" x="'+M.X(x1)+'" y="'+M.Y(b)+'" width="'+r(M.X(x2)-M.X(x1))+'" height="'+r(M.Y(a)-M.Y(b))+'"/>'}
+    return o+(tex?'<rect class="'+tex+'" x="'+M.X(x1)+'" y="'+M.Y(z2)+'" width="'+r(M.X(x2)-M.X(x1))+'" height="'+r(M.Y(z1)-M.Y(z2))+'"/>':"");
+  }
+  /* A foil-faced insulation board in section. */
+  const pir=(M,x1,x2,z1,z2)=>'<rect class="tp-pir" x="'+M.X(x1)+'" y="'+M.Y(z2)+'" width="'+r(M.X(x2)-M.X(x1))+'" height="'+r(M.Y(z1)-M.Y(z2))+'"/><path class="tp-foil" d="M'+M.X(x1)+' '+M.Y(z2)+' V'+M.Y(z1)+' M'+M.X(x2)+' '+M.Y(z2)+' V'+M.Y(z1)+'"/>';
+  /* A stainless wall tie across the cavity at height z: ends bedded 50 mm+ in each leaf, falling slightly to the outer
+     leaf, the drip at dx in the clear cavity, and (for partial fill) a clip holding the board at clipX. */
+  const wallTie=(M,xa,xb,z,dripX,clipX)=>{const f=r(2.2*M.s*4);
+    return '<path class="tp-tie2" d="M'+M.X(xa)+' '+r(+M.Y(z)+f)+' L'+M.X(dripX-12)+' '+r(+M.Y(z)+f*.55)+' L'+M.X(dripX)+' '+r(+M.Y(z)+f*.5+22*M.s)+' L'+M.X(dripX+12)+' '+r(+M.Y(z)+f*.45)+' L'+M.X(xb)+' '+M.Y(z)+'"/>'+
+      (clipX!=null?'<rect class="tp-clip2" x="'+r(M.X(clipX)-3*M.s*3)+'" y="'+r(+M.Y(z)-22*M.s)+'" width="'+r(3*M.s*6)+'" height="'+r(44*M.s)+'" rx="1"/>':"");
+  };
+  const dpcIn=(M,x1,x2,z)=>'<rect class="tp-dpc2" x="'+r(M.X(x1)-1.5)+'" y="'+M.Y(z)+'" width="'+r(M.X(x2)-M.X(x1)+3)+'" height="'+r(Math.max(2,10*M.s))+'"/>';
   /* ---------- Bricklayer ---------- */
   const panel=(x,y,w,c,s,f,o)=>brickwork(x,y,w,c,s,f||BOND.stretcher,Object.assign({headers:false},o||{}));
   const dimV=(x,y1,y2,label,side)=>'<path class="tp-dim" d="M'+x+' '+y1+' V'+y2+' M'+(x-4)+' '+y1+' H'+(x+4)+' M'+(x-4)+' '+y2+' H'+(x+4)+'"/>'+t(x+(side||14),(y1+y2)/2+4,label,"tp-sm");
@@ -416,34 +467,54 @@
       dimV(46,10,47.5,"",0)+t(26,32,"75","tp-sm")+t(135,126,"brick + joint = 75 mm a course","tp-xs"),
       "Three courses of brickwork: each course is a 65 millimetre brick and a 10 millimetre joint, 75 millimetres"),
     tools:()=>svg(320,128,
-      at(8,30,.8,trowelTop())+at(102,24,1,levelTool(82))+
-      at(226,15,.95,linePin())+at(274,15,.95,linePin())+'<path class="tp-string" d="M229 21.5 Q250 24 271 21.5"/><path class="tp-wrap" d="M222.4 18.4 L229.6 20 M222.4 20.8 L229.6 22.4 M222.4 23.2 L229.6 24.8"/>'+
-      at(45,68,.76,bolsterTool())+at(108,90,1,clubHammer())+at(222,90,1,jointerTool())+
-      t(49,58,"Trowel","tp-xs")+t(143,52,"Spirit level","tp-xs")+t(250,58,"Line and pins","tp-xs")+t(45,122,"Bolster","tp-xs")+t(149,122,"Club hammer","tp-xs")+t(252,122,"Jointer","tp-xs"),
+      at(6,30,.21,trowelTop())+at(106,24,.15,levelTool())+
+      at(228,13,.26,linePin())+at(272,13,.26,linePin())+'<path class="tp-string" d="M231 22 Q250 24.5 269 22"/><path class="tp-wrap" d="M223.6 17.6 L232.4 19.4 M223.6 20.3 L232.4 22.1 M223.6 23 L232.4 24.8"/>'+
+      at(20,88,.26,bolsterTool(),-90)+at(112,88,.3,clubHammer())+at(222,80,.24,jointerTool())+
+      t(50,56,"Trowel","tp-xs")+t(151,52,"Spirit level","tp-xs")+t(250,58,"Line and pins","tp-xs")+t(48,122,"Bolster","tp-xs")+t(151,122,"Club hammer","tp-xs")+t(252,122,"Jointer","tp-xs"),
       "Bricklaying hand tools: trowel, spirit level, line and pins, bolster, club hammer and jointer"),
-    coping:()=>svg(320,124,panel(120,52,80,3,.26,BOND.english)+
+    coping:()=>svg(320,124,view("Section")+panel(120,52,80,3,.26,BOND.english)+
       '<path class="tp-dpc" d="M116 51 H204"/><path class="tp-coping" d="M104 50 V40 L160 26 L216 40 V50 Z"/><path class="tp-dripg" d="M112 50 a3 3 0 0 0 6 0 M202 50 a3 3 0 0 0 6 0"/>'+
       '<g class="tp-drop2"><circle cx="110" cy="62" r="2"/><circle cx="110" cy="74" r="2"/><circle cx="210" cy="62" r="2"/><circle cx="210" cy="74" r="2"/></g>'+
-      '<path class="tp-thin" d="M72 50 H108 M240 51 H206"/>'+t(46,54,"Drip")+t(266,55,"DPC")+t(160,118,"Water drips clear of the wall face","tp-xs"),
+      call("Drip",86,64,115,52)+call("DPC",240,64,204,51)+t(160,118,"Water drips clear of the wall face","tp-xs"),
       "A coping on top of a brick wall, with a DPC underneath and drips under each overhang so water falls clear of the face"),
-    /* Checking a corner is square with a 3-4-5 triangle. */
-    square345:()=>svg(320,130,'<path class="tp-string2" d="M60 110 H260 M60 110 V14"/><path class="tp-tri" d="M60 110 H220 L60 14 Z"/>'+
-      '<circle class="tp-peg" cx="60" cy="110" r="4"/><circle class="tp-peg" cx="220" cy="110" r="4"/><circle class="tp-peg" cx="60" cy="14" r="4"/><path class="tp-thin" d="M60 98 H72 V110"/>'+
-      t(140,125,"4 m")+t(40,66,"3 m")+t(156,56,"5 m")+t(262,40,"3, 4, 5 means","tp-xs")+t(262,52,"a right angle","tp-xs"),
-      "A corner set out with lines: 3 metres one way, 4 metres the other, and 5 metres across means the corner is square"),
-    /* Plan views: a pier bonded into a wall, and a pier on its own. */
-    piers:()=>svg(320,120,'<rect class="tp-plan" x="16" y="40" width="170" height="22"/><rect class="tp-plan" x="78" y="62" width="44" height="22"/><path class="tp-thin" d="M78 62 H122"/>'+
-      '<rect class="tp-plan" x="236" y="36" width="44" height="44"/>'+t(100,104,"Attached pier","tp-sm")+t(100,116,"bonded into the wall","tp-xs")+t(258,104,"Isolated pier","tp-sm")+t(258,116,"stands on its own","tp-xs")+t(100,32,"Plan (from above)","tp-xs"),
-      "Plan views of an attached pier bonded into a wall and an isolated pier standing on its own"),
+    /* Checking a corner is square: lines 3 m and 4 m from the corner peg, 5 m across. Drawn to scale (32 px a metre). */
+    square345:()=>{const A=[64,112],B=[64+128,112],C=[64,112-96],peg=(p)=>'<rect class="tp-peg2" x="'+(p[0]-4)+'" y="'+(p[1]-4)+'" width="8" height="8" rx="1.2"/>';
+      return svg(320,130,view("Plan")+'<path class="tp-tri" d="M'+A+' L'+B+' L'+C+' Z"/><path class="tp-string2" d="M'+B+' H300 M'+C+' V4"/><path class="tp-string" d="M'+A+' L'+B+' M'+A+' L'+C+' M'+B+' L'+C+'"/>'+
+        '<path class="tp-thin" d="M64 100 H76 V112"/>'+peg(A)+peg(B)+peg(C)+
+        t(128,126,"4 m","tp-sm")+t(46,68,"3 m","tp-sm")+t(138,58,"5 m","tp-sm")+t(258,56,"3, 4, 5 means","tp-xs")+t(258,68,"a right angle","tp-xs"),
+        "A corner set out with lines: 3 metres one way, 4 metres the other, and 5 metres across means the corner is square")},
+    /* Piers in plan, one course seen from above, to scale. The attached pier is bonded in: three headers run from the
+       back of the half-brick wall right into the pier, and a stretcher and a half bat finish its face. The isolated pier
+       is a one-brick pier: two stretchers side by side (the next course turns them round). */
+    piers:()=>{const k=.22,B=(x,y,w,h,ox,oy)=>'<rect class="tp-bplan" x="'+r(ox+x*k)+'" y="'+r(oy+y*k)+'" width="'+r(w*k)+'" height="'+r(h*k)+'"/>';
+      const ax=12,ay=22,m=(x,y,w,h,ox,oy)=>'<rect class="tp-mortar" x="'+r(ox+x*k)+'" y="'+r(oy+y*k)+'" width="'+r(w*k)+'" height="'+r(h*k)+'"/>';
+      let A=m(0,0,900,102.5,ax,ay)+m(276.25,0,347.5,327.5,ax,ay);
+      [[0,51.25],[61.25,215],[623.75,215],[848.75,51.25]].forEach(b=>{A+=B(b[0],0,b[1],102.5,ax,ay)});
+      [286.25,398.75,511.25].forEach(x=>{A+=B(x,0,102.5,215,ax,ay)});
+      A+=B(286.25,225,215,102.5,ax,ay)+B(511.25,225,102.5,102.5,ax,ay);
+      const ix=240,iy=34;let I=m(0,0,215,215,ix,iy)+B(0,0,215,102.5,ix,iy)+B(0,112.5,215,102.5,ix,iy);
+      return svg(320,130,view("Plan: one course")+A+I+
+        t(111,110,"Attached pier","tp-sm")+t(111,122,"headers bond it into the wall","tp-xs")+t(264,110,"Isolated pier","tp-sm")+t(264,122,"stands on its own","tp-xs"),
+        "Plans of one course: an attached pier bonded into a half-brick wall by three headers running into it, and a one-brick isolated pier of two stretchers")},
     "garden-bond":()=>svg(320,112,'<g>'+brickwork(70,8,180,8,.12,BOND.garden)+'</g>'+t(160,94,"English garden wall bond")+t(160,107,"3 stretcher courses, then a header course","tp-xs"),
       "English garden wall bond: three courses of stretchers, then a course of headers"),
     soldier:()=>{const s2=.14,W=140,n=Math.floor(W/(75*s2)),row=(x,y,h,k0)=>bw(s2)+Array.from({length:n},(_,k)=>'<rect class="tp-b'+(1+(k+k0)%3)+'" x="'+r(x+k*75*s2)+'" y="'+r(y)+'" width="'+r(65*s2)+'" height="'+r(h*s2)+'"/>').join("")+'</g>';
-      return svg(320,122,panel(16,6,W,2,s2)+'<rect class="tp-mortar" x="16" y="'+r(6+2*75*s2-10*s2)+'" width="'+W+'" height="'+r(225*s2+2)+'"/>'+row(16,6+2*75*s2,215,0)+panel(16,r(6+2*75*s2+225*s2),W,2,s2)+
+      return svg(320,122,view("Elevation")+panel(16,6,W,2,s2)+'<rect class="tp-mortar" x="16" y="'+r(6+2*75*s2-10*s2)+'" width="'+W+'" height="'+r(225*s2+2)+'"/>'+row(16,6+2*75*s2,215,0)+panel(16,r(6+2*75*s2+225*s2),W,2,s2)+
         '<rect class="tp-mortar" x="168" y="'+r(28-10*s2)+'" width="'+W+'" height="'+r(112.5*s2+1)+'"/>'+row(168,28,102.5,1)+panel(168,r(28+112.5*s2),W,4,s2)+
         t(86,112,"Soldier course: on end","tp-sm")+t(238,112,"Brick-on-edge capping","tp-sm"),"A soldier course of bricks stood on end in a wall, and a brick-on-edge capping along the top of a wall")},
-    dpc150:()=>svg(320,130,'<rect class="tp-conc" x="60" y="96" width="170" height="30"/><rect class="tp-brick" x="90" y="14" width="40" height="82"/><rect class="tp-block" x="160" y="14" width="46" height="82"/>'+
-      '<path class="tp-ground" d="M30 80 H90 M206 80 H250"/><path class="tp-dpc" d="M86 56 H134 M156 56 H210"/>'+dimV(64,56,80,"",0)+t(34,64,"150 mm","tp-sm")+t(34,76,"min","tp-xs")+
-      t(284,60,"DPC")+t(284,84,"Ground")+t(145,11,"Cavity","tp-xs")+'<path class="tp-thin" d="M262 57 H214 M258 81 H252"/>',"A cavity wall section with the DPC in both leaves at least 150 millimetres above ground level"),
+    /* DPC height in section: both leaves coursed from the DPC, the DPC 150 mm above the finished ground, and the cavity
+       filled with concrete below ground to 225 mm under the DPC. 1:5ish, sizes in millimetres. */
+    dpc150:()=>{const M=scaler(118,52,.2),zb=-360,zt=260,W=[0,102.5,202.5,302.5];
+      const box=(x1,x2,z1,z2,c)=>'<rect class="'+c+'" x="'+M.X(x1)+'" y="'+M.Y(z2)+'" width="'+r(M.X(x2)-M.X(x1))+'" height="'+r(M.Y(z1)-M.Y(z2))+'"/>';
+      return svg(320,130,view("Section")+box(-330,W[0],zb,0,"tp-soil")+box(-330,W[0],zb,0,"tp-x-soil")+box(W[3],W[3]+300,zb,0,"tp-soil")+box(W[3],W[3]+300,zb,0,"tp-x-soil")+
+        box(W[1],W[2],zb,-75,"tp-conc")+box(W[1],W[2],zb,-75,"tp-x-conc")+
+        leaf(M,W[0],W[1],zb,zt,65,"tp-bu",null,150)+leaf(M,W[2],W[3],zb,zt,215,"tp-block","tp-x-block",150)+dpcIn(M,W[0],W[1],140)+dpcIn(M,W[2],W[3],140)+
+        '<path class="tp-ground" d="M'+M.X(-330)+' '+M.Y(0)+' H'+M.X(W[0])+' M'+M.X(W[3])+' '+M.Y(0)+' H'+M.X(W[3]+300)+'"/>'+
+        '<path class="tp-dim" d="M'+M.X(-60)+' '+M.Y(0)+' V'+M.Y(150)+' M'+r(M.X(-60)-4)+' '+M.Y(150)+' H'+r(M.X(-60)+4)+' M'+r(M.X(-60)-4)+' '+M.Y(0)+' H'+r(M.X(-60)+4)+'"/>'+
+        '<text class="tp-sm" x="'+r(M.X(-60)-6)+'" y="'+r(M.Y(75)+2)+'" style="text-anchor:end">150 mm</text><text class="tp-xs" x="'+r(M.X(-60)-6)+'" y="'+r(M.Y(75)+13)+'" style="text-anchor:end">at least</text>'+
+        call("DPC",238,22,M.X(W[3]),M.Y(145))+call("Ground level",238,52,M.X(W[3]+220),M.Y(0))+call("Cavity fill",238,98,M.X(152),M.Y(-200)),
+        "A cavity wall cut through at ground level: the DPC in both leaves at least 150 millimetres above the ground, and the cavity filled with concrete below ground")},
+
     gaugerod:()=>{let m="";for(let k=0;k<=13;k++){const y=116-k*7.5;m+='<path class="tp-tickc" d="M150 '+y+' H'+(k%4===0?166:160)+'"/>'}
       return svg(320,124,'<rect class="tp-wood" x="146" y="10" width="14" height="108"/>'+m+'<path class="tp-mark" d="M146 71 H178 M146 26 H178"/>'+t(214,74,"Sill height")+t(218,29,"Lintel bearing")+t(96,119,"Ground / DPC","tp-xs")+t(84,56,"A mark every","tp-xs")+t(84,68,"course (75 mm)","tp-xs"),
       "A timber gauge rod with a mark every 75 millimetre course and the sill and lintel heights marked")},
@@ -451,129 +522,196 @@
     extinguishers:()=>svg(320,124,[["Water","tp-exw"],["Foam","tp-exf"],["CO2","tp-exc"],["Powder","tp-exp"]].map((e,i)=>{const x=40+i*80;
       return extinguisher(x,e[1],e[0]==="CO2")+t(x,116,e[0])}).join(""),
       "Four red fire extinguishers with coloured bands: water red, foam cream, CO2 black with a horn, and dry powder blue"),
-    opening:()=>{const s2=.13,L=110-150*s2,LW=100+300*s2,n=Math.floor(LW/(75*s2));return svg(320,146,panel(20,6,280,14,s2)+'<rect class="tp-hole2" x="110" y="45" width="100" height="62"/>'+
+    opening:()=>{const s2=.13,L=110-150*s2,LW=100+300*s2,n=Math.floor(LW/(75*s2));return svg(320,146,view("Elevation")+panel(20,6,280,14,s2)+'<rect class="tp-hole2" x="110" y="45" width="100" height="62"/>'+
       '<rect class="tp-lintel" x="'+r(L)+'" y="36" width="'+r(LW)+'" height="9"/><rect class="tp-mortar" x="'+r(L)+'" y="7" width="'+r(LW)+'" height="29"/>'+
       bw(s2)+Array.from({length:n},(_,k)=>'<rect class="tp-b'+(1+k%3)+'" x="'+r(L+(LW-n*75*s2+10*s2)/2+k*75*s2)+'" y="8" width="'+r(65*s2)+'" height="'+r(215*s2)+'"/>').join("")+'</g>'+
       '<rect class="tp-sill" x="104" y="107" width="112" height="10"/><rect class="tp-weep" x="129.5" y="30" width="2" height="5"/><rect class="tp-weep" x="188" y="30" width="2" height="5"/>'+
       dimH(128,r(L),110,"150")+dimH(128,210,r(210+150*s2),"150")+t(160,80,"Opening","tp-xs"),
       "A window opening in brickwork: a lintel with a soldier course above, 150 millimetre bearings at each end, a brick-on-edge sill and weep holes")},
-    movement:()=>svg(320,120,panel(20,8,128,6,.2)+panel(158,8,142,6,.2,k=>k%2?rep([215],30):[102.5].concat(rep([215],30)))+
+    movement:()=>svg(320,120,view("Elevation")+panel(20,8,128,6,.2)+panel(158,8,142,6,.2,k=>k%2?rep([215],30):[102.5].concat(rep([215],30)))+
       '<rect class="tp-filler" x="148" y="8" width="10" height="88"/><rect class="tp-seal" x="148" y="8" width="3" height="88"/>'+t(153,112,"Movement joint: filler and sealant, no mortar","tp-xs"),
       "Two panels of brickwork with a movement joint between them filled with compressible filler and sealant"),
-    gable:()=>{const id="tpg"+(++uid);return svg(320,130,'<clipPath id="'+id+'"><path d="M30 118 L160 12 L290 118 Z"/></clipPath><g clip-path="url(#'+id+')">'+panel(20,10,280,14,.1)+'</g>'+
+    gable:()=>{const id="tpg"+(++uid);return svg(320,130,view("Elevation")+'<clipPath id="'+id+'"><path d="M30 118 L160 12 L290 118 Z"/></clipPath><g clip-path="url(#'+id+')">'+panel(20,10,280,14,.1)+'</g>'+
       '<path class="tp-rake" d="M26 121 L160 9 L294 121"/><path class="tp-string" d="M160 9 L300 124"/>'+t(262,40,"Line set","tp-xs")+t(262,52,"to the rake","tp-xs")+t(58,40,"Bricks cut","tp-xs")+t(58,52,"to the line","tp-xs"),
       "A gable end wall with each course cut along a line set to the angle of the rake")},
-    bolster:()=>svg(320,120,'<rect class="tp-brick" x="70" y="72" width="180" height="40"/><path class="tp-mark" d="M160 72 V112"/>'+
-      '<g transform="rotate(-6 160 70)">'+at(160,25,.9,bolsterTool())+'</g>'+at(236,42,.95,clubHammer(),206)+
-      t(60,40,"Mark all faces,","tp-xs")+t(60,52,"bolster on the line","tp-xs"),"A brick marked for cutting with a bolster held on the line and a club hammer ready to strike")
+    /* Cutting a brick: the brick in 3D with its header face towards you and the cut marked on every face, the bolster
+       standing with its blade across the mark, and the club hammer raised to strike it. Everything to one scale. */
+    bolster:()=>{const k=.45,w=102.5*k,h=65*k,L=215*k*.5,dx=L*Math.cos(Math.PI/6),dy=-L*Math.sin(Math.PI/6),x0=106,y0=149.3;
+      const P2=(x,y)=>r(x)+' '+r(y),mx=x0+dx/2,my=y0+dy/2,H=[172,22];
+      return svg(320,188,shadow(x0+w/2+dx/2,y0+h+1,70,5)+
+        '<path class="tp-brick" d="M'+P2(x0,y0)+' L'+P2(x0+dx,y0+dy)+' L'+P2(x0+w+dx,y0+dy)+' L'+P2(x0+w,y0)+' Z"/><path class="tp-lit" d="M'+P2(x0,y0)+' L'+P2(x0+dx,y0+dy)+' L'+P2(x0+w+dx,y0+dy)+' L'+P2(x0+w,y0)+' Z"/>'+
+        '<path class="tp-brick" d="M'+P2(x0+w,y0)+' L'+P2(x0+w+dx,y0+dy)+' L'+P2(x0+w+dx,y0+dy+h)+' L'+P2(x0+w,y0+h)+' Z"/><path class="tp-shade" d="M'+P2(x0+w,y0)+' L'+P2(x0+w+dx,y0+dy)+' L'+P2(x0+w+dx,y0+dy+h)+' L'+P2(x0+w,y0+h)+' Z"/>'+
+        '<rect class="tp-brick" x="'+r(x0)+'" y="'+r(y0)+'" width="'+r(w)+'" height="'+r(h)+'"/>'+
+        '<path class="tp-pencil" d="M'+P2(mx,my)+' L'+P2(mx+w,my)+' L'+P2(mx+w,my+h)+'"/>'+
+        at(mx+w/2,my-216*k,k,bolsterTool())+at(H[0]+237.5*k*.63,H[1]+237.5*k*.77,k,clubHammer(),-129.4)+
+        call("Mark all faces",232,150,mx+w,my+h*.62)+call("Blade on the mark",108,112,mx+4,my-1.5)+call("Club hammer",246,66,196.4,52.1),
+        "A brick marked for cutting on all its faces, a bolster standing with its blade across the mark on top, and a club hammer raised to strike it")}
   });
+  /* ---------- Timber in 3D (oblique view: depth drawn up and to the right at half size) ----------
+     obox draws a length of timber as a box: the front, top and right faces, lit from above. grain "v" means the
+     timber runs up and down (so its top is end grain), "h" left to right (so its right end is end grain). oprism
+     extrudes a flat outline (like a board with dovetails cut in it) back by its thickness. */
+  const op=(x,y,z)=>r(x+z*.433)+' '+r(y-z*.25);
+  const oface=(d,end,tone,tex)=>'<path class="'+(end?"tp-endg":"tp-tim")+'" d="'+d+'"/>'+(tone?'<path class="'+tone+'" d="'+d+'"/>':"")+(tex&&!end?'<path class="'+tex+'" d="'+d+'"/>':"");
+  function obox(x,y,z,w,h,d,grain,faces){
+    const f=faces||"trf",P=[];
+    if(f.includes("t"))P.push(oface('M'+op(x,y,z)+' L'+op(x+w,y,z)+' L'+op(x+w,y,z+d)+' L'+op(x,y,z+d)+' Z',grain==="v","tp-lit"));
+    if(f.includes("r"))P.push(oface('M'+op(x+w,y,z)+' L'+op(x+w,y+h,z)+' L'+op(x+w,y+h,z+d)+' L'+op(x+w,y,z+d)+' Z',grain==="h","tp-shade"));
+    if(f.includes("f"))P.push(oface('M'+op(x,y,z)+' L'+op(x+w,y,z)+' L'+op(x+w,y+h,z)+' L'+op(x,y+h,z)+' Z',false,"",grain==="v"?"tp-x-grainv":"tp-x-grainh"));
+    return P.join("");
+  }
+  function oprism(pts,z,d,frontEnd,grain){
+    const n=pts.length,cx=pts.reduce((a,p)=>a+p[0],0)/n,cy=pts.reduce((a,p)=>a+p[1],0)/n;let area=0;
+    for(let i=0;i<n;i++){const p=pts[i],q=pts[(i+1)%n];area+=p[0]*q[1]-q[0]*p[1]}
+    const side=[];
+    for(let i=0;i<n;i++){const p=pts[i],q=pts[(i+1)%n];let nx=q[1]-p[1],ny=-(q[0]-p[0]);if(area<0){nx=-nx;ny=-ny}
+      if(nx*.433+ny*-.25>1e-6){const d2='M'+op(p[0],p[1],z)+' L'+op(q[0],q[1],z)+' L'+op(q[0],q[1],z+d)+' L'+op(p[0],p[1],z+d)+' Z';
+        side.push({d:d2,k:(p[1]+q[1])/2-(p[0]+q[0])/2*.2,end:grain==="v"?Math.abs(ny)>Math.abs(nx):Math.abs(nx)>Math.abs(ny),tone:ny<-Math.abs(nx)*.5?"tp-lit":"tp-shade"})}}
+    side.sort((a,b)=>b.k-a.k);
+    const front='M'+pts.map(p=>op(p[0],p[1],z)).join(" L")+' Z';
+    return side.map(f=>oface(f.d,f.end,f.tone)).join("")+oface(front,frontEnd,"",grain==="v"?"tp-x-grainv":"tp-x-grainh");
+  }
   /* ---------- Joinery and carpentry ---------- */
   Object.assign(P,{
-    /* The four basic joints, pulled apart. */
-    joints4:()=>svg(320,122,
-      '<g><rect class="tp-tim" x="10" y="8" width="20" height="92"/><rect class="tp-slot" x="16.7" y="38" width="6.6" height="30"/><rect class="tp-tim" x="44" y="38" width="36" height="30"/><rect class="tp-tim" x="34" y="48" width="10" height="10"/></g>'+
-      '<g><rect class="tp-tim2" x="92" y="8" width="64" height="16"/><path class="tp-tim2" d="M98 24 L101 42 H111 L114 24 Z M126 24 L129 42 H139 L142 24 Z"/>'+
-        '<path class="tp-tim" d="M92 62 V92 H156 V62 H151 L148 46 H133 L130 62 H124 L121 46 H106 L103 62 Z"/></g>'+
-      '<g><path class="tp-tim" d="M172 100 V20 H196 V100 Z"/><rect class="tp-slot" x="180" y="20" width="8" height="30"/><rect class="tp-tim2" x="204" y="26" width="30" height="24"/><rect class="tp-tim2" x="196" y="30" width="8" height="16" opacity=".0"/></g>'+
-      '<g><rect class="tp-tim" x="250" y="46" width="64" height="18"/><rect class="tp-tim2" x="272" y="12" width="18" height="84"/><path class="tp-thin" d="M272 46 V64 M290 46 V64"/></g>'+
-      t2(45,108,"Mortise","and tenon","tp-xs")+t(124,108,"Dovetail","tp-xs")+t(203,108,"Bridle","tp-xs")+t(282,108,"Halving","tp-xs"),
-      "Four joints: a tenon a third of the timber's thickness beside its mortise, dovetail tails and pins, a bridle joint's open slot, and a cross halving"),
+    /* The four basic joints, pulled apart, in 3D. Mortise and tenon: the tenon is the middle third of the rail's
+       thickness and fits the mortise cut in the stile's edge. Dovetail: the tails flare out towards their ends and fit
+       sockets that are narrow at the top; the pins board is seen end on. Bridle: an open slot (fork) in the stile's end
+       takes the rail's tongue. Cross halving: each piece is cut away to half its depth where they cross. */
+    joints4:()=>{const D=21,T=D/3;
+      const mt=obox(8,10,0,16,86,D,"v")+'<path class="tp-slot" d="M'+op(24,38,T)+' L'+op(24,66,T)+' L'+op(24,66,2*T)+' L'+op(24,38,2*T)+' Z"/>'+
+        obox(32,39,T,10,26,T,"h","tf")+obox(42,36,0,30,32,D,"h");
+      const tails=[[88,4],[150,4],[150,16],[141,16],[145,34],[127,34],[131,16],[107,16],[111,34],[93,34],[97,16],[88,16]];
+      const pins=[[88,48],[97,48],[93,66],[111,66],[107,48],[131,48],[127,66],[145,66],[141,48],[150,48],[150,98],[88,98]];
+      const dt=oprism(tails,0,12,false,"h")+oprism(pins,0,12,true,"v");
+      const br=obox(168,44,0,16,54,D,"v")+obox(168,12,2*T,16,32,T,"v")+'<path class="tp-slotin" d="M'+op(168,12,2*T)+' L'+op(184,12,2*T)+' L'+op(184,44,2*T)+' L'+op(168,44,2*T)+' Z"/>'+
+        '<path class="tp-slotin" d="M'+op(184,12,T)+' L'+op(184,44,T)+' L'+op(184,44,2*T)+' L'+op(184,12,2*T)+' Z"/>'+obox(168,12,0,16,32,T,"v")+
+        obox(192,18,T,12,26,T,"h","tf")+obox(204,18,0,30,26,D,"h");
+      const hv=obox(246,76,0,24,16,D,"h","tf")+obox(270,84,0,18,8,D,"h","t")+'<path class="tp-shade" d="M'+op(270,76,0)+' L'+op(270,84,0)+' L'+op(270,84,D)+' L'+op(270,76,D)+' Z"/>'+obox(270,84,0,18,8,D,"h","f")+obox(288,76,0,24,16,D,"h")+
+        obox(270,30,-14,18,16,48,"h")+'<path class="tp-arrow" d="M'+op(279,52,4)+' L'+op(279,70,4)+'"/><path class="tp-arrowh" d="M'+op(275,65,4)+' L'+op(279,70,4)+' L'+op(283,65,4)+'"/>';
+      return svg(320,124,mt+dt+br+hv+
+        t2(45,110,"Mortise","and tenon","tp-sm")+t(124,110,"Dovetail","tp-sm")+t(203,110,"Bridle","tp-sm")+t(282,110,"Halving","tp-sm"),
+        "Four joints pulled apart: a tenon a third of the rail's thickness beside the mortise in the stile's edge, dovetail tails flaring towards their ends above the pins board's sockets, a bridle's open slot and tongue, and a cross halving cut to half depth")},
     /* A casement window from the outside, and a section through the sill. */
-    window:()=>svg(320,140,'<rect class="tp-tim" x="20" y="10" width="160" height="112"/><rect class="tp-glass" x="30" y="20" width="60" height="90"/><rect class="tp-tim2" x="98" y="18" width="74" height="96"/><rect class="tp-glass" x="106" y="26" width="58" height="80"/>'+
+    window:()=>svg(320,140,view("Elevation and sill section")+'<rect class="tp-tim" x="20" y="10" width="160" height="112"/><rect class="tp-glass" x="30" y="20" width="60" height="90"/><rect class="tp-tim2" x="98" y="18" width="74" height="96"/><rect class="tp-glass" x="106" y="26" width="58" height="80"/>'+
       '<path class="tp-tim" d="M14 122 H186 L184 132 H16 Z"/>'+
-      '<g transform="translate(220 40)"><path class="tp-tim" d="M0 40 V20 H30 V14 H44 V20 L80 30 V46 H6 V40 Z"/><path class="tp-dripg" d="M14 46 a4 4 0 0 0 8 0"/><path class="tp-arrow" d="M66 20 L78 24"/><g class="tp-drop2"><circle cx="18" cy="56" r="2"/><circle cx="18" cy="66" r="2"/></g></g>'+
-      t(100,6,"","tp-xs")+t(276,112,"Sill section","tp-xs")+t(255,26,"weathered","tp-xs"),
+      /* Sill section (outside on the right), 0.6 px a mm: 140 mm wide, the casement closing on the rebate, the top
+         weathered down to a rounded front, and the drip groove under the part that projects past the wall face. */
+      '<rect class="tp-mortar" x="210" y="78" width="61" height="6"/><rect class="tp-dpc2" x="210" y="78" width="61" height="2"/><rect class="tp-brick" x="210" y="84" width="61" height="34"/><path class="tp-thin" d="M204 118 H277"/>'+
+      '<path class="tp-tim" d="M214 78 V39.6 H236.8 V45.6 L290.8 54 Q298 54 298 60 V78 H289.8 A2.6 2.6 0 0 0 284.6 78 Z"/><rect class="tp-tim2" x="222" y="10" width="14.8" height="29.6"/>'+
+      '<g class="tp-drop2"><circle cx="287.2" cy="88" r="2"/><circle cx="287.2" cy="99" r="2"/></g>'+
+      call("Weathered\ntop",252,16,246,46.7,null,"start")+call("Drip groove",266,134,286,79),
       "A timber casement window from outside: frame with head, jambs and sill, an opening casement and glass, and a section through the sloping sill with a drip groove underneath"),
-    /* A straight flight: strings, treads, risers and nosings, with the rise and going. */
-    stair:()=>{let st="";for(let k=0;k<5;k++){const x=40+k*44,y=110-k*20;st+='<rect class="tp-tim" x="'+x+'" y="'+(y-20)+'" width="6" height="20"/><path class="tp-tim2" d="M'+(x-6)+' '+(y-24)+' H'+(x+44)+' V'+(y-20)+' H'+(x-6)+' Z"/>'}
-      return svg(320,130,'<path class="tp-string3" d="M14 106 L270 -10 L270 20 L14 136 Z"/>'+st+'<path class="tp-pitch" d="M34 86 L262 -18"/>'+
-        t(290,64,"String","tp-xs")+'<path class="tp-thin" d="M276 60 H250"/>'+t(96,52,"Tread","tp-xs")+'<path class="tp-thin" d="M104 56 L118 64"/>'+t(24,72,"Nosing","tp-xs")+'<path class="tp-thin" d="M28 76 L34 84"/>'+t(186,98,"Riser","tp-xs")+'<path class="tp-thin" d="M178 92 L174 76"/>',
-        "A straight stair from the side: the string carrying treads and risers, with a nosing at the front of each tread")},
+    /* A straight flight from the side, to scale: 190 mm rise, 250 mm going, 25 mm treads with a 20 mm nosing, 15 mm
+       risers standing on the tread below, and the wall string behind carrying them (the near string is left off so you
+       can see the steps). The pitch line joins the nosings. */
+    stair:()=>{const M=scaler(40,140,.18),S=[1,2,3,4];let st="";
+      const R=190,G=250,P3=(x,z)=>M.X(x)+' '+M.Y(z),k=R/G,top=x=>R+(x+20)*k+62.8,bot=x=>top(x)-282,x0=(282-62.8-R)/k-20;
+      const str='<path class="tp-string4" d="M'+P3(-120,0)+' L'+P3(x0,0)+' L'+P3(1060,bot(1060))+' L'+P3(1060,top(1060))+' L'+P3(-120,top(-120))+' Z"/>';
+      S.forEach(i=>{const x=(i-1)*G,tp=i*R;
+        st+='<rect class="tp-tim2" x="'+M.X(x)+'" y="'+M.Y(tp-25)+'" width="'+r(15*M.s)+'" height="'+r((R-25)*M.s)+'"/>'+
+          '<path class="tp-tim" d="M'+P3(x-20,tp)+' L'+P3(i*G+15,tp)+' L'+P3(i*G+15,tp-25)+' L'+P3(x-8,tp-25)+' Q'+P3(x-20,tp-25)+' '+P3(x-20,tp-12)+' Z"/>'});
+      return svg(320,150,view("Side view")+'<path class="tp-ground" d="M'+P3(-120,0)+' H'+M.X(700)+'"/>'+str+st+'<path class="tp-pitch" d="M'+P3(-20,R)+' L'+P3(3.6*G-20,4.6*R)+'"/>'+
+        '<path class="tp-dim" d="M'+P3(2*G+200,2*R)+' V'+M.Y(3*R)+' M'+r(+M.X(2*G+200)-3)+' '+M.Y(2*R)+' H'+r(+M.X(2*G+200)+3)+' M'+r(+M.X(2*G+200)-3)+' '+M.Y(3*R)+' H'+r(+M.X(2*G+200)+3)+'"/>'+t(+M.X(2*G+200)+16,+M.Y(2.5*R)+3,"Rise","tp-xs")+
+        '<path class="tp-dim" d="M'+P3(G-20,R+85)+' H'+M.X(2*G-20)+' M'+M.X(G-20)+' '+r(+M.Y(R+85)-3)+' V'+r(+M.Y(R+85)+3)+' M'+M.X(2*G-20)+' '+r(+M.Y(R+85)-3)+' V'+r(+M.Y(R+85)+3)+'"/>'+t(+M.X(1.5*G-20),+M.Y(R+85)-4,"Going","tp-xs")+
+        call("Nosing",40,84,M.X(G-18),M.Y(2*R-12))+call("Tread",118,22,M.X(2*G+60),M.Y(3*R))+call("Riser",176,132,M.X(G+7),M.Y(R+60))+call("String, behind",220,104,M.X(620),M.Y(470))+call("Pitch line",236,30,M.X(3*G+30),M.Y(4*R+45)),
+        "A straight flight of stairs from the side: treads with nosings, risers standing on the tread below, the wall string behind carrying them, the pitch line through the nosings, and the rise and going marked")},
     /* Door frame (rebated, solid) and door lining (thin board with a planted stop), in section. */
-    framelining:()=>svg(320,120,'<path class="tp-tim" d="M40 20 H110 V80 H80 V60 H40 Z"/><rect class="tp-door2" x="40" y="62" width="38" height="46"/>'+
+    framelining:()=>svg(320,120,view("Section")+'<path class="tp-tim" d="M40 20 H110 V80 H80 V60 H40 Z"/><rect class="tp-door2" x="40" y="62" width="38" height="46"/>'+
       '<rect class="tp-tim" x="190" y="30" width="100" height="18"/><rect class="tp-tim2" x="224" y="48" width="12" height="12"/><rect class="tp-door2" x="190" y="60" width="32" height="46"/>'+
-      t(75,14,"Door frame","tp-sm")+t(75,118,"Rebate cut in","tp-xs")+t(240,24,"Door lining","tp-sm")+t(281,74,"Planted stop","tp-xs")+'<path class="tp-thin" d="M246 70 H237"/>',
+      t(75,14,"Door frame","tp-sm")+call("Rebate cut in",120,98,79,70)+t(240,24,"Door lining","tp-sm")+call("Planted stop",246,84,236,55),
       "Sections through a solid door frame with a rebate cut into it, and a thin door lining with a separate stop fixed on"),
     /* A four-panel door and a ledged and braced door (hinges on the left). */
-    doors:()=>svg(320,148,'<rect class="tp-tim" x="30" y="8" width="90" height="124"/><rect class="tp-panel" x="42" y="18" width="30" height="46"/><rect class="tp-panel" x="78" y="18" width="30" height="46"/><rect class="tp-panel" x="42" y="76" width="30" height="46"/><rect class="tp-panel" x="78" y="76" width="30" height="46"/>'+
+    doors:()=>svg(320,148,view("Elevation")+'<rect class="tp-tim" x="30" y="8" width="90" height="124"/><rect class="tp-panel" x="42" y="18" width="30" height="46"/><rect class="tp-panel" x="78" y="18" width="30" height="46"/><rect class="tp-panel" x="42" y="76" width="30" height="46"/><rect class="tp-panel" x="78" y="76" width="30" height="46"/>'+
       '<rect class="tp-tim2" x="190" y="8" width="90" height="124"/>'+[0,1,2,3,4].map(k=>'<path class="tp-thin" d="M'+(208+k*18)+' 8 V132"/>').join("")+
       '<rect class="tp-tim" x="190" y="18" width="90" height="12"/><rect class="tp-tim" x="190" y="64" width="90" height="12"/><rect class="tp-tim" x="190" y="110" width="90" height="12"/>'+
       olLine("tp-brace","M198 108 L272 78 M198 62 L272 30",9,"sq")+
-      '<rect class="tp-hinge" x="186" y="20" width="10" height="8"/><rect class="tp-hinge" x="186" y="112" width="10" height="8"/>'+
+      [24,116].map(y=>'<path class="tp-hinge" d="M184 '+(y-7)+' H190 V'+(y-2)+' H194 L244 '+(y-1.2)+' Q247 '+y+' 244 '+(y+1.2)+' L194 '+(y+2)+' H190 V'+(y+7)+' H184 Z"/>'+[200,216,232].map(x=>'<circle class="tp-nail" cx="'+x+'" cy="'+y+'" r="1"/>').join("")).join("")+
       t(75,144,"Panelled","tp-xs")+t(235,144,"Ledged and braced","tp-xs"),
       "A four-panel door with stiles, rails, a muntin and panels, and a ledged and braced door hung on the left, its braces rising away from the hinges"),
     /* Chisel edge: ground at 25 degrees, honed at 30. */
-    chisel:()=>svg(320,110,'<path class="tp-steel" d="M20 50 H220 L250.4 63 L255.2 66 H20 Z"/><path class="tp-honed" d="M250.4 63 L255.2 66 H250.4 Z"/>'+
-      '<path class="tp-thin" d="M220 66 H290"/><path class="tp-dim" d="M236 66 A16 16 0 0 0 234.5 59.2"/>'+t(196,90,"Grinding bevel about 25°","tp-xs")+t(236,40,"Honing bevel about 30°","tp-xs")+t(90,90,"Flat back","tp-xs")+'<path class="tp-thin" d="M268 44 L253 63"/>',
+    chisel:()=>svg(320,110,view("Side view")+'<path class="tp-steel" d="M20 50 H220 L250.4 63 L255.2 66 H20 Z"/><path class="tp-honed" d="M250.4 63 L255.2 66 H250.4 Z"/>'+
+      '<path class="tp-thin" d="M220 66 H290"/><path class="tp-dim" d="M236 66 A16 16 0 0 0 234.5 59.2"/>'+call("Grinding bevel\nabout 25°",202,92,234,58)+call("Honing bevel\nabout 30°",240,30,253,64)+call("Flat back",96,90,120,66),
       "The end of a chisel from the side: a flat back, a grinding bevel at about 25 degrees and a small honing bevel at about 30 degrees"),
     /* A room wall with the mouldings. */
-    mouldings:()=>svg(320,140,'<rect class="tp-wallp" x="10" y="8" width="300" height="124"/><rect class="tp-door3" x="204" y="42" width="50" height="90"/>'+
+    mouldings:()=>svg(320,140,view("Elevation")+'<rect class="tp-wallp" x="10" y="8" width="300" height="124"/><rect class="tp-door3" x="204" y="42" width="50" height="90"/>'+
       '<path class="tp-mould" d="M196 132 V34 H262 V132 H254 V42 H204 V132 Z"/>'+
       '<rect class="tp-mould" x="10" y="22" width="300" height="4"/><rect class="tp-mould" x="10" y="80" width="186" height="5"/><rect class="tp-mould" x="10" y="122" width="186" height="10"/><rect class="tp-mould" x="262" y="122" width="48" height="10"/>',
       "A wall with a picture rail near the top, a dado rail part way up, skirting along the bottom and architrave around the door"),
     /* A balustrade: newel, handrail, spindles and baserail, with the 100 mm rule. */
     balustrade:()=>{let sp="";for(let k=0;k<9;k++){const x=62+k*22,d=(x-46)*16/220;sp+=olLine("tp-spindle",'M'+x+' '+r(104-d)+' V'+r(28-d),5)}
       return svg(320,130,'<rect class="tp-tim" x="30" y="16" width="16" height="110"/><rect class="tp-tim" x="266" y="2" width="16" height="108"/>'+
-        olLine("tp-rail","M46 26 L266 10",9,"rc")+olLine("tp-rail","M46 106 L266 90",9,"rc")+sp+'<circle class="tp-sphere" cx="73" cy="64" r="9"/>'+t(110,124,"Gaps under 100 mm","tp-xs")+t(202,7,"Handrail","tp-xs")+t(18,10,"Newel","tp-xs"),
+        olLine("tp-rail","M46 26 L266 10",9,"rc")+olLine("tp-rail","M46 106 L266 90",9,"rc")+sp+'<circle class="tp-sphere" cx="73" cy="64" r="9"/>'+t(110,124,"Gaps under 100 mm","tp-xs")+call("Handrail",204,9,182,15)+call("Newel post",60,9,38,24),
         "A stair balustrade: newel posts, a handrail, a baserail and spindles close enough that a 100 millimetre sphere can't pass between them")},
     /* Where hinges and the handle go on a door. */
-    hinges:()=>svg(320,140,'<rect class="tp-door3" x="110" y="6" width="80" height="130"/><rect class="tp-hinge" x="106" y="16" width="8" height="12"/><rect class="tp-hinge" x="106" y="108" width="8" height="12"/>'+
+    hinges:()=>svg(320,140,view("Elevation")+'<rect class="tp-door3" x="110" y="6" width="80" height="130"/><rect class="tp-hinge" x="106" y="16" width="8" height="12"/><rect class="tp-hinge" x="106" y="108" width="8" height="12"/>'+
       '<circle class="tp-knob" cx="180" cy="76" r="4"/><rect class="tp-knob" x="178" y="76" width="4" height="10"/>'+
       dimV(90,6,22,"",0)+t(60,18,"150 mm","tp-xs")+dimV(90,114,136,"",0)+t(60,128,"225 mm","tp-xs")+dimV(214,76,136,"",0)+t(250,108,"about 1,000","tp-xs"),
       "A door with the top hinge about 150 millimetres from the top, the bottom hinge about 225 millimetres from the bottom, and the handle about 1,000 millimetres from the floor"),
-    /* A band saw with its top guard set just above the work. */
-    bandsaw:()=>svg(320,140,'<path class="tp-mach" d="M110 128 V110 H210 V128 Z"/><path class="tp-mach" d="M140 110 V20 Q140 8 152 8 H196 Q208 8 208 20 V110"/><rect class="tp-table" x="96" y="70" width="128" height="8"/>'+
-      '<path class="tp-blade2" d="M168 20 V110"/><rect class="tp-guard" x="162" y="20" width="12" height="36"/><rect class="tp-tim2" x="120" y="58" width="80" height="12"/><path class="tp-thin" d="M230 52 H176"/>'+t(270,56,"Guard just","tp-xs")+t(270,68,"above the work","tp-xs"),
+    /* A band saw from the front: stand, lower and upper wheel housings (doors shut), the blade running down through
+       the cast iron table, and the top guard with its guides lowered to just above the timber (about 10 mm). */
+    bandsaw:()=>svg(320,140,shadow(166,136,62,3)+
+      '<path class="tp-machd" d="M134 106 H198 L204 136 H128 Z"/><rect class="tp-mach" x="120" y="76" width="92" height="30" rx="6"/><path class="tp-machl" d="M126 82 H206"/><rect class="tp-knobk" x="196" y="87" width="4" height="10" rx="2"/>'+
+      '<rect class="tp-mach" x="122" y="34" width="22" height="44"/><path class="tp-machl" d="M138 38 V74"/>'+
+      '<path class="tp-mach" d="M122 44 V30 Q122 4 166 4 Q210 4 210 30 V44 Z"/><path class="tp-machl" d="M128 38 V30 Q128 10 166 10 Q204 10 204 30 V38"/><rect class="tp-knobk" x="196" y="24" width="4" height="10" rx="2"/>'+
+      '<rect class="tp-steel" x="186" y="44" width="4" height="7"/><rect class="tp-guard" x="178" y="49" width="12" height="9" rx="1.5"/><path class="tp-blade3" d="M184 58 V69"/>'+
+      '<rect class="tp-tim" x="150" y="60.5" width="72" height="8" rx="1"/><path class="tp-x-grainh" d="M150 60.5 H222 V68.5 H150 Z"/>'+
+      '<rect class="tp-table" x="104" y="68.5" width="124" height="5.5" rx="1"/><rect class="tp-machd" x="152" y="74" width="30" height="3"/>'+
+      '<circle class="tp-go" cx="113" cy="90" r="3.6"/><rect class="tp-stop" x="109" y="95" width="8" height="5" rx="1.5"/>'+
+      call("Top guard\njust above work",222,40,184,57)+call("Table",236,86,226,71)+call("Wheel housings",112,22,126,28),
       "A band saw with its top guard lowered to just above the piece of timber on the table")
   });
   /* ---------- Site carpentry ---------- */
   Object.assign(P,{
     /* A load-bearing stud wall: plates, studs at 600 mm centres, noggins and a door opening. */
     studwall:()=>{const full=[20,80,98,180,240,296].map(x=>'<rect class="tp-tim" x="'+x+'" y="14" width="8" height="98"/>').join("");
-      return svg(320,130,'<rect class="tp-tim2" x="14" y="112" width="92" height="8"/><rect class="tp-tim2" x="180" y="112" width="130" height="8"/><rect class="tp-tim2" x="14" y="6" width="296" height="8"/>'+full+
+      return svg(320,144,view("Elevation")+'<rect class="tp-tim2" x="14" y="112" width="92" height="8"/><rect class="tp-tim2" x="180" y="112" width="130" height="8"/><rect class="tp-tim2" x="14" y="6" width="296" height="8"/>'+full+
         '<rect class="tp-tim" x="106" y="30" width="8" height="82"/><rect class="tp-tim" x="172" y="30" width="8" height="82"/><rect class="tp-lint" x="106" y="20" width="74" height="10"/><rect class="tp-tim" x="139" y="14" width="8" height="6"/>'+
         '<rect class="tp-tim2" x="28" y="58" width="52" height="7"/><rect class="tp-tim2" x="188" y="62" width="52" height="7"/><rect class="tp-tim2" x="248" y="58" width="48" height="7"/>'+
-        dimH(126,24,84,"600")+t(143,72,"Opening","tp-xs"),"A load-bearing stud wall: head and sole plates, studs at 600 millimetre centres, noggins, and a door opening with a lintel sitting on cripple studs beside full-height studs")},
+        dimH(126,24,84,"600 centres")+t(143,72,"Opening","tp-xs"),"A load-bearing stud wall: head and sole plates, studs at 600 millimetre centres, noggins, and a door opening with a lintel sitting on cripple studs beside full-height studs")},
     /* Metal partition: U-tracks top and bottom with C-studs between. */
-    metalstud:()=>svg(320,130,'<path class="tp-metal" d="M20 8 H300 V16 H20 Z M20 104 H300 V112 H20 Z"/>'+[40,110,180,250].map(x=>'<path class="tp-metal2" d="M'+x+' 16 H'+(x+10)+' V104 H'+x+' Z"/><path class="tp-thin" d="M'+(x+3)+' 16 V104"/>').join("")+
+    metalstud:()=>svg(320,130,view("Elevation")+'<path class="tp-metal" d="M20 8 H300 V16 H20 Z M20 104 H300 V112 H20 Z"/>'+[40,110,180,250].map(x=>'<path class="tp-metal2" d="M'+x+' 16 H'+(x+10)+' V104 H'+x+' Z"/><path class="tp-thin" d="M'+(x+3)+' 16 V104"/>').join("")+
       t(80,126,"C-studs between","tp-xs")+t(230,126,"U-tracks top and bottom","tp-xs"),"A metal stud partition: U-shaped tracks at the top and bottom with C-studs clipped between them"),
     /* Where you may notch and drill a floor joist (from each support). */
-    joist:()=>{const L=20,W=280,x=f=>L+f*W;return svg(320,120,'<rect class="tp-tim" x="20" y="40" width="280" height="36"/><rect class="tp-wallb" x="6" y="40" width="14" height="70"/><rect class="tp-wallb" x="300" y="40" width="14" height="70"/>'+
+    joist:()=>{const L=20,W=280,x=f=>L+f*W;return svg(320,120,view("Elevation")+'<rect class="tp-tim" x="20" y="40" width="280" height="36"/><rect class="tp-wallb" x="6" y="40" width="14" height="70"/><rect class="tp-wallb" x="300" y="40" width="14" height="70"/>'+
       '<rect class="tp-zone1" x="'+x(.07)+'" y="40" width="'+(x(.25)-x(.07))+'" height="5"/><rect class="tp-zone1" x="'+x(.75)+'" y="40" width="'+(x(.93)-x(.75))+'" height="5"/>'+
       '<rect class="tp-zone2" x="'+x(.25)+'" y="52" width="'+(x(.4)-x(.25))+'" height="12"/><rect class="tp-zone2" x="'+x(.6)+'" y="52" width="'+(x(.75)-x(.6))+'" height="12"/>'+
       '<circle class="tp-holec" cx="'+x(.3)+'" cy="58" r="4"/><circle class="tp-holec" cx="'+x(.35)+'" cy="58" r="4"/><path class="tp-cent" d="M20 58 H300"/>'+
       t(x(.16),30,"Notches: top edge","tp-xs")+t(x(.16),18,"0.07 to 0.25 of span","tp-xs")+t(x(.325),92,"Holes: on the centre line","tp-xs")+t(x(.325),104,"0.25 to 0.4 of span","tp-xs"),
       "A floor joist between two supports: notches allowed in the top edge between 0.07 and 0.25 of the span from each support, holes on the centre line between 0.25 and 0.4 of the span")},
     /* A joist hanger: nailed through every hole. */
-    hanger:()=>svg(320,120,'<rect class="tp-wallb" x="30" y="10" width="60" height="104"/><rect class="tp-tim" x="96" y="40" width="200" height="40"/>'+
+    hanger:()=>svg(320,120,view("Side view")+'<rect class="tp-wallb" x="30" y="10" width="60" height="104"/><rect class="tp-tim" x="96" y="40" width="200" height="40"/>'+
       '<path class="tp-hang" d="M90 30 H100 V84 H122 V36 H128 V90 H90 Z"/>'+[[94,40],[94,60],[112,70],[112,50],[124,60]].map(p=>'<circle class="tp-nail" cx="'+p[0]+'" cy="'+p[1]+'" r="2"/>').join("")+
       t(200,104,"Right nails in every hole","tp-xs")+t(60,8,"","tp-xs"),"A joist end sitting in a galvanised joist hanger fixed to a wall, with a nail in every hole"),
     /* Boxing in a pipe: battens, boards and an access panel at the valve. */
-    boxing:()=>svg(320,130,'<rect class="tp-wallp" x="10" y="6" width="300" height="118"/><rect class="tp-pipe2" x="60" y="6" width="10" height="118"/><rect class="tp-pipe2" x="80" y="6" width="10" height="118"/><rect class="tp-valve" x="56" y="58" width="18" height="10"/>'+
+    boxing:()=>svg(320,130,view("Elevation")+'<rect class="tp-wallp" x="10" y="6" width="300" height="118"/><rect class="tp-pipe2" x="60" y="6" width="10" height="118"/><rect class="tp-pipe2" x="80" y="6" width="10" height="118"/><rect class="tp-valve" x="56" y="58" width="18" height="10"/>'+
       '<rect class="tp-box" x="44" y="6" width="62" height="118"/><rect class="tp-access" x="50" y="46" width="50" height="34"/><circle class="tp-nail" cx="54" cy="50" r="1.6"/><circle class="tp-nail" cx="96" cy="50" r="1.6"/><circle class="tp-nail" cx="54" cy="76" r="1.6"/><circle class="tp-nail" cx="96" cy="76" r="1.6"/>'+
-      t(200,58,"Access panel at the valve","tp-xs")+'<path class="tp-thin" d="M150 56 H100"/>',"Pipes boxed in with boards, and a screwed-on access panel where the valve is"),
-    /* Timber cladding in section: membrane, battens, a ventilated gap and the boards. */
-    cladding:()=>svg(320,130,'<rect class="tp-block" x="20" y="8" width="60" height="114"/><rect class="tp-memb" x="80" y="8" width="4" height="114"/>'+
-      [20,60,100].map(y=>'<rect class="tp-tim2" x="84" y="'+y+'" width="14" height="10"/>').join("")+
-      Array.from({length:7},(_,k)=>'<path class="tp-tim" d="M98 '+(8+k*16)+' H112 V'+(26+k*16)+' H98 Z"/>').join("")+
-      '<path class="tp-airflow" d="M91 118 V20"/><path class="tp-arrowh" d="M87 26 L91 18 L95 26"/>'+
-      t(200,20,"Breathable membrane","tp-xs")+'<path class="tp-thin" d="M160 17 H84"/>'+t(210,56,"Battens: a ventilated gap","tp-xs")+'<path class="tp-thin" d="M160 53 H98"/>'+t(206,92,"Cladding boards","tp-xs")+'<path class="tp-thin" d="M166 89 H112"/>',
-      "A section through timber cladding: the wall, a breathable membrane, battens leaving a ventilated gap with air rising behind, and the overlapping boards"),
+      call("Access panel\nat the valve",140,58,100,63),"Pipes boxed in with boards, and a screwed-on access panel where the valve is"),
+    /* Timber cladding in section, to scale: blockwork, a breathable membrane, vertical battens (shown dashed: the cut is
+       between two battens) making a 25 mm ventilated gap, and feather-edge boards, thin edge up, each lapping 25 mm
+       over the one below. Air comes in at the bottom and rises behind the boards. */
+    cladding:()=>{const M=scaler(64,127,.55),P3=(x,z)=>M.X(x)+' '+M.Y(z);let B="";
+      for(let i=0;i<3;i++){const zb=i*125-20,zt=zb+150;B+='<path class="tp-board2" d="M'+P3(128,zt)+' L'+P3(134,zt)+' L'+P3(152,zb)+' L'+P3(136,zb)+' Z"/><path class="tp-x-grainv" d="M'+P3(128,zt)+' L'+P3(134,zt)+' L'+P3(152,zb)+' L'+P3(136,zb)+' Z"/>'}
+      return svg(320,130,view("Section")+leaf(M,0,100,0,232,215,"tp-block","tp-x-block")+
+        '<rect class="tp-batten" x="'+M.X(103)+'" y="'+M.Y(232)+'" width="'+r(25*M.s)+'" height="'+r(232*M.s)+'"/><rect class="tp-memb" x="'+M.X(100)+'" y="'+M.Y(232)+'" width="'+r(3*M.s)+'" height="'+r(232*M.s)+'"/>'+B+
+        '<path class="tp-airflow" d="M'+P3(115,12)+' V'+M.Y(205)+'"/><path class="tp-arrowh" d="M'+r(+M.X(115)-3.5)+' '+r(+M.Y(205)+5)+' L'+P3(115,205)+' L'+r(+M.X(115)+3.5)+' '+r(+M.Y(205)+5)+'"/>'+
+        call("Breathable membrane",176,22,M.X(101.5),M.Y(200))+call("Batten, behind",176,50,M.X(124),M.Y(172))+
+        call("Ventilated gap",176,82,M.X(115),M.Y(100))+call("Feather-edge boards",176,114,M.X(145),M.Y(40)),
+        "A section through timber cladding: blockwork, a breathable membrane, vertical battens making a ventilated gap with air rising behind, and feather-edge boards each overlapping the one below")},
     /* Skirting corners from above: a scribe inside, a mitre outside. */
-    corners:()=>svg(320,130,'<path class="tp-wallp2" d="M20 20 H140 V36 H36 V110 H20 Z"/><rect class="tp-tim" x="36" y="36" width="104" height="10"/><path class="tp-tim2" d="M36 46 H46 V110 H36 Z"/><path class="tp-scribe" d="M36 46 Q41 42 46 46"/>'+
+    corners:()=>svg(320,130,view("Plan")+'<path class="tp-wallp2" d="M20 20 H140 V36 H36 V110 H20 Z"/><rect class="tp-tim" x="36" y="36" width="104" height="10"/><path class="tp-tim2" d="M36 46 H46 V110 H36 Z"/><path class="tp-scribe" d="M36 46 Q41 42 46 46"/>'+
       '<path class="tp-wallp2" d="M190 110 V40 H300 V24 H174 V110 Z"/><path class="tp-tim" d="M190 40 H300 V30 H180 Z"/><path class="tp-tim2" d="M180 30 L190 40 V110 H180 Z"/>'+
       t(80,126,"Internal corner: scribe","tp-xs")+t(240,126,"External corner: mitre","tp-xs"),"Skirting corners seen from above: an internal corner with one board scribed over the other, and an external corner with a 45 degree mitre"),
     /* A window board from above: horns notched round the reveals, bullnosed front. */
-    windowboard:()=>svg(320,110,'<rect class="tp-wallp2" x="10" y="10" width="80" height="50"/><rect class="tp-wallp2" x="230" y="10" width="80" height="50"/><rect class="tp-frame3" x="90" y="10" width="140" height="10"/>'+
+    windowboard:()=>svg(320,110,view("Plan")+'<rect class="tp-wallp2" x="10" y="10" width="80" height="50"/><rect class="tp-wallp2" x="230" y="10" width="80" height="50"/><rect class="tp-frame3" x="90" y="10" width="140" height="10"/>'+
       '<path class="tp-tim" d="M90 20 H230 V60 H254 V82 Q254 88 248 88 H72 Q66 88 66 82 V60 H90 Z"/>'+t(78,100,"Horn","tp-xs")+t(160,100,"Bullnosed front edge","tp-xs")+t(160,46,"Window board","tp-xs")+t(50,40,"Reveal","tp-xs"),
       "A window board seen from above, running past the reveals with notched horns and a rounded front edge"),
     /* A traditional cut roof: ridge, rafters, purlin, wall plate, birdsmouth and ceiling joist. */
-    cutroof:()=>svg(320,130,'<rect class="tp-wallb" x="20" y="94" width="20" height="34"/><rect class="tp-wallb" x="280" y="94" width="20" height="34"/><rect class="tp-tim2" x="20" y="88" width="20" height="6"/><rect class="tp-tim2" x="280" y="88" width="20" height="6"/>'+
+    cutroof:()=>svg(320,130,view("Section")+'<rect class="tp-wallb" x="20" y="94" width="20" height="34"/><rect class="tp-wallb" x="280" y="94" width="20" height="34"/><rect class="tp-tim2" x="20" y="88" width="20" height="6"/><rect class="tp-tim2" x="280" y="88" width="20" height="6"/>'+
       '<rect class="tp-tim" x="20" y="94" width="280" height="6"/><path class="tp-tim" d="M10 96 L156 14 L162 20 L44 88 L40 88 L38 94 Z"/><path class="tp-tim" d="M310 96 L164 14 L158 20 L276 88 L280 88 L282 94 Z"/><rect class="tp-tim2" x="156" y="8" width="8" height="18"/>'+
       '<rect class="tp-tim2" x="84" y="50" width="12" height="12"/><rect class="tp-tim2" x="224" y="50" width="12" height="12"/>',
       "A cut roof in section: rafters from the wall plates up to the ridge, birdsmouth notches over the wall plates, purlins part way up and ceiling joists across"),
     /* Flat roofs: warm (insulation above the deck) and cold (insulation between the joists, ventilated). */
-    flatroofs:()=>svg(320,130,'<g><rect class="tp-memb2" x="16" y="18" width="130" height="5"/><rect class="tp-insul" x="16" y="23" width="130" height="16"/><rect class="tp-vcl" x="16" y="39" width="130" height="3"/><rect class="tp-deck" x="16" y="42" width="130" height="6"/>'+
+    flatroofs:()=>svg(320,130,view("Section")+'<g><rect class="tp-memb2" x="16" y="18" width="130" height="5"/><rect class="tp-insul" x="16" y="23" width="130" height="16"/><rect class="tp-vcl" x="16" y="39" width="130" height="3"/><rect class="tp-deck" x="16" y="42" width="130" height="6"/>'+
       [26,70,114].map(x=>'<rect class="tp-tim" x="'+x+'" y="48" width="10" height="36"/>').join("")+'</g>'+
       '<g><rect class="tp-memb2" x="174" y="18" width="130" height="5"/><rect class="tp-deck" x="174" y="23" width="130" height="6"/>'+[184,228,272].map(x=>'<rect class="tp-tim" x="'+x+'" y="29" width="10" height="55"/>').join("")+
       [194,238].map(x=>'<rect class="tp-insul" x="'+x+'" y="50" width="34" height="34"/>').join("")+'<rect class="tp-vcl" x="174" y="84" width="130" height="3"/><path class="tp-airflow" d="M198 40 H290"/><path class="tp-arrowh" d="M284 36 L292 40 L284 44"/></g>'+
@@ -587,7 +725,7 @@
        the crown, skewbacks on the radial lines at each end. Span 1,170 mm, rise 230 mm (about a fifth of the span). */
     arch:()=>{const s=.12,cx=160,sp=90,S=70,rise=28,R=(S*S+rise*rise)/(2*rise),cy=sp+R-rise,D=215*s,R2=R+D,th=Math.asin(S/R),n=17,dA=2*th/n,g=10*s/R;
       let v="";for(let k=0;k<n;k++){const a0=-th+k*dA+g/2,a1=a0+dA-g;v+='<path class="tp-b'+(1+k%3)+'" d="M'+polar(cx,cy,R,a0)+' A'+r(R)+' '+r(R)+' 0 0 1 '+polar(cx,cy,R,a1)+' L'+polar(cx,cy,R2,a1)+' A'+r(R2)+' '+r(R2)+' 0 0 0 '+polar(cx,cy,R2,a0)+' Z"/>'}
-      return svg(320,150,panel(20,6,280,16,s)+
+      return svg(320,150,view("Elevation")+panel(20,6,280,16,s)+
         '<path class="tp-mortar" d="M'+polar(cx,cy,R,-th)+' A'+r(R)+' '+r(R)+' 0 0 1 '+polar(cx,cy,R,th)+' L'+polar(cx,cy,R2,th)+' A'+r(R2)+' '+r(R2)+' 0 0 0 '+polar(cx,cy,R2,-th)+' Z"/>'+bw(s)+v+'</g>'+
         '<path class="tp-hole2" d="M90 150 V90 A'+r(R)+' '+r(R)+' 0 0 1 230 90 V150 Z"/><path class="tp-cent" d="M26 90 H294"/>'+
         dimH(132,90,230,"")+dimV(160,62,90,"",0),
@@ -597,7 +735,7 @@
     chimney:()=>{const s=.14,W=440*s,x0=130,roof=x=>160-(x-20)*.5,J=[101.3,90.8,80.3,69.8,59.3];
       const pts=[];let x=x0;while(x<x0+W-.01){const top=Math.max(...J.filter(j=>j<=roof(x)-7)),nx=Math.min(x0+W,20+(153-top)*2);pts.push([x,top],[nx,top]);x=nx+.01}
       const step='<path class="tp-leadf" d="M'+x0+' '+roof(x0)+' '+pts.map(p=>'L'+r(p[0])+' '+r(p[1])).join(" ")+' L'+r(x0+W)+' '+r(roof(x0+W))+' Z"/>';
-      return svg(150,130,panel(x0,49.5,W,6,s)+brickwork(x0-3,39,W+6,1,s,BOND.stretcher,{headers:false})+brickwork(x0-6,28.5,W+12,1,s,k=>[102.5].concat(rep([215],6)),{headers:false})+
+      return svg(150,130,view("Side view")+panel(x0,49.5,W,6,s)+brickwork(x0-3,39,W+6,1,s,BOND.stretcher,{headers:false})+brickwork(x0-6,28.5,W+12,1,s,k=>[102.5].concat(rep([215],6)),{headers:false})+
         '<path class="tp-mortar" d="M'+(x0-6)+' 28 L150 20 H172 L'+r(x0+W+6)+' 28 Z"/><path class="tp-pot" d="M150 20 L152 4 H170 L172 20 Z"/>'+
         '<path class="tp-cent" d="M144.4 28 V104 M177.2 28 V88"/>'+
         '<path class="tp-roof" d="M20 160 L300 20 V160 Z"/>'+step,
@@ -606,19 +744,19 @@
        bricks and a plinth course with a bevelled top above the base. */
     decor:()=>{const s=.2,X=20,W=280,y=k=>6+k*15,row=(k,f,cls)=>brickwork(X,y(k),W,1,s,()=>f,{headers:false}).replace(/tp-b[123]/g,m=>cls||m);
       let dent="";const hw=102.5*s,step=112.5*s;for(let i=0;X+i*step<X+W;i++){const w=Math.min(hw,X+W-(X+i*step));dent+='<rect class="'+(i%2?"tp-rec":"tp-b2")+'" x="'+r(X+i*step)+'" y="'+y(1)+'" width="'+r(w)+'" height="13"/>'+(i%2?"":'<rect class="tp-shadow2" x="'+r(X+i*step)+'" y="'+(y(1)+13)+'" width="'+r(w)+'" height="3"/>')}
-      return svg(320,130,'<rect class="tp-mortar" x="'+X+'" y="6" width="'+W+'" height="118"/>'+row(0,BOND.stretcher(0))+row(2,BOND.stretcher(1))+bw(s)+dent+'</g>'+row(3,BOND.stretcher(0))+row(4,BOND.stretcher(1),"tp-bf")+row(5,BOND.stretcher(0))+
+      return svg(320,130,view("Elevation")+'<rect class="tp-mortar" x="'+X+'" y="6" width="'+W+'" height="118"/>'+row(0,BOND.stretcher(0))+row(2,BOND.stretcher(1))+bw(s)+dent+'</g>'+row(3,BOND.stretcher(0))+row(4,BOND.stretcher(1),"tp-bf")+row(5,BOND.stretcher(0))+
         row(6,BOND.stretcher(1))+'<rect class="tp-chamf" x="'+X+'" y="'+y(6)+'" width="'+W+'" height="4"/>'+row(7,BOND.stretcher(0)),
         "A brick wall with a dentil course of alternate projecting headers near the top, a string course of contrasting buff bricks across the middle, and a plinth course with a bevelled top near the bottom")},
     /* A corbel in section: three courses each stepping out a quarter brick (56 mm), 168 mm in all, less than the
        215 mm wall it comes out of. */
     corbel:()=>{const s=.34,X=110,W=215*s,c=75*s,b=65*s,top=8;let o="";
       const N=[3,2,1,0,0];N.forEach((n,k)=>{const w=r(W+n*56.25*s);o+='<rect class="tp-mortar" x="'+X+'" y="'+r(top+k*c)+'" width="'+r(W+(k<4?N[k+1]:n)*56.25*s)+'" height="'+r(k<4?c:b)+'"/><rect class="tp-brick" x="'+X+'" y="'+r(top+k*c)+'" width="'+w+'" height="'+r(b)+'"/>'});
-      return svg(320,132,o+'<path class="tp-cent" d="M'+r(X+W)+' 4 V128"/>',
+      return svg(320,132,view("Section")+o+'<path class="tp-cent" d="M'+r(X+W)+' 4 V128"/>',
         "A corbel cut through: three brick courses each stepping out a quarter brick further than the one below, from a one-brick wall")},
     /* Brick cladding on a concrete frame, in section: a steel support angle bolted to the slab edge carries the
        brickwork above; a compressible movement joint sits under it; a cavity tray over it; ties back to the frame. */
     supportangle:()=>{const s=.4,bx=166,bw=102.5*s,cr=(y,h)=>'<rect class="tp-brick" x="'+bx+'" y="'+y+'" width="'+r(bw)+'" height="'+h+'"/>';
-      return svg(320,150,'<rect class="tp-block" x="60" y="0" width="50" height="58"/><rect class="tp-block" x="60" y="100" width="50" height="50"/><rect class="tp-conc" x="20" y="58" width="90" height="42"/>'+
+      return svg(320,150,view("Section")+'<rect class="tp-block" x="60" y="0" width="50" height="58"/><rect class="tp-block" x="60" y="100" width="50" height="50"/><rect class="tp-conc" x="20" y="58" width="90" height="42"/>'+
         '<rect class="tp-mortar" x="'+bx+'" y="0" width="'+r(bw)+'" height="96"/>'+cr(0,6)+cr(10,26)+cr(40,26)+cr(70,26)+
         '<path class="tp-dpc" d="M111 40 L'+bx+' 88 V95 H'+r(bx+bw)+'"/>'+
         '<path class="tp-hang" d="M110 64 H114 V94 H'+r(bx+bw-6)+' V98 H110 Z"/><rect class="tp-nail" x="100" y="72" width="16" height="4"/>'+
@@ -628,7 +766,7 @@
         "A section through brick cladding on a concrete frame: a steel support angle bolted to the slab edge carries the brickwork, a cavity tray runs over it, a compressible movement joint sits under it, and ties hold the brickwork back to the frame")},
     /* A drain in long section: pipe on a granular bed and surround laid to a steady fall into an inspection chamber,
        trench backfilled above. The fall is exaggerated so you can see it. */
-    drain:()=>svg(320,130,'<rect class="tp-soil" x="0" y="20" width="320" height="110"/><path class="tp-ground" d="M0 20 H320"/>'+
+    drain:()=>svg(320,130,view("Long section")+'<rect class="tp-soil" x="0" y="20" width="320" height="110"/><path class="tp-ground" d="M0 20 H320"/>'+
       '<rect class="tp-backfill" x="10" y="21" width="230" height="100"/><path class="tp-gravel" d="M10 82 L240 94 V121 H10 Z"/>'+olLine("tp-pipe3","M10 94 L246 106",9,"pipe")+''+
       '<rect class="tp-brick" x="240" y="16" width="12" height="104"/><rect class="tp-brick" x="292" y="16" width="12" height="104"/><rect class="tp-conc" x="240" y="120" width="64" height="8"/>'+
       '<path class="tp-conc" d="M252 102 Q272 118 292 102 V120 H252 Z"/><rect class="tp-steel" x="236" y="12" width="72" height="5"/><rect class="tp-hole2" x="252" y="17" width="40" height="85"/><path class="tp-conc" d="M252 102 Q272 118 292 102 V120 H252 Z"/>'+
@@ -638,7 +776,7 @@
        checked, and a temporary bench mark (TBM) peg. */
     profiles:()=>{const bh=(x,y)=>'<rect class="tp-wood" x="'+(x-12)+'" y="'+(y-3)+'" width="24" height="6"/><circle class="tp-peg" cx="'+(x-12)+'" cy="'+y+'" r="3"/><circle class="tp-peg" cx="'+(x+12)+'" cy="'+y+'" r="3"/>',
       bv=(x,y)=>'<rect class="tp-wood" x="'+(x-3)+'" y="'+(y-12)+'" width="6" height="24"/><circle class="tp-peg" cx="'+x+'" cy="'+(y-12)+'" r="3"/><circle class="tp-peg" cx="'+x+'" cy="'+(y+12)+'" r="3"/>';
-      return svg(320,140,'<path class="tp-trench" fill-rule="evenodd" d="M84 29 H236 V111 H84 Z M96 41 H224 V99 H96 Z"/>'+
+      return svg(320,140,view("Plan")+'<path class="tp-trench" fill-rule="evenodd" d="M84 29 H236 V111 H84 Z M96 41 H224 V99 H96 Z"/>'+
         '<path class="tp-string" d="M34 35 H286 M34 105 H286 M90 8 V132 M230 8 V132"/><path class="tp-string2" d="M90 35 L230 105 M230 35 L90 105"/>'+
         bv(34,35)+bv(286,35)+bv(34,105)+bv(286,105)+bh(90,8)+bh(230,8)+bh(90,132)+bh(230,132)+
         '<circle class="tp-peg" cx="300" cy="128" r="5"/><path class="tp-bm" d="M293 117 L300 107 L307 117 Z M290 118 H310"/>',
@@ -647,7 +785,7 @@
        serrated scoop that spreads the jointing mortar. */
     thinjoint:()=>{const s=.14,bw=440*s,bh=215*s,X=20,W=190;let o="";
       for(let k=0;k<3;k++){const y=104-1.4-(k+1)*(bh+.42);let x=X-(k%2?bw/2:0);while(x<X+W){const a=Math.max(x,X),w=Math.min(x+bw,X+W)-a;if(w>1)o+='<rect class="tp-aircrete" x="'+r(a)+'" y="'+r(y)+'" width="'+r(w-.42)+'" height="'+r(bh)+'"/>';x+=bw+.42}}
-      return svg(320,130,'<rect class="tp-conc" x="10" y="104" width="210" height="22"/><rect class="tp-mortar" x="'+X+'" y="101.2" width="'+W+'" height="2.8"/><path class="tp-dpc" d="M'+X+' 104 H'+(X+W)+'"/>'+o+
+      return svg(320,130,view("Elevation")+'<rect class="tp-conc" x="10" y="104" width="210" height="22"/><rect class="tp-mortar" x="'+X+'" y="101.2" width="'+W+'" height="2.8"/><path class="tp-dpc" d="M'+X+' 104 H'+(X+W)+'"/>'+o+
         '<path class="tp-scoop" d="M236 46 H300 V70 H236 Z"/><path class="tp-teeth2" d="M236 70 '+Array.from({length:8},(_,k)=>'l4 6 l4 -6').join(" ")+'"/><rect class="tp-grip2" x="258" y="30" width="20" height="8" rx="3"/><path class="tp-shank" d="M262 38 V46 M274 38 V46"/>',
         "Thin joint aircrete blockwork: the first course on a normal mortar bed over the DPC, then courses with 2 to 3 millimetre joints, next to the serrated scoop used to spread the jointing mortar")},
     /* A wall curved on plan, built in headers so joints stay small, with the trammel (radius rod) swinging from the
@@ -655,7 +793,7 @@
     curved:()=>{const s=.05,cx=160,cy=140,R=125,D=215*s,h=102.5*s,n=46,th=.96;let o="";
       for(let k=0;k<n;k++){const a=-th+(k+.5)*2*th/n,c=Math.cos(a),sn=Math.sin(a),px=(rr,w)=>r(cx+rr*sn+w*c)+' '+r(cy-rr*c+w*sn);
         o+='<path class="tp-b'+(1+k%3)+'" d="M'+px(R-D,-h/2)+' L'+px(R,-h/2)+' L'+px(R,h/2)+' L'+px(R-D,h/2)+' Z"/>'}
-      return svg(320,150,'<path class="tp-mortar" d="M'+polar(cx,cy,R-D,-th)+' A'+(R-D)+' '+(R-D)+' 0 0 1 '+polar(cx,cy,R-D,th)+' L'+polar(cx,cy,R,th)+' A'+R+' '+R+' 0 0 0 '+polar(cx,cy,R,-th)+' Z"/>'+o+
+      return svg(320,150,view("Plan")+'<path class="tp-mortar" d="M'+polar(cx,cy,R-D,-th)+' A'+(R-D)+' '+(R-D)+' 0 0 1 '+polar(cx,cy,R-D,th)+' L'+polar(cx,cy,R,th)+' A'+R+' '+R+' 0 0 0 '+polar(cx,cy,R,-th)+' Z"/>'+o+
         olLine("tp-rod",'M'+cx+' '+cy+' L'+polar(cx,cy,R,.42),4,"rc")+'<circle class="tp-peg" cx="'+cx+'" cy="'+cy+'" r="5"/>',
         "A wall curved on plan, seen from above, built in headers, with a trammel rod pivoting on a peg at the centre of the curve reaching out to the face of the wall")},
     /* A simple bar chart programme: when each activity runs and what has to finish first. */
@@ -664,7 +802,7 @@
         rows.map((w,i)=>{const y=20+i*23;return t(56,y+12,w[0],"tp-sm")+'<rect class="tp-bar" x="'+(X+w[1]*wk+2)+'" y="'+y+'" width="'+((w[2]-w[1])*wk-4)+'" height="14" rx="3"/>'}).join("")+t(206,126,"Weeks","tp-xs"),
         "A bar chart programme over 8 weeks: set out in week 1, foundations weeks 2 and 3, walls to DPC in week 4, superstructure weeks 5 to 8")},
     /* Repointing in section, face on the left: joints raked out to at least 15 mm, then pointed with matching mortar. */
-    repoint:()=>svg(320,120,[["Raked out",'<rect class="tp-mortar2" x="15" y="39" width="45" height="6"/>'],["Repointed",'<rect class="tp-mortar2" x="15" y="39" width="45" height="6"/><rect class="tp-mortar" x="0" y="39" width="15" height="6"/>']].map((j,i)=>{const x=50+i*140;
+    repoint:()=>svg(320,120,view("Section")+[["Raked out",'<rect class="tp-mortar2" x="15" y="39" width="45" height="6"/>'],["Repointed",'<rect class="tp-mortar2" x="15" y="39" width="45" height="6"/><rect class="tp-mortar" x="0" y="39" width="15" height="6"/>']].map((j,i)=>{const x=50+i*140;
       return '<g transform="translate('+x+' 6)"><rect class="tp-brick" x="0" y="0" width="60" height="39"/><rect class="tp-brick" x="0" y="45" width="60" height="39"/>'+j[1]+'<path class="tp-face" d="M0 -2 V86"/></g>'+t(x+30,108,j[0],"tp-sm")}).join("")+
       '<path class="tp-thin" d="M124 51 H72"/>'+t(150,54,"15 mm+","tp-xs"),
       "Repointing cut through the wall, face on the left: the joint raked out at least 15 millimetres deep, then refilled with new mortar to the face")

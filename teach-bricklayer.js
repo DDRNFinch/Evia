@@ -259,7 +259,7 @@
         T("A coping with a drip throws water clear of the wall face.",true,"The drip stops water running back and staining the wall.")
       ]),
       lesson("bk-basic2","Tools and how buildings work","Using and caring for your tools",[
-        EX("Your hand tools","Tap each tool.","tools",[[34,36,"Trowel","Spreads and cuts mortar. Clean it off before it sets."],[142,30,"Spirit level","Checks level and plumb. Check it’s accurate by reversing it."],[250,32,"Line and pins","Stretched between the ends to keep courses straight."],[45,82,"Bolster","With a club hammer, cuts bricks cleanly."],[149,85,"Club hammer","Heavy hammer for the bolster and plugging chisel."],[254,86,"Jointer","Presses in the joint finish."]]),
+        EX("Your hand tools","Tap each tool.","tools",[[34,36,"Trowel","Spreads and cuts mortar. Clean it off before it sets."],[142,30,"Spirit level","Checks level and plumb. Check it’s accurate by reversing it."],[250,24,"Line and pins","Stretched between the ends to keep courses straight."],[45,82,"Bolster","With a club hammer, cuts bricks cleanly."],[149,85,"Club hammer","Heavy hammer for the bolster and plugging chisel."],[254,86,"Jointer","Presses in the joint finish."]]),
         M("Match the tool to its job",[["Spirit level","Level and plumb"],["Line and pins","Straight courses"],["Bolster and club hammer","Cutting bricks"],["Jointer","Finishing joints"]],"The right tool for each job."),
         SC("Kai","The head of my club hammer’s loose. I’ll tape it.","What do you say?",[["Stop using it and get it repaired or replaced","A flying hammer head can seriously hurt someone."],["Tape’s fine for light work","It can still come off."],["Just be careful","Care doesn’t stop it flying off."]]),
         J("Looking after your tools",[["Cleaning your trowel before the mortar sets",true,"Hard mortar ruins the blade."],["Leaving your level in the back of the van loose",false,"Knocks put it out of true."],["Storing tools dry at the end of the day",true,"Dry tools don’t rust."],["Using a level as a straight edge to tap bricks",false,"Hitting it knocks it out."]]),
@@ -270,7 +270,7 @@
       lesson("bk-basic3","Unit challenge","Building a simple wall",[
         TROPHY(6),
         Q("A wall needs to be 900 mm high to the top of a course. How many courses?",["12","9","10","15"],"900 ÷ 75 = 12."),
-        HOT("Tap the tool that keeps your courses straight between the ends","tools",[[34,36,22,"Trowel"],[142,30,30,"Spirit level"],[250,32,30,"Line and pins"],[45,84,18,"Bolster"],[149,85,26,"Club hammer"],[254,86,26,"Jointer"]],2,"Line and pins, stretched between the ends."),
+        HOT("Tap the tool that keeps your courses straight between the ends","tools",[[34,36,22,"Trowel"],[142,30,30,"Spirit level"],[250,26,26,"Line and pins"],[45,84,18,"Bolster"],[149,85,26,"Club hammer"],[254,86,26,"Jointer"]],2,"Line and pins, stretched between the ends."),
         SP("Sam’s wall. Tap the mistake.",["Checked the base was level","Built both ends first","Laid the middle without a line","Finished with a coping"],2,"Without a line, the middle won’t be straight or level."),
         T("Putting health and safety first means stopping work if something is unsafe.",true,"No job is worth an injury."),
         Q("What’s the drip under a coping for?",["To make rain drop clear of the wall face","To hold the coping on","To let air in","Decoration"],"Water falls off the drip instead of running down the face."),
@@ -336,7 +336,7 @@
     ]),
     unit("Set out Cavity Walling","Cavity wall setting out",[
       lesson("bk-cset1","Setting out a cavity wall","Profiles, gauge rods, DPCs and trays",[
-        EX("A cavity wall","Two leaves, usually brick outside and block inside, with a cavity between, tied together. Tap each part.","cavity",[[91,28,"Brick","The outer leaf, the face you see."],[139,24,"Insulation","Keeps the heat in. Fitted tight to the inner leaf."],[193,28,"Block","The inner leaf, carrying the floors and roof."],[166,58,"Wall tie","Ties the two leaves together across the cavity."],[92,92,"DPC","Stops damp rising up the wall."]]),
+        EX("A cavity wall","Two leaves, usually brick outside and block inside, with a cavity between, tied together. Tap each part.","cavity",[[123,42,"Brick","The outer leaf, the face you see."],[169,42,"Insulation","Keeps the heat in. Fitted tight to the inner leaf, leaving a clear cavity."],[199,42,"Block","The inner leaf, carrying the floors and roof."],[146,69,"Wall tie","Ties the two leaves together. The drip in the middle stops water crossing the cavity."],[123,136,"DPC","Stops damp rising up the wall. It goes in both leaves."]]),
         TE("DPC height","The DPC goes in both leaves, at least *150 mm* above the finished ground level, so rain splashing off the ground can’t soak up the wall.","dpc150"),
         G("The DPC must be at least [150] mm above ground level.",["50","75"],"At least 150 mm."),
         TE("The gauge rod","A gauge rod is marked every 75 mm course, with the sill, lintel and floor heights. Check each corner against it so both leaves and the openings line up.","gaugerod","Gauge rod"),
@@ -355,7 +355,7 @@
       ]),
       lesson("bk-cset3","Unit challenge","Setting out cavity walls",[
         TROPHY(6),
-        HOT("Tap the part that stops damp rising","cavity",[[91,40,20,"Brick"],[139,40,14,"Insulation"],[187,40,26,"Block"],[92,92,18,"DPC"]],3,"The DPC, in both leaves."),
+        HOT("Tap the part that stops damp rising","cavity",[[123,42,14,"Brick"],[169,42,13,"Insulation"],[199,42,14,"Block"],[123,136,11,"DPC"]],3,"The DPC, in both leaves."),
         Q("Ground level is at 0. What’s the lowest the DPC can be?",["150 mm above","At ground level","75 mm above","50 mm below"],"At least 150 mm above."),
         T("Weep holes let water out above cavity trays.",true,"So water in the cavity drains to the outside."),
         Q("Roughly how many bricks for 8 m² of half-brick wall?",["480","80","640","800"],"60 × 8 = 480."),

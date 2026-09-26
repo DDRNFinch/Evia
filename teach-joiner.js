@@ -37,7 +37,7 @@
       lesson("jn-window1","Making a casement window","Frame, casement, rebates and weathering",[
         EX("A casement window","The frame is fixed; the casement opens. Tap each part.","window",[[100,15,"Head","The top of the frame."],[25,70,"Jamb","The sides of the frame."],[102,64,"Casement","The opening part, made of stiles and rails."],[60,64,"Glazing","The glass sits in a rebate and is held with beads."],[258,68,"Sill","Sloped (weathered) so water runs off, with a drip underneath."]]),
         TE("Weathering and drips","The sill’s top slopes outwards, called *weathering*, so rain runs away. The *drip groove* underneath stops water creeping back under the sill to the wall.","window","Weathering"),
-        HOT("Tap the drip groove","window",[[238,86,10,"Drip groove"],[258,62,14,"Sill top"],[100,127,20,"Front of the sill"],[60,64,26,"Glass"]],0,"Under the sill: water drops off there instead of running back."),
+        HOT("Tap the drip groove","window",[[287,78,9,"Drip groove"],[262,48,13,"Sill top"],[100,127,20,"Front of the sill"],[60,64,26,"Glass"]],0,"Under the sill: water drops off there instead of running back."),
         O("Put making a window in order",["Read the drawing and cutting list","Mark out from the rod","Cut the joints and rebates","Dry-assemble and check it’s square","Glue up, fit ironmongery and glaze"],"Checking square before gluing saves trouble."),
         Q("How do you check a frame is square?",["Measure both diagonals: they should match","Look along it","Use a spirit level","Check one corner only"],"Equal diagonals mean square."),
         T("The sill slopes so rainwater runs away from the window.",true,"That slope is called weathering.")
@@ -52,7 +52,7 @@
       lesson("jn-window3","Unit challenge","Windows and drawings",[
         TROPHY(6),
         Q("Water is running back under a new sill and staining the wall. What’s probably missing?",["A drip groove","Glazing beads","A casement","Paint"],"The drip stops water creeping back underneath."),
-        LB("Label the window","window",[[40,6,100,12,"Head"],[40,96,25,90,"Jamb"],[150,6,120,40,"Casement"],[260,124,248,84,"Drip"]],"Head and jambs make the frame; the casement opens; the drip is under the sill."),
+        LB("Label the window","window",[[40,6,100,12,"Head"],[40,96,25,90,"Jamb"],[150,6,120,40,"Casement"],[296,124,287,78,"Drip"]],"Head and jambs make the frame; the casement opens; the drip is under the sill."),
         T("Equal diagonals mean a frame is square.",true,"Measure both before gluing."),
         SP("Kai’s window. Tap the mistake.",["Read the cutting list","Checked the diagonals","Glued up before a dry fit","Fitted the ironmongery"],2,"Dry-assemble first to find problems."),
         Q("What does RPE stand for?",["Respiratory protective equipment","Real personal equipment","Rapid power extraction","Risk and PPE"],"A mask that filters the air you breathe."),
@@ -61,7 +61,7 @@
     ]),
     unit("Straight staircases","Straight staircases",[
       lesson("jn-stairs1","Parts and the rules","Strings, treads, risers and the numbers",[
-        EX("A straight flight","Tap each part.","stair",[[60,110,"String","The side board that carries the steps."],[150,44,"Tread","What you step on."],[87,80,"Riser","The upright between treads."],[34,86,"Nosing","The front edge of the tread."]]),
+        EX("A straight flight","Tap each part.","stair",[[152,56,"String","The side board that carries the steps."],[141,38,"Tread","What you step on."],[86,95,"Riser","The upright between treads."],[82,74,"Nosing","The front edge of the tread."]]),
         TE("Rise and going","The *rise* is the height of one step; the *going* is its depth. For private stairs: rise no more than 220 mm, going at least 220 mm, pitch no more than 42°, and twice the rise plus the going between 550 and 700 mm.",null,"2R + G"),
         Q("A private stair has a 200 mm rise and a 250 mm going. Is 2R + G within the rules?",["Yes: 650 mm","No: 450 mm","No: 750 mm","Yes: 450 mm"],"2 × 200 + 250 = 650.",{again:G("2 × 180 + 240 = [600], so it’s within the rules.",["420","780"],"Between 550 and 700.")}),
         Q("The total rise is 2,600 mm with 13 risers. What is each rise?",["200 mm","216 mm","260 mm","130 mm"],"2,600 ÷ 13 = 200 mm."),
@@ -78,7 +78,7 @@
       ]),
       lesson("jn-stairs3","Unit challenge","Straight staircases",[
         TROPHY(6),
-        HOT("Tap the nosing","stair",[[34,86,14,"Front edge"],[87,80,14,"Upright"],[60,110,18,"Side board"],[150,44,16,"Top of a step"]],0,"The front edge of the tread."),
+        HOT("Tap the nosing","stair",[[82,74,9,"Front edge"],[86,95,9,"Upright"],[152,56,14,"Side board"],[141,38,11,"Top of a step"]],0,"The front edge of the tread."),
         Q("A stair rises 2,640 mm with 12 risers. What’s each rise, and is it allowed?",["220 mm, the most allowed","200 mm, allowed","240 mm, too steep","264 mm, too steep"],"2,640 ÷ 12 = 220 mm, right at the limit."),
         T("The going must be at least 220 mm on a private stair.",true,"A minimum 220 mm going."),
         SP("Sam’s stair. Tap the mistake.",["Every riser 200 mm","Going of 240 mm","Last riser 180 mm to fit the landing","Headroom of 2.1 m"],2,"Every riser must be the same."),
@@ -248,7 +248,7 @@
       ]),
       lesson("jn-mach3","Unit challenge","Fixed machinery",[
         TROPHY(5),
-        HOT("Tap the part that should sit just above the work","bandsaw",[[168,38,12,"Guard"],[160,74,20,"Table"],[160,118,24,"Base"],[196,14,12,"Top of the wheel housing"]],0,"The top guard."),
+        HOT("Tap the part that should sit just above the work","bandsaw",[[184,53,10,"Guard"],[125,71,9,"Table"],[166,120,18,"Base"],[166,16,14,"Top of the wheel housing"]],0,"The top guard."),
         Q("Which machine makes timber flat, square and to thickness?",["Planer and thicknesser","Band saw","Mortiser","Crosscut saw"],"Flat, square, then to thickness."),
         T("You can change a blade with the machine switched off at the start button.",false,"Isolate it at the supply first."),
         SP("Jay’s machine check. Tap the mistake.",["Checked he was authorised","Checked the extraction","Set the band saw guard at its highest","Used a push stick"],2,"The guard goes just above the work."),
