@@ -160,7 +160,9 @@
     const style=document.createElement("style");
     style.id="evia-theme-styles";
     style.textContent=
-      '#evia-theme-screen{position:fixed;inset:0;z-index:10050;background:var(--bg,#fffdfa);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;opacity:0;transition:opacity .4s ease}'+
+      '#evia-theme-screen{position:fixed;inset:0;z-index:10050;background:var(--bg,#fffdfa);display:flex;flex-direction:column;align-items:center;padding:max(32px,env(safe-area-inset-top)) 24px max(32px,env(safe-area-inset-bottom));opacity:0;transition:opacity .4s ease;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}'+
+      /* Centred when it fits, scrolls from the top when there are more shapes or colours than fit. */
+      '#evia-theme-screen>.evia-theme-inner{margin:auto 0;flex:none}'+
       '#evia-theme-screen.visible{opacity:1}'+
       '#evia-theme-screen.leaving{opacity:0}'+
       '.evia-theme-inner{max-width:420px;width:100%;text-align:center;position:relative}'+
