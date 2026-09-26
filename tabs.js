@@ -7,6 +7,7 @@
   const ICON={
     course:'<svg viewBox="0 0 24 24"><rect x="3" y="14" width="8" height="5" rx="1"/><rect x="13" y="14" width="8" height="5" rx="1"/><rect x="8" y="8" width="8" height="5" rx="1"/><path d="M3 21h18"/></svg>',
     maths:'<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 7.5h8M8.5 12h1M12 12h1M15 12h1M8.5 16h1M12 16h1M15 16h1"/></svg>',
+    edi:'<svg viewBox="0 0 24 24"><circle cx="8" cy="7.5" r="2.6"/><circle cx="16" cy="7.5" r="2.6"/><path d="M3.5 19c0-3 2-5 4.5-5s4.5 2 4.5 5M11.5 19c0-3 2-5 4.5-5s4.5 2 4.5 5"/></svg>',
     english:'<svg viewBox="0 0 24 24"><path d="M4 20l5.5-15h1L16 20M6.2 14.5h7.6"/><path d="M17 12.5c1-1 3.5-1 3.5 1.2V20M20.5 16.2c-2.7-.4-4 .5-4 1.9 0 1 .8 1.9 2 1.9 1.3 0 2-1 2-1"/></svg>'
   };
   /* Lessons done out of the total for a list of units, from the Teach me store. */
@@ -14,18 +15,27 @@
     let L={};try{L=((JSON.parse(localStorage.getItem("evia7-teach")||"{}")||{})[course]||{}).lessons||{}}catch(_){}
     const ls=[].concat(...us.map(u=>u.lessons));return {done:ls.filter(l=>L[l.id]&&L[l.id].done).length,total:ls.length};
   }
+  /* Level from all-time XP: a new level every 200 XP. */
+  const LEVEL_XP=200;
+  const PLAY='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg>';
   function teachPage(){
-    const T=window.eviaTeach,E=window.EVIA_TEACH||{fs:[]};
+    const T=window.eviaTeach,E=window.EVIA_TEACH||{fs:[]},R=window.eviaRewards,I=(E.ui&&E.ui.ICON)||{};
     const trade=(T&&T.COURSES&&T.COURSES[course])||[],fs=f=>(E.fs||[]).filter(u=>u.fs===f);
-    const card=(id,title,c)=>'<button type="button" class="tt-card" data-go="'+id+'"><span class="tt-ic" aria-hidden="true">'+ICON[id]+'</span><span class="tt-copy"><strong>'+esc(title)+'</strong><small>'+c.done+' of '+c.total+' lessons</small>'+
-      '<i class="tt-bar"><i style="width:'+(c.total?Math.round(c.done/c.total*100):0)+'%"></i></i></span><span class="tt-chev" aria-hidden="true">›</span></button>';
-    const cs=[count(trade),count(fs("maths")),count(fs("english"))],done=cs.reduce((n,c)=>n+c.done,0),total=cs.reduce((n,c)=>n+c.total,0),R=window.eviaRewards;
-    /* The summary at the top, in the same card style as My progress. */
-    const hero='<div class="pv-card pv-alert ui-hero"><span class="pv-head"><span class="pv-title">Lessons done</span></span><span class="pv-big">'+done+'<small> / '+total+'</small></span>'+
-      '<span class="pv-sub">'+(done?"1 coin for every "+((R&&R.XP_PER_COIN)||5)+" XP you earn":"Start with your course lessons. Each one earns coins.")+'</span><i class="pv-bar ui-hero-bar"><i style="width:'+(total?Math.round(done/total*100):0)+'%"></i></i></div>';
-    scr().innerHTML=head("Teach me")+hero+'<h2 class="ui-section-label">Subjects</h2><div class="tt-list">'+card("course",courseName()||"Your course",cs[0])+card("maths","Maths",cs[1])+card("english","English",cs[2])+'</div>'+games();
+    const subjects=[["course",courseName()||"Your course",count(trade)],["maths","Maths",count(fs("maths"))],["english","English",count(fs("english"))],["edi","EDI",count(fs("edi"))]].filter(x=>x[2].total||x[0]==="course");
+    const me=T&&T.stats?T.stats():{xp:0,streak:0,today:false},lvl=1+Math.floor(me.xp/LEVEL_XP),inLvl=me.xp%LEVEL_XP,bal=R&&R.balance?R.balance():0;
+    /* The player card: Evia, the level and XP to the next one, the day streak and coins. */
+    const player='<section class="tg-player"><div class="tg-me"><span class="tg-evia evia-mini" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span><span class="tg-lvl">Level '+lvl+'</span></div>'+
+      '<div class="tg-xp"><div class="tg-xp-top"><strong>'+inLvl+'<small> / '+LEVEL_XP+' XP</small></strong><span>to level '+(lvl+1)+'</span></div><i class="tg-xp-bar"><i style="width:'+Math.round(inLvl/LEVEL_XP*100)+'%"></i></i>'+
+      '<div class="tg-pills"><span class="tg-pill fire'+(me.today?" lit":"")+'">'+(I.flame||"")+'<b>'+me.streak+'</b> day streak</span><span class="tg-pill coin">'+(R&&R.coin?R.coin():"")+'<b>'+bal+'</b> coins</span></div></div></section>';
+    /* Up next: one tap straight into the next lesson. */
+    const nx=T&&T.nextUp?T.nextUp():null;
+    const next=nx?'<button type="button" class="tg-next" data-play="'+esc(nx.id)+'"><span class="tg-next-copy"><small>'+(nx.resume?"Carry on":"Up next")+' · '+esc(nx.unit)+'</small><strong>'+esc(nx.title)+'</strong><span>Lesson '+nx.n+' of '+nx.of+' · about '+nx.mins+' min</span></span><span class="tg-play">'+PLAY+'</span></button>':"";
+    const tile=([id,title,c])=>{const pct=c.total?Math.round(c.done/c.total*100):0;
+      return '<button type="button" class="tt-card tg-tile tg-'+id+'" data-go="'+id+'"><span class="tg-tile-top"><span class="tg-tile-ic" aria-hidden="true">'+ICON[id]+'</span><span class="tg-ring" style="--p:'+pct+'" aria-hidden="true"><b>'+pct+'%</b></span></span><strong>'+esc(title)+'</strong><small>'+c.done+' of '+c.total+' lessons</small></button>'};
+    scr().innerHTML=head("Teach me")+player+next+'<h2 class="ui-section-label">Subjects</h2><div class="tg-grid">'+subjects.map(tile).join("")+'</div>'+games();
     scr().querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{if(T)T.open(b.dataset.go)});
-    scr().querySelectorAll("[data-game]").forEach(b=>b.onclick=()=>{const R=window.eviaRewards,id=b.dataset.game;
+    scr().querySelectorAll("[data-play]").forEach(b=>b.onclick=()=>{if(T&&T.play)T.play(b.dataset.play)});
+    scr().querySelectorAll("[data-game]").forEach(b=>b.onclick=()=>{const id=b.dataset.game;
       if(R&&R.owns(id))window.eviaGames.open(b.dataset.key);else if(R)R.openItem(id)});
   }
   /* Mini games: unlocked in Rewards, played here. */
@@ -33,10 +43,10 @@
   function games(){
     const G=window.eviaGames,R=window.eviaRewards;if(!G||!R)return "";
     const PRICE={common:30,rare:80,epic:180},room=R.gameRoom(),earned=R.GAME_DAILY-room;
-    return '<section class="tt-games"><div class="tt-games-head"><h2 class="ui-section-label">Mini games</h2><span>'+(room?earned+" of "+R.GAME_DAILY+" game coins today":"Today’s game coins collected")+'</span></div><div class="tt-list">'+
+    return '<section class="tt-games"><div class="tt-games-head"><h2 class="ui-section-label">Mini games</h2><span>'+(room?earned+" of "+R.GAME_DAILY+" game coins today":"Today’s game coins collected")+'</span></div><div class="tg-games">'+
       G.GAMES.map(g=>{const own=R.owns(g.id);
-        return '<button type="button" class="tt-card tt-game'+(own?"":" locked")+'" data-game="'+g.id+'" data-key="'+g.key+'"><span class="tt-ic" aria-hidden="true">'+G.iconFor(g.key)+'</span><span class="tt-copy"><strong>'+esc(g.label)+'</strong><small>'+esc(own?g.about:"Unlock it in Rewards")+'</small></span>'+
-          (own?'<span class="tt-play">Play</span>':'<span class="tt-lock">'+LOCK+(PRICE[g.rarity]?'<b>'+PRICE[g.rarity]+'</b>':"")+'</span>')+'</button>'}).join("")+'</div></section>';
+        return '<button type="button" class="tt-game tg-game g-'+g.key+(own?"":" locked")+'" data-game="'+g.id+'" data-key="'+g.key+'"><span class="tg-game-ic" aria-hidden="true">'+G.iconFor(g.key)+'</span><strong>'+esc(g.label)+'</strong><small>'+esc(own?g.about:"Unlock in Rewards")+'</small>'+
+          (own?'<span class="tg-game-go">'+PLAY+'Play</span>':'<span class="tg-game-go lock">'+LOCK+(PRICE[g.rarity]?'<b>'+PRICE[g.rarity]+'</b>':"")+'</span>')+'</button>'}).join("")+'</div></section>';
   }
   function rewardsPage(){if(window.eviaRewards)window.eviaRewards.page();else scr().innerHTML=head("Rewards")}
 

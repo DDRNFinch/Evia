@@ -87,7 +87,7 @@
     document.body.appendChild(root);
     onKey=e=>{if(e.key==="Escape")close()};document.addEventListener("keydown",onKey);
   }
-  function open(which){section=which==="maths"||which==="english"?which:"course";shell("Teach me");path()}
+  function open(which){section=["maths","english","edi"].includes(which)?which:"course";shell("Teach me");path()}
   function close(){
     if(!root)return;document.removeEventListener("keydown",onKey);
     if(window.eviaOtj)window.eviaOtj.flush();
@@ -99,7 +99,7 @@
   const mins=l=>Math.max(2,Math.round(l.steps.reduce((n,s)=>n+({banner:4,teach:14,learn:18,explore:30,watch:28,cards:30,quick:30,sort:40,judge:35,match:30,label:35}[s.t]||18),0)/60));
   function unitHtml(u,L,counter){
     const d=u.lessons.filter(l=>isDone(L,l)).length,nextI=u.lessons.findIndex(l=>!isDone(L,l));
-    return '<section class="tm-unit'+(u.fs?" fs":"")+'"><div class="tm-unit-head"><span class="tm-unit-k">'+(u.fs?"Level 2":"Unit")+'</span><h2>'+esc(u.unit)+'</h2><small>'+u.lessons.length+' lessons'+(u.fs?"":" · covers the whole unit")+'</small><span class="tm-unit-bar"><i style="width:'+Math.round(d/u.lessons.length*100)+'%"></i></span></div>'+
+    return '<section class="tm-unit'+(u.fs?" fs":"")+'"><div class="tm-unit-head"><span class="tm-unit-k">'+(u.fs==="edi"?"For everyone":u.fs?"Level 2":"Unit")+'</span><h2>'+esc(u.unit)+'</h2><small>'+u.lessons.length+' lessons'+(u.fs?"":" · covers the whole unit")+'</small><span class="tm-unit-bar"><i style="width:'+Math.round(d/u.lessons.length*100)+'%"></i></span></div>'+
       '<ol class="tm-path">'+u.lessons.map((l,k)=>{
         const n=counter.n++,r=L[l.id],state=isDone(L,l)?"done":k===nextI?"next":u.fs?"open":"locked",res=state==="next"&&resumeOf(l.id);
         return '<li class="tm-node '+state+(l.challenge?" trophy":"")+'" style="--i:'+(n%4)+'"><button type="button" data-lesson="'+l.id+'"'+(state==="locked"?' disabled aria-disabled="true"':"")+' aria-label="'+esc(l.title)+(state==="done"?", done":state==="locked"?", locked":"")+'">'+
@@ -114,9 +114,9 @@
   function path(){
     const L=mine(),us=sectionUnits(),all=[].concat(...us.map(u=>u.lessons)),p=profile();
     const done=all.filter(l=>isDone(L,l)).length,next=all.find(l=>!isDone(L,l)),name=String(p.name||"").split(/\s+/)[0];
-    const title=section==="course"?"Teach me":"Teach me · "+(section==="maths"?"Maths":"English");
+    const title=section==="course"?"Teach me":"Teach me · "+({maths:"Maths",english:"English",edi:"EDI"}[section]);
     const say=!all.length?"I don’t have lessons for your course yet, but they’re on the way. You can try maths or English in the meantime.":
-      done===0?"Hi"+(name?" "+esc(name):"")+"! I’ll teach you "+(section==="course"?"everything in each unit":section==="maths"?"Level 2 maths, with examples from site":"Level 2 reading, writing, speaking and listening")+", a few minutes at a time. Tap "+(section==="course"?"the first lesson":"any lesson")+" to start.":
+      done===0?"Hi"+(name?" "+esc(name):"")+"! I’ll teach you "+(section==="course"?"everything in each unit":section==="maths"?"Level 2 maths, with examples from site":section==="edi"?"equality, diversity and inclusion: your rights at work, and treating others fairly":"Level 2 reading, writing, speaking and listening")+", a few minutes at a time. Tap "+(section==="course"?"the first lesson":"any lesson")+" to start.":
       done===all.length?"You’ve finished every lesson here. Nice work! Replay any lesson to beat your score.":
       "Welcome back"+(name?", "+esc(name):"")+". Next up: <strong>"+esc(next.title)+"</strong>.";
     const others=section==="course"&&!(window.eviaNvq&&window.eviaNvq.on())?courseOrder().filter(n=>!us.some(u=>u.unit===n)).slice(0,4):[];
@@ -351,5 +351,16 @@
   }
 
   /* current() is what's on screen now (the tests use it to play a lesson through). */
-  window.eviaTeach={open,available,hasCourse,summary,viewFor,confidence,stats,COURSES,FS,current:()=>current};
+  /* The next lesson to play on the course (the first unit, in course order, with one left), for the Teach me tab. */
+  function nextUp(){
+    const L=mine();
+    for(const u of trade()){const k=u.lessons.findIndex(l=>!isDone(L,l));if(k>=0){const l=u.lessons[k];return {id:l.id,title:l.title,unit:u.unit,n:k+1,of:u.lessons.length,mins:mins(l),resume:!!resumeOf(l.id)}}}
+    return null;
+  }
+  /* Straight into a lesson from outside Teach me (its path is underneath, for when it ends). */
+  function play(id){
+    const u=units().find(x=>x.lessons.some(l=>l.id===id));if(!u)return;const l=u.lessons.find(x=>x.id===id);
+    section=u.fs||"course";shell("Teach me");path();lesson(l);
+  }
+  window.eviaTeach={open,play,nextUp,available,hasCourse,summary,viewFor,confidence,stats,COURSES,FS,current:()=>current};
 })();

@@ -1,4 +1,4 @@
-const VERSION = "2026-10-15-evia7-v125";
+const VERSION = "2026-10-15-evia7-v126";
 const CACHE_NAME = "evia7-offline-" + VERSION;
 
 const APP_SHELL = [
@@ -39,6 +39,7 @@ const APP_SHELL = [
   "./teach-play.js",
   "./teach-maths.js",
   "./teach-english.js",
+  "./teach-edi.js",
   "./teach-bricklayer.js",
   "./teach-joiner.js",
   "./teach-site.js",

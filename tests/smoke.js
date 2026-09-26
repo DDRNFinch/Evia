@@ -250,7 +250,11 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>{window.chat({quiet:true});setTimeout(()=>window.eviaCoachFlows.upskill(),200)});await page.waitForTimeout(2500);
     const upskillHasTeach=await page.evaluate(()=>[...document.querySelectorAll(".ui-replies button")].some(b=>/Teach me/.test(b.textContent)));
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";nav("teach")});await page.waitForTimeout(600);
-    check("Teach me is a tab with the course, maths and English, and it's no longer in Upskill me",!upskillHasTeach&&await page.evaluate(()=>{const t=[...document.querySelectorAll("[data-go] strong")].map(b=>b.textContent);return t.join()==="Bricklayer,Maths,English"&&!document.querySelector(".tm-tile")}));
+    check("Teach me is a tab with the course, maths, English and EDI, and it's no longer in Upskill me",!upskillHasTeach&&await page.evaluate(()=>{const t=[...document.querySelectorAll("[data-go] strong")].map(b=>b.textContent);return t.join()==="Bricklayer,Maths,English,EDI"&&!document.querySelector(".tm-tile")}));
+    check("EDI opens from Teach me with its lessons, and Up next goes straight into a lesson",await page.evaluate(async()=>{const w=t=>new Promise(r=>setTimeout(r,t));
+      document.querySelector('[data-go="edi"]').click();await w(400);const edi=!!document.querySelector('[data-lesson="edi-what"]')&&/EDI/.test(document.querySelector(".tm-bar").textContent);
+      document.querySelector(".tm-x").click();await w(400);nav("teach");await w(300);document.querySelector("[data-play]").click();await w(500);
+      const inLesson=!!document.querySelector(".tm")&&!document.querySelector(".tm-path");document.querySelector(".tm-x").click();await w(300);const x=document.querySelector(".tm-x");if(x)x.click();await w(300);nav("teach");await w(300);return edi&&inLesson}));
     await page.evaluate(()=>document.querySelector('[data-go="course"]').click());await page.waitForTimeout(600);
     // Rewards: free starters, locked items, buying, and loot boxes that refund duplicates and guarantee an epic.
     await page.evaluate(()=>{const x=document.querySelector(".tm-x");if(x)x.click()});await page.waitForTimeout(300);

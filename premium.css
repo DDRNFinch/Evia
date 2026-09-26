@@ -92,3 +92,57 @@ html body .ui-sup-list .supporting-course-card{display:grid!important}
 .tt-games-head{margin:26px 4px 10px!important;align-items:center!important}html body .tt-games-head .ui-section-label{margin:0}
 .tt-games-head span{font-size:12px!important}
 html body .section-title.nvq-section{color:var(--ui-muted)!important;margin:26px 4px 10px}
+
+/* ---------- Teach me: a game hub ----------
+   A dark player card (like the loot box), one bright "Up next" card to jump straight in, colour-coded subject tiles
+   with progress rings, and a scrolling row of game cards. */
+.tg-player{display:flex;gap:16px;align-items:center;padding:18px;border-radius:24px;color:#fff;background:radial-gradient(120% 140% at 0% 0%,#3b3576 0%,#211d45 55%,#15122e 100%);box-shadow:0 12px 30px rgba(21,18,46,.28);position:relative;overflow:hidden}
+.tg-player::after{content:"";position:absolute;right:-40px;top:-50px;width:170px;height:170px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--yellow) 40%,transparent),transparent 70%);pointer-events:none}
+.tg-me{flex:none;display:flex;flex-direction:column;align-items:center;gap:8px}
+html body .tg-evia{width:62px;height:62px;border-width:4px;background:#fffdfa}
+.tg-lvl{padding:3px 10px;border-radius:999px;background:var(--yellow);color:var(--ui-on-accent);font-size:12px;font-weight:800;white-space:nowrap}
+.tg-xp{flex:1;min-width:0;position:relative;z-index:1}
+.tg-xp-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.tg-xp-top strong{font-size:22px;font-weight:800;letter-spacing:-.02em}.tg-xp-top strong small{font-size:13px;font-weight:700;opacity:.7}
+.tg-xp-top span{font-size:12px;opacity:.7;font-weight:600}
+.tg-xp-bar{display:block;height:10px;margin:8px 0 12px;border-radius:999px;background:rgba(255,255,255,.14);overflow:hidden}
+.tg-xp-bar>i{display:block;height:100%;min-width:10px;border-radius:999px;background:linear-gradient(90deg,var(--yellow),color-mix(in srgb,var(--yellow) 70%,#fff))}
+.tg-pills{display:flex;flex-wrap:wrap;gap:8px}
+.tg-pill{display:inline-flex;align-items:center;gap:5px;padding:5px 10px 5px 7px;border-radius:999px;background:rgba(255,255,255,.1);font-size:12px;font-weight:600;color:rgba(255,255,255,.85)}
+.tg-pill b{font-size:13px;font-weight:800;color:#fff}
+.tg-pill svg{width:17px;height:17px}.tg-pill.fire svg{fill:#9aa3af;stroke:none}.tg-pill.fire.lit svg{fill:#ff8a1f}
+.tg-next{display:flex;align-items:center;gap:14px;width:100%;margin:14px 0 0;padding:16px 16px 16px 20px;border:0;border-radius:22px;text-align:left;cursor:pointer;font:inherit;background:var(--yellow);color:var(--ui-on-accent);box-shadow:0 10px 24px color-mix(in srgb,var(--yellow) 35%,transparent);transition:transform .12s ease}
+.tg-next:active,.tg-tile:active,.tg-game:active{transform:scale(.98)}
+.tg-next-copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.tg-next-copy small{font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tg-next-copy strong{font-size:19px;font-weight:800;letter-spacing:-.02em;line-height:1.2}
+.tg-next-copy span{font-size:13px;font-weight:600;opacity:.75}
+.tg-play{flex:none;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:#fff;box-shadow:0 4px 12px rgba(16,24,40,.15);animation:tgBob 2.4s ease-in-out infinite}
+.tg-play svg{width:26px;height:26px;margin-left:3px;fill:var(--ui-ink,#172033)}
+@keyframes tgBob{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+.tg-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+html body .tg-tile{--c:var(--yellow);display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:14px;border:1px solid color-mix(in srgb,var(--c) 22%,transparent)!important;border-radius:20px;background:color-mix(in srgb,var(--c) 9%,#fff);box-shadow:var(--pm-shadow);text-align:left;transition:transform .12s ease}
+html body .tg-tile+.tg-tile{border-top:1px solid color-mix(in srgb,var(--c) 22%,transparent)}
+html body .tg-maths{--c:#3b82f6}html body .tg-english{--c:#8b5cf6}html body .tg-edi{--c:#e0457b}
+.tg-tile-top{display:flex;align-items:center;justify-content:space-between;width:100%;margin-bottom:10px}
+.tg-tile-ic{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:var(--c);color:#fff;box-shadow:0 6px 14px color-mix(in srgb,var(--c) 35%,transparent)}
+.tg-course .tg-tile-ic{color:var(--ui-on-accent)}
+.tg-tile-ic svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.tg-ring{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--c) calc(var(--p)*1%),color-mix(in srgb,var(--c) 15%,#fff) 0)}
+.tg-ring b{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#fff;font-size:10.5px;font-weight:800;color:var(--ui-ink)}
+.tg-tile strong{font-size:16px;font-weight:800;color:var(--ui-ink);line-height:1.2;overflow-wrap:anywhere}
+.tg-tile small{font-size:12px;color:var(--ui-muted);font-weight:600}
+.tg-games{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -4px;padding:2px 4px 14px;scrollbar-width:none}
+.tg-games::-webkit-scrollbar{display:none}
+.tg-game{--g1:#fb923c;--g2:#ea580c;flex:0 0 150px;scroll-snap-align:start;display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-height:176px;padding:14px;border:0;border-radius:22px;text-align:left;cursor:pointer;font:inherit;color:#fff;background:linear-gradient(160deg,var(--g1),var(--g2));box-shadow:0 10px 22px color-mix(in srgb,var(--g2) 30%,transparent);transition:transform .12s ease}
+.tg-game.g-crossword{--g1:#38bdf8;--g2:#0369a1}.tg-game.g-flappy{--g1:#a78bfa;--g2:#6d28d9}
+.tg-game-ic{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:rgba(255,255,255,.2);margin-bottom:auto}
+.tg-game-ic svg{width:26px;height:26px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tg-game strong{margin-top:12px;font-size:16px;font-weight:800}
+.tg-game small{font-size:11.5px;line-height:1.3;opacity:.85}
+.tg-game-go{margin-top:10px;display:inline-flex;align-items:center;gap:4px;padding:6px 12px 6px 9px;border-radius:999px;background:#fff;color:var(--g2);font-size:13px;font-weight:800}
+.tg-game-go svg{width:15px;height:15px;fill:currentColor;stroke:none}
+.tg-game-go.lock{background:rgba(0,0,0,.22);color:#fff}.tg-game-go.lock svg{fill:none;stroke:currentColor;stroke-width:2}
+.tg-game.locked{filter:saturate(.55)}
+@media (prefers-reduced-motion:reduce){.tg-play{animation:none}}
+html[data-a11y-motion="reduce"] .tg-play{animation:none}

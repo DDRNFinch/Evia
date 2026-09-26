@@ -1655,10 +1655,14 @@ html body .tp .tp-mid{font-size:24px;font-weight:800;fill:var(--ui-ink)}html bod
 .tm-art{position:relative;margin:0 auto;width:100%}
 .tm-art>.tp{width:100%;height:100%;max-height:none}
 .tm-pic.bare{padding:0;border:0;background:none}
-.tm-spot{position:absolute;z-index:1;width:28px;height:28px;margin:-14px 0 0 -14px;padding:0;border-radius:50%;border:2.5px solid #fff;background:var(--yellow);color:var(--ui-on-accent);font-size:13px;font-weight:900;display:grid;place-items:center;box-shadow:0 3px 10px rgba(16,24,40,.28);cursor:pointer;transition:transform .15s ease}
-.tm-spot::after{content:"";position:absolute;inset:-7px;border-radius:50%;border:2px solid var(--yellow);animation:tmPulse 1.6s ease-out infinite}
-.tm-spot.seen{background:var(--yellow-ink);color:#fff}.tm-spot.seen::after{display:none}
-.tm-spot.on{transform:scale(1.18);z-index:2}
+.tm-spot{position:absolute;z-index:1;width:20px;height:20px;margin:-10px 0 0 -10px;padding:0;border-radius:50%;border:2px solid #fff;background:var(--yellow);color:var(--ui-on-accent);font-size:11px;font-weight:900;line-height:1;display:grid;place-items:center;box-shadow:0 2px 6px rgba(16,24,40,.3);cursor:pointer;transition:transform .15s ease,opacity .2s ease}
+/* Small pins so the drawing shows through: a bigger invisible area takes the tap, and a thin ring pulses round the ones not seen yet. */
+.tm-spot::before{content:"";position:absolute;inset:-12px;border-radius:50%}
+.tm-spot::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:1.5px solid var(--yellow);animation:tmPulse 1.6s ease-out infinite;pointer-events:none}
+.tm-spot.seen{background:var(--yellow-ink);color:#fff;opacity:.55;transform:scale(.85)}.tm-spot.seen::after{display:none}
+.tm-spot.on{opacity:1;transform:scale(1.1);z-index:2}.tm-spot.on::after{display:block;animation:none;inset:-9px;border:2px solid var(--yellow-ink);background:transparent}
+/* In explore mode the drawing's own labels are what the learner finds by tapping, so they're hidden here. */
+.tm-art.explore .tp-lead,.tm-art.explore .tp-leaddot,.tm-art.explore .tp-cl{display:none}
 .tm-reveal{min-height:78px}
 .tm-hint{display:flex;align-items:center;gap:8px;margin:0;padding:12px 2px;color:var(--ui-muted);font-size:14.5px}.tm-hint svg{width:22px;height:22px;flex:none}
 .tm-reveal-card{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:16px;background:#fff;border:2px solid var(--yellow-line);animation:tmIn .25s ease both}
