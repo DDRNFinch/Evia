@@ -171,3 +171,5 @@ html body .ek-eyes.sun .ek-bridge,html body .ek-eyes.sun .ek-arm{background:#0f1
 
 /* Darker new colours carry white text on accent buttons. */
 html[data-evia-theme="forest"],html[data-evia-theme="navy"],html[data-evia-theme="graphite"],html[data-evia-theme="rose"],html[data-evia-theme="midnight"],html[data-evia-theme="teal"]{--ui-on-accent:#fff}
+/* Mini games hide their overlays (the Flappy question, the tip) with the hidden attribute: make sure it wins. */
+.gm [hidden]{display:none!important}
