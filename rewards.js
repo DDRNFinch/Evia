@@ -52,6 +52,7 @@
     Object.keys(PPE).forEach(id=>out.push(Object.assign({id,kind:"hat"},PPE[id])));
     Object.keys(EXPR).forEach(k=>out.push({id:"expr-"+k,kind:"expr",key:k,label:EXPR[k].label,rarity:EXPR[k].rarity,about:EXPR[k].about}));
     Object.keys(SHAPE_R).forEach(k=>S[k]&&out.push({id:"shape-"+k,kind:"shape",key:k,label:S[k].label+" Evia",rarity:SHAPE_R[k],about:S[k].orb?(S[k].orb.style==="glass"?"An advanced Evia: a glass orb whose light moves when she talks.":"An advanced Evia: a living sphere of light."):"A new shape for Evia."}));
+    ((window.eviaGames&&window.eviaGames.GAMES)||[]).forEach(g=>out.push({id:g.id,kind:"game",key:g.key,label:g.label,rarity:g.rarity,about:g.about}));
     Object.keys(COLOUR_R).forEach(k=>T[k]&&out.push({id:"colour-"+k,kind:"colour",key:k,label:T[k].label,rarity:COLOUR_R[k],about:"Evia and the app in "+T[k].label.toLowerCase()+"."}));
     return out;
   }
@@ -112,6 +113,13 @@
       r.paid[w.key]=first?w.coins:(r.paid[w.key]||0)+due;if(n>0){r.bank+=n;if(!first)gained.push({n,why:w.why})}});
     r.workV=1;
     write(r);badge();if(gained.length){toast(gained);if(isOpen())setTimeout(page,0)}return r;
+  }
+  /* Mini games pay a few coins each, up to GAME_DAILY a day. */
+  const GAME_DAILY=20;
+  const gameRoom=()=>{const r=read();return r.gDay===today()?Math.max(0,GAME_DAILY-(r.gEarned||0)):GAME_DAILY};
+  function gameCoins(n){
+    const r=read(),d=today();if(r.gDay!==d){r.gDay=d;r.gEarned=0}
+    const got=Math.max(0,Math.min(Math.floor(n)||0,GAME_DAILY-r.gEarned));r.gEarned+=got;r.bank+=got;write(r);badge();return got;
   }
   /* Room left today for Teach me coins. */
   const room=()=>{const r=read();return r.day===today()?Math.max(0,DAILY-(r.dayEarned||0)):DAILY};
@@ -219,7 +227,7 @@
   function buy(id){
     const it=item(id),r=read();if(!it||r.owned.includes(id))return;
     const price=RARITY[it.rarity].price;if(!price||balance()<price)return;
-    r.spent+=price;r.owned.push(id);write(r);use(id);
+    r.spent+=price;r.owned.push(id);write(r);if(it.kind!=="game")use(id);
     if(window.eviaMood)window.eviaMood("happy");
     reveal(it,false);
   }
@@ -229,9 +237,10 @@
     else if(it.kind==="expr"){const r=read();r.expr=r.expr===it.key?"":it.key;write(r);applyExpr()}
     else if(it.kind==="shape"&&window.eviaSetShape){window.eviaSetShape(it.key);wearOn()}
     else if(it.kind==="colour"&&window.eviaSetTheme)window.eviaSetTheme(it.key);
+    else if(it.kind==="game"){if(window.eviaGames)window.eviaGames.open(it.key);return}
     if(isOpen())page();
   }
-  const inUse=it=>it.kind==="expr"?read().expr===it.key:it.kind==="hat"?read()[it.slot||"hat"]===it.id:it.kind==="shape"?window.eviaCurrentShape&&window.eviaCurrentShape()===it.key:window.eviaCurrentTheme&&window.eviaCurrentTheme()===it.key;
+  const inUse=it=>it.kind==="game"?false:it.kind==="expr"?read().expr===it.key:it.kind==="hat"?read()[it.slot||"hat"]===it.id:it.kind==="shape"?window.eviaCurrentShape&&window.eviaCurrentShape()===it.key:window.eviaCurrentTheme&&window.eviaCurrentTheme()===it.key;
   /* A loot box: roll a rarity from the odds (an epic or better is guaranteed after 9 without one), then an item of
      that rarity the learner doesn't have yet. If they have them all, they get tokens back instead. */
   function openBox(){
@@ -256,6 +265,7 @@
   const face='<span class="evia-face"><i></i><i></i></span>';
   /* A small Evia showing the item: the learner's own shape and colour, with the item on. */
   function preview(it){
+    if(it.kind==="game")return '<span class="rw-game" aria-hidden="true">'+(window.eviaGames?window.eviaGames.iconFor(it.key):"")+'</span>';
     const T=window.eviaThemes||{},shape=it.kind==="shape"?it.key:(window.eviaCurrentShape?window.eviaCurrentShape():"circle");
     const x=it.kind==="expr"?' data-x="'+it.key+'"':"";
     const wear=it.kind==="hat"?{[it.slot||"hat"]:it.id}:{},col=it.kind==="colour"?' style="--yellow:'+T[it.key].accent+';--evia-shape-stroke:'+T[it.key].accent+'"':"";
@@ -272,12 +282,12 @@
       '<section class="rw-box"><div class="rw-box-art" aria-hidden="true">'+GIFT+'</div><div class="rw-box-copy"><strong>Loot box</strong><small>Win something you don’t have yet. Duplicates give coins back, and 10 boxes always include an Epic or better.</small>'+
         '<div class="rw-odds">'+ORDER.map(k=>'<span class="r-'+k+'">'+RARITY[k].label+' '+RARITY[k].odds+'%</span>').join("")+'</div>'+
         '<button type="button" class="rw-btn buy" id="rw-open"'+(bal>=BOX?"":" disabled")+'>'+coin+BOX+' · Open</button></div></section>'+
-      '<div class="rw-tabs" role="tablist">'+[["hat","Kit"],["expr","Faces"],["shape","Shapes"],["colour","Colours"]].map(t=>'<button type="button" role="tab" aria-selected="'+(tab===t[0])+'" class="'+(tab===t[0]?"on":"")+'" data-tab="'+t[0]+'">'+t[1]+'</button>').join("")+'</div>'+
+      '<div class="rw-tabs" role="tablist">'+[["hat","Kit"],["expr","Faces"],["shape","Shapes"],["colour","Colours"],["game","Games"]].map(t=>'<button type="button" role="tab" aria-selected="'+(tab===t[0])+'" class="'+(tab===t[0]?"on":"")+'" data-tab="'+t[0]+'">'+t[1]+'</button>').join("")+'</div>'+
       '<div class="rw-grid">'+list.map(it=>{const own=r.owned.includes(it.id),on=own&&inUse(it),price=RARITY[it.rarity].price;
         return '<div class="rw-item r-'+it.rarity+(own?" own":"")+(on?" on":"")+'" id="rw-'+it.id+'">'+tag(it.rarity)+preview(it)+'<strong>'+esc(it.label)+'</strong><small>'+esc(it.about)+'</small>'+
-          (own?'<button type="button" class="rw-btn'+(on?" on":"")+'" data-use="'+it.id+'">'+(on?(it.kind==="hat"?"Wearing":"In use"):(it.kind==="hat"?"Wear":"Use"))+'</button>'
+          (own?'<button type="button" class="rw-btn'+(on?" on":"")+'" data-use="'+it.id+'">'+(on?(it.kind==="hat"?"Wearing":"In use"):(it.kind==="hat"?"Wear":it.kind==="game"?"Play":"Use"))+'</button>'
             :price?'<button type="button" class="rw-btn buy" data-buy="'+it.id+'"'+(bal>=price?"":" disabled")+'>'+coin+price+'</button>':'<span class="rw-only">Loot box only</span>')+'</div>'}).join("")+'</div>'+
-      (tab==="shape"||tab==="colour"?'<p class="rw-note">Circle, Squircle and Cloud, and Yellow, Green and Blue, are always free.</p>':tab==="expr"?'<p class="rw-note">Evia’s classic face is always free. Tap “In use” to go back to it.</p>':"")+'</div>';
+      (tab==="shape"||tab==="colour"?'<p class="rw-note">Circle, Squircle and Cloud, and Yellow, Green and Blue, are always free.</p>':tab==="expr"?'<p class="rw-note">Evia’s classic face is always free. Tap “In use” to go back to it.</p>':tab==="game"?'<p class="rw-note">Games you unlock are in the Teach me tab too. Each game pays a few coins, up to '+GAME_DAILY+' a day.</p>':"")+'</div>';
     requestAnimationFrame(()=>fitAll(scr()));
     scr().querySelector("#rw-open").onclick=openBox;
     scr().querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{tab=b.dataset.tab;page()});
@@ -304,7 +314,7 @@
     const o=overlay('<div class="rw-reveal r-'+it.rarity+'"><span class="rw-burst" aria-hidden="true"></span>'+tag(it.rarity)+
       (dup?'<div class="rw-dup">'+coin+'</div><h2>You have them all</h2><p>Every '+RARITY[it.rarity].label.toLowerCase()+' item is already yours, so here’s <strong>'+it.refund+' coins</strong> back.</p>'
           :'<div class="rw-big">'+preview(it)+'</div><h2>'+esc(it.label)+'</h2><p>'+(fromBox?"New in your collection!":"It’s yours.")+'</p>')+
-      '<div class="rw-reveal-btns">'+(dup?"":'<button type="button" class="rw-btn buy" data-go="use">'+(it.kind==="hat"?"Wear it":"Use it")+'</button>')+'<button type="button" class="rw-btn" data-go="ok">'+(dup?"OK":"Later")+'</button></div></div>');
+      '<div class="rw-reveal-btns">'+(dup?"":'<button type="button" class="rw-btn buy" data-go="use">'+(it.kind==="hat"?"Wear it":it.kind==="game"?"Play it":"Use it")+'</button>')+'<button type="button" class="rw-btn" data-go="ok">'+(dup?"OK":"Later")+'</button></div></div>');
     requestAnimationFrame(()=>fitAll(o));
     const close=()=>{o.classList.add("out");setTimeout(()=>o.remove(),200);if(isOpen())page();badge()};
     o.querySelector('[data-go="ok"]').onclick=close;
@@ -318,7 +328,7 @@
   /* The expression in use goes on <html>, so every Evia in the app shows it (moods still win for a moment). */
   function applyExpr(){const r=read(),on=r.expr&&owns("expr-"+r.expr);if(on)document.documentElement.setAttribute("data-evia-expr",r.expr);else document.documentElement.removeAttribute("data-evia-expr")}
   applyExpr();
-  window.eviaRewards={coin:()=>coin,page,room,later,EV_PAY,applyExpr,kitHtml,fitAll,locked,openItem,hatHtml,hatSvg,wearOn,sync,balance,catalogue,FIT};
+  window.eviaRewards={coin:()=>coin,gameCoins,gameRoom,GAME_DAILY,owns,page,room,later,EV_PAY,applyExpr,kitHtml,fitAll,locked,openItem,hatHtml,hatSvg,wearOn,sync,balance,catalogue,FIT};
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)sync()});
   setTimeout(()=>{sync();wearOn()},500);
   /* Keep the hat on when Evia's shape changes. */

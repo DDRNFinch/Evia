@@ -1,4 +1,4 @@
-/* Evia7 tabs beside Evia: Teach me (the course, maths and English lessons) and Rewards (still to be designed). */
+/* Evia7 tabs beside Evia: Teach me (the course, maths and English lessons, and the mini games) and Rewards (rewards.js). */
 (function(){
   const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const scr=()=>document.getElementById("screen");
@@ -19,8 +19,20 @@
     const trade=(T&&T.COURSES&&T.COURSES[course])||[],fs=f=>(E.fs||[]).filter(u=>u.fs===f);
     const card=(id,title,c)=>'<button type="button" class="tt-card" data-go="'+id+'"><span class="tt-ic" aria-hidden="true">'+ICON[id]+'</span><span class="tt-copy"><strong>'+esc(title)+'</strong><small>'+c.done+' of '+c.total+' lessons</small>'+
       '<i class="tt-bar"><i style="width:'+(c.total?Math.round(c.done/c.total*100):0)+'%"></i></i></span><span class="tt-chev" aria-hidden="true">›</span></button>';
-    scr().innerHTML=head("Teach me")+'<div class="tt-list">'+card("course",courseName()||"Your course",count(trade))+card("maths","Maths",count(fs("maths")))+card("english","English",count(fs("english")))+'</div>';
+    scr().innerHTML=head("Teach me")+'<div class="tt-list">'+card("course",courseName()||"Your course",count(trade))+card("maths","Maths",count(fs("maths")))+card("english","English",count(fs("english")))+'</div>'+games();
     scr().querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{if(T)T.open(b.dataset.go)});
+    scr().querySelectorAll("[data-game]").forEach(b=>b.onclick=()=>{const R=window.eviaRewards,id=b.dataset.game;
+      if(R&&R.owns(id))window.eviaGames.open(b.dataset.key);else if(R)R.openItem(id)});
+  }
+  /* Mini games: unlocked in Rewards, played here. */
+  const LOCK='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>';
+  function games(){
+    const G=window.eviaGames,R=window.eviaRewards;if(!G||!R)return "";
+    const PRICE={common:30,rare:80,epic:180},room=R.gameRoom(),earned=R.GAME_DAILY-room;
+    return '<section class="tt-games"><div class="tt-games-head"><h2>Mini games</h2><span>'+(room?earned+" of "+R.GAME_DAILY+" game coins today":"Today’s game coins collected")+'</span></div><div class="tt-list">'+
+      G.GAMES.map(g=>{const own=R.owns(g.id);
+        return '<button type="button" class="tt-card tt-game'+(own?"":" locked")+'" data-game="'+g.id+'" data-key="'+g.key+'"><span class="tt-ic" aria-hidden="true">'+G.iconFor(g.key)+'</span><span class="tt-copy"><strong>'+esc(g.label)+'</strong><small>'+esc(own?g.about:"Unlock it in Rewards")+'</small></span>'+
+          (own?'<span class="tt-play">Play</span>':'<span class="tt-lock">'+LOCK+(PRICE[g.rarity]?'<b>'+PRICE[g.rarity]+'</b>':"")+'</span>')+'</button>'}).join("")+'</div></section>';
   }
   function rewardsPage(){if(window.eviaRewards)window.eviaRewards.page();else scr().innerHTML=head("Rewards")}
 
