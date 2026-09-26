@@ -146,3 +146,4 @@ html body .tg-maths{--c:#3b82f6}html body .tg-english{--c:#8b5cf6}html body .tg-
 .tg-game.locked{filter:saturate(.55)}
 @media (prefers-reduced-motion:reduce){.tg-play{animation:none}}
 html[data-a11y-motion="reduce"] .tg-play{animation:none}
+html body .tg-evia .evia-face{gap:8px}html body .tg-evia .evia-face i{width:13px!important;height:17px!important;border-width:3px!important}
