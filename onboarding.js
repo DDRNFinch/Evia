@@ -6,13 +6,13 @@
   const ppeCodes=()=>nvqOn()?["102.1.2","102.1.4"]:["K2","S2"]; /* NVQ: using H&S control equipment, and why and when to use it */
   const MAX_PHOTOS=4;
   const COURSES=[
-    {key:"bricklayer",label:"Bricklayer",sub:"Brickwork and blockwork",c:"#d9643a",
+    {key:"bricklayer",label:"Bricklayer",sub:"Brickwork and blockwork",
       ic:'<svg viewBox="0 0 24 24"><rect x="3" y="13.5" width="8" height="5.5" rx="1"/><rect x="13" y="13.5" width="8" height="5.5" rx="1"/><rect x="8" y="6.5" width="8" height="5.5" rx="1"/></svg>'},
-    {key:"site",label:"Site Carpenter",sub:"Carpentry on site",c:"#2f80ed",
+    {key:"site",label:"Site Carpenter",sub:"Carpentry on site",
       ic:'<svg viewBox="0 0 24 24"><path d="M2.5 12 12 4l9.5 8"/><path d="M5.5 10v9.5h13V10"/><path d="M12 4v15.5M5.5 14.5 12 9l6.5 5.5"/></svg>'},
-    {key:"joiner",label:"Bench Joiner",sub:"Joinery in the workshop",c:"#b7791f",
+    {key:"joiner",label:"Bench Joiner",sub:"Joinery in the workshop",
       ic:'<svg viewBox="0 0 24 24"><path d="M3.5 15.5h17v3.5h-17z"/><path d="M6 15.5l2-5h8l2 5"/><path d="M13 10.5c0-2.5 1.5-4.5 4-5"/></svg>'},
-    {key:"trowel3",label:"Trowel Occupations L3",sub:"NVQ Level 3 Diploma · City & Guilds",c:"#7c3aed",
+    {key:"trowel3",label:"Trowel Occupations L3",sub:"NVQ Level 3 Diploma · City & Guilds",
       ic:'<svg viewBox="0 0 24 24"><path d="M11 13 4 20"/><path d="M11 13l3-9 7 7-9 3z"/></svg>'}
   ];
   const escHtml=s=>String(s??"").replace(/[&<>"']/g,x=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[x]));
@@ -33,10 +33,10 @@
       .evia-onboard-inner h2{font-size:26px;margin:0 0 8px;letter-spacing:-.03em;color:#172033}
       .evia-onboard-inner p{font-size:14px;color:#7b8797;margin:0 0 24px;line-height:1.5}
       .evia-onboard-courses{display:grid;gap:12px;text-align:left}
-      .evia-onboard-course{display:flex;align-items:center;gap:14px;width:100%;padding:14px 16px;border-radius:20px;border:2px solid #edf0f4;background:#fff;cursor:pointer;box-shadow:0 4px 14px rgba(25,36,55,.05);color:#172033;font:inherit;transition:transform .12s ease,border-color .15s ease}
+      .evia-onboard-course{display:flex;align-items:center;gap:14px;width:100%;padding:14px 16px;border-radius:20px;border:1px solid rgba(16,24,40,.08);background:#fff;cursor:pointer;box-shadow:0 1px 2px rgba(16,24,40,.04),0 6px 20px rgba(16,24,40,.05);color:#172033;font:inherit;transition:transform .12s ease,border-color .15s ease}
       .evia-onboard-course:active{transform:scale(.98)}
-      .evia-onboard-course:hover,.evia-onboard-course:focus-visible{border-color:var(--c,var(--yellow))}
-      .evia-onboard-course-dot{width:48px;height:48px;flex:0 0 48px;border-radius:15px;display:grid;place-items:center;background:var(--c);color:#fff;box-shadow:0 6px 14px color-mix(in srgb,var(--c) 35%,transparent)}
+      .evia-onboard-course:hover,.evia-onboard-course:focus-visible{border-color:var(--yellow)}
+      .evia-onboard-course-dot{width:46px;height:46px;flex:0 0 46px;border-radius:14px;display:grid;place-items:center;background:var(--soft);color:var(--yellow-ink)}
       .evia-onboard-course-dot svg{width:27px;height:27px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
       .evia-onboard-course-copy{flex:1;min-width:0;display:grid;gap:3px;text-align:left}
       .evia-onboard-course-copy strong{font-size:16.5px}
@@ -44,23 +44,23 @@
       .evia-onboard-course-arrow{font-size:24px;color:#98a2b3}
       /* The very first screen: a welcome from Evia, then the course cards. */
       #evia-onboard-course.welcome{display:block;padding:0;background:#fffdfa}
-      .ew-hero{position:relative;overflow:hidden;padding:max(44px,calc(env(safe-area-inset-top) + 28px)) 22px 76px;text-align:center;color:#fff;background:radial-gradient(130% 120% at 50% 0%,#3b3576 0%,#241f4d 55%,#16132f 100%)}
-      .ew-hero::before{content:"";position:absolute;inset:0;opacity:.07;background-image:linear-gradient(#fff 2px,transparent 2px),linear-gradient(90deg,#fff 2px,transparent 2px),linear-gradient(90deg,#fff 2px,transparent 2px);background-size:64px 26px,64px 26px,64px 26px;background-position:0 0,0 0,32px 13px;mask-image:linear-gradient(transparent,#000 60%)}
-      .ew-hero::after{content:"";position:absolute;left:50%;top:40px;width:260px;height:260px;margin-left:-130px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--yellow) 38%,transparent),transparent 68%);pointer-events:none}
+      .ew-hero{position:relative;overflow:hidden;padding:max(40px,calc(env(safe-area-inset-top) + 26px)) 22px 56px;text-align:center;color:#172033;background:radial-gradient(120% 85% at 50% 0%,color-mix(in srgb,var(--yellow) 13%,#fffdfa) 0%,#fffdfa 72%)}
+      .ew-hero::before{content:"";position:absolute;inset:0;opacity:.05;background-image:linear-gradient(#172033 1px,transparent 1px),linear-gradient(90deg,#172033 1px,transparent 1px);background-size:48px 20px;mask-image:linear-gradient(#000,transparent 75%);-webkit-mask-image:linear-gradient(#000,transparent 75%)}
+      .ew-hero::after{content:"";position:absolute;left:50%;top:30px;width:240px;height:240px;margin-left:-120px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--yellow) 22%,transparent),transparent 68%);pointer-events:none}
       .ew-evia-wrap{position:relative;z-index:1;display:inline-block;animation:ewFloat 3.6s ease-in-out infinite}
-      html body .ew-evia{width:104px;height:104px;border-width:6px;background:#fffdfa;box-shadow:0 14px 34px rgba(0,0,0,.35)}
+      html body .ew-evia{width:100px;height:100px;border-width:6px;background:#fffdfa;box-shadow:0 12px 30px rgba(16,24,40,.12)}
       html body .ew-evia .evia-face{gap:12px}
-      html body .ew-evia .evia-face i{width:19px!important;height:25px!important;border-width:4.5px!important;animation:ewBlink 4.2s infinite}
-      .ew-wave{position:absolute;right:-18px;top:-4px;font-size:30px;transform-origin:70% 80%;animation:ewWave 2.2s ease-in-out .6s 2}
-      .ew-say{position:relative;z-index:1;display:inline-block;margin:18px auto 0;padding:10px 16px;border-radius:18px;background:#fff;color:#172033;font-size:15px;font-weight:700;box-shadow:0 8px 20px rgba(0,0,0,.25)}
-      .ew-say::before{content:"";position:absolute;left:50%;top:-7px;width:14px;height:14px;margin-left:-7px;background:#fff;transform:rotate(45deg);border-radius:3px}
-      .ew-title{position:relative;z-index:1;margin:18px 0 6px;font-size:30px;line-height:1.1;font-weight:800;letter-spacing:-.035em}
-      .ew-title span{color:var(--yellow)}
-      .ew-sub{position:relative;z-index:1;margin:0 auto;max-width:330px;font-size:14.5px;line-height:1.5;color:rgba(255,255,255,.75)}
+      html body .ew-evia .evia-face i{width:18px!important;height:24px!important;border-width:4.5px!important;animation:ewBlink 4.2s infinite}
+      .ew-wave{position:absolute;right:-16px;top:-2px;font-size:28px;transform-origin:70% 80%;animation:ewWave 2.2s ease-in-out .6s 2}
+      .ew-say{position:relative;z-index:1;display:inline-block;margin:16px auto 0;padding:9px 16px;border-radius:16px;background:#fff;color:#172033;font-size:14.5px;font-weight:700;border:1px solid rgba(16,24,40,.07);box-shadow:0 6px 18px rgba(16,24,40,.07)}
+      .ew-say::before{content:"";position:absolute;left:50%;top:-6px;width:12px;height:12px;margin-left:-6px;background:#fff;transform:rotate(45deg);border-left:1px solid rgba(16,24,40,.07);border-top:1px solid rgba(16,24,40,.07);border-radius:2px 0 0 0}
+      .ew-title{position:relative;z-index:1;margin:18px 0 8px;font-size:30px;line-height:1.12;font-weight:800;letter-spacing:-.035em;color:#172033}
+      .ew-title span{background:linear-gradient(transparent 60%,color-mix(in srgb,var(--yellow) 45%,transparent) 60%);padding:0 2px}
+      .ew-sub{position:relative;z-index:1;margin:0 auto;max-width:330px;font-size:14.5px;line-height:1.5;color:#667085}
       .ew-chips{position:relative;z-index:1;display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:18px}
-      .ew-chip{display:inline-flex;align-items:center;gap:6px;padding:7px 12px 7px 9px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);font-size:12.5px;font-weight:700;color:#fff}
-      .ew-chip svg{width:17px;height:17px;fill:none;stroke:var(--yellow);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-      .ew-pick{position:relative;z-index:2;max-width:440px;margin:-44px auto 0;padding:22px 18px calc(28px + env(safe-area-inset-bottom));border-radius:28px 28px 0 0;background:#fffdfa;text-align:left}
+      .ew-chip{display:inline-flex;align-items:center;gap:6px;padding:7px 12px 7px 9px;border-radius:999px;background:#fff;border:1px solid rgba(16,24,40,.08);box-shadow:0 1px 2px rgba(16,24,40,.04);font-size:12.5px;font-weight:650;color:#344054}
+      .ew-chip svg{width:16px;height:16px;fill:none;stroke:var(--yellow-ink);stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+      .ew-pick{position:relative;z-index:2;max-width:440px;margin:-18px auto 0;padding:8px 18px calc(28px + env(safe-area-inset-bottom));background:transparent;text-align:left}
       .ew-pick h2{margin:0 4px 4px;font-size:22px;letter-spacing:-.02em;color:#172033}
       .ew-pick>p{margin:0 4px 16px;font-size:13.5px;color:#7b8797;line-height:1.45}
       .ew-in{opacity:0;transform:translateY(14px);animation:ewIn .55s cubic-bezier(.2,.8,.3,1) forwards;animation-delay:calc(var(--d,0) * 90ms + 150ms)}
@@ -145,7 +145,7 @@
         '</div></section>'+
       '<section class="ew-pick"><h2 class="ew-in" style="--d:5">Which course are you on?</h2><p class="ew-in" style="--d:5">I’ll set up your units and everything you need to evidence.</p>'+
       '<div class="evia-onboard-courses">'+COURSES.filter(c=>C[c.key]).map((c,i)=>
-        '<button type="button" class="evia-onboard-course ew-in" style="--d:'+(6+i)+';--c:'+c.c+'" data-onboard-course="'+c.key+'"><span class="evia-onboard-course-dot" aria-hidden="true">'+c.ic+'</span><span class="evia-onboard-course-copy"><strong>'+escHtml(c.label)+'</strong><small>'+escHtml(c.sub)+'</small></span><span class="evia-onboard-course-arrow" aria-hidden="true">›</span></button>'
+        '<button type="button" class="evia-onboard-course ew-in" style="--d:'+(6+i)+'" data-onboard-course="'+c.key+'"><span class="evia-onboard-course-dot" aria-hidden="true">'+c.ic+'</span><span class="evia-onboard-course-copy"><strong>'+escHtml(c.label)+'</strong><small>'+escHtml(c.sub)+'</small></span><span class="evia-onboard-course-arrow" aria-hidden="true">›</span></button>'
       ).join("")+'</div></section>';
     document.body.appendChild(root);
     requestAnimationFrame(()=>root.classList.add("visible"));
