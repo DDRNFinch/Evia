@@ -6,7 +6,35 @@
   const T=window.EVIA_TEACH=window.EVIA_TEACH||{courses:{},fs:[]};
   const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const r=v=>Math.round(v*100)/100;
-  const svg=(w,h,body,label,at)=>'<svg class="tp" viewBox="'+(at||"0 0")+' '+w+' '+h+'" role="img" aria-label="'+esc(label)+'">'+body+'</svg>';
+  /* The shading. Every picture uses the same soft gradients (ui.css points each material at one, with a flat colour
+     as a fallback), so they're added to the page once rather than to each picture. Stops go from light to dark:
+     top to bottom for boards and blades, left to right for round things like buckets and extinguishers. */
+  const GRAD={
+    sand:[0,"#f2d396",1,"#d8ac62"],wet:[0,"#a59e90",1,"#7a7468"],dry:[0,"#e2d6b6",1,"#bdae88"],
+    steel:[0,"#f1f3f6",.45,"#c8ced6",1,"#98a1ac"],steeld:[0,"#a7b0bb",1,"#6d7682"],handle:[0,"#e8b675",1,"#b8773a"],
+    wood:[0,"#f3cb8e",1,"#dba462"],wood2:[0,"#e6b273",1,"#c88a48"],conc:[0,"#dde0e4",1,"#b3b9c0"],block:[0,"#d0d5db",1,"#a9b0ba"],
+    mach:[0,"#f3f5f7",1,"#c7cdd4"],insul:[0,"#f8e39a",1,"#e8c250"],roof:[0,"#8d96a1",1,"#666f7a"],
+    white:[0,"#ffffff",1,"#d9dee5"],navy:[0,"#4d5b76",1,"#2b3549"],hivis:[0,"#fd9f4f",1,"#e5650c"],trou:[0,"#4a5163",1,"#2c313d"],
+    glass:["d",0,"#f3fafe",.5,"#d4ebf7",1,"#b6d9ec"],
+    bkt:["h",0,"#525a65",.3,"#3a4049",1,"#1e2227"],tubk:["h",0,"#4a515b",.3,"#343a42",1,"#1c2025"],
+    red:["h",0,"#ef5f50",.35,"#d52b1e",1,"#9e1b11"],copper:["h",0,"#e8a068",.4,"#c8793c",1,"#96521f"],
+    tarp:[0,"#4388d1",1,"#22579a"],sack:[0,"#f4eddf",1,"#d9cfbb"],
+    /* The Evia colour, for kit whose colour carries no meaning, follows the learner's theme. */
+    yel:[0,"color-mix(in srgb,var(--yellow) 66%,#fff)",.5,"var(--yellow)",1,"color-mix(in srgb,var(--yellow) 88%,#000)"]
+  };
+  function gradients(){
+    return Object.keys(GRAD).map(k=>{let g=GRAD[k],dir="v";if(typeof g[0]==="string"){dir=g[0];g=g.slice(1)}
+      const xy=dir==="h"?'x1="0" y1="0" x2="1" y2="0"':dir==="d"?'x1="0" y1="0" x2="1" y2="1"':'x1="0" y1="0" x2="0" y2="1"';let st="";
+      for(let i=0;i<g.length;i+=2)st+='<stop offset="'+g[i]+'" style="stop-color:'+g[i+1]+'"/>';
+      return '<linearGradient id="tpg-'+k+'" '+xy+'>'+st+'</linearGradient>'}).join("");
+  }
+  function defs(){
+    if(typeof document==="undefined"||!document.body||document.getElementById("tp-defs"))return;
+    const d=document.createElementNS("http://www.w3.org/2000/svg","svg");d.id="tp-defs";d.setAttribute("aria-hidden","true");d.setAttribute("focusable","false");
+    d.style.cssText="position:absolute;width:0;height:0;overflow:hidden;pointer-events:none";d.innerHTML="<defs>"+gradients()+"</defs>";
+    document.body.appendChild(d);
+  }
+  const svg=(w,h,body,label,at)=>{defs();return '<svg class="tp" viewBox="'+(at||"0 0")+' '+w+' '+h+'" role="img" aria-label="'+esc(label)+'">'+body+'</svg>'};
   const t=(x,y,s,c)=>'<text x="'+x+'" y="'+y+'"'+(c?' class="'+c+'"':"")+'>'+esc(s)+'</text>';
   const t2=(x,y,a,b,c)=>'<text x="'+x+'" y="'+y+'"'+(c?' class="'+c+'"':"")+'>'+esc(a)+'<tspan x="'+x+'" dy="12">'+esc(b)+'</tspan></text>';
   let uid=0;
@@ -24,9 +52,12 @@
     garden:k=>k%4===3?[102.5,46.25].concat(rep([102.5],40)):k%4===1?[102.5].concat(rep([215],30)):rep([215],30)
   };
   const kind=f=>f===215?"":f===46.25?" tp-cl":f===102.5?" tp-hd":"";
+  /* Each brick gets a thin outline in a deeper brick colour, thinner as the bricks get smaller, and none at all on
+     walls drawn so small that it would hide the mortar. */
+  const bw=s=>'<g class="tp-bw" style="stroke-width:'+(s>=.3?.8:s>=.18?.55:s>=.11?.4:0)+'">';
   function brickwork(x,y,w,courses,s,faces,o){
     o=o||{};const hdr=o.headers!==false;
-    let out='<rect class="tp-mortar" x="'+r(x)+'" y="'+r(y)+'" width="'+r(w)+'" height="'+r(courses*75*s-10*s)+'"/>';
+    let out='<rect class="tp-mortar" x="'+r(x)+'" y="'+r(y)+'" width="'+r(w)+'" height="'+r(courses*75*s-10*s)+'"/>'+bw(s);
     for(let k=0;k<courses;k++){
       const cy=y+k*75*s;
       if(o.band)out+='<rect class="'+o.band(k)+'" x="'+r(x)+'" y="'+r(k?cy-10*s:cy)+'" width="'+r(w)+'" height="'+r(k?75*s:65*s)+'"/>';
@@ -37,14 +68,14 @@
         at+=f[j]+10;j++;
       }
     }
-    return out;
+    return out+'</g>';
   }
 
   /* ---------- Buckets and tools ---------- */
   /* A black builder's bucket seen slightly from above. mode: level (struck off), heaped, under (not full), empty. */
-  function bucket(cx,top,fill,mode,k){
+  function bucket(cx,top,fill,mode,k,noShadow){
     const id="tpk"+(++uid);
-    let g='<g transform="translate('+cx+' '+top+')'+(k&&k!==1?' scale('+k+')':"")+'"><ellipse class="tp-bin" cx="0" cy="0" rx="20" ry="6"/>';
+    let g='<g transform="translate('+cx+' '+top+')'+(k&&k!==1?' scale('+k+')':"")+'">'+(noShadow?"":'<ellipse class="tp-shadow" cx="0" cy="40.5" rx="19" ry="3.2"/>')+'<ellipse class="tp-bin" cx="0" cy="0" rx="20" ry="6"/>';
     if(mode==="level"||mode==="heaped")g+='<ellipse class="'+fill+'" cx="0" cy=".4" rx="18.6" ry="4.9"/>';
     if(mode==="under")g+='<clipPath id="'+id+'"><ellipse cx="0" cy="0" rx="19" ry="5.3"/></clipPath><ellipse class="'+fill+'" clip-path="url(#'+id+')" cx="0" cy="7" rx="17.4" ry="4.6"/>';
     g+='<path class="tp-bkt" d="M-20 0 L-15 36 A15 4.5 0 0 0 15 36 L20 0 A20 6 0 0 1 -20 0 Z"/><path class="tp-bktl" d="M-17.5 7 L-13.5 33"/>';
@@ -67,13 +98,86 @@
   /* A site worker in PPE (front view), feet at y. */
   function person(cx,y,o){
     o=o||{};const s=o.scale||1;
-    return '<g transform="translate('+cx+' '+y+') scale('+s+')">'+
+    return '<g transform="translate('+cx+' '+y+') scale('+s+')"><ellipse class="tp-shadow" cx="0" cy="0" rx="17" ry="2.6"/>'+
       '<path class="tp-trou" d="M-11 -44 H-1 L-1.5 -6 H-10.5 Z M1 -44 H11 L10.5 -6 H1.5 Z"/><path class="tp-boot" d="M-12 -7 H-1 V0 H-14 Q-14 -7 -12 -7 Z M1 -7 H12 Q14 -7 14 0 H1 Z"/>'+
       '<path class="tp-navy" d="M-13 -73 Q-10 -77 -4 -77 H4 Q10 -77 13 -73 L14 -42 H-14 Z"/>'+
       (o.arm==="up"?'<path class="tp-navy" d="M11 -72 L24 -84 L28 -80 L15 -66 Z"/><circle class="tp-nitrile" cx="27" cy="-84" r="3.4"/>':'<path class="tp-navy" d="M11 -72 Q17 -68 18 -58 L19 -46 H14 L13 -58 Z"/><circle class="tp-nitrile" cx="16.5" cy="-44" r="3.2"/>')+
       '<path class="tp-navy" d="M-11 -72 Q-17 -68 -18 -58 L-19 -46 H-14 L-13 -58 Z"/><circle class="tp-nitrile" cx="-16.5" cy="-44" r="3.2"/>'+
       '<path class="tp-hivis" d="M-12 -72 Q-9 -76 -5 -76 L-3 -70 H3 L5 -76 Q9 -76 12 -72 L13 -44 H-13 Z"/><rect class="tp-refl" x="-13" y="-57" width="26" height="3"/><rect class="tp-refl" x="-13" y="-50" width="26" height="3"/><rect class="tp-refl" x="-9" y="-74" width="3" height="17"/><rect class="tp-refl" x="6" y="-74" width="3" height="17"/>'+
       '<circle class="tp-head" cx="0" cy="-86" r="8.5"/><path class="tp-hat" d="M-9 -88 Q-9 -99 0 -99 Q9 -99 9 -88 Z"/><path class="tp-hat" d="M-11 -88.5 H11 V-86.5 H-11 Z"/></g>';
+  }
+
+  /* ---------- Tools and kit, in the Evia illustration style ----------
+     Each is drawn in its own small space and placed with at(x,y,scale). A lighter line (tp-shine) catches the
+     light along the top and a see-through darker shape (tp-shade) shades the lower side, like the reference art. */
+  const at=(x,y,k,body,rot)=>'<g transform="translate('+r(x)+' '+r(y)+')'+(rot?' rotate('+rot+')':"")+(k&&k!==1?' scale('+k+')':"")+'">'+body+'</g>';
+  const shadow=(cx,cy,rx,ry)=>'<ellipse class="tp-shadow" cx="'+r(cx)+'" cy="'+r(cy)+'" rx="'+r(rx)+'" ry="'+r(ry||rx/7)+'"/>';
+  /* A thick line (a rail, a spindle, a pipe) with an outline: a darker, wider copy underneath. */
+  const olLine=(cls,d,w,o)=>'<path class="tp-olw'+(o?" "+o:"")+'" style="stroke-width:'+r(w+2.4)+'" d="'+d+'"/><path class="'+cls+'" d="'+d+'"/>';
+  /* A pencil, eraser end at 0 and the point at 70. */
+  const pencil=()=>'<rect class="tp-eraser" x="0" y="-4" width="7" height="8" rx="2"/><rect class="tp-steel" x="6" y="-4.2" width="6" height="8.4"/>'+
+    '<path class="tp-pen" d="M12 -4 H56 V4 H12 Z"/><path class="tp-shade" d="M12 1.3 H56 V4 H12 Z"/><path class="tp-woodtip" d="M56 -4 L68 -1 V1 L56 4 Z"/><path class="tp-lead2" d="M66 -1.4 L70 0 L66 1.4 Z"/>';
+  /* A brick trowel from above: the tip on the left, 101 long. */
+  const trowelTop=()=>'<path class="tp-steel" d="M0 0 C14 -4 34 -10 52 -12 Q60 -13 62 -6 V6 Q60 13 52 12 C34 10 14 4 0 0 Z"/>'+
+    '<path class="tp-shade" d="M0 0 C14 4 34 10 52 12 Q60 13 62 6 V0 Z"/><path class="tp-shine" d="M8 -.8 L56 -2.6"/>'+
+    '<rect class="tp-steeld" x="61" y="-2.6" width="7" height="5.2" rx="1"/><rect class="tp-steel" x="67" y="-4.6" width="6" height="9.2" rx="1.5"/>'+
+    '<path class="tp-wood" d="M73 -4.6 H96 Q101 -4.6 101 0 Q101 4.6 96 4.6 H73 Z"/><path class="tp-shine" d="M76 -2.4 H95"/>';
+  /* A spirit level, w long and 12 deep, with a level vial in the middle and a plumb vial near the end. */
+  const levelTool=w=>'<rect class="tp-lvl" x="0" y="0" width="'+w+'" height="12" rx="2"/><path class="tp-shine" d="M7 2.6 H'+(w-7)+'"/><path class="tp-shade" d="M1 8 H'+(w-1)+' V10 Q'+(w-1)+' 12 '+(w-3)+' 12 H3 Q1 12 1 10 Z"/>'+
+    '<rect class="tp-cap" x="0" y="0" width="6" height="12" rx="2"/><rect class="tp-cap" x="'+(w-6)+'" y="0" width="6" height="12" rx="2"/>'+
+    '<rect class="tp-vialw" x="'+(w/2-10)+'" y="2.2" width="20" height="7.6" rx="3.8"/><rect class="tp-vial" x="'+(w/2-7.5)+'" y="3.6" width="15" height="4.8" rx="2.4"/><circle class="tp-bub" cx="'+(w/2)+'" cy="6" r="1.7"/>'+
+    '<path class="tp-vialx" d="M'+(w/2-3)+' 3.6 V8.4 M'+(w/2+3)+' 3.6 V8.4"/>'+
+    '<circle class="tp-vialw" cx="16" cy="6" r="4.2"/><circle class="tp-vial" cx="16" cy="6" r="2.6"/>';
+  /* A steel line pin, point down, 30 long. */
+  const linePin=()=>'<rect class="tp-steeld" x="-4.5" y="0" width="9" height="3.4" rx="1.2"/><path class="tp-steel" d="M-3.6 3 H3.6 L1.3 25 L0 30 L-1.3 25 Z"/><path class="tp-shade" d="M0 3 H3.6 L1.3 25 L0 30 Z"/>';
+  /* A bolster: striking end at the top, rubber hand guard, wide blade at the bottom. 50 tall. */
+  const bolsterTool=()=>'<rect class="tp-steeld" x="-4.2" y="0" width="8.4" height="6" rx="1.8"/><rect class="tp-steel" x="-3.4" y="5" width="6.8" height="37"/>'+
+    '<rect class="tp-grip2" x="-6" y="9" width="12" height="18" rx="3"/><path class="tp-grip2" d="M-11.5 30 Q0 23.5 11.5 30 L9.5 33 Q0 28.5 -9.5 33 Z"/><path class="tp-shine" d="M-3.4 12 V24"/>'+
+    '<path class="tp-steel" d="M-3.4 40 L-13 46 V50 H13 V46 L3.4 40 Z"/><path class="tp-shade" d="M0 40 H3.4 L13 46 V50 H0 Z"/><path class="tp-edgel" d="M-13 47.4 H13"/>';
+  /* A club hammer: handle on the left, the heavy head on the right. 80 long. */
+  const clubHammer=()=>'<path class="tp-wood" d="M1 -3 Q-1.5 0 1 3 L58 3.6 V-3.6 Z"/><path class="tp-shine" d="M4 -1.6 H54"/>'+
+    '<path class="tp-steeld" d="M58 -10 H78 L80 -8 V8 L78 10 H58 L56 8 V-8 Z"/><path class="tp-shade" d="M56 2 H80 V8 L78 10 H58 L56 8 Z"/><path class="tp-shine" d="M59.5 -7 V6"/>';
+  /* A brick jointer: a curved steel bar with a small handle, 60 across. */
+  const jointerTool=()=>'<path class="tp-olk" stroke-width="6.2" d="M0 14 C6 14 7 6 15 6 H45 C53 6 54 14 60 14"/><path class="tp-stl" stroke-width="3.8" d="M0 14 C6 14 7 6 15 6 H45 C53 6 54 14 60 14"/>'+
+    '<rect class="tp-steel" x="21" y="-2" width="3.6" height="8"/><rect class="tp-steel" x="35.4" y="-2" width="3.6" height="8"/><rect class="tp-wood" x="17" y="-9" width="26" height="8" rx="4"/><path class="tp-shine" d="M21 -6.8 H39"/>';
+  /* A work glove, back of the hand, fingers up: about 50 wide and 72 tall. */
+  const gloveKit=()=>'<rect class="tp-glove" x="-20" y="8" width="9" height="36" rx="4.5"/><rect class="tp-glove" x="-10.5" y="2" width="9" height="40" rx="4.5"/>'+
+    '<rect class="tp-glove" x="-1" y="5" width="9" height="38" rx="4.5"/><rect class="tp-glove" x="8.5" y="14" width="8" height="30" rx="4"/>'+
+    '<path class="tp-glove" d="M-16 50 L-31 33 Q-34 28.5 -30.5 26 Q-27 24 -24.5 27.5 L-12 42 Z"/>'+
+    '<path class="tp-glove" d="M-21 30 H17 V52 Q17 60 10 62 H-14 Q-21 60 -21 52 Z"/><path class="tp-shade" d="M4 31 H16 V52 Q16 59 10 61 H4 Z"/>'+
+    '<path class="tp-seam" d="M-19 36 Q-2 39 15 36"/><rect class="tp-cuff" x="-19" y="60" width="34" height="12" rx="2.5"/>'+
+    '<path class="tp-rib" d="M-14 62 V70 M-9 62 V70 M-4 62 V70 M1 62 V70 M6 62 V70 M11 62 V70"/>';
+  /* Safety glasses from the front, 92 across. */
+  const specsKit=()=>'<path class="tp-arm" d="M-38 -11 L-46 -6 M38 -11 L46 -6"/>'+
+    '<path class="tp-goggle" d="M-38 -10 Q-38 -14 -32 -14 H-6 Q-3 -14 -3 -10 L-4 3 Q-6 12 -16 12 H-26 Q-38 12 -38 2 Z"/>'+
+    '<path class="tp-goggle" d="M38 -10 Q38 -14 32 -14 H6 Q3 -14 3 -10 L4 3 Q6 12 16 12 H26 Q38 12 38 2 Z"/>'+
+    '<path class="tp-brow" d="M-39 -13.5 Q0 -17 39 -13.5"/><path class="tp-arm" d="M-4 -7 Q0 -10 4 -7"/>'+
+    '<path class="tp-glint" d="M-31 -8 L-25 -1 M-22 -9.5 L-19.5 -6.5 M13 -8 L19 -1 M22 -9.5 L24.5 -6.5"/>';
+  /* A disposable FFP3 dust mask with a valve, from the front, 70 across. */
+  const maskKit=()=>'<path class="tp-strapw" d="M-23 -8 L-35 -13 M23 -8 L35 -13 M-21 9 L-35 13 M21 9 L35 13"/>'+
+    '<path class="tp-mask" d="M-24 -13 Q0 -22 24 -13 Q27 3 18 14 Q0 26 -18 14 Q-27 3 -24 -13 Z"/><path class="tp-shade" d="M0 -17.5 Q13 -16.5 24 -13 Q27 3 18 14 Q9 20.5 0 21.5 Z"/>'+
+    '<path class="tp-seam" d="M0 -17.5 V21.5"/><path class="tp-clip" d="M-9 -16.5 Q0 -19.5 9 -16.5"/>'+
+    '<circle class="tp-valve2" cx="0" cy="4" r="7.5"/><path class="tp-slots" d="M-3.5 1 H3.5 M-4.5 4 H4.5 M-3.5 7 H3.5"/>';
+  /* A 25 kg paper sack of cement, 52 wide and 60 tall, with its printed band. */
+  const cementSack=()=>'<path class="tp-sack" d="M1 8 H51 L52 54 Q52 59 47 59 H5 Q0 59 0 54 Z"/><path class="tp-shade" d="M34 8 H51 L52 54 Q52 59 47 59 H34 Z"/>'+
+    '<path class="tp-sackt" d="M2 0 H50 L51 9 H1 Z"/><path class="tp-stitch" d="M3 7 '+Array.from({length:12},()=>'l2 -2 l2 2').join(" ")+'"/>'+
+    '<rect class="tp-grey2" x="0" y="22" width="52" height="17"/><path class="tp-fold" d="M6 12 Q4 30 6 52"/>';
+  /* A 5 litre can of plasticiser: body, handle, cap and label. */
+  const jerryCan=()=>'<path class="tp-can" d="M0 14 Q0 8 6 8 H38 Q44 8 44 14 V52 Q44 58 38 58 H6 Q0 58 0 52 Z"/><path class="tp-shade" d="M30 8 H38 Q44 8 44 14 V52 Q44 58 38 58 H30 Z"/>'+
+    '<rect class="tp-capk" x="5" y="0" width="12" height="9" rx="2"/><path class="tp-canh" d="M25 8 V2.5 H40 V8"/><rect class="tp-paper" x="6" y="22" width="32" height="20" rx="2"/><path class="tp-thin" d="M11 29 H33 M11 35 H28"/>';
+  /* A wheelbarrow, wheel on the left, about 70 long, with an optional load. */
+  const barrow=load=>shadow(30,27,32,3.2)+'<path class="tp-leg" d="M40 14 L43 26 M16 14 L18 20"/><path class="tp-leg" d="M44 5 L66 1"/><rect class="tp-gripk" x="62" y="-1.6" width="9" height="4.6" rx="2.3" transform="rotate(-10 66 1)"/>'+
+    '<circle class="tp-tyre" cx="4" cy="18" r="7.2"/><circle class="tp-hubw" cx="4" cy="18" r="2.6"/><path class="tp-leg" d="M4 18 L14 9"/>'+
+    '<path class="tp-barrow" d="M0 0 H52 L44 15 H11 Z"/><path class="tp-shade" d="M26 0 H52 L44 15 H26 Z"/>'+(load?'<path class="'+load+'" d="M5 .5 Q26 -13 47 .5 Z"/>':"")+'<path class="tp-rimb" d="M-1.5 0 H53.5"/>';
+  /* A fire extinguisher, x its middle: red body, coloured band, valve and lever, hose or CO2 horn. */
+  function extinguisher(x,band,co2){
+    return shadow(x,101,19,3)+
+      (co2?'<path class="tp-horn" d="M'+(x+6)+' 24 C'+(x+26)+' 24 '+(x+26)+' 40 '+(x+22)+' 60 L'+(x+30)+' 64 L'+(x+26)+' 52"/>':'<path class="tp-hosex" d="M'+(x+6)+' 24 C'+(x+24)+' 26 '+(x+24)+' 50 '+(x+20)+' 70"/><rect class="tp-exhead" x="'+(x+17.5)+'" y="68" width="5" height="7" rx="1.5"/>')+
+      '<path class="tp-exbody" d="M'+(x-15)+' 37 Q'+(x-15)+' 29 '+(x-8)+' 29 H'+(x+8)+' Q'+(x+15)+' 29 '+(x+15)+' 37 V96 Q'+(x+15)+' 100 '+(x+11)+' 100 H'+(x-11)+' Q'+(x-15)+' 100 '+(x-15)+' 96 Z"/>'+
+      '<rect class="'+band+'" x="'+(x-15)+'" y="47" width="30" height="15"/><path class="tp-shine" d="M'+(x-9)+' 35 V44 M'+(x-9)+' 66 V92"/>'+
+      '<rect class="tp-exbase" x="'+(x-15)+'" y="94" width="30" height="6" rx="2"/>'+
+      '<rect class="tp-exhead" x="'+(x-5)+'" y="19" width="10" height="11" rx="2"/><path class="tp-lever" d="M'+(x-5)+' 19 L'+(x+13)+' 13.5 L'+(x+14.5)+' 16.5 L'+(x-3)+' 22 Z"/>'+
+      '<circle class="tp-gauge" cx="'+(x-8.5)+'" cy="24" r="3.2"/>';
   }
 
   /* A worker in PPE for mixing, front on (drawn in a 320 × 210 space). */
@@ -90,11 +194,10 @@
   /* ---------- Mixing mortar ---------- */
   Object.assign(P,{
     ingredients:()=>svg(320,122,
-      '<path class="tp-sand" d="M8 98 C22 70 38 56 54 56 C70 56 86 70 100 98 Z"/><g class="tp-grain"><circle cx="40" cy="80" r="1.2"/><circle cx="58" cy="70" r="1.2"/><circle cx="70" cy="86" r="1.2"/><circle cx="30" cy="92" r="1.2"/><circle cx="52" cy="90" r="1.2"/><circle cx="80" cy="92" r="1.2"/></g>'+
-      '<path class="tp-grey" d="M116 44 Q116 38 122 38 H162 Q168 38 168 44 V94 Q168 98 164 98 H120 Q116 98 116 94 Z"/><path class="tp-grey2" d="M116 44 Q116 38 122 38 H162 Q168 38 168 44 V47 H116 Z"/><rect class="tp-grey2" x="116" y="60" width="52" height="17"/>'+
-      '<text class="tp-on" x="142" y="72">CEMENT</text><text class="tp-xs" x="142" y="90">25 kg</text>'+
+      shadow(54,98.5,50,3)+'<path class="tp-sand" d="M8 98 C22 70 38 56 54 56 C70 56 86 70 100 98 Z"/><g class="tp-grain"><circle cx="40" cy="80" r="1.2"/><circle cx="58" cy="70" r="1.2"/><circle cx="70" cy="86" r="1.2"/><circle cx="30" cy="92" r="1.2"/><circle cx="52" cy="90" r="1.2"/><circle cx="80" cy="92" r="1.2"/></g>'+
+      shadow(142,98,31,3)+at(116,38,1,cementSack())+'<text class="tp-on" x="142" y="72.5">CEMENT</text><text class="tp-xs" x="142" y="90">25 kg</text>'+
       bucket(205,60,"tp-water","level")+
-      '<rect class="tp-can" x="250" y="48" width="44" height="50" rx="6"/><rect class="tp-can" x="255" y="40" width="12" height="9" rx="2"/><path class="tp-canh" d="M275 48 V42 H290 V48"/><rect class="tp-paper" x="256" y="62" width="32" height="20" rx="2"/><path class="tp-thin" d="M261 69 H283 M261 75 H278"/>'+
+      shadow(272,98.5,27,3)+at(250,40,1,jerryCan())+
       t(54,116,"Sand")+t(142,116,"Cement")+t(205,116,"Water")+t(272,116,"Plasticiser"),
       "Building sand, a 25 kg bag of cement, a bucket of water and a tub of plasticiser"),
     ratio:()=>svg(320,112,
@@ -152,7 +255,7 @@
     hand3:()=>svg(320,118,
       '<path class="tp-ply" d="M44 90 H276 L294 104 H26 Z"/><path class="tp-ply2" d="M26 104 H294 V109 H26 Z"/>'+
       '<path class="tp-dry" d="M78 96 C94 68 116 58 132 58 C138 62 148 64 160 64 C172 64 182 62 188 58 C204 58 226 68 242 96 Z"/><ellipse class="tp-water" cx="160" cy="61" rx="23" ry="4.2"/>'+
-      '<g transform="translate(222 30) rotate(-58)">'+bucket(0,0,"tp-water","level",.8)+'</g><path class="tp-pour" d="M210 32 Q186 36 172 58"/>',
+      '<g transform="translate(222 30) rotate(-58)">'+bucket(0,0,"tp-water","level",.8,true)+'</g><path class="tp-pour" d="M210 32 Q186 36 172 58"/>',
       "A well made in the middle of the dry mix, with water poured into it from a bucket"),
     hand4:()=>svg(320,118,
       '<path class="tp-ply" d="M44 90 H276 L294 104 H26 Z"/><path class="tp-ply2" d="M26 104 H294 V109 H26 Z"/>'+
@@ -182,13 +285,13 @@
       t(114,54,"DRY","tp-sm")+t(114,66,"MORTAR","tp-sm")+
       '<rect class="tp-steel" x="106" y="124" width="16" height="10"/><rect class="tp-steel" x="104" y="132" width="96" height="14" rx="7"/><rect class="tp-motor" x="86" y="128" width="22" height="22" rx="3"/>'+
       '<path class="tp-steel" d="M192 144 H202 V156 L198 160 H194 L192 156 Z"/><g class="tp-drop tp-wet"><circle cx="197" cy="164" r="2"/><circle cx="197" cy="170" r="1.6"/></g>'+
-      '<path class="tp-barrow" d="M174 172 H224 L216 186 H184 Z"/><path class="tp-wet" d="M178 173 Q199 162 220 173 Z"/><circle class="tp-tyre" cx="178" cy="189" r="5"/><path class="tp-frame" d="M220 178 L246 172 M214 186 L216 193"/>'+
+      at(172,172,.85,barrow("tp-wet"))+
       '<rect class="tp-motor" x="150" y="104" width="22" height="18" rx="2"/><circle class="tp-go" cx="161" cy="113" r="4.2"/><path class="tp-lead" d="M172 110 C190 110 196 94 214 94"/>'+
       '<path class="tp-pipe" d="M292 192 V120"/><path class="tp-pipe" d="M292 122 H282 V128"/><rect class="tp-motor" x="286" y="112" width="12" height="5" rx="2"/>'+
       '<path class="tp-hose" d="M282 128 C262 132 248 120 232 122 C216 124 206 128 196 132"/>',
       "A mortar silo: dry pre-blended mortar in the silo, a mixer at the bottom fed by a water hose, a control box, and mortar coming out into a barrow"),
     premix:()=>svg(320,120,
-      '<path class="tp-tubk" d="M12 56 H96 L89 100 H19 Z"/><rect class="tp-lid" x="8" y="48" width="92" height="9" rx="3"/><rect class="tp-paper" x="36" y="66" width="36" height="17" rx="2"/><path class="tp-thin" d="M41 72 H67 M41 78 H61"/>'+
+      shadow(54,100.5,44,3)+shadow(153,100.5,44,3)+'<path class="tp-tubk" d="M12 56 H96 L89 100 H19 Z"/><rect class="tp-lid" x="8" y="48" width="92" height="9" rx="3"/><rect class="tp-paper" x="36" y="66" width="36" height="17" rx="2"/><path class="tp-thin" d="M41 72 H67 M41 78 H61"/>'+
       '<path class="tp-tubk" d="M111 56 H195 L188 100 H118 Z"/><ellipse class="tp-wet" cx="153" cy="57" rx="41" ry="6"/><path class="tp-sheen" d="M134 56 C146 53 162 53 174 55"/>'+
       '<g transform="rotate(6 250 70)"><rect class="tp-paper" x="228" y="38" width="44" height="58" rx="2"/>'+t(250,52,"USE BY","tp-xs")+t(250,64,"Fri 4 pm","tp-xs")+'<path class="tp-thin" d="M234 74 H266 M234 81 H260 M234 88 H264"/></g>'+
       t(54,116,"Keep it covered")+t(153,116,"Ready to use")+t(258,116,"Check the ticket"),
@@ -199,7 +302,7 @@
     team:()=>svg(320,140,
       brickwork(12,72,104,7,.12,BOND.stretcher,{headers:false})+
       person(140,134,{arm:"up"})+
-      '<path class="tp-barrow" d="M196 108 H244 L236 122 H204 Z"/><path class="tp-wet" d="M200 109 Q220 98 240 109 Z"/><circle class="tp-tyre" cx="198" cy="126" r="6"/><path class="tp-frame" d="M240 114 L262 110 M234 122 L236 132"/>'+
+      at(194,108,.92,barrow("tp-wet"))+
       person(276,134)+
       '<path class="tp-bubble" d="M148 3 H300 Q306 3 306 9 V24 Q306 30 300 30 H172 L154 42 L162 30 H148 Q142 30 142 24 V9 Q142 3 148 3 Z"/>'+t(224,20,"More mortar in 30 mins?","tp-sm"),
       "A bricklayer at a wall asking the labourer, who has a barrow of mortar, for more mortar in half an hour"),
@@ -213,10 +316,10 @@
 
   Object.assign(P,{
     /* One bucket of each material, for dragging into a mix. */
-    "bucket-cement":()=>svg(48,48,bucket(24,9,"tp-cement","level",.95),"A bucket of cement"),
-    "bucket-sand":()=>svg(48,48,bucket(24,9,"tp-sand","level",.95),"A bucket of sand"),
-    "bucket-lime":()=>svg(48,48,bucket(24,9,"tp-lime","level",.95),"A bucket of lime"),
-    "bucket-water":()=>svg(48,48,bucket(24,9,"tp-water","level",.95),"A bucket of water"),
+    "bucket-cement":()=>svg(48,48,bucket(24,8,"tp-cement","level",.92),"A bucket of cement"),
+    "bucket-sand":()=>svg(48,48,bucket(24,8,"tp-sand","level",.92),"A bucket of sand"),
+    "bucket-lime":()=>svg(48,48,bucket(24,8,"tp-lime","level",.92),"A bucket of lime"),
+    "bucket-water":()=>svg(48,48,bucket(24,8,"tp-water","level",.92),"A bucket of water"),
     sandcover:()=>svg(320,112,
       '<g class="tp-rain">'+[[34,6],[62,14],[90,4],[118,12],[48,30],[104,28],[76,34],[132,32]].map(p=>'<path d="M'+p[0]+' '+p[1]+' l-3 10"/>').join("")+'</g>'+
       '<path class="tp-sandwet" d="M16 92 C32 64 54 54 78 54 C102 54 124 64 140 92 Z"/><ellipse class="tp-water" cx="58" cy="90" rx="14" ry="2.2" opacity=".8"/><ellipse class="tp-water" cx="108" cy="91" rx="10" ry="1.8" opacity=".8"/>'+
@@ -228,7 +331,7 @@
       Array.from({length:12},(_,k)=>{const a=k*Math.PI/6,x1=92+Math.sin(a)*33,y1=52-Math.cos(a)*33,x2=92+Math.sin(a)*37,y2=52-Math.cos(a)*37;return '<path class="tp-tickc" d="M'+r(x1)+' '+r(y1)+' L'+r(x2)+' '+r(y2)+'"/>'}).join("")+
       '<path class="tp-hand2" d="M92 52 L92 22 M92 52 L109 42"/><circle class="tp-hub2" cx="92" cy="52" r="3"/>'+t(92,108,"About 2 hours")+
       '<path class="tp-arrow" d="M148 52 H176"/><path class="tp-arrowh" d="M171 47 L177 52 L171 57"/>'+
-      '<path class="tp-tubk" d="M192 40 H292 L284 86 H200 Z"/><ellipse class="tp-wet" cx="242" cy="41" rx="48" ry="6.5"/><path class="tp-crk" d="M222 40 L230 43 L226 46 M254 38 L262 42"/>'+t(242,108,"Setting? Mix fresh"),
+      shadow(242,86.5,46,3)+'<path class="tp-tubk" d="M192 40 H292 L284 86 H200 Z"/><ellipse class="tp-wet" cx="242" cy="41" rx="48" ry="6.5"/><path class="tp-crk" d="M222 40 L230 43 L226 46 M254 38 L262 42"/>'+t(242,108,"Setting? Mix fresh"),
       "A clock showing about two hours, then a tub of mortar starting to set: mix a fresh batch"),
   });
 
@@ -262,8 +365,11 @@
   const bondPanel=(x,label,sub,faces)=>'<g>'+brickwork(x,10,96,7,.12,faces)+t(x+48,88,label)+t(x+48,101,sub,"tp-xs")+'</g>';
   Object.assign(P,{
     tape:()=>svg(320,120,
-      '<rect class="tp-tape" x="14" y="30" width="70" height="62" rx="14"/><circle class="tp-hub" cx="49" cy="61" r="12"/>'+
-      '<rect class="tp-blade" x="80" y="52" width="226" height="22" rx="2"/>'+Array.from({length:23},(_,k)=>'<path class="tp-tick" d="M'+(88+k*9.5)+' 52 V'+(k%5===0?66:59)+'"/>').join("")+
+      shadow(50,96,40,3)+'<rect class="tp-blade" x="78" y="52" width="228" height="22" rx="1"/><path class="tp-shine" d="M86 55 H302"/>'+Array.from({length:23},(_,k)=>'<path class="tp-tick" d="M'+(88+k*9.5)+' 52 V'+(k%5===0?66:59)+'"/>').join("")+
+      '<path class="tp-steel" d="M303.5 48.5 H311 V77.5 H303.5 V74 H307 V52 H303.5 Z"/>'+
+      '<rect class="tp-tape" x="14" y="30" width="70" height="62" rx="14"/><path class="tp-shade" d="M60 31 H70 Q83 31 83 44 V78 Q83 91 70 91 H60 Z"/>'+
+      '<path class="tp-rubber" d="M14 74 H84 V78 Q84 92 70 92 H28 Q14 92 14 78 Z"/><rect class="tp-grip2" x="58" y="24.5" width="17" height="7" rx="2.5"/>'+
+      '<circle class="tp-hubm" cx="49" cy="55" r="12"/><circle class="tp-screw" cx="49" cy="55" r="2.6"/>'+
       '<text x="88" y="90">0</text><text x="135.5" y="90">50</text><text x="183" y="90">100</text><text x="230.5" y="90">150</text><text x="278" y="90">200 mm</text>',"A tape measure marked in millimetres"),
     /* A room in plan, 4 m by 3 m, drawn to scale (40 px a metre). */
     area:()=>svg(320,154,'<rect class="tp-floor" x="80" y="10" width="160" height="120" rx="1"/>'+Array.from({length:3},(_,k)=>'<path class="tp-gridl" d="M'+(120+k*40)+' 10 V130"/>').join("")+Array.from({length:2},(_,k)=>'<path class="tp-gridl" d="M80 '+(50+k*40)+' H240"/>').join("")+
@@ -272,14 +378,12 @@
     write:()=>svg(320,120,
       '<rect class="tp-page" x="70" y="10" width="180" height="104" rx="8"/>'+[0,1,2,3,4].map(k=>'<path class="tp-thin" d="M88 '+(34+k*16)+' H232"/>').join("")+
       '<text class="tp-hand" x="160" y="30">First, I checked the drawings.</text><text class="tp-hand" x="160" y="46">Then I set out the job.</text><text class="tp-hand" x="160" y="62">Finally, I checked the quality.</text>'+
-      '<path class="tp-pen" d="M262 94 L292 34 L300 38 L270 98 Z"/>',"A neat write-up in full sentences"),
+      at(296,36,1,pencil(),116.6),"A neat write-up in full sentences"),
     heap:()=>svg(320,120,
       '<rect class="tp-board" x="20" y="88" width="280" height="10" rx="3"/><path class="tp-mix" d="M50 88 Q160 8 270 88 Z"/><ellipse class="tp-water" cx="160" cy="52" rx="34" ry="9"/>'+
       '<path class="tp-thin" d="M126 50 Q160 30 194 50"/><text x="160" y="116">A well in the middle for the water</text>',"A mixed heap on a board with a well of water"),
     ppe:()=>svg(320,120,
-      '<path class="tp-glove" d="M40 100 V56 Q40 46 48 46 V30 Q48 24 54 24 Q60 24 60 30 V44 V22 Q60 16 66 16 Q72 16 72 22 V44 V26 Q72 20 78 20 Q84 20 84 26 V48 V36 Q84 30 90 30 Q96 30 96 36 V74 Q96 100 70 100 Z"/>'+
-      '<g><rect class="tp-goggle" x="130" y="42" width="44" height="30" rx="12"/><rect class="tp-goggle" x="180" y="42" width="44" height="30" rx="12"/><path class="tp-line" d="M174 56 H180 M120 56 H130 M224 56 H234"/></g>'+
-      '<g><path class="tp-mask" d="M258 50 Q282 38 306 50 L302 78 Q282 92 262 78 Z"/><path class="tp-line" d="M258 54 L248 48 M306 54 L316 48"/></g>'+
+      at(70,26,1.02,gloveKit())+at(177,58,1,specsKit())+at(282,60,1,maskKit())+
       '<text x="68" y="116">Gloves</text><text x="177" y="116">Eye protection</text><text x="282" y="116">Dust mask</text>',"Gloves, eye protection and a dust mask"),
     /* Joint finishes in section: the face of the wall is on the left. */
     joints:()=>svg(320,124,[["Flush","",'<path class="tp-mortar" d="M0 34 H56 V50 H0 Z"/>'],["Half round","(bucket handle)",'<path class="tp-mortar" d="M0 34 H56 V50 H0 V49 A7.5 7.5 0 0 0 0 35 Z"/>'],["Weather","struck",'<path class="tp-mortar" d="M6 34 H56 V50 H0 Z"/>'],["Recessed","",'<path class="tp-mortar" d="M6 34 H56 V50 H6 Z"/>']].map((j,i)=>{const x=14+i*78;return '<g transform="translate('+x+' 4)"><rect class="tp-brick" x="0" y="0" width="56" height="34"/><rect class="tp-brick" x="0" y="50" width="56" height="34"/>'+j[2]+'<path class="tp-face" d="M0 -2 V86"/></g>'+t(x+28,102,j[0],"tp-sm")+(j[1]?t(x+28,114,j[1],"tp-xs"):"")}).join(""),"Joint finishes cut through the wall with the face on the left: flush, half round, weather struck and recessed"),
@@ -311,14 +415,11 @@
       dimV(222,10,42.5,"",0)+t(262,30,"65 brick","tp-sm")+'<path class="tp-dim" d="M222 42.5 H232 M222 47.5 H232"/>'+t(262,50,"10 joint","tp-sm")+
       dimV(46,10,47.5,"",0)+t(26,32,"75","tp-sm")+t(135,126,"brick + joint = 75 mm a course","tp-xs"),
       "Three courses of brickwork: each course is a 65 millimetre brick and a 10 millimetre joint, 75 millimetres"),
-    tools:()=>svg(320,120,
-      '<g transform="translate(-4 -30)"><path class="tp-steel" d="M8 63.5 L52 63.5 L52 66 L12 66 Z"/><path class="tp-shank" d="M50 65 L55 55 L58 55"/><path class="tp-wood" d="M57 51.5 L74 53 Q77 55 74 57 L57 58.5 Z"/></g>'+
-      '<rect class="tp-lvl" x="100" y="24" width="84" height="12" rx="2"/><rect class="tp-vial" x="136" y="27" width="12" height="6" rx="3"/><circle class="tp-bub" cx="142" cy="30" r="1.8"/>'+
-      '<path class="tp-steel" d="M222 18 L226 44 L230 18 Z"/><path class="tp-steel" d="M270 18 L274 44 L278 18 Z"/><path class="tp-string" d="M226 20 H274"/>'+
-      '<path class="tp-steel" d="M34 94 H56 L52 100 H38 Z"/><rect class="tp-steel" x="40" y="66" width="10" height="30" rx="2"/><rect class="tp-grip2" x="40" y="72" width="10" height="12" rx="3"/>'+
-      '<rect class="tp-wood" x="110" y="80" width="54" height="8" rx="3"/><rect class="tp-steel" x="164" y="74" width="24" height="20" rx="3"/>'+
-      '<path class="tp-jointer" d="M226 92 C232 92 232 84 240 84 H268 C276 84 276 92 282 92"/><rect class="tp-wood" x="244" y="72" width="22" height="8" rx="3"/><path class="tp-shank" d="M248 80 V84 M262 80 V84"/>'+
-      t(34,56,"Trowel","tp-xs")+t(142,50,"Spirit level","tp-xs")+t(250,56,"Line and pins","tp-xs")+t(45,114,"Bolster","tp-xs")+t(149,114,"Club hammer","tp-xs")+t(254,114,"Jointer","tp-xs"),
+    tools:()=>svg(320,128,
+      at(8,30,.8,trowelTop())+at(102,24,1,levelTool(82))+
+      at(226,15,.95,linePin())+at(274,15,.95,linePin())+'<path class="tp-string" d="M229 21.5 Q250 24 271 21.5"/><path class="tp-wrap" d="M222.4 18.4 L229.6 20 M222.4 20.8 L229.6 22.4 M222.4 23.2 L229.6 24.8"/>'+
+      at(45,68,.76,bolsterTool())+at(108,90,1,clubHammer())+at(222,90,1,jointerTool())+
+      t(49,58,"Trowel","tp-xs")+t(143,52,"Spirit level","tp-xs")+t(250,58,"Line and pins","tp-xs")+t(45,122,"Bolster","tp-xs")+t(149,122,"Club hammer","tp-xs")+t(252,122,"Jointer","tp-xs"),
       "Bricklaying hand tools: trowel, spirit level, line and pins, bolster, club hammer and jointer"),
     coping:()=>svg(320,124,panel(120,52,80,3,.26,BOND.english)+
       '<path class="tp-dpc" d="M116 51 H204"/><path class="tp-coping" d="M104 50 V40 L160 26 L216 40 V50 Z"/><path class="tp-dripg" d="M112 50 a3 3 0 0 0 6 0 M202 50 a3 3 0 0 0 6 0"/>'+
@@ -336,7 +437,7 @@
       "Plan views of an attached pier bonded into a wall and an isolated pier standing on its own"),
     "garden-bond":()=>svg(320,112,'<g>'+brickwork(70,8,180,8,.12,BOND.garden)+'</g>'+t(160,94,"English garden wall bond")+t(160,107,"3 stretcher courses, then a header course","tp-xs"),
       "English garden wall bond: three courses of stretchers, then a course of headers"),
-    soldier:()=>{const s2=.14,W=140,n=Math.floor(W/(75*s2)),row=(x,y,h,k0)=>Array.from({length:n},(_,k)=>'<rect class="tp-b'+(1+(k+k0)%3)+'" x="'+r(x+k*75*s2)+'" y="'+r(y)+'" width="'+r(65*s2)+'" height="'+r(h*s2)+'"/>').join("");
+    soldier:()=>{const s2=.14,W=140,n=Math.floor(W/(75*s2)),row=(x,y,h,k0)=>bw(s2)+Array.from({length:n},(_,k)=>'<rect class="tp-b'+(1+(k+k0)%3)+'" x="'+r(x+k*75*s2)+'" y="'+r(y)+'" width="'+r(65*s2)+'" height="'+r(h*s2)+'"/>').join("")+'</g>';
       return svg(320,122,panel(16,6,W,2,s2)+'<rect class="tp-mortar" x="16" y="'+r(6+2*75*s2-10*s2)+'" width="'+W+'" height="'+r(225*s2+2)+'"/>'+row(16,6+2*75*s2,215,0)+panel(16,r(6+2*75*s2+225*s2),W,2,s2)+
         '<rect class="tp-mortar" x="168" y="'+r(28-10*s2)+'" width="'+W+'" height="'+r(112.5*s2+1)+'"/>'+row(168,28,102.5,1)+panel(168,r(28+112.5*s2),W,4,s2)+
         t(86,112,"Soldier course: on end","tp-sm")+t(238,112,"Brick-on-edge capping","tp-sm"),"A soldier course of bricks stood on end in a wall, and a brick-on-edge capping along the top of a wall")},
@@ -348,12 +449,11 @@
       "A timber gauge rod with a mark every 75 millimetre course and the sill and lintel heights marked")},
     /* UK fire extinguishers: all red, with a coloured band. */
     extinguishers:()=>svg(320,124,[["Water","tp-exw"],["Foam","tp-exf"],["CO2","tp-exc"],["Powder","tp-exp"]].map((e,i)=>{const x=40+i*80;
-      return '<rect class="tp-exbody" x="'+(x-16)+'" y="30" width="32" height="70" rx="10"/><rect class="'+e[1]+'" x="'+(x-16)+'" y="48" width="32" height="14"/><rect class="tp-exhead" x="'+(x-6)+'" y="20" width="12" height="11" rx="2"/>'+
-        (e[0]==="CO2"?'<path class="tp-horn" d="M'+(x+6)+' 24 C'+(x+26)+' 24 '+(x+26)+' 40 '+(x+22)+' 60 L'+(x+30)+' 64 L'+(x+26)+' 52"/>':'<path class="tp-hosex" d="M'+(x+6)+' 24 C'+(x+24)+' 26 '+(x+24)+' 50 '+(x+20)+' 70"/>')+t(x,116,e[0])}).join(""),
+      return extinguisher(x,e[1],e[0]==="CO2")+t(x,116,e[0])}).join(""),
       "Four red fire extinguishers with coloured bands: water red, foam cream, CO2 black with a horn, and dry powder blue"),
     opening:()=>{const s2=.13,L=110-150*s2,LW=100+300*s2,n=Math.floor(LW/(75*s2));return svg(320,146,panel(20,6,280,14,s2)+'<rect class="tp-hole2" x="110" y="45" width="100" height="62"/>'+
       '<rect class="tp-lintel" x="'+r(L)+'" y="36" width="'+r(LW)+'" height="9"/><rect class="tp-mortar" x="'+r(L)+'" y="7" width="'+r(LW)+'" height="29"/>'+
-      Array.from({length:n},(_,k)=>'<rect class="tp-b'+(1+k%3)+'" x="'+r(L+(LW-n*75*s2+10*s2)/2+k*75*s2)+'" y="8" width="'+r(65*s2)+'" height="'+r(215*s2)+'"/>').join("")+
+      bw(s2)+Array.from({length:n},(_,k)=>'<rect class="tp-b'+(1+k%3)+'" x="'+r(L+(LW-n*75*s2+10*s2)/2+k*75*s2)+'" y="8" width="'+r(65*s2)+'" height="'+r(215*s2)+'"/>').join("")+'</g>'+
       '<rect class="tp-sill" x="104" y="107" width="112" height="10"/><rect class="tp-weep" x="129.5" y="30" width="2" height="5"/><rect class="tp-weep" x="188" y="30" width="2" height="5"/>'+
       dimH(128,r(L),110,"150")+dimH(128,210,r(210+150*s2),"150")+t(160,80,"Opening","tp-xs"),
       "A window opening in brickwork: a lintel with a soldier course above, 150 millimetre bearings at each end, a brick-on-edge sill and weep holes")},
@@ -364,8 +464,7 @@
       '<path class="tp-rake" d="M26 121 L160 9 L294 121"/><path class="tp-string" d="M160 9 L300 124"/>'+t(262,40,"Line set","tp-xs")+t(262,52,"to the rake","tp-xs")+t(58,40,"Bricks cut","tp-xs")+t(58,52,"to the line","tp-xs"),
       "A gable end wall with each course cut along a line set to the angle of the rake")},
     bolster:()=>svg(320,120,'<rect class="tp-brick" x="70" y="72" width="180" height="40"/><path class="tp-mark" d="M160 72 V112"/>'+
-      '<g transform="rotate(-6 160 60)"><path class="tp-steel" d="M146 70 H174 L170 60 H150 Z"/><rect class="tp-steel" x="155" y="26" width="10" height="36" rx="2"/><rect class="tp-grip2" x="154" y="36" width="12" height="16" rx="3"/></g>'+
-      '<g transform="rotate(20 200 26)"><rect class="tp-wood" x="176" y="22" width="80" height="8" rx="3"/><rect class="tp-steel" x="156" y="14" width="24" height="24" rx="3"/></g>'+
+      '<g transform="rotate(-6 160 70)">'+at(160,25,.9,bolsterTool())+'</g>'+at(236,42,.95,clubHammer(),206)+
       t(60,40,"Mark all faces,","tp-xs")+t(60,52,"bolster on the line","tp-xs"),"A brick marked for cutting with a bolster held on the line and a club hammer ready to strike")
   });
   /* ---------- Joinery and carpentry ---------- */
@@ -383,7 +482,7 @@
     window:()=>svg(320,140,'<rect class="tp-tim" x="20" y="10" width="160" height="112"/><rect class="tp-glass" x="30" y="20" width="60" height="90"/><rect class="tp-tim2" x="98" y="18" width="74" height="96"/><rect class="tp-glass" x="106" y="26" width="58" height="80"/>'+
       '<path class="tp-tim" d="M14 122 H186 L184 132 H16 Z"/>'+
       '<g transform="translate(220 40)"><path class="tp-tim" d="M0 40 V20 H30 V14 H44 V20 L80 30 V46 H6 V40 Z"/><path class="tp-dripg" d="M14 46 a4 4 0 0 0 8 0"/><path class="tp-arrow" d="M66 20 L78 24"/><g class="tp-drop2"><circle cx="18" cy="56" r="2"/><circle cx="18" cy="66" r="2"/></g></g>'+
-      t(100,6,"","tp-xs")+t(260,110,"Sill section","tp-xs")+t(255,26,"weathered","tp-xs"),
+      t(100,6,"","tp-xs")+t(276,112,"Sill section","tp-xs")+t(255,26,"weathered","tp-xs"),
       "A timber casement window from outside: frame with head, jambs and sill, an opening casement and glass, and a section through the sloping sill with a drip groove underneath"),
     /* A straight flight: strings, treads, risers and nosings, with the rise and going. */
     stair:()=>{let st="";for(let k=0;k<5;k++){const x=40+k*44,y=110-k*20;st+='<rect class="tp-tim" x="'+x+'" y="'+(y-20)+'" width="6" height="20"/><path class="tp-tim2" d="M'+(x-6)+' '+(y-24)+' H'+(x+44)+' V'+(y-20)+' H'+(x-6)+' Z"/>'}
@@ -393,15 +492,15 @@
     /* Door frame (rebated, solid) and door lining (thin board with a planted stop), in section. */
     framelining:()=>svg(320,120,'<path class="tp-tim" d="M40 20 H110 V80 H80 V60 H40 Z"/><rect class="tp-door2" x="40" y="62" width="38" height="46"/>'+
       '<rect class="tp-tim" x="190" y="30" width="100" height="18"/><rect class="tp-tim2" x="224" y="48" width="12" height="12"/><rect class="tp-door2" x="190" y="60" width="32" height="46"/>'+
-      t(75,14,"Door frame","tp-sm")+t(75,118,"Rebate cut in","tp-xs")+t(240,24,"Door lining","tp-sm")+t(262,70,"Planted stop","tp-xs")+'<path class="tp-thin" d="M248 66 H236"/>',
+      t(75,14,"Door frame","tp-sm")+t(75,118,"Rebate cut in","tp-xs")+t(240,24,"Door lining","tp-sm")+t(281,74,"Planted stop","tp-xs")+'<path class="tp-thin" d="M246 70 H237"/>',
       "Sections through a solid door frame with a rebate cut into it, and a thin door lining with a separate stop fixed on"),
     /* A four-panel door and a ledged and braced door (hinges on the left). */
-    doors:()=>svg(320,140,'<rect class="tp-tim" x="30" y="8" width="90" height="124"/><rect class="tp-panel" x="42" y="18" width="30" height="46"/><rect class="tp-panel" x="78" y="18" width="30" height="46"/><rect class="tp-panel" x="42" y="76" width="30" height="46"/><rect class="tp-panel" x="78" y="76" width="30" height="46"/>'+
+    doors:()=>svg(320,148,'<rect class="tp-tim" x="30" y="8" width="90" height="124"/><rect class="tp-panel" x="42" y="18" width="30" height="46"/><rect class="tp-panel" x="78" y="18" width="30" height="46"/><rect class="tp-panel" x="42" y="76" width="30" height="46"/><rect class="tp-panel" x="78" y="76" width="30" height="46"/>'+
       '<rect class="tp-tim2" x="190" y="8" width="90" height="124"/>'+[0,1,2,3,4].map(k=>'<path class="tp-thin" d="M'+(208+k*18)+' 8 V132"/>').join("")+
       '<rect class="tp-tim" x="190" y="18" width="90" height="12"/><rect class="tp-tim" x="190" y="64" width="90" height="12"/><rect class="tp-tim" x="190" y="110" width="90" height="12"/>'+
-      '<path class="tp-brace" d="M196 108 L274 32 M196 62 L274 32" opacity="0"/><path class="tp-brace" d="M198 108 L272 78 M198 62 L272 30"/>'+
+      olLine("tp-brace","M198 108 L272 78 M198 62 L272 30",9,"sq")+
       '<rect class="tp-hinge" x="186" y="20" width="10" height="8"/><rect class="tp-hinge" x="186" y="112" width="10" height="8"/>'+
-      t(75,138,"Panelled","tp-xs")+t(235,138,"Ledged and braced","tp-xs"),
+      t(75,144,"Panelled","tp-xs")+t(235,144,"Ledged and braced","tp-xs"),
       "A four-panel door with stiles, rails, a muntin and panels, and a ledged and braced door hung on the left, its braces rising away from the hinges"),
     /* Chisel edge: ground at 25 degrees, honed at 30. */
     chisel:()=>svg(320,110,'<path class="tp-steel" d="M20 50 H220 L250.4 63 L255.2 66 H20 Z"/><path class="tp-honed" d="M250.4 63 L255.2 66 H250.4 Z"/>'+
@@ -413,9 +512,9 @@
       '<rect class="tp-mould" x="10" y="22" width="300" height="4"/><rect class="tp-mould" x="10" y="80" width="186" height="5"/><rect class="tp-mould" x="10" y="122" width="186" height="10"/><rect class="tp-mould" x="262" y="122" width="48" height="10"/>',
       "A wall with a picture rail near the top, a dado rail part way up, skirting along the bottom and architrave around the door"),
     /* A balustrade: newel, handrail, spindles and baserail, with the 100 mm rule. */
-    balustrade:()=>{let sp="";for(let k=0;k<9;k++){const x=62+k*22,d=(x-46)*16/220;sp+='<path class="tp-spindle" d="M'+x+' '+r(104-d)+' V'+r(28-d)+'"/>'}
+    balustrade:()=>{let sp="";for(let k=0;k<9;k++){const x=62+k*22,d=(x-46)*16/220;sp+=olLine("tp-spindle",'M'+x+' '+r(104-d)+' V'+r(28-d),5)}
       return svg(320,130,'<rect class="tp-tim" x="30" y="16" width="16" height="110"/><rect class="tp-tim" x="266" y="2" width="16" height="108"/>'+
-        '<path class="tp-rail" d="M46 26 L266 10"/><path class="tp-rail" d="M46 106 L266 90"/>'+sp+'<circle class="tp-sphere" cx="73" cy="64" r="9"/>'+t(110,124,"Gaps under 100 mm","tp-xs")+t(156,14,"Handrail","tp-xs")+t(18,10,"Newel","tp-xs"),
+        olLine("tp-rail","M46 26 L266 10",9,"rc")+olLine("tp-rail","M46 106 L266 90",9,"rc")+sp+'<circle class="tp-sphere" cx="73" cy="64" r="9"/>'+t(110,124,"Gaps under 100 mm","tp-xs")+t(202,7,"Handrail","tp-xs")+t(18,10,"Newel","tp-xs"),
         "A stair balustrade: newel posts, a handrail, a baserail and spindles close enough that a 100 millimetre sphere can't pass between them")},
     /* Where hinges and the handle go on a door. */
     hinges:()=>svg(320,140,'<rect class="tp-door3" x="110" y="6" width="80" height="130"/><rect class="tp-hinge" x="106" y="16" width="8" height="12"/><rect class="tp-hinge" x="106" y="108" width="8" height="12"/>'+
@@ -489,7 +588,7 @@
     arch:()=>{const s=.12,cx=160,sp=90,S=70,rise=28,R=(S*S+rise*rise)/(2*rise),cy=sp+R-rise,D=215*s,R2=R+D,th=Math.asin(S/R),n=17,dA=2*th/n,g=10*s/R;
       let v="";for(let k=0;k<n;k++){const a0=-th+k*dA+g/2,a1=a0+dA-g;v+='<path class="tp-b'+(1+k%3)+'" d="M'+polar(cx,cy,R,a0)+' A'+r(R)+' '+r(R)+' 0 0 1 '+polar(cx,cy,R,a1)+' L'+polar(cx,cy,R2,a1)+' A'+r(R2)+' '+r(R2)+' 0 0 0 '+polar(cx,cy,R2,a0)+' Z"/>'}
       return svg(320,150,panel(20,6,280,16,s)+
-        '<path class="tp-mortar" d="M'+polar(cx,cy,R,-th)+' A'+r(R)+' '+r(R)+' 0 0 1 '+polar(cx,cy,R,th)+' L'+polar(cx,cy,R2,th)+' A'+r(R2)+' '+r(R2)+' 0 0 0 '+polar(cx,cy,R2,-th)+' Z"/>'+v+
+        '<path class="tp-mortar" d="M'+polar(cx,cy,R,-th)+' A'+r(R)+' '+r(R)+' 0 0 1 '+polar(cx,cy,R,th)+' L'+polar(cx,cy,R2,th)+' A'+r(R2)+' '+r(R2)+' 0 0 0 '+polar(cx,cy,R2,-th)+' Z"/>'+bw(s)+v+'</g>'+
         '<path class="tp-hole2" d="M90 150 V90 A'+r(R)+' '+r(R)+' 0 0 1 230 90 V150 Z"/><path class="tp-cent" d="M26 90 H294"/>'+
         dimH(132,90,230,"")+dimV(160,62,90,"",0),
         "A segmental brick arch over an opening: wedge-shaped voussoirs on end with a key brick at the crown, the springing line across the tops of the jambs, the span and the rise")},
@@ -507,7 +606,7 @@
        bricks and a plinth course with a bevelled top above the base. */
     decor:()=>{const s=.2,X=20,W=280,y=k=>6+k*15,row=(k,f,cls)=>brickwork(X,y(k),W,1,s,()=>f,{headers:false}).replace(/tp-b[123]/g,m=>cls||m);
       let dent="";const hw=102.5*s,step=112.5*s;for(let i=0;X+i*step<X+W;i++){const w=Math.min(hw,X+W-(X+i*step));dent+='<rect class="'+(i%2?"tp-rec":"tp-b2")+'" x="'+r(X+i*step)+'" y="'+y(1)+'" width="'+r(w)+'" height="13"/>'+(i%2?"":'<rect class="tp-shadow2" x="'+r(X+i*step)+'" y="'+(y(1)+13)+'" width="'+r(w)+'" height="3"/>')}
-      return svg(320,130,'<rect class="tp-mortar" x="'+X+'" y="6" width="'+W+'" height="118"/>'+row(0,BOND.stretcher(0))+row(2,BOND.stretcher(1))+dent+row(3,BOND.stretcher(0))+row(4,BOND.stretcher(1),"tp-bf")+row(5,BOND.stretcher(0))+
+      return svg(320,130,'<rect class="tp-mortar" x="'+X+'" y="6" width="'+W+'" height="118"/>'+row(0,BOND.stretcher(0))+row(2,BOND.stretcher(1))+bw(s)+dent+'</g>'+row(3,BOND.stretcher(0))+row(4,BOND.stretcher(1),"tp-bf")+row(5,BOND.stretcher(0))+
         row(6,BOND.stretcher(1))+'<rect class="tp-chamf" x="'+X+'" y="'+y(6)+'" width="'+W+'" height="4"/>'+row(7,BOND.stretcher(0)),
         "A brick wall with a dentil course of alternate projecting headers near the top, a string course of contrasting buff bricks across the middle, and a plinth course with a bevelled top near the bottom")},
     /* A corbel in section: three courses each stepping out a quarter brick (56 mm), 168 mm in all, less than the
@@ -530,7 +629,7 @@
     /* A drain in long section: pipe on a granular bed and surround laid to a steady fall into an inspection chamber,
        trench backfilled above. The fall is exaggerated so you can see it. */
     drain:()=>svg(320,130,'<rect class="tp-soil" x="0" y="20" width="320" height="110"/><path class="tp-ground" d="M0 20 H320"/>'+
-      '<rect class="tp-backfill" x="10" y="21" width="230" height="100"/><path class="tp-gravel" d="M10 82 L240 94 V121 H10 Z"/><path class="tp-pipe3" d="M10 94 L246 106"/>'+
+      '<rect class="tp-backfill" x="10" y="21" width="230" height="100"/><path class="tp-gravel" d="M10 82 L240 94 V121 H10 Z"/>'+olLine("tp-pipe3","M10 94 L246 106",9,"pipe")+''+
       '<rect class="tp-brick" x="240" y="16" width="12" height="104"/><rect class="tp-brick" x="292" y="16" width="12" height="104"/><rect class="tp-conc" x="240" y="120" width="64" height="8"/>'+
       '<path class="tp-conc" d="M252 102 Q272 118 292 102 V120 H252 Z"/><rect class="tp-steel" x="236" y="12" width="72" height="5"/><rect class="tp-hole2" x="252" y="17" width="40" height="85"/><path class="tp-conc" d="M252 102 Q272 118 292 102 V120 H252 Z"/>'+
       '<path class="tp-arrow" d="M60 76 L150 81"/><path class="tp-arrowh" d="M143 76 L151 81 L143 86"/>',
@@ -557,7 +656,7 @@
       for(let k=0;k<n;k++){const a=-th+(k+.5)*2*th/n,c=Math.cos(a),sn=Math.sin(a),px=(rr,w)=>r(cx+rr*sn+w*c)+' '+r(cy-rr*c+w*sn);
         o+='<path class="tp-b'+(1+k%3)+'" d="M'+px(R-D,-h/2)+' L'+px(R,-h/2)+' L'+px(R,h/2)+' L'+px(R-D,h/2)+' Z"/>'}
       return svg(320,150,'<path class="tp-mortar" d="M'+polar(cx,cy,R-D,-th)+' A'+(R-D)+' '+(R-D)+' 0 0 1 '+polar(cx,cy,R-D,th)+' L'+polar(cx,cy,R,th)+' A'+R+' '+R+' 0 0 0 '+polar(cx,cy,R,-th)+' Z"/>'+o+
-        '<path class="tp-rod" d="M'+cx+' '+cy+' L'+polar(cx,cy,R,.42)+'"/><circle class="tp-peg" cx="'+cx+'" cy="'+cy+'" r="5"/>',
+        olLine("tp-rod",'M'+cx+' '+cy+' L'+polar(cx,cy,R,.42),4,"rc")+'<circle class="tp-peg" cx="'+cx+'" cy="'+cy+'" r="5"/>',
         "A wall curved on plan, seen from above, built in headers, with a trammel rod pivoting on a peg at the centre of the curve reaching out to the face of the wall")},
     /* A simple bar chart programme: when each activity runs and what has to finish first. */
     gantt:()=>{const rows=[["Set out",0,1],["Foundations",1,3],["Walls to DPC",3,4],["Superstructure",4,8]],X=110,wk=24;
@@ -593,14 +692,14 @@
     triangle:()=>svg(320,120,'<path class="tp-tri" d="M100 104 H228 L100 14 Z"/><path class="tp-thin" d="M100 92 H112 V104"/><path class="tp-arrow" d="M200 104 A28 28 0 0 0 205.1 88"/>'+t(118,86,"90°","tp-sm")+t(180,98,"35°","tp-sm")+t(112,44,"?","tp-mid"),
       "A right-angled triangle with angles of 90 degrees and 35 degrees, and the third angle unknown"),
     /* A concrete trench fill as a box: 10 m long, 0.6 m wide, 0.2 m deep (not to scale). */
-    trench:()=>svg(320,120,'<path class="tp-conc" d="M40 60 H250 L280 40 H70 Z"/><path class="tp-conc" d="M40 60 H250 V84 H40 Z"/><path class="tp-conc" d="M250 60 L280 40 V64 L250 84 Z"/>'+
+    trench:()=>svg(320,120,'<path class="tp-conc" d="M40 60 H250 L280 40 H70 Z"/><path class="tp-lit" d="M40 60 H250 L280 40 H70 Z"/><path class="tp-conc" d="M40 60 H250 V84 H40 Z"/><path class="tp-conc" d="M250 60 L280 40 V64 L250 84 Z"/><path class="tp-shade" d="M250 60 L280 40 V64 L250 84 Z"/>'+
       '<path class="tp-dim" d="M40 98 H250 M40 94 V102 M250 94 V102"/>'+t(145,113,"10 m","tp-sm")+'<path class="tp-dim" d="M262 90 L292 70"/>'+t(300,92,"0.6 m","tp-sm")+'<path class="tp-dim" d="M28 60 V84 M24 60 H32 M24 84 H32"/>'+t(30,52,"0.2 m","tp-sm"),
       "A block of concrete 10 metres long, 0.6 metres wide and 0.2 metres deep"),
     /* The probability scale from 0 to 1. */
     probline:()=>{const x=v=>40+v*240;return svg(320,80,'<path class="tp-line" d="M40 34 H280"/>'+[[0,"0","Impossible"],[.5,"½","Even"],[1,"1","Certain"]].map(p=>'<path class="tp-tickc" d="M'+x(p[0])+' 26 V42"/>'+t(x(p[0]),18,p[1],"tp-sm")+t(x(p[0]),60,p[2],"tp-xs")).join("")+
       '<path class="tp-tickc" d="M'+x(.25)+' 30 V38 M'+x(.75)+' 30 V38"/>'+t(x(.25),60,"Unlikely","tp-xs")+t(x(.75),60,"Likely","tp-xs"),"The probability scale from 0, impossible, through a half, even chance, to 1, certain")},
     /* A 4.8 m run with posts every 1.2 m: 4 gaps, 5 posts. */
-    posts:()=>svg(320,90,'<path class="tp-rail2" d="M40 30 H280"/>'+[0,1,2,3,4].map(k=>'<rect class="tp-tim2" x="'+(35+k*60)+'" y="20" width="10" height="44"/>').join("")+'<path class="tp-ground" d="M20 64 H300"/>'+
+    posts:()=>svg(320,90,olLine("tp-rail2","M40 30 H280",6)+[0,1,2,3,4].map(k=>'<rect class="tp-tim2" x="'+(35+k*60)+'" y="20" width="10" height="44"/>').join("")+'<path class="tp-ground" d="M20 64 H300"/>'+
       '<path class="tp-dim" d="M40 76 H100 M40 72 V80 M100 72 V80"/>'+t(70,88,"1.2 m","tp-xs")+t(210,88,"4.8 m in all","tp-xs"),"A fence 4.8 metres long with posts every 1.2 metres: 4 gaps and 5 posts"),
     /* A short, well laid-out work email. */
     email:()=>svg(320,150,'<rect class="tp-page" x="14" y="6" width="292" height="140" rx="8"/><path class="tp-thin" d="M14 44 H306"/>'+
