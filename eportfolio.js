@@ -60,10 +60,14 @@
     details.forEach((d,i)=>{const x=M+(i%2)*(CW/2),yy=y+Math.floor(i/2)*5.2;doc.setFont("helvetica","bold");doc.setTextColor(...ink);doc.text(pdfText(d[0])+":",x,yy+3.5);const lw=doc.getTextWidth(pdfText(d[0])+": ");doc.setFont("helvetica","normal");doc.setTextColor(71,84,103);doc.text(pdfText(d[1]),x+lw,yy+3.5)});
     y+=Math.ceil(details.length/2)*5.2+3;
     doc.setDrawColor(...accent);doc.setLineWidth(.8);doc.line(M,y,W-M,y);y+=8;
+    /* More than one entry: a contents list, filled in with page numbers once every entry has been laid out. */
+    let tocY=null;const starts=[];
+    if(entries.length>1){label("Contents",M,y+3);y+=6;tocY=y;y+=entries.length*5.6+4;doc.setDrawColor(234,236,240);doc.setLineWidth(.3);doc.line(M,y,W-M,y);y+=8}
 
     for(let i=0;i<entries.length;i++){
       const e=entries[i],photos=photosByEntry[i]||[];
       if(i>0){doc.addPage();y=M} /* each evidence occasion starts on its own page */
+      starts.push(doc.getNumberOfPages());
       need(20);
       label("Evidence "+(i+1)+" of "+entries.length+" · "+ukDate(entryTime(e)||e.d),M,y+3);y+=7;
       // Photos: four square tiles per row, each cropped from the centre to fill its tile.
@@ -121,6 +125,15 @@
       }
     }
 
+    if(tocY!=null){
+      doc.setPage(1);doc.setFontSize(9.5);
+      entries.forEach((e,i)=>{
+        const yy=tocY+i*5.6+3.5,n=(photosByEntry[i]||[]).length;
+        doc.setFont("helvetica","bold");doc.setTextColor(...ink);doc.text("Evidence "+(i+1),M,yy);
+        doc.setFont("helvetica","normal");doc.setTextColor(71,84,103);doc.text(pdfText(ukDate(entryTime(e)||e.d)+" · "+n+" photo"+(n===1?"":"s")),M+24,yy);
+        doc.setTextColor(...muted);doc.text("Page "+starts[i],W-M,yy,{align:"right"});
+      });
+    }
     const pages=doc.getNumberOfPages();
     for(let n=1;n<=pages;n++){
       doc.setPage(n);doc.setFont("helvetica","normal");doc.setFontSize(7.5);doc.setTextColor(...muted);
@@ -174,6 +187,7 @@
       .eport-sent:empty{display:none}
       .eport-ksbs{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px}
       .eport-ksbs span{font-size:11px;font-weight:750;color:var(--yellow-ink);background:var(--soft);border:1px solid var(--yellow-line);border-radius:999px;padding:3px 9px}
+      .eport-all{margin-top:12px}
       .eport-copy{min-height:40px;padding:8px 14px;border-radius:12px;border:1px solid #e3e7ed;background:#fff;font-size:12px;font-weight:700;cursor:pointer}
       .eport-files{display:grid;gap:10px;margin-bottom:13px}
       .eport-pdf{display:grid;gap:12px;margin:0!important}
@@ -228,14 +242,19 @@
       return;
     }
     const ksbs=[...new Set(entries.flatMap(e=>e.k||[]))];
+    const unitTotal=evidence.filter(e=>e.c===course&&e.u===unitName).length;
+    /* One entry opened from its tile: offer every saved entry for the unit in one PDF instead. */
+    const allLink=entryId!=null&&unitTotal>1?'<button type="button" class="eport-copy eport-all" id="eport-all">Share all '+unitTotal+' for this unit in one PDF</button>':"";
+    const introText=entryId==null&&entries.length>1?"All "+entries.length+" pieces of evidence for this unit in one PDF, oldest first, each on its own page with its date. Upload it to Aptem or your e-portfolio.":"Upload this PDF to Aptem or your e-portfolio. It’s named so your assessor can see what it is.";
     $("#screen").innerHTML=back+
       '<div class="eport-page">'+
-        '<div class="card eport-intro"><div class="section-title">SEND TO E-PORTFOLIO</div><h2>'+escHtml(unitName)+'</h2><p>Upload this PDF to Aptem or your e-portfolio. It’s named so your assessor can see what it is.</p><span class="eport-sent" id="eport-sent">'+(sent?"Last sent "+escHtml(ukDate(sent)):"")+'</span></div>'+
+        '<div class="card eport-intro"><div class="section-title">SEND TO E-PORTFOLIO</div><h2>'+escHtml(unitName)+'</h2><p>'+escHtml(introText)+'</p><span class="eport-sent" id="eport-sent">'+(sent?"Last sent "+escHtml(ukDate(sent)):"")+'</span>'+(allLink?'<div>'+allLink+'</div>':"")+'</div>'+
         '<div class="card"><div class="section-title">KSBS COVERED</div><div class="eport-ksbs">'+ksbs.map(k=>'<span>'+escHtml(k)+'</span>').join("")+'</div><button type="button" class="eport-copy" id="eport-copy">Copy KSB codes</button></div>'+
         '<div class="eport-files" id="eport-files"><div class="card eport-pdf"><div class="eport-sheet is-loading" aria-hidden="true"><span></span><span></span><span></span></div><p class="eport-status">Preparing your evidence PDF…</p></div></div>'+
         '<div class="card"><div class="section-title">HOW TO UPLOAD</div><ol class="eport-steps"><li>Tap <strong>Share PDF</strong> to send it straight to Aptem or another app, or <strong>Save PDF</strong> to keep it on your phone.</li><li>In Aptem (or your e-portfolio), add new evidence and upload the PDF.</li><li>Tag the KSBs listed above.</li></ol></div>'+
       '</div>';
     $("#eport-back").onclick=goBack;
+    const allBtn=$("#eport-all");if(allBtn)allBtn.onclick=()=>openSendToPortfolio(unitName);
     $("#eport-copy").onclick=async()=>{
       const text=ksbs.join(", ");
       try{await navigator.clipboard.writeText(text);if(typeof showEvidenceToast==="function")showEvidenceToast("KSB codes copied")}
@@ -251,10 +270,10 @@
       try{photosByEntry.push(window.eviaGetEvidencePhotoData?await window.eviaGetEvidencePhotoData(e):(e.p||[]))}
       catch(err){console.error("Evia photo read failed",err);photosByEntry.push([])}
     }
-    const lastDate=isoDate(entryTime(entries[entries.length-1])||Date.now());
+    const lastDate=isoDate(entryTime(entries[entries.length-1])||Date.now()),firstDate=isoDate(entryTime(entries[0])||Date.now());
     try{
       const pdf=await buildUnitPdf(unitName,entries,photosByEntry);
-      files.push({kind:"pdf",title:"Evidence PDF",pages:pdf.evPages,file:new File([pdf],base+"_evidence_"+lastDate+".pdf",{type:"application/pdf"})});
+      files.push({kind:"pdf",title:"Evidence PDF",pages:pdf.evPages,file:new File([pdf],base+"_evidence_"+(entries.length>1&&firstDate!==lastDate?firstDate+"_to_"+lastDate:lastDate)+".pdf",{type:"application/pdf"})});
     }catch(err){console.error("Evia PDF failed",err);problems.push(/PDF library/.test(err&&err.message)?"The PDF couldn’t be made because part of Evia hasn’t downloaded yet. Open Evia once with signal, then try again.":"The PDF couldn’t be made on this phone ("+escHtml((err&&err.message)||"unknown error")+").")}
     let n=0,unreadable=Math.max(0,expected-photosByEntry.flat().length);
     for(const src of photosByEntry.flat()){

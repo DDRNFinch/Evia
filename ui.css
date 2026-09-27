@@ -869,6 +869,10 @@ html body .bottom-nav{grid-template-columns:1fr 104px 1fr}
 .ev-saved-line{height:1px;background:var(--ui-line);margin:26px 2px 18px}
 .ev-saved{display:flex;flex-direction:column;gap:10px}
 .ev-saved h3{margin:0 2px 2px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ui-muted)}
+.ev-saved-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 2px}
+.ev-saved-head h3{margin:0 2px}
+.ev-share-all{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--ui-line);background:var(--ui-card);font:inherit;font-size:13px;font-weight:700;color:var(--ui-ink);cursor:pointer;box-shadow:var(--ui-shadow)}
+.ev-share-all svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .ev-tile{display:flex;align-items:stretch;background:var(--ui-card);border:1px solid var(--ui-line);border-radius:16px;overflow:hidden;box-shadow:var(--ui-shadow)}
 .ev-tile-main{flex:1;min-width:0;display:flex;align-items:center;gap:12px;padding:8px;text-align:left;cursor:pointer;font:inherit;color:inherit}
 .ev-tile-img{flex:0 0 auto;width:64px;height:48px;border-radius:10px;overflow:hidden;display:grid;place-items:center;background:var(--soft,#fff7d6);color:var(--yellow-ink)}

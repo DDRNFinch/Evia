@@ -212,10 +212,12 @@
     const entries=evidence.filter(e=>e.c===course&&e.u===unitName).sort((x,y)=>entryTime(y)-entryTime(x));
     if(!entries.length)return;
     const words=e=>String(e.w||"").trim()?String(e.w).trim().split(/\s+/).length:0,count=e=>(e.photoIds||e.p||[]).length;
-    page.insertAdjacentHTML("beforeend",'<div class="ev-saved-line"></div><section class="ev-saved"><h3>Saved evidence</h3>'+
+    /* With more than one saved, "Share all" puts every one of them in a single PDF, oldest first. */
+    page.insertAdjacentHTML("beforeend",'<div class="ev-saved-line"></div><section class="ev-saved"><div class="ev-saved-head"><h3>Saved evidence</h3>'+(entries.length>1?'<button type="button" class="ev-share-all" id="ev-share-all">'+SHARE_ICON+'Share all '+entries.length+'</button>':"")+'</div>'+
       entries.map(e=>tileHtml(escHtml(e.id),icon(ICONS.camera,20),"Saved "+savedDay(entryTime(e)),count(e)+" photo"+(count(e)===1?"":"s")+" · "+words(e)+" words",sharedAt("pack:"+e.id))).join("")+'</section>');
     entries.forEach(async e=>{const src=await photoOf(e),el=page.querySelector('[data-ev-img="'+CSS.escape(String(e.id))+'"]');if(src&&el)el.innerHTML='<img src="'+src+'" alt="">'});
     page.querySelectorAll("[data-ev-open]").forEach(b=>b.onclick=()=>viewPack(entries.find(e=>String(e.id)===b.dataset.evOpen)));
+    const all=page.querySelector("#ev-share-all");if(all)all.onclick=()=>window.eviaOpenSendToPortfolio&&window.eviaOpenSendToPortfolio(unitName);
     page.querySelectorAll("[data-ev-share]").forEach(b=>b.onclick=()=>{const e=entries.find(x=>String(x.id)===b.dataset.evShare);if(e&&window.eviaOpenSendToPortfolio)window.eviaOpenSendToPortfolio(unitName,e.id)});
   }
   /* A saved pack, to look back at: its photos and write-up. */
