@@ -75,8 +75,7 @@
   }
   function save(hrs,text,did,learned){
     const k=K(),now=Date.now();
-    hours.push({id:"otj-"+now+"-"+Math.random().toString(36).slice(2,8),n:Math.round(hrs*100)/100,description:text,did:did||"",learned:learned||"",createdAt:now,savedAt:formatDateTime(now)});
-    persist();
+    window.eviaData.put("hours",{minutes:Math.round(hrs*60),description:text,did:did||"",learned:learned||"",source:"evia",createdAt:now});
     if(window.eviaCheckTargets)window.eviaCheckTargets();
     const week=hours.filter(x=>Number(x.createdAt)>=weekStart()).reduce((n,x)=>n+Number(x.n||0),0);
     if(window.eviaMood)window.eviaMood("happy");

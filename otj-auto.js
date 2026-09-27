@@ -53,17 +53,13 @@
     if(typeof hours==="undefined")return;
     const day=new Date().toDateString(),autoKey=key+"|"+day;
     const batches=typeof otjBatches!=="undefined"?otjBatches:[],cutoff=Number((batches[batches.length-1]||{}).cutoff||0);
-    let e=hours.find(x=>x&&x.autoKey===autoKey&&Number(x.createdAt)>cutoff);
-    if(!e){
-      const now=Date.now();
-      e={id:"otj-auto-"+now+"-"+Math.random().toString(36).slice(2,8),n:0,mins:0,description:description||"Learning with Evia",did:"",learned:"",createdAt:now,savedAt:typeof formatDateTime==="function"?formatDateTime(now):new Date(now).toLocaleString("en-GB"),auto:true,autoKey};
-      hours.push(e);
-    }
-    e.mins=(Number(e.mins)||Math.round(Number(e.n||0)*60))+mins;
-    e.n=Math.round(e.mins/60*100)/100;
-    if(description)e.description=description;
-    if(learned){const had=String(e.learned||"").split("; ").filter(Boolean);if(!had.includes(learned))had.push(learned);e.learned=had.join("; ")}
-    if(typeof persist==="function")persist();
+    const e=hours.find(x=>x&&x.autoKey===autoKey&&Number(x.createdAt)>cutoff);
+    /* Written through eviaData: one entry per activity per day, adding the minutes as they come. */
+    const had=String(e&&e.learned||"").split("; ").filter(Boolean);if(learned&&!had.includes(learned))had.push(learned);
+    const now=Date.now();
+    window.eviaData.put("hours",{id:e?e.id:"otj-auto-"+now+"-"+Math.random().toString(36).slice(2,8),source:"auto",activityKey:autoKey,
+      minutes:(e?(Number(e.mins)||Math.round(Number(e.n||0)*60)):0)+mins,description:description||(e&&e.description)||"Learning with Evia",
+      did:e?e.did||"":"",learned:had.join("; "),createdAt:e?Number(e.createdAt):now});
   }
 
   /* Portfolio write-ups: any text box marked with data-otj (the evidence write-up and guided Evia's answers). */

@@ -330,6 +330,26 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       return out;
     });
     check("Coins: evidence pays by strength, an upgrade pays the difference, hours are capped at 40 a week, and Teach me shows coins",cn.ev&&cn.otjCap&&cn.once&&cn.upgrade&&cn.toast&&cn.pill,JSON.stringify(cn));
+    // Learner data (data.js): today's storage read in the new shape; hours written through it; sync sees changes.
+    const dm=await page.evaluate(()=>{
+      const D=window.eviaData,out={};
+      const snap=D.snapshot();
+      out.collections=D.COLLECTIONS.every(c=>Array.isArray(snap[c]));
+      out.ids=!!snap.learnerId&&snap.evidence.length>0&&snap.evidence.every(e=>e.id&&e.learnerId===snap.learnerId&&e.v===1);
+      out.evidence=snap.evidence.every(e=>/^\d{4}-\d\d-\d\dT/.test(e.createdAt||"")&&e.unitId&&e.unitId.startsWith(e.course+"/")&&Array.isArray(e.ksbs));
+      out.ukDate=D.iso("05/03/2026, 14:30:00").startsWith("2026-03-05")&&D.iso(Date.UTC(2026,0,2))==="2026-01-02T00:00:00.000Z";
+      const before=hours.length,id=D.put("hours",{minutes:95,description:"Data test: toolbox talk",source:"manual"});
+      const got=D.get("hours",id),raw=hours.find(x=>x.id===id);
+      out.hoursPut=hours.length===before+1&&got&&got.minutes===95&&got.source==="manual"&&raw.n===1.58&&raw.mins===95&&window.eviaHM(raw.n)==="1h:35m";
+      D.put("hours",Object.assign({},got,{minutes:100}));out.hoursUpdate=hours.length===before+1&&D.get("hours",id).minutes===100;
+      const ch=D.changesSince();out.syncAll=ch.some(c=>c.collection==="hours"&&c.record.id===id);
+      D.markSynced(ch);out.syncQuiet=D.changesSince().length===0;
+      D.remove("hours",id);const gone=D.changesSince();
+      out.syncDelete=hours.length===before&&gone.length===1&&gone[0].record.id===id&&!!gone[0].record.deletedAt;
+      D.markSynced(gone);localStorage.removeItem("evia7-data-synced");
+      return out;
+    });
+    check("Learner data: every record in the new shape (ids, learner id, ISO dates, unit ids), hours written and removed through eviaData, and sync sees changes and deletions",Object.values(dm).every(Boolean),JSON.stringify(dm));
     // Mini games: locked until unlocked in Rewards, played from Teach me, small coins with a daily cap.
     const gm=await page.evaluate(async()=>{
       const w=ms=>new Promise(r=>setTimeout(r,ms)),R=window.eviaRewards,G=window.eviaGames,out={},keep=localStorage.getItem("evia7-rewards");

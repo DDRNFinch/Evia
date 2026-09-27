@@ -312,7 +312,7 @@
       $("#ui-log-add").onclick=()=>{window.chat({quiet:true});setTimeout(()=>window.eviaCoachFlows&&window.eviaCoachFlows.hours(),120)};
       const dl=$("#download-otj");if(dl)dl.onclick=()=>downloadOTJPDF("new");
       document.querySelectorAll("[data-batch]").forEach(b=>b.onclick=()=>downloadOTJPDF(b.dataset.batch));
-      document.querySelectorAll("[data-rm-auto]").forEach(b=>b.onclick=()=>{if(!confirm("Remove this entry from your learning log?"))return;const i=hours.findIndex(x=>x.id===b.dataset.rmAuto);if(i>=0){hours.splice(i,1);persist();openLearningLogs()}});
+      document.querySelectorAll("[data-rm-auto]").forEach(b=>b.onclick=()=>{if(!confirm("Remove this entry from your learning log?"))return;if(window.eviaData.remove("hours",b.dataset.rmAuto))openLearningLogs()});
       window.scrollTo(0,0);
     });
   }
@@ -725,7 +725,7 @@
       const n=Number(input.value),description=$("#otj-description").value.trim();
       if(!(n>0)){input.focus();if(typeof showEvidenceToast==="function")showEvidenceToast("Pick how many hours first",true);return}
       if(!description){$("#otj-description").focus();if(typeof showEvidenceToast==="function")showEvidenceToast("Add a few words about what you did",true);return}
-      const now=Date.now();hours.push({id:"otj-"+now+"-"+Math.random().toString(36).slice(2,8),n,description,createdAt:now,savedAt:formatDateTime(now)});persist();
+      window.eviaData.put("hours",{minutes:Math.round(n*60),description,source:"manual"});
       hoursScreen();if(typeof showEvidenceToast==="function")showEvidenceToast(fmt(n)+" saved");
       if(window.eviaCheckTargets)window.eviaCheckTargets();
     };
