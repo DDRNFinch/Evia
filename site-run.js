@@ -143,8 +143,6 @@
     const $=s=>ctx.body.querySelector(s);
     const wrap=$(".sr"),cv=$("canvas"),g=cv.getContext("2d"),menu=$(".sr-menu"),qEl=$(".sr-q"),toastEl=$(".sr-toast"),pad=$(".sr-pad");
     const css=getComputedStyle(document.documentElement),accent=css.getPropertyValue("--yellow").trim()||"#f5c400";
-    const shapeName=window.eviaCurrentShape?window.eviaCurrentShape():"circle",outline=(window.eviaOutlines||{})[shapeName];
-    const bodyPaths=outline?outline.body.map(d=>new Path2D(d)):null,bodyDots=outline&&outline.dots||[];
     let W=0,H=0,dpr=1,scale=1,camX=0,camY=0,land=true;
     const size=()=>{const r=wrap.getBoundingClientRect();dpr=Math.min(2,window.devicePixelRatio||1);W=r.width;H=r.height;cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);cv.style.width=W+"px";cv.style.height=H+"px";
       land=W>=H;scale=land?H/360:W/360;wrap.classList.toggle("port",!land);pad.hidden=!land||state!=="play"};
@@ -397,11 +395,9 @@
       if(p.power>0){g.fillStyle="rgba(22,163,74,"+(.18+.1*Math.sin(t*10))+")";g.beginPath();g.arc(0,2,27,0,Math.PI*2);g.fill();g.strokeStyle="rgba(22,163,74,.6)";g.lineWidth=2;g.stroke()}
       /* boots first, under the body */
       if(p.ppe.boots){g.fillStyle="#2f343a";const sw=p.ground&&Math.abs(p.vx)>.5?Math.sin(t*14)*3:0;rr(-12+sw,13,11,7,2.5);g.fill();rr(1-sw,13,11,7,2.5);g.fill();g.fillStyle="#f5b800";g.fillRect(-12+sw,18,11,1.5);g.fillRect(1-sw,18,11,1.5)}
-      /* the body: her shape, filled white with the accent outline */
+      /* the body: always the original round Evia, white with the learner's colour as the outline */
       g.save();g.scale(.34,.34);g.translate(-50,-50);const bodyClip=new Path2D();
-      if(bodyPaths){bodyPaths.forEach(q=>bodyClip.addPath(q));bodyDots.forEach(c=>{bodyClip.moveTo(c[0]+c[2],c[1]);bodyClip.arc(c[0],c[1],c[2],0,Math.PI*2)})}
-      else if(shapeName==="squircle"){if(bodyClip.roundRect)bodyClip.roundRect(6,6,88,88,30);else bodyClip.rect(6,6,88,88)}
-      else bodyClip.arc(50,50,46,0,Math.PI*2);
+      bodyClip.arc(50,50,46,0,Math.PI*2);
       g.fillStyle="#fff";g.fill(bodyClip);
       if(p.ppe.vis){g.save();g.clip(bodyClip);g.fillStyle="#fb8c1a";g.fillRect(0,64,100,40);g.fillStyle="#e8ecef";g.fillRect(0,72,100,6);g.fillRect(0,84,100,6);g.restore()}
       g.strokeStyle=accent;g.lineWidth=9;g.lineJoin="round";g.stroke(bodyClip);

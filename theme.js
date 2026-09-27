@@ -267,7 +267,6 @@
   window.eviaShowThemePicker=showPicker;
   window.eviaThemeHasBeenPicked=hasPickedTheme;
   window.eviaShapes=SHAPES;
-  window.eviaOutlines=OUTLINES;
   window.eviaSetShape=setShape;
   window.eviaCurrentShape=currentShape;
   window.eviaShowShapePicker=showShapePicker;
