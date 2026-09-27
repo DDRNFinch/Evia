@@ -17,7 +17,7 @@ const packFiles=[...(read("packs.js").match(/const FILES=\{([\s\S]*?)\n  \};/)||
 if(!packFiles.length)problems.push("packs.js lists no course pack files");
 const loaderRaw=(html.match(/data-app-scripts="([^"]*)"/)||[])[1]||"";
 if(!/(^|\s)@course-pack(\s|$)/.test(loaderRaw))problems.push("index.html has no @course-pack in its app scripts");
-const loader=loaderRaw.split(/\s+/).filter(f=>f&&f!=="@course-pack").join(" ");
+const loader=loaderRaw.split(/\s+/).filter(f=>f&&!f.startsWith("@course-pack")).join(" ");
 packFiles.forEach(f=>{if(!exists(f))problems.push("packs.js lists a missing file: "+f)});
 const pageFiles=[...loader.split(/\s+/).filter(Boolean),...[...html.matchAll(/(?:src|href)="([^"#:]+)"/g)].map(m=>m[1])];
 pageFiles.forEach(f=>{if(!exists(f))problems.push("index.html loads a missing file: "+f)});

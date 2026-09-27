@@ -187,7 +187,13 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>window.eviaSetShape("circle"));
 
     // Trowel Occupations L3 (NVQ): packs and questions by unit, shared answers, witness testimony.
-    await page.evaluate(()=>{course="trowel3";persist();nav("course")});await page.waitForTimeout(450);
+    // Per-trade packs: a bricklayer's phone has only the bricklaying test bank and no NVQ; picking the NVQ downloads it.
+    const own=await page.evaluate(()=>({nvqOff:!window.EVIA_NVQ&&!C.trowel3&&!window.eviaNvq,banks:Object.keys(EPA_QUESTIONS).join()+"/"+Object.keys(EPA_DISCUSSIONS).join(),
+      listed:window.eviaPacks.catalogue().map(c=>c.id).join()}));
+    await page.evaluate(async()=>{window.eviaData.put("learner",{course:"trowel3"});for(let i=0;i<50&&course!=="trowel3";i++)await new Promise(r=>setTimeout(r,100));nav("course")});await page.waitForTimeout(450);
+    const nvqIn=await page.evaluate(()=>course==="trowel3"&&!!C.trowel3&&!!window.eviaNvq&&(window.eviaLearnerPrompts.trowel3||{}).Arches!=null);
+    check("Per-trade packs: no NVQ or other trades' test banks on a bricklayer's phone, every course still listed, and switching to the NVQ downloads it",
+      own.nvqOff&&own.banks==="bricklaying/bricklaying"&&own.listed==="bricklayer,site,joiner,trowel3"&&nvqIn,JSON.stringify(own)+" nvqIn="+nvqIn);
     check("The NVQ course groups site jobs into dropdowns by type of work, with one knowledge pack",await page.evaluate(()=>{const g=[...document.querySelectorAll(".nvq-group summary strong")].map(x=>x.textContent);return ["Setting out","Walls and structures","Features and specialist work","Repairs and maintenance"].every(t=>g.includes(t))&&!g.includes("Drainage")&&!document.querySelector(".nvq-group[open]")&&document.querySelectorAll("[data-u]").length===23&&document.querySelectorAll("[data-nvq-knowledge]").length===1}));
     await page.click('.nvq-group[data-group="walls"] summary');
     check("A dropdown opens to show its jobs",await page.evaluate(()=>{const d=document.querySelector('.nvq-group[data-group="walls"]');return d.open&&d.querySelector("[data-u]").getBoundingClientRect().height>0}));
@@ -545,6 +551,13 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await ctx.setOffline(true);await page.reload();await page.waitForTimeout(2500);
     check("Evia opens offline",await page.evaluate(()=>typeof render==="function"&&!!document.getElementById("evia-fab")&&!!window.eviaStats));
     await ctx.setOffline(false);
+
+    // A Trowel L3 learner opening Evia: the NVQ loads before the first screen, with no problems logged.
+    await page.evaluate(async()=>{window.eviaData.put("learner",{course:"trowel3"});for(let i=0;i<50&&course!=="trowel3";i++)await new Promise(r=>setTimeout(r,100));
+      window.eviaErrors.clear();if(window.eviaStorage.flush)await window.eviaStorage.flush()});
+    await page.reload();await page.waitForTimeout(2500);
+    const tb=await page.evaluate(()=>({course,nvq:!!window.eviaNvq,groups:document.querySelectorAll(".nvq-group").length,problems:window.eviaErrors.list().filter(x=>x.kind!=="reported").map(x=>x.message)}));
+    check("A Trowel L3 learner opens straight onto the NVQ course, with nothing going wrong",tb.course==="trowel3"&&tb.nvq&&tb.groups>=4&&!tb.problems.length,JSON.stringify(tb));
 
     check("No script errors",!errors.length,errors.join(" | "));
   }catch(e){check("Test run finished",false,e.message)}

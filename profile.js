@@ -17,6 +17,12 @@
     const list=window.eviaErrors?window.eviaErrors.list():[];
     return list.length?list.length+" recorded · last "+ago(list[list.length-1].lastAt):"Nothing has gone wrong";
   }
+  /* Switch course, downloading its pack first if it isn't on the phone (packs.js). */
+  async function pickCourse(button,k,then){
+    button.disabled=true;
+    try{await window.eviaPacks.ensure(k)}catch(err){button.disabled=false;if(typeof showEvidenceToast==="function")showEvidenceToast(err.message,true);return}
+    window.eviaData.put("learner",{course:k});then();
+  }
   function openProblems(){
     const E=window.eviaErrors,list=E?E.list().slice().reverse():[];
     document.getElementById("modal-root").innerHTML='<div class="overlay"><section class="sheet pr-sheet pf-problems" role="dialog" aria-modal="true" aria-label="Problem log">'+
@@ -56,7 +62,7 @@
         (nvqOn?'<details class="pf-more"><summary>Optional units<span>'+esc(window.eviaNvq.optionalChosen().join(", "))+'</span></summary><div class="nvq-opts" id="profile-nvq-opts">'+window.eviaNvq.optionalHtml()+'</div></details>':"")+
         sw("profile-maths","Maths","Include maths in tests and reviews")+
         sw("profile-english","English","Include English in tests and reviews")+
-        '<details class="pf-more pf-change"><summary>Change course<span>Only if you’ve moved course</span></summary><div class="course-options">'+Object.keys(C).map(k=>'<button type="button" class="course-option '+(k===course?"selected":"")+'" data-profile-course="'+k+'">'+esc(C[k].name)+'<span>'+(k===course?"Current":"›")+'</span></button>').join("")+'</div></details>')+
+        '<details class="pf-more pf-change"><summary>Change course<span>Only if you’ve moved course</span></summary><div class="course-options">'+window.eviaPacks.catalogue().map(c=>'<button type="button" class="course-option '+(c.id===course?"selected":"")+'" data-profile-course="'+c.id+'">'+esc(c.name)+'<span>'+(c.id===course?"Current":"›")+'</span></button>').join("")+'</div></details>')+
       group("Evia",
         row("open-shape-picker",'<span class="evia-mini"><span class="evia-face"><i></i><i></i></span></span>',"Evia’s shape")+
         row("open-theme-picker",'<i class="pf-dot"></i>',"Evia’s colour")+
@@ -85,7 +91,7 @@
       const f=e.target.files[0];if(!f)return;
       const r=new FileReader();r.onload=async()=>{p.avatar=window.eviaShrinkAvatar?await window.eviaShrinkAvatar(r.result):r.result;set(p);refreshProfileButton();openProfile()};r.readAsDataURL(f);
     };
-    document.querySelectorAll("[data-profile-course]").forEach(b=>b.onclick=()=>{window.eviaData.put("learner",{course:b.dataset.profileCourse});openProfile();});
+    document.querySelectorAll("[data-profile-course]").forEach(b=>b.onclick=()=>pickCourse(b,b.dataset.profileCourse,openProfile));
     document.querySelectorAll("#profile-nvq-opts input").forEach(i=>i.onchange=()=>{const list=window.eviaNvq.readOptional(document.getElementById("profile-nvq-opts"));if(!list.length){i.checked=true;return}window.eviaNvq.setOptional(list);if(typeof render==="function")render()});
     document.getElementById("open-settings").onclick=()=>{if(window.eviaAccessibility)window.eviaAccessibility.open()};
     const shapePickerBtn=document.getElementById("open-shape-picker");
@@ -203,16 +209,15 @@
       '<h2>Choose your apprenticeship course</h2>'+
       '<p>This is the course you will use throughout your apprenticeship.</p>'+
       '<div class="course-onboarding-options">'+
-        Object.keys(C).map(k=>'<button type="button" class="course-onboarding-option" data-first-course="'+k+'"><strong>'+esc(C[k].name)+'</strong><span>'+esc(C[k].std)+'</span></button>').join("")+
+        window.eviaPacks.catalogue().map(c=>'<button type="button" class="course-onboarding-option" data-first-course="'+c.id+'"><strong>'+esc(c.name)+'</strong><span>'+esc(c.std)+'</span></button>').join("")+
       '</div>'+
       '</div>';
     document.body.appendChild(root);
     requestAnimationFrame(()=>root.classList.add("visible"));
-    root.querySelectorAll("[data-first-course]").forEach(b=>b.onclick=()=>{
-      window.eviaData.put("learner",{course:b.dataset.firstCourse});
+    root.querySelectorAll("[data-first-course]").forEach(b=>b.onclick=()=>pickCourse(b,b.dataset.firstCourse,()=>{
       root.classList.add("leaving");
       setTimeout(()=>{root.remove();welcome()},320);
-    });
+    }));
   }
 
   function welcome(){

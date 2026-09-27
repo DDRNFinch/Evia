@@ -144,13 +144,16 @@
           '<span class="ew-chip">'+I('<rect x="3.5" y="8.5" width="17" height="4" rx="1"/><path d="M5 12.5v8h14v-8M12 8.5v12"/><path d="M12 8.5C10.5 5 6.8 4.2 6.8 6.4c0 1.6 2.7 2.1 5.2 2.1ZM12 8.5c1.5-3.5 5.2-4.3 5.2-2.1 0 1.6-2.7 2.1-5.2 2.1Z"/>')+'Earn rewards</span>'+
         '</div></section>'+
       '<section class="ew-pick"><h2 class="ew-in" style="--d:5">Which course are you on?</h2><p class="ew-in" style="--d:5">I’ll set up your units and everything you need to evidence.</p>'+
-      '<div class="evia-onboard-courses">'+COURSES.filter(c=>C[c.key]).map((c,i)=>
+      '<div class="evia-onboard-courses">'+COURSES.filter(c=>window.eviaPacks.COURSES.includes(c.key)).map((c,i)=>
         '<button type="button" class="evia-onboard-course ew-in" style="--d:'+(6+i)+'" data-onboard-course="'+c.key+'"><span class="evia-onboard-course-dot" aria-hidden="true">'+c.ic+'</span><span class="evia-onboard-course-copy"><strong>'+escHtml(c.label)+'</strong><small>'+escHtml(c.sub)+'</small></span><span class="evia-onboard-course-arrow" aria-hidden="true">›</span></button>'
       ).join("")+'</div></section>';
     document.body.appendChild(root);
     requestAnimationFrame(()=>root.classList.add("visible"));
-    root.querySelectorAll("[data-onboard-course]").forEach(b=>b.onclick=()=>{
-      window.eviaData.put("learner",{course:b.dataset.onboardCourse});
+    root.querySelectorAll("[data-onboard-course]").forEach(b=>b.onclick=async()=>{
+      /* The course's pack is downloaded first if it isn't on the phone (packs.js). */
+      const k=b.dataset.onboardCourse;b.disabled=true;
+      try{await window.eviaPacks.ensure(k)}catch(err){b.disabled=false;if(typeof showEvidenceToast==="function")showEvidenceToast(err.message,true);return}
+      window.eviaData.put("learner",{course:k});
       const nvq=nvqOn();
       writeState(nvq?"optional":"unit");
       const next=()=>nvq?showOptionalPicker():pickersThen(showPpeUnit);

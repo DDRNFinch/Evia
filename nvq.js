@@ -3,7 +3,8 @@
    - evidence packs for real site jobs (each ticks off the "doing" criteria of its unit),
    - question sets for the "describe / explain" criteria (a question shared by several units is answered once),
    - witness testimony and documents in Supporting evidence, linked to a unit.
-   Loaded before app.js so the course exists on first render; everything else runs when called. */
+   Part of the trowel3 course pack (packs.js): for a trowel3 learner it loads before app.js so the course exists on first
+   render; for anyone switching to it later it loads then, and adds the course itself. Everything else runs when called. */
 (function(){
   "use strict";
   const N=window.EVIA_NVQ;if(!N)return;
@@ -84,6 +85,8 @@
     u:PACKS.map(p=>[p.title,packCodes(p).map(c=>c+"|"+critText(c)),{unit:p.unit,sub:p.sub}])
   }});
   window.EVIA_EXTRA_PROMPTS=Object.assign(window.EVIA_EXTRA_PROMPTS||{},{[ID]:Object.fromEntries(PACKS.map(p=>[p.title,{photos:p.capture,writeup:p.mention}]))});
+  if(typeof C!=="undefined"&&!C[ID])C[ID]=window.EVIA_EXTRA_COURSES[ID];
+  if(window.eviaLearnerPrompts)window.eviaLearnerPrompts[ID]=window.EVIA_EXTRA_PROMPTS[ID];
 
   /* ---------- Which units, which criteria, what's evidenced ---------- */
   const on=()=>typeof course!=="undefined"&&course===ID;

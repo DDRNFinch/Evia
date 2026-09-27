@@ -1,9 +1,11 @@
 /* Evia7 course packs: each trade's content is its own pack, and a learner's phone loads only their own.
-   Today a pack is the trade's Teach me file (the biggest part of a trade's content); the unit lists stay in app.js so
-   the course picker can show every course. When Nisia supplies packs, fetch() here swaps from script files to
+   Today a pack is the trade's Teach me lessons and EPA test bank; for the NVQ, its criteria (nvq-data.js) and screens
+   (nvq.js) too. The other trades' unit lists stay in app.js; CATALOGUE names every course for the course pickers. When Nisia supplies packs, fetch() here swaps from script files to
    Nisia's download, and the rest of Evia doesn't change: it asks for eviaPacks.ensure(course) and eviaPacks.pack().
 
-   eviaPacks.files(course)      the files that make up a course's pack
+   eviaPacks.files(course, part) the files that make up a course's pack; part "early" is the ones that must run before
+                                app.js (the NVQ course is built from them), "late" the rest
+   eviaPacks.catalogue()        every course, [{id, name, std}], downloaded or not
    eviaPacks.ensure(course)     loads them if they aren't already (a Promise); storage.js loads the saved course's at boot
    eviaPacks.loaded(course)     whether they are in
    eviaPacks.unitId(course, name)  a unit's stable id: fixed below for every unit that exists today, so renaming a unit
@@ -12,10 +14,16 @@
                                 name, ksbs:[{code,text}], lessons}], lessons } (see the "Evia data model" write-up) */
 (function(){
   const FILES={
-    bricklayer:["teach-bricklayer.js?v=tb-v6"],
-    joiner:["teach-joiner.js?v=tj-v3"],
-    site:["teach-site.js?v=ts-v3"],
-    trowel3:["teach-trowel3.js?v=t3-v2"]
+    bricklayer:["test-bank-bricklayer.js?v=bank-b-v1","teach-bricklayer.js?v=tb-v6"],
+    joiner:["test-bank-joinery.js?v=bank-j-v1","teach-joiner.js?v=tj-v3"],
+    site:["test-bank-joinery.js?v=bank-j-v1","teach-site.js?v=ts-v3"],
+    /* The NVQ's knowledge test uses the bricklaying bank. */
+    trowel3:["nvq-data.js?v=nvq-data-v1","nvq.js?v=nvq-v9","test-bank-bricklayer.js?v=bank-b-v1","teach-trowel3.js?v=t3-v2"]
+  };
+  const EARLY=new Set(["nvq-data.js","nvq.js"]);
+  const CATALOGUE={
+    bricklayer:{name:"Bricklayer",std:"ST0095 v1.2"},site:{name:"Site Carpenter",std:"ST0264 v1.4"},
+    joiner:{name:"Bench Joiner",std:"ST0264 v1.4"},trowel3:{name:"Trowel Occupations L3",std:"C&G 6570-05 · NVQ Level 3"}
   };
   const VERSION="2026.09.1";
   /* Stable unit ids, frozen from the unit names on 27 Sept 2026. Never change an id: rename the key instead. */
@@ -31,7 +39,7 @@
   const plain=f=>f.split("?")[0];
   /* A file counts as loaded if a script for it is already on the page (storage.js adds the saved course's at boot). */
   const onPage=f=>[...document.scripts].some(s=>s.src&&plain(new URL(s.src,location.href).pathname).endsWith("/"+plain(f)));
-  const files=course=>(FILES[course]||[]).slice();
+  const files=(course,part)=>(FILES[course]||[]).filter(f=>!part||(part==="early")===EARLY.has(plain(f)));
   const loaded=course=>files(course).every(f=>done[f]||onPage(f));
   function load(f){
     if(done[f]||onPage(f))return Promise.resolve();
@@ -51,5 +59,7 @@
       units:c.u.map(u=>({id:unitId(course,u[0]),name:u[0],ksbs:(u[1]||[]).map(split),lessons:(lessons.find(l=>l.unit===u[0])||{lessons:[]}).lessons.map(l=>l.id)})),
       lessons:lessons.map(l=>({unit:l.unit,lessons:l.lessons.map(x=>({id:x.id,title:x.title,steps:(x.steps||[]).length}))}))};
   }
-  window.eviaPacks={VERSION,files,ensure,loaded,unitId,pack,COURSES:Object.keys(FILES)};
+  /* Downloaded courses use their own name; the rest the catalogue's. */
+  const catalogue=()=>Object.keys(CATALOGUE).map(id=>{const c=typeof C!=="undefined"&&C[id];return {id,name:c?c.name:CATALOGUE[id].name,std:c?c.std:CATALOGUE[id].std}});
+  window.eviaPacks={VERSION,files,ensure,loaded,unitId,pack,catalogue,COURSES:Object.keys(FILES)};
 })();

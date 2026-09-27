@@ -17,7 +17,8 @@
   const V=1,ID_KEY="evia7-learner-id",SYNC_KEY="evia7-data-synced";
   const readJson=(k,f)=>{try{const v=JSON.parse(localStorage.getItem(k)||"null");return v??f}catch(_){return f}};
   const writeJson=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(_){}};
-  /* app.js keeps these as top-level variables, which every script can see by name. */
+  /* app.js keeps these as top-level variables, which every script can see by name. data.js loads before app.js (app.js
+     draws its first screen as it loads, and screens read through here), so they are looked up when used. */
   const G=name=>name==="evidence"?(typeof evidence!=="undefined"?evidence:undefined):name==="hours"?(typeof hours!=="undefined"?hours:undefined)
     :name==="otjBatches"?(typeof otjBatches!=="undefined"?otjBatches:undefined):name==="course"?(typeof course!=="undefined"?course:undefined):undefined;
   const courseNow=()=>G("course")||localStorage.getItem("evia7-course")||"";
@@ -70,7 +71,7 @@
         nvqUnit:x.nvqUnit||null,criteria:(x.ksbs||x.criteria||[]).slice(),createdAt:iso(x.addedAt),updatedAt:iso(x.updatedAt||x.addedAt),deletedAt:null,submission:submission("sup:"+x.id)}));
     },
     nvqAnswers(){
-      const all=readJson("evia7-nvq-answers",{})||{},nvq=(window.EVIA_NVQ||{}).id||null;
+      const all=readJson("evia7-nvq-answers",{})||{},nvq=(window.EVIA_NVQ||{}).id||"trowel3";   /* the only NVQ; its pack may not be loaded */
       return Object.keys(all).map(q=>base(q,{course:nvq,questionId:q,text:all[q].t||"",createdAt:iso(all[q].savedAt),updatedAt:iso(all[q].updatedAt||all[q].savedAt),deletedAt:null}));
     },
     hours(){
@@ -250,11 +251,13 @@
         Object.keys(r).forEach(k=>{if(!SKIP.has(k)&&r[k]!==undefined){p[k]=r[k];changed=true}});
         if(changed){p.updatedAt=new Date().toISOString();writeJson("evia7-profile",p)}
         if(r.course){
-          if(typeof course!=="undefined")course=r.course;try{localStorage.setItem("evia7-course",r.course)}catch(_){}save();
-          /* Only the learner's own course pack is loaded (packs.js): fetch the new one, then redraw. */
-          if(window.eviaPacks&&!window.eviaPacks.loaded(r.course))window.eviaPacks.ensure(r.course)
-            .then(()=>{emit("learner");if(typeof render==="function"&&typeof course!=="undefined"&&course===r.course)render()})
-            .catch(err=>{console.error(err);if(typeof showEvidenceToast==="function")showEvidenceToast(err.message,true)});
+          const P=window.eviaPacks,to=r.course,redraw=()=>{emit("learner");if(typeof render==="function"&&typeof course!=="undefined"&&course===to)render()};
+          const switchNow=()=>{if(typeof course!=="undefined")course=to;try{localStorage.setItem("evia7-course",to)}catch(_){}save()};
+          const failed=err=>{console.error(err);if(typeof showEvidenceToast==="function")showEvidenceToast(err.message,true)};
+          /* Only the learner's own course pack is loaded (packs.js). A course whose units come with its pack (the NVQ)
+             switches once the pack is in; the others switch now, and their lessons follow. */
+          if(typeof C!=="undefined"&&!C[to]&&P)P.ensure(to).then(()=>{if(C[to]){switchNow();redraw()}}).catch(failed);
+          else{switchNow();if(P&&!P.loaded(to))P.ensure(to).then(redraw).catch(failed)}
         }
         return "learner";
       }

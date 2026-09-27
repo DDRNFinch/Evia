@@ -15,8 +15,6 @@ const APP_SHELL = [
   "./vendor/fonts/inter-latin-wght-normal.woff2",
   "./errors.js","./packs.js",
   "./storage.js",
-  "./nvq-data.js",
-  "./nvq.js",
   "./app.js",
   "./data.js",
   "./polish.js",

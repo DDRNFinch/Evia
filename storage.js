@@ -280,10 +280,11 @@
 
   /* ---------- Boot: load data, then the app scripts in order ---------- */
   function loadScripts(me){
-    /* "@course-pack" is where the learner's own course pack goes (packs.js): only that trade's content is loaded. */
+    /* "@course-pack" is where the learner's own course pack goes (packs.js): only that trade's content is loaded.
+       "@course-pack-early" is for the pack files that must run before app.js (the NVQ's criteria and screens). */
     const saved=(()=>{try{return localStorage.getItem("evia7-course")||"bricklayer"}catch(_){return "bricklayer"}})();
     const list=(me&&me.dataset.appScripts||"").split(/\s+/).filter(Boolean)
-      .flatMap(src=>src==="@course-pack"?(window.eviaPacks?window.eviaPacks.files(saved):[]):[src]);
+      .flatMap(src=>src==="@course-pack"||src==="@course-pack-early"?(window.eviaPacks?window.eviaPacks.files(saved,src==="@course-pack"?"late":"early"):[]):[src]);
     const reveal=()=>document.documentElement.classList.remove("evia-booting");
     if(!list.length){reveal();return}
     list.forEach((src,i)=>{
