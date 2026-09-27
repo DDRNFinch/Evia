@@ -119,7 +119,6 @@
      capture listed, then the write-up with all the things to mention. freeStep is where free range is: null (the
      choice), "photos" or "write". */
   let freeStep=null;
-  const FREE_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="13" height="11" rx="2.5"/><path d="M6.5 7l1-2h4l1 2"/><circle cx="9.5" cy="12.5" r="2.4"/><path d="M15 20.5l5.5-5.5 1.5 1.5-5.5 5.5H15z"/></svg>';
   async function renderPack(pack){
     const u=data().u[unit],photos=pack.photos||[],prompts=learnerPrompts(),step=freeStep;
     const started=photos.length||String(pack.write||"").trim();
@@ -130,7 +129,7 @@
       !step?
         heading("EVIDENCE PACK",u[0],"Capture the whole job in one pack. Take photos from the <strong>beginning, middle and end</strong> of the job.")+
         (window.eviaGuide?'<button type="button" class="eg-start" id="eg-start"><span class="evia-mini" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span><span><strong>'+(pack.guide&&!pack.guide.used&&(pack.guide.at||Object.values(pack.guide.answers||{}).some(Boolean))?"Carry on with Evia":"Let Evia guide you")+'</strong><small>'+(pack.guide&&!pack.guide.used&&pack.guide.at?"Pick up where you left off":"Photos one at a time, then a few questions")+'</small></span><span class="eg-start-chev" aria-hidden="true">›</span></button>':"")+
-        '<button type="button" class="eg-start fr-start" id="fr-start"><span class="fr-icon">'+FREE_ICON+'</span><span><strong>'+(started?"Carry on in free range":"Free range mode")+'</strong><small>'+
+        '<button type="button" class="eg-start fr-start" id="fr-start"><span class="evia-mini fr-no" aria-hidden="true"><span class="evia-face"><i></i><i></i></span><b class="fr-strike"></b></span><span><strong>'+(started?"Carry on in free range":"Free range mode")+'</strong><small>'+
           (started?photos.length+" photo"+(photos.length===1?"":"s")+(String(pack.write||"").trim()?" and a write-up":"")+" so far":"Add whatever you like: all your photos, then your write-up")+'</small></span><span class="eg-start-chev" aria-hidden="true">›</span></button>'+
         (window.eviaStrength?'<button type="button" class="st-how" id="st-how">How to build a strong portfolio ›</button>':"")
       :step==="photos"?
@@ -316,10 +315,8 @@
       .pack-actions .secondary{background:#f4f6f8}
       .pack-actions .primary{background:#1b2435}
       .pack-actions.fr-actions{grid-template-columns:1fr}
-      .fr-start{background:#fff;border-color:var(--line,#edf0f4)}
-      .fr-start small,.fr-start .eg-start-chev{color:#667085}
-      .fr-icon{width:38px;height:38px;flex:0 0 38px;border-radius:50%;background:#f4f6f8;display:flex;align-items:center;justify-content:center;color:#344054}
-      .fr-icon svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;display:block}
+      /* Free range: Evia crossed out, as in "without Evia". */
+      .fr-strike{position:absolute;z-index:2;left:50%;top:50%;width:122%;height:2.5px;border-radius:2px;background:var(--yellow,#e7b900);box-shadow:0 0 0 1.5px var(--soft,#fff7d6);transform:translate(-50%,-50%) rotate(-45deg);pointer-events:none}
       .submit-hint{text-align:center;font-size:11.5px;line-height:1.45;color:#98a2b3;margin:9px 6px 0}
       .prompt-list,.writeup-prompts,.photo-guide,.capture-intro{display:none}
       button:disabled{opacity:.45;cursor:not-allowed}
