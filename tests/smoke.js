@@ -339,7 +339,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       const w=ms=>new Promise(r=>setTimeout(r,ms)),R=window.eviaRewards,G=window.eviaGames,out={},keep=localStorage.getItem("evia7-rewards");
       localStorage.setItem("evia7-rewards",JSON.stringify({bank:500,spent:0,owned:[],hat:"",pity:0,seenAch:[],lastXp:1e9,day:"",workV:1,paid:{}}));
       nav("teach");await w(500);
-      out.locked=document.querySelectorAll(".tt-game.locked").length===5;
+      out.locked=document.querySelectorAll(".tt-game.locked").length===4;
       document.querySelector('[data-game="game-brickle"]').click();await w(700);
       out.toRewards=screen==="rewards"&&!!document.querySelector('#rw-game-brickle [data-buy]');
       document.querySelector('#rw-game-brickle [data-buy]').click();await w(300);document.querySelectorAll(".rw-over").forEach(o=>o.remove());
@@ -370,24 +370,14 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       document.querySelector('[data-lv="0"]').click();await w(300);
       const S=document.querySelector(".gm-siterun").srState();
       out.srPlay=S.state==="play"&&S.w.stations.length===2&&S.w.stations.every(s=>s.q&&s.q.opts[s.q.a])&&!!document.querySelector(".sr-hearts svg.on");
-      /* the tool belt: every stop has its right answer among the choices; walking into the first opens the belt */
-      out.srEncs=S.w.encs.length>=6&&S.w.encs.every(e=>e.opts.some(o=>o.k===e.a));
-      S.p.x=S.w.encs[0].solid.x-40;S.p.y=250;await w(700);
-      const bt=document.querySelector(".sr-belt");out.srBelt=!bt.hidden&&bt.querySelectorAll("[data-o]").length===4;
-      const right=[...bt.querySelectorAll("[data-o]")][S.w.encs[0].opts.findIndex(o=>o.k===S.w.encs[0].a)];right.click();await w(100);
-      out.srCleared=bt.hidden&&S.w.encs[0].done;
+      /* level 1: the turnstile is shut until Sam's induction; the panel and controller are there */
+      out.srPanel=!!document.querySelector(".sr-panel .sr-msg")&&!!document.querySelector(".sr-a")&&!!document.querySelector(".sr-b")&&!S.S.pass;
       document.querySelector(".sr-hud .sr-x").click();await w(100);
-      /* Evia's Site Quest: the first area starts outside the office; the turnstile is shut until the induction */
-      const sq=JSON.parse(localStorage.getItem("evia7-rewards"));sq.owned.push("game-sitequest");localStorage.setItem("evia7-rewards",JSON.stringify(sq));
-      G.open("sitequest");await w(300);document.querySelector(".sq-area").click();await w(300);
-      const Q=document.querySelector(".gm-sitequest").sqState();
-      out.sqStart=Q.state==="play"&&Q.mapName==="yard"&&!Q.S.pass&&/site office/.test(document.querySelector(".sq-goal").textContent);
-      document.querySelector(".sq-hud .sq-x").click();await w(100);
       out.closed=!document.querySelector(".gm")&&!document.documentElement.classList.contains("gm-open");
       if(keep)localStorage.setItem("evia7-rewards",keep);else localStorage.removeItem("evia7-rewards");
       return out;
     });
-    check("Mini games: locked until bought in Rewards, then Brickle, the crossword, Flappy Evia and Evia’s Site Run and Site Quest play from Teach me and pay capped coins",Object.values(gm).every(Boolean),JSON.stringify(gm));
+    check("Mini games: locked until bought in Rewards, then Brickle, the crossword, Flappy Evia and Evia’s Site Run play from Teach me and pay capped coins",Object.values(gm).every(Boolean),JSON.stringify(gm));
     check("Expressions: twelve faces (heart eyes loot box only); using one shows it on Evia, and tapping again goes back to classic",rw.faces&&rw.expr&&rw.exprOff,JSON.stringify(rw));
     await page.evaluate(()=>nav("teach"));await page.waitForTimeout(600);
     await page.evaluate(()=>document.querySelector('[data-go="course"]').click());await page.waitForTimeout(600);
