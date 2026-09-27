@@ -1,6 +1,7 @@
 /* Evia's Site Run: a platform game. Evia starts with no PPE and picks it up on the way; each bit of kit gets her
    through one kind of hazard (hard hat: falling objects, dust mask: dust, hi-vis: moving plant, ear defenders: noise,
-   safety boots: nails). All five at once (or a full PPE kit) makes her safe from everything for a few seconds.
+   safety boots: nails). What she picks up goes in her kit bar; the player taps one bit of PPE to put it on and one
+   tool to hold, so they choose the right kit for what's ahead. A full PPE kit puts everything on for a few seconds.
    Tools open the way (a bolster cuts through a wall, a spirit level fixes a wonky board, a ladder gets her up high).
    Question gates and the Big Mixer boss use questions from the learner's Teach me course.
    Landscape: move and jump with the buttons (or the keyboard). Portrait: Evia runs on her own; tap to jump.
@@ -26,7 +27,7 @@
     ladder:{d:"M5.5 2H8.3V22H5.5ZM15.7 2H18.5V22H15.7ZM8.3 5.5H15.7V7.5H8.3ZM8.3 10.5H15.7V12.5H8.3ZM8.3 15.5H15.7V17.5H8.3Z",c:"#a8763e",name:"Ladder"},
     kit:{d:"M12 2L20 5V11Q20 18 12 22Q4 18 4 11V5ZM10.6 7H13.4V10.6H17V13.4H13.4V17H10.6V13.4H7V10.6H10.6Z",c:"#16a34a",eo:1,name:"Full PPE kit"}
   };
-  const PPE=["hat","mask","vis","ears","boots"];
+  const PPE=["hat","mask","vis","ears","boots"],BAG=PPE.concat(["bolster","level","ladder"]);
   const P2D={};const path=k=>P2D[k]||(P2D[k]=new Path2D(ICON[k].d));
   const svg=(k,cls)=>'<svg class="'+(cls||"")+'" viewBox="0 0 24 24" aria-hidden="true"><path d="'+ICON[k].d+'"'+(ICON[k].eo?' fill-rule="evenodd"':"")+'/></svg>';
   const HAZ={
@@ -136,8 +137,8 @@
   /* ---------- The game ---------- */
   function run(ctx){
     ctx.body.innerHTML='<div class="sr"><canvas aria-label="Evia’s Site Run"></canvas>'+
-      '<div class="sr-hud"><div class="sr-hearts" aria-label="Hearts"></div><div class="sr-kit"></div><b class="sr-name"></b><span class="sr-coins">'+coinSvg()+'<b>0</b></span><button type="button" class="sr-x" aria-label="Close">×</button></div>'+
-      '<div class="sr-q" hidden></div><div class="sr-toast" role="status" aria-live="polite"></div>'+
+      '<div class="sr-hud"><div class="sr-hearts" aria-label="Hearts"></div><b class="sr-name"></b><span class="sr-coins">'+coinSvg()+'<b>0</b></span><button type="button" class="sr-x" aria-label="Close">×</button></div>'+
+      '<div class="sr-top"><div class="sr-q" hidden></div><div class="sr-toast" role="status" aria-live="polite"></div></div><div class="sr-bag" role="toolbar" aria-label="Your kit" hidden></div>'+
       '<div class="sr-pad" hidden><button type="button" data-k="l" aria-label="Left"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><button type="button" data-k="r" aria-label="Right"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button><button type="button" data-k="j" class="sr-jump" aria-label="Jump"><svg viewBox="0 0 24 24"><path d="M5 15l7-7 7 7"/></svg></button></div>'+
       '<div class="sr-menu"></div></div>';
     const $=s=>ctx.body.querySelector(s);
@@ -161,7 +162,8 @@
     cv.addEventListener("pointerdown",e=>{if(state!=="play")return;e.preventDefault();if(!land)press("j")});
     cv.addEventListener("pointerup",()=>release("j"));cv.addEventListener("pointercancel",()=>release("j"));
     const KM={ArrowLeft:"l",KeyA:"l",ArrowRight:"r",KeyD:"r",ArrowUp:"j",KeyW:"j",Space:"j"};
-    const kd=e=>{const k=KM[e.code];if(!k||state!=="play"||e.target.closest&&e.target.closest("button"))return;e.preventDefault();if(!e.repeat)press(k)};
+    const kd=e=>{const n=/^Digit([1-8])$/.exec(e.code);if(n&&state==="play"&&p){const got=BAG.filter(k=>p.bag[k]);if(got[n[1]-1])pick(got[n[1]-1]);return}
+      const k=KM[e.code];if(!k||state!=="play"||e.target.closest&&e.target.closest("button"))return;e.preventDefault();if(!e.repeat)press(k)};
     const ku=e=>{const k=KM[e.code];if(k)release(k)};
     document.addEventListener("keydown",kd);document.addEventListener("keyup",ku);
     const vis=()=>{if(document.hidden){keys.l=keys.r=keys.j=0}};document.addEventListener("visibilitychange",vis);
@@ -182,15 +184,18 @@
       if(!p)return;
       $(".sr-hearts").innerHTML=[0,1,2].map(i=>'<svg viewBox="0 0 24 24" class="'+(i<p.hearts?"on":"")+'"><path d="M12 20.5l-1.4-1.3C5.4 14.5 2 11.4 2 7.6 2 4.5 4.4 2 7.5 2c1.8 0 3.4.8 4.5 2.1C13.1 2.8 14.7 2 16.5 2 19.6 2 22 4.5 22 7.6c0 3.8-3.4 6.9-8.6 11.6z"/></svg>').join("");
       $(".sr-hearts").setAttribute("aria-label",p.hearts+" hearts left");
-      $(".sr-kit").innerHTML=PPE.map(k=>'<span class="sr-slot'+(p.ppe[k]?" on":"")+'" title="'+ICON[k].name+'" style="--c:'+ICON[k].c+'">'+svg(k)+'</span>').join("")+
-        ["bolster","level","ladder"].filter(k=>p.tools[k]).map(k=>'<span class="sr-slot on tool" title="'+ICON[k].name+'" style="--c:'+ICON[k].c+'">'+svg(k)+'</span>').join("");
+      /* the kit bar: everything she's picked up; the worn PPE and the tool in hand are lit */
+      const got=BAG.filter(k=>p.bag[k]),bag=$(".sr-bag");bag.hidden=!got.length||state!=="play";
+      bag.innerHTML=got.map((k,i)=>{const on=PPE.includes(k)?(p.power>0||p.wear===k):p.hold===k;
+        return (i&&PPE.includes(got[i-1])&&!PPE.includes(k)?'<i class="sr-bag-gap"></i>':"")+'<button type="button" class="sr-slot'+(on?" on":"")+'" data-kit="'+k+'" aria-pressed="'+on+'" aria-label="'+ICON[k].name+'" style="--c:'+ICON[k].c+'">'+svg(k)+'</button>'}).join("");
+      bag.querySelectorAll("[data-kit]").forEach(b=>b.addEventListener("pointerdown",e=>{e.preventDefault();e.stopPropagation();pick(b.dataset.kit)}));
       $(".sr-coins b").textContent=p.coins;
     }
 
     /* ---------- Menu and cards ---------- */
     const star=on=>'<svg viewBox="0 0 24 24" class="sr-star'+(on?" on":"")+'"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.6 1.3 6.5L12 17.2l-5.9 3.2 1.3-6.5L2.5 9.3l6.6-.8z"/></svg>';
     function showMenu(){
-      state="menu";qEl.hidden=true;pad.hidden=true;wrap.classList.remove("playing");const pr=prog();
+      state="menu";qEl.hidden=true;pad.hidden=true;$(".sr-bag").hidden=true;wrap.classList.remove("playing");const pr=prog();
       menu.hidden=false;menu.innerHTML='<div class="sr-card sr-levels"><button type="button" class="sr-x sr-cx" aria-label="Close">×</button><h2>Evia’s Site Run</h2><p>Pick up the right PPE, answer the questions and get to the end of the site.</p>'+
         '<div class="sr-list">'+LEVELS.map((L,i)=>{const open=i<pr.open,s=pr.stars[i]|0;return '<button type="button" class="sr-lv'+(open?"":" locked")+'" data-lv="'+i+'"'+(open?"":" disabled")+'><span class="sr-lv-n">'+(L.boss?"!":i+1)+'</span><span class="sr-lv-t"><strong>'+esc(L.name)+'</strong><small>'+(open?esc(L.about):"Finish the level before to open")+'</small></span><span class="sr-lv-s">'+[0,1,2].map(k=>star(k<s)).join("")+'</span></button>'}).join("")+'</div>'+
         (land?"":'<p class="sr-turn"><svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M20 14a7 7 0 0 1-5 6.5M4 10a7 7 0 0 1 5-6.5"/></svg>Best played with your phone turned sideways.</p>')+'</div>';
@@ -209,7 +214,7 @@
     let qs=[];
     function start(n){
       lv=n;qs=deal(questions(),n);w=build(n,qs);
-      p={x:60,y:GY-PH,vx:0,vy:0,face:1,ground:true,coy:0,hearts:3,inv:0,power:0,ppe:{},tools:{},coins:0,cp:60,dust:0,noise:0,climb:null,full:false,missed:0,answered:0,wobble:0,dead:0};
+      p={x:60,y:GY-PH,vx:0,vy:0,face:1,ground:true,coy:0,hearts:3,inv:0,power:0,bag:{},wear:null,hold:null,coins:0,cp:60,dust:0,noise:0,climb:null,full:false,missed:0,answered:0,wobble:0,dead:0};
       Object.keys(said).forEach(k=>delete said[k]);
       menu.hidden=true;menu.innerHTML="";state="play";wrap.classList.add("playing");pad.hidden=!land;qEl.hidden=true;shownQ=null;parts.length=0;
       $(".sr-name").textContent=LEVELS[n].name;hud();
@@ -217,11 +222,11 @@
       last=performance.now();
     }
     function lose(){
-      state="over";buzz([30,40,30]);pad.hidden=true;qEl.hidden=true;
+      state="over";buzz([30,40,30]);pad.hidden=true;qEl.hidden=true;$(".sr-bag").hidden=true;
       card('<h2>Out of hearts</h2><p class="sr-sub">Look out for the blue signs: they tell you which PPE you need next.</p>',[["again","Try again","primary"],["levels","Levels"]]);
     }
     function win(){
-      state="won";pad.hidden=true;qEl.hidden=true;buzz([20,30,20]);
+      state="won";pad.hidden=true;qEl.hidden=true;$(".sr-bag").hidden=true;buzz([20,30,20]);
       const allRight=p.missed===0,coinsOk=p.coins>=Math.ceil(w.total*.8),stars=1+(allRight?1:0)+(coinsOk?1:0);
       const pr=prog();pr.stars[lv]=Math.max(pr.stars[lv]|0,stars);pr.open=Math.max(pr.open,Math.min(LEVELS.length,lv+2));saveProg(pr);
       const want=Math.min(20,Math.floor(p.coins/3)+stars*2),got=want&&R()&&R().gameCoins?R().gameCoins(want):0;ctx.coins();
@@ -247,13 +252,24 @@
       p.hearts--;hud();if(p.hearts<=0){state="dying";setTimeout(lose,300);return}
       p.x=p.cp;p.y=GY-PH-80;p.vx=p.vy=0;p.inv=90;p.climb=null;toast("Mind the gaps! Back to the last cone.","gap",0);buzz(40);
     }
-    function wear(k){
-      if(k==="kit"){PPE.forEach(x=>p.ppe[x]=true);powerUp();return}
-      if(ICON[k]&&PPE.includes(k)){p.ppe[k]=true;toast(ICON[k].name+" on.");if(!p.full&&PPE.every(x=>p.ppe[x]))powerUp()}
-      else{p.tools[k]=true;toast("Got the "+ICON[k].name.toLowerCase()+".")}
+    /* Picking up only puts it in the kit bar: the player taps it to wear it (one bit of PPE) or hold it (one tool). */
+    let firstKit=true;
+    function collect(k){
+      if(k==="kit"){PPE.forEach(x=>p.bag[x]=true);powerUp();return}
+      p.bag[k]=true;const nm=ICON[k].name.toLowerCase();
+      toast(firstKit?"The "+nm+" is in your kit. Tap it to "+(PPE.includes(k)?"put it on.":"use it."):"Got the "+nm+". Tap it in your kit.");firstKit=false;
       hud();
     }
-    function powerUp(){p.full=true;p.power=480;toast("Full PPE! Nothing can hurt you for a bit.");buzz([15,30,15]);hud()}
+    function pick(k){
+      if(state!=="play"||!p.bag[k])return;buzz(8);
+      if(PPE.includes(k)){p.wear=p.wear===k?null:k;if(p.wear)toast(ICON[k].name+" on.","on-"+k,1500)}
+      else{p.hold=p.hold===k?null:k;if(p.hold)toast("Holding the "+ICON[k].name.toLowerCase()+".","on-"+k,1500)}
+      hud();
+    }
+    const worn=k=>p.power>0||p.wear===k;
+    /* When she gets hurt or blocked, say what would have helped: tap it if she has it, find it if she doesn't. */
+    const needSay=(k,msg)=>p.bag[k]?(PPE.includes(k)?"Put the "+ICON[k].name.toLowerCase()+" on: tap it in your kit.":"Tap the "+ICON[k].name.toLowerCase()+" in your kit to use it."):msg;
+    function powerUp(){p.full=true;p.power=480;toast("Full PPE! Everything on, nothing can hurt you for a bit.");buzz([15,30,15]);hud();setTimeout(hud,8100)}
     function answer(st,i){
       const boss=st===w.boss;
       if(boss?(!st.q||st.wait>0):st.done)return;
@@ -294,8 +310,8 @@
       if(wasG&&!p.ground&&p.vy>=0)p.coy=land?6:9;
     }
     function touchGate(s){
-      if(s.tool==="bolster"){if(p.tools.bolster){if(!s.brk){s.brk=1;toast(TOOL.bolster);buzz(20)}}else toast(NEED.bolster,"need-bolster")}
-      if(s.tool==="ladder"){if(p.tools.ladder||s.placed){if(!s.placed)toast(TOOL.ladder);s.placed=true;p.climb=s}else toast(NEED.ladder,"need-ladder")}
+      if(s.tool==="bolster"){if(p.hold==="bolster"){if(!s.brk){s.brk=1;toast(TOOL.bolster);buzz(20)}}else toast(needSay("bolster",NEED.bolster),"need-bolster")}
+      if(s.tool==="ladder"){if(p.hold==="ladder"||s.placed){if(!s.placed)toast(TOOL.ladder);s.placed=true;p.climb=s}else toast(needSay("ladder",NEED.ladder),"need-ladder")}
     }
 
     function update(dt){
@@ -306,32 +322,33 @@
       if(p.y>GY+140&&state==="play")respawn();
       /* the level board: fix it with the spirit level as she walks up to it */
       for(const g of w.gates){
-        if(g.kind==="board"&&!g.fixed&&p.x+PW>g.x-50&&p.x<g.x+10){if(p.tools.level){g.fixed=true;toast(TOOL.level);buzz(15)}else toast(NEED.level,"need-level")}
+        if(g.kind==="board"&&!g.fixed&&p.x+PW>g.x-50&&p.x<g.x+10){if(p.hold==="level"){g.fixed=true;toast(TOOL.level);buzz(15)}else toast(needSay("level",NEED.level),"need-level")}
         if(g.kind==="wall"&&g.brk){g.brk+=dt;if(g.brk>24&&!g.gone){g.gone=true;burst(g.x+18,GY-80,"#b5654a",26,6)}}
       }
       /* pick-ups: portrait pulls them in, as there's no stopping */
       for(const k of w.picks){if(k.got)continue;const dx=k.x-(p.x+PW/2),dy=k.y-(p.y+PH/2);
         if(!land&&Math.abs(dx)<110&&Math.abs(dy)<160){k.x-=dx*.12;k.y-=dy*.12}
-        if(Math.abs(dx)<26&&Math.abs(dy)<40){k.got=true;wear(k.kind);burst(k.x,k.y,ICON[k.kind].c,12)}}
+        if(Math.abs(dx)<26&&Math.abs(dy)<40){k.got=true;collect(k.kind);burst(k.x,k.y,ICON[k.kind].c,12)}}
       for(const c of w.coins){if(c.got)continue;if(Math.abs(c.x-(p.x+PW/2))<20&&Math.abs(c.y-(p.y+PH/2))<24){c.got=true;p.coins++;$(".sr-coins b").textContent=p.coins;burst(c.x,c.y,"#f5b800",5,2.5)}}
       for(const c of w.cps)if(!c.on&&p.x>c.x-10){c.on=true;p.cp=c.x;toast("Checkpoint.")}
       /* hazards */
       const cx=p.x+PW/2;
       for(const z of w.zones){
-        z.t+=dt;const inZ=cx>z.x&&cx<z.x+z.w,near=cx>z.x-160&&cx<z.x+z.w+40,H=HAZ[z.kind],has=p.ppe[H.need];
-        if(inZ&&has)toast(H.safe,"safe-"+z.kind,60000);
+        z.t+=dt;const inZ=cx>z.x&&cx<z.x+z.w,near=cx>z.x-160&&cx<z.x+z.w+40,H=HAZ[z.kind],has=worn(H.need),say=needSay(H.need,H.hurt);
+        if(inZ&&has&&!p.power)toast(H.safe,"safe-"+z.kind,60000);
+        if(!inZ&&near&&cx<z.x&&!has&&p.bag[H.need])toast(ICON[H.need].name+" needed ahead: tap it in your kit.","ahead-"+z.kind,5000);
         if(z.kind==="fall"){
           if(near){z.brick-=dt;if(z.brick<=0){z.brick=48+Math.random()*20;const bx=Math.max(z.x+10,Math.min(z.x+z.w-30,p.x+(Math.random()*180-40)+p.vx*20));(z.bricks=z.bricks||[]).push({x:bx,y:GY-262,vy:2,vx:0,w:22,h:11,dead:0})}}
           for(const b of z.bricks||[]){b.vy+=.32*dt;b.y+=b.vy*dt;b.x+=b.vx*dt;
-            if(!b.dead&&b.x<p.x+PW&&b.x+b.w>p.x&&b.y<p.y+PH&&b.y+b.h>p.y){if(has||safe()){b.dead=1;b.vy=-5;b.vx=2.5;burst(b.x,b.y,"#f5b800",6,3)}else{b.dead=1;hurt(H.hurt,"h")}}
+            if(!b.dead&&b.x<p.x+PW&&b.x+b.w>p.x&&b.y<p.y+PH&&b.y+b.h>p.y){if(has||safe()){b.dead=1;b.vy=-5;b.vx=2.5;burst(b.x,b.y,"#f5b800",6,3)}else{b.dead=1;hurt(say,"h")}}
             if(b.y+b.h>=GY&&!b.gone){b.gone=true;burst(b.x+11,GY,"#b5654a",8,3)}}
           if(z.bricks)z.bricks=z.bricks.filter(b=>!b.gone&&b.y<GY+40);
         }
-        if(z.kind==="dust"||z.kind==="noise"){const k=z.kind;if(inZ&&!has&&!safe()){p[k]+=dt;if(p[k]>40){p[k]=0;hurt(H.hurt,"h")}}else p[k]=Math.max(0,p[k]-dt)}
-        if(z.kind==="nails"&&inZ&&p.ground&&!has&&p.y+PH>=GY-1)hurt(H.hurt,"h");
+        if(z.kind==="dust"||z.kind==="noise"){const k=z.kind;if(inZ&&!has&&!safe()){p[k]+=dt;if(p[k]>40){p[k]=0;hurt(say,"h")}}else p[k]=Math.max(0,p[k]-dt)}
+        if(z.kind==="nails"&&inZ&&p.ground&&!has&&p.y+PH>=GY-1)hurt(say,"h");
         if(z.kind==="plant"){const m=z.dumper,mcx=m.x+35;m.stop=has&&Math.abs(mcx-cx)<240;
           if(!m.stop){m.x+=m.dir*1.8*dt;if(m.x<z.x){m.x=z.x;m.dir=1}if(m.x>z.x+z.w-70){m.x=z.x+z.w-70;m.dir=-1}}
-          if(!m.stop&&p.x<m.x+68&&p.x+PW>m.x+2&&p.y+PH>GY-44)hurt(H.hurt,"h")}
+          if(!m.stop&&p.x<m.x+68&&p.x+PW>m.x+2&&p.y+PH>GY-44)hurt(say,"h")}
       }
       /* the boss */
       const B=w.boss;
@@ -394,19 +411,19 @@
       g.save();g.translate(cx,cy-bob);
       if(p.power>0){g.fillStyle="rgba(22,163,74,"+(.18+.1*Math.sin(t*10))+")";g.beginPath();g.arc(0,2,27,0,Math.PI*2);g.fill();g.strokeStyle="rgba(22,163,74,.6)";g.lineWidth=2;g.stroke()}
       /* boots first, under the body */
-      if(p.ppe.boots){g.fillStyle="#2f343a";const sw=p.ground&&Math.abs(p.vx)>.5?Math.sin(t*14)*3:0;rr(-12+sw,13,11,7,2.5);g.fill();rr(1-sw,13,11,7,2.5);g.fill();g.fillStyle="#f5b800";g.fillRect(-12+sw,18,11,1.5);g.fillRect(1-sw,18,11,1.5)}
+      if(worn("boots")){g.fillStyle="#2f343a";const sw=p.ground&&Math.abs(p.vx)>.5?Math.sin(t*14)*3:0;rr(-12+sw,13,11,7,2.5);g.fill();rr(1-sw,13,11,7,2.5);g.fill();g.fillStyle="#f5b800";g.fillRect(-12+sw,18,11,1.5);g.fillRect(1-sw,18,11,1.5)}
       /* the body: always the original round Evia, white with the learner's colour as the outline */
       g.save();g.scale(.34,.34);g.translate(-50,-50);const bodyClip=new Path2D();
       bodyClip.arc(50,50,46,0,Math.PI*2);
       g.fillStyle="#fff";g.fill(bodyClip);
-      if(p.ppe.vis){g.save();g.clip(bodyClip);g.fillStyle="#fb8c1a";g.fillRect(0,64,100,40);g.fillStyle="#e8ecef";g.fillRect(0,72,100,6);g.fillRect(0,84,100,6);g.restore()}
+      if(worn("vis")){g.save();g.clip(bodyClip);g.fillStyle="#fb8c1a";g.fillRect(0,64,100,40);g.fillStyle="#e8ecef";g.fillRect(0,72,100,6);g.fillRect(0,84,100,6);g.restore()}
       g.strokeStyle=accent;g.lineWidth=9;g.lineJoin="round";g.stroke(bodyClip);
       g.restore();
       /* eyes look where she's going */
       const ex=p.face*2;g.strokeStyle=accent;g.lineWidth=2.6;g.lineCap="round";g.beginPath();g.moveTo(-4.5+ex,-4);g.lineTo(-4.5+ex,1.5);g.moveTo(4.5+ex,-4);g.lineTo(4.5+ex,1.5);g.stroke();
-      if(p.ppe.mask){g.fillStyle="#f1f4f6";g.strokeStyle="#9aa6b2";g.lineWidth=1;g.beginPath();g.moveTo(-8+ex,4);g.quadraticCurveTo(ex,1.5,8+ex,4);g.lineTo(6+ex,9.5);g.quadraticCurveTo(ex,13,-6+ex,9.5);g.closePath();g.fill();g.stroke();g.beginPath();g.moveTo(-8+ex,4.5);g.lineTo(-16,1);g.moveTo(8+ex,4.5);g.lineTo(16,1);g.stroke()}
-      if(p.ppe.ears){g.strokeStyle="#3f4a57";g.lineWidth=2.4;g.beginPath();g.arc(0,-2,17,Math.PI*1.08,Math.PI*1.92);g.stroke();g.fillStyle="#3f4a57";rr(-20,-6,6,12,3);g.fill();rr(14,-6,6,12,3);g.fill()}
-      if(p.ppe.hat){g.fillStyle="#f5b800";g.beginPath();g.arc(0,-11,12,Math.PI,0);g.closePath();g.fill();g.fillStyle="#d99f00";g.fillRect(-1.2,-22.5,2.4,11);rr(-16,-12,32,3.8,1.9);g.fillStyle="#e2a700";g.fill()}
+      if(worn("mask")){g.fillStyle="#f1f4f6";g.strokeStyle="#9aa6b2";g.lineWidth=1;g.beginPath();g.moveTo(-8+ex,4);g.quadraticCurveTo(ex,1.5,8+ex,4);g.lineTo(6+ex,9.5);g.quadraticCurveTo(ex,13,-6+ex,9.5);g.closePath();g.fill();g.stroke();g.beginPath();g.moveTo(-8+ex,4.5);g.lineTo(-16,1);g.moveTo(8+ex,4.5);g.lineTo(16,1);g.stroke()}
+      if(worn("ears")){g.strokeStyle="#3f4a57";g.lineWidth=2.4;g.beginPath();g.arc(0,-2,17,Math.PI*1.08,Math.PI*1.92);g.stroke();g.fillStyle="#3f4a57";rr(-20,-6,6,12,3);g.fill();rr(14,-6,6,12,3);g.fill()}
+      if(worn("hat")){g.fillStyle="#f5b800";g.beginPath();g.arc(0,-11,12,Math.PI,0);g.closePath();g.fill();g.fillStyle="#d99f00";g.fillRect(-1.2,-22.5,2.4,11);rr(-16,-12,32,3.8,1.9);g.fillStyle="#e2a700";g.fill()}
       g.restore();
     }
     function draw(){
