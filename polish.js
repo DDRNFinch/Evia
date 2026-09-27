@@ -115,17 +115,26 @@
     g.querySelectorAll("[data-remove-photo]").forEach(b=>b.onclick=async()=>{const i=+b.dataset.removePhoto,p=pack.photos[i];if(p&&p.id)await idbDelete(p.id);pack.photos.splice(i,1);await savePack(pack);await renderPhotos(pack)});
   }
 
+  /* A pack is made one of two ways: Evia guides it (guide.js), or free range: every photo first, with all the things to
+     capture listed, then the write-up with all the things to mention. freeStep is where free range is: null (the
+     choice), "photos" or "write". */
+  let freeStep=null;
+  const FREE_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="13" height="11" rx="2.5"/><path d="M6.5 7l1-2h4l1 2"/><circle cx="9.5" cy="12.5" r="2.4"/><path d="M15 20.5l5.5-5.5 1.5 1.5-5.5 5.5H15z"/></svg>';
   async function renderPack(pack){
-    const u=data().u[unit],photos=pack.photos||[],prompts=learnerPrompts();
+    const u=data().u[unit],photos=pack.photos||[],prompts=learnerPrompts(),step=freeStep;
+    const started=photos.length||String(pack.write||"").trim();
+    const heading=(label,title,sub)=>'<div class="evidence-heading"><div class="evidence-label">'+label+'</div><h2>'+esc(title)+'</h2><p>'+sub+'</p></div>';
+    const back='<button type="button" class="secondary ui-back" id="fr-back">‹ '+(step==="write"?"Photos":esc(u[0]))+'</button>';
     $("#page-title").textContent=u[0];
-    $("#screen").innerHTML=
-      '<div class="evidence-pack-page">'+
-        '<div class="evidence-heading">'+
-          '<div class="evidence-label">EVIDENCE PACK</div>'+
-          '<h2>'+esc(u[0])+'</h2>'+
-          '<p>Capture the whole job in one pack. Take photos from the <strong>beginning, middle and end</strong> of the job.</p>'+
-        '</div>'+
+    $("#screen").innerHTML='<div class="evidence-pack-page">'+(
+      !step?
+        heading("EVIDENCE PACK",u[0],"Capture the whole job in one pack. Take photos from the <strong>beginning, middle and end</strong> of the job.")+
         (window.eviaGuide?'<button type="button" class="eg-start" id="eg-start"><span class="evia-mini" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span><span><strong>'+(pack.guide&&!pack.guide.used&&(pack.guide.at||Object.values(pack.guide.answers||{}).some(Boolean))?"Carry on with Evia":"Let Evia guide you")+'</strong><small>'+(pack.guide&&!pack.guide.used&&pack.guide.at?"Pick up where you left off":"Photos one at a time, then a few questions")+'</small></span><span class="eg-start-chev" aria-hidden="true">›</span></button>':"")+
+        '<button type="button" class="eg-start fr-start" id="fr-start"><span class="fr-icon">'+FREE_ICON+'</span><span><strong>'+(started?"Carry on in free range":"Free range mode")+'</strong><small>'+
+          (started?photos.length+" photo"+(photos.length===1?"":"s")+(String(pack.write||"").trim()?" and a write-up":"")+" so far":"Add whatever you like: all your photos, then your write-up")+'</small></span><span class="eg-start-chev" aria-hidden="true">›</span></button>'+
+        (window.eviaStrength?'<button type="button" class="st-how" id="st-how">How to build a strong portfolio ›</button>':"")
+      :step==="photos"?
+        back+heading("FREE RANGE · 1 OF 2","Photos","Take as many as you like, from the <strong>beginning, middle and end</strong> of the job.")+
         '<div class="evidence-photo-actions">'+
           '<label class="evidence-photo-button" for="evidence-camera"><span class="evidence-photo-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="18" height="14" rx="3"></rect><path d="M8 6.5l1.4-2h5.2l1.4 2"></path><circle cx="12" cy="13.5" r="3.5"></circle></svg></span><span>Camera</span><input id="evidence-camera" type="file" accept="image/*" capture="environment"></label>'+
           '<label class="evidence-photo-button" for="evidence-gallery"><span class="evidence-photo-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"></rect><circle cx="8.5" cy="9.5" r="1.6"></circle><path d="M4 16.5l5-5 4 4 3-3 4 4"></path></svg></span><span>Gallery</span><input id="evidence-gallery" type="file" accept="image/*" multiple></label>'+
@@ -135,18 +144,28 @@
           '<div class="evidence-section-title">THINGS TO CAPTURE</div>'+
           '<div class="compact-prompts">'+esc(prompts.photos)+'</div>'+
         '</section>'+
-        '<div class="evidence-section-divider"></div>'+
+        '<div class="pack-actions fr-actions"><button class="primary" id="fr-next" type="button">Next: write-up</button></div>'+
+        '<p class="submit-hint">'+(photos.length?photos.length+" photo"+(photos.length===1?"":"s")+" added. Your work saves as you go.":"Add at least one photo. Your work saves as you go.")+'</p>'
+      :
+        back+heading("FREE RANGE · 2 OF 2","Write-up","In your own words: what you did, how and why.")+
         '<section class="evidence-section writeup-section">'+
           '<div class="evidence-section-title">THINGS TO MENTION</div>'+
           '<div class="compact-prompts">'+esc(prompts.writeup)+'</div>'+
           '<textarea id="write" data-otj="'+esc(u[0])+'" placeholder="Write about the process and what you did…">'+esc(pack.write||"")+'</textarea>'+
         '</section>'+
         '<div class="pack-actions">'+
+          '<button class="secondary" id="fr-photos" type="button">‹ Photos ('+photos.length+')</button>'+
           '<button class="primary" id="submit-evidence" '+(photos.length&&String(pack.write||"").trim()?"":"disabled")+'>Submit to Portfolio</button>'+
         '</div>'+
-        '<p class="submit-hint">Your work saves as you go. Add at least one photo and a write-up to submit.</p>'+
-        (window.eviaStrength?'<button type="button" class="st-how" id="st-how">How to build a strong portfolio ›</button>':"")+
-      '</div>';
+        '<p class="submit-hint">'+(photos.length?"Your work saves as you go. Add a write-up to submit.":"Add at least one photo and a write-up to submit.")+'</p>'
+    )+'</div>';
+    window.scrollTo(0,0);
+    const go=to=>{freeStep=to;renderPack(pack)};
+    const bind=(id,fn)=>{const el=$("#"+id);if(el)el.onclick=fn};
+    bind("fr-start",()=>go(String(pack.write||"").trim()&&photos.length?"write":"photos"));
+    bind("fr-back",()=>go(step==="write"?"photos":null));
+    bind("fr-next",()=>go("write"));
+    bind("fr-photos",()=>go("photos"));
 
     const addFiles=async files=>{
       if(!files.length)return;
@@ -159,22 +178,22 @@
         await savePack(pack);await renderPack(pack);
       }catch(err){console.error("Evia evidence photo save failed",err);alert("That photo could not be added. Please try again.")}
     };
-    $("#evidence-camera").onchange=async e=>{await addFiles([...e.target.files]);e.target.value=""};
+    if($("#evidence-camera"))$("#evidence-camera").onchange=async e=>{await addFiles([...e.target.files]);e.target.value=""};
     /* Camera opens Evia's own square camera (camera.js) with this unit's "Things to capture" as prompts. */
     const camLabel=document.querySelector('label[for="evidence-camera"]');
     if(camLabel&&window.eviaCamera&&window.eviaCamera.supported())camLabel.onclick=e=>{e.preventDefault();window.eviaCamera.open({title:u[0],prompts:String(prompts.photos||"").split("·"),onDone:files=>addFiles(files)})};
-    $("#evidence-gallery").onchange=async e=>{await addFiles([...e.target.files]);e.target.value=""};
-    const eg=$("#eg-start");if(eg)eg.onclick=()=>window.eviaGuide.start({unitName:u[0],prompts,ksbs:u[1],pack,addFiles,save:()=>savePack(pack),done:()=>renderPack(pack)});
+    if($("#evidence-gallery"))$("#evidence-gallery").onchange=async e=>{await addFiles([...e.target.files]);e.target.value=""};
+    const eg=$("#eg-start");if(eg)eg.onclick=()=>window.eviaGuide.start({unitName:u[0],prompts,ksbs:u[1],pack,addFiles,save:()=>savePack(pack),done:()=>{freeStep=String(pack.write||"").trim()?"write":null;renderPack(pack)}});
     const how=$("#st-how");if(how)how.onclick=()=>window.eviaStrength.guide();
-    $("#write").oninput=e=>{
+    if($("#write"))$("#write").oninput=e=>{
       pack.write=e.target.value;savePack(pack);
       const ready=pack.photos.length>0&&String(pack.write||"").trim();
       const btn=$("#submit-evidence"),hint=document.querySelector(".submit-hint");
       if(btn)btn.disabled=!ready;
-      if(hint)hint.textContent=ready?"Your evidence pack is ready to submit.":"Your work saves as you go. Add at least one photo and a write-up to submit.";
+      if(hint)hint.textContent=ready?"Your evidence pack is ready to submit.":pack.photos.length?"Your work saves as you go. Add a write-up to submit.":"Add at least one photo and a write-up to submit.";
     };
     let submitting=false;
-    $("#submit-evidence").onclick=async()=>{
+    if($("#submit-evidence"))$("#submit-evidence").onclick=async()=>{
       if(submitting)return;
       submitting=true;
       const btn=$("#submit-evidence");
@@ -187,8 +206,8 @@
         alert("Evia could not save this evidence to your portfolio. Please try again.");
       }
     };
-    renderPhotos(pack);
-    if(window.eviaSavedTiles)window.eviaSavedTiles(u[0],document.querySelector(".evidence-pack-page"));
+    if(step==="photos")renderPhotos(pack);
+    if(!step&&window.eviaSavedTiles)window.eviaSavedTiles(u[0],document.querySelector(".evidence-pack-page"));
   }
 
   async function migrateSubmittedEvidence(){
@@ -254,7 +273,9 @@
 
   migrateSubmittedEvidence().catch(err=>console.error("Evia evidence migration failed",err));
 
-  window.openUnit=function(i){
+  /* step opens free range at "photos" or "write" (Evia's coach uses it); otherwise the unit opens on the choice. */
+  window.openUnit=function(i,step){
+    freeStep=step==="photos"||step==="write"?step:null;
     const profileBtn=document.getElementById("profile-btn");
     if(profileBtn)profileBtn.style.display="none";
     screen="unit";unit=i;getPack().then(p=>migrateLegacyPack(p)).then(renderPack).catch(err=>{console.error(err);alert("Evia could not open this evidence pack.")});
@@ -294,6 +315,11 @@
       .pack-actions button{min-height:50px;padding:12px 14px;border-radius:15px;font-size:13px}
       .pack-actions .secondary{background:#f4f6f8}
       .pack-actions .primary{background:#1b2435}
+      .pack-actions.fr-actions{grid-template-columns:1fr}
+      .fr-start{background:#fff;border-color:var(--line,#edf0f4)}
+      .fr-start small,.fr-start .eg-start-chev{color:#667085}
+      .fr-icon{width:38px;height:38px;flex:0 0 38px;border-radius:50%;background:#f4f6f8;display:flex;align-items:center;justify-content:center;color:#344054}
+      .fr-icon svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;display:block}
       .submit-hint{text-align:center;font-size:11.5px;line-height:1.45;color:#98a2b3;margin:9px 6px 0}
       .prompt-list,.writeup-prompts,.photo-guide,.capture-intro{display:none}
       button:disabled{opacity:.45;cursor:not-allowed}

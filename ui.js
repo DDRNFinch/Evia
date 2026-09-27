@@ -805,7 +805,7 @@
   }
   const originalNav=window.nav,originalOpenUnit=window.openUnit;
   window.nav=function(s){withFade(()=>originalNav(s))};
-  window.openUnit=function(i){withFade(()=>originalOpenUnit(i))};
+  window.openUnit=function(i,step){withFade(()=>originalOpenUnit(i,step))};
   /* The other full pages fade the same way. */
   ["openSupportingEvidence","eviaOpenSendToPortfolio"].forEach(name=>{const f=window[name];if(typeof f==="function")window[name]=function(){const args=arguments;return withFade(()=>f.apply(this,args))}});
   /* Pop-up panels fade out when closed with ✕ or a tap outside, instead of vanishing. */

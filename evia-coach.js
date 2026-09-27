@@ -252,7 +252,9 @@
   /* Open a unit and land on one part of it: the photos, the write-up or the guided pack. */
   function openUnitAt(u,sel,how){
     K().closeChat();
-    setTimeout(()=>{openUnit(u.index);setTimeout(()=>waitFor(sel,el=>{flash(el);if(how==="focus")setTimeout(()=>el.focus({preventScroll:true}),400);if(how==="click")setTimeout(()=>el.click(),300)}),300)},60);
+    /* The photos and the write-up are the two free range screens (polish.js). */
+    const step=sel==="#evidence-photos"?"photos":sel==="#write"?"write":null;
+    setTimeout(()=>{openUnit(u.index,step);setTimeout(()=>waitFor(sel,el=>{flash(el);if(how==="focus")setTimeout(()=>el.focus({preventScroll:true}),400);if(how==="click")setTimeout(()=>el.click(),300)}),300)},60);
   }
   /* Open a My progress section: scroll to its card and open its detail. */
   function openProgress(id){

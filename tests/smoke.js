@@ -82,9 +82,19 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.click(".ev-tile-main");await page.waitForTimeout(400);
     check("Tapping a saved tile shows that pack",await page.evaluate(()=>!!document.getElementById("ev-view-photos")));
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";nav("course")});await page.waitForTimeout(400);
+    // Free range: the unit offers Evia's guide or free range; free range is all the photos, then the write-up.
     await page.evaluate(()=>openUnit(data().u.findIndex(u=>u[0]==="Mixing mortar")));await page.waitForTimeout(900);
+    const fr={choice:await page.evaluate(()=>!!document.getElementById("eg-start")&&!!document.getElementById("fr-start")&&!document.getElementById("write")&&!document.getElementById("evidence-camera"))};
+    await page.click("#fr-start");await page.waitForTimeout(400);
+    fr.photos=await page.evaluate(()=>!!document.getElementById("evidence-camera")&&!!document.getElementById("evidence-gallery")&&/THINGS TO CAPTURE/.test(document.getElementById("screen").textContent)&&!document.getElementById("write"));
+    await page.click("#fr-next");await page.waitForTimeout(400);
+    fr.write=await page.evaluate(()=>!!document.getElementById("write")&&/THINGS TO MENTION/.test(document.getElementById("screen").textContent)&&document.getElementById("submit-evidence").disabled&&!document.getElementById("evidence-camera"));
+    await page.click("#fr-photos");await page.waitForTimeout(400);fr.backToPhotos=await page.evaluate(()=>!!document.getElementById("evidence-camera"));
+    await page.click("#fr-back");await page.waitForTimeout(400);fr.backToChoice=await page.evaluate(()=>!!document.getElementById("fr-start"));
+    check("Free range mode: the unit offers Evia's guide or free range, which is all the photos with every prompt, then the write-up",Object.values(fr).every(Boolean),JSON.stringify(fr));
+    await page.evaluate(()=>openUnit(data().u.findIndex(u=>u[0]==="Mixing mortar"),"write"));await page.waitForTimeout(900);
     check("The evidence pack has no Continue later button and a check-my-writing icon in the text box",await page.evaluate(()=>!document.getElementById("continue-later")&&!!document.querySelector(".wc-field #write + .wc-btn")));
-    await page.evaluate(()=>{nav("course")});await page.waitForTimeout(450);await page.evaluate(()=>openUnit(3));await page.waitForTimeout(900);
+    await page.evaluate(()=>{nav("course")});await page.waitForTimeout(450);await page.evaluate(()=>openUnit(3,"write"));await page.waitForTimeout(900);
     check("An evidence pack opens",await page.$("#write"));
     await page.fill("#write","i laid the morter on the dpc and checked it was plum");await page.click(".wc-btn");await page.click(".wc-all");
     check("Check my writing fixes spelling, capitals and punctuation",await page.inputValue("#write")==="I laid the mortar on the DPC and checked it was plumb.");
@@ -233,7 +243,9 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       return few==="weak"&&lots==="strong"&&mid==="weak"&&guided==="strong";
     }));
     await page.evaluate(()=>{course="bricklayer";persist();openUnit(0)});await page.waitForTimeout(700);
-    check("The evidence pack shows no score, just a link to how to build a strong portfolio",await page.evaluate(()=>!document.getElementById("st-meter")&&!!document.getElementById("st-how")&&document.querySelectorAll(".writeup-section .compact-prompts").length===1));
+    const stHow=await page.evaluate(()=>!document.getElementById("st-meter")&&!!document.getElementById("st-how"));
+    await page.evaluate(()=>openUnit(0,"write"));await page.waitForTimeout(700);
+    check("The evidence pack shows no score, just a link to how to build a strong portfolio",stHow&&await page.evaluate(()=>!document.getElementById("st-meter")&&document.querySelectorAll(".writeup-section .compact-prompts").length===1));
     await page.evaluate(()=>{const w=document.getElementById("write");w.value="";w.dispatchEvent(new Event("input"));nav("learning")});await page.waitForTimeout(600);
     await page.evaluate(()=>document.getElementById("pv-guide").click());await page.waitForTimeout(400);
     check("My progress explains how to build a strong portfolio",await page.evaluate(()=>/strong portfolio/.test(document.getElementById("st-title").textContent)&&document.querySelectorAll(".st-tip").length===8));
