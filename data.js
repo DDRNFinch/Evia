@@ -37,9 +37,9 @@
   }
   const ms=v=>{const t=Date.parse(iso(v)||"");return isNaN(t)?Date.now():t};
   const slug=s=>String(s||"").toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
-  /* Units are named, not numbered, in today's data. A stable id from the course and the name; course packs from Nisia
-     will carry real ids, matched to these once by name. */
-  const unitId=(c,name)=>c&&name?c+"/"+slug(name):null;
+  /* Units are named in older evidence. Stable ids come from the course packs (packs.js), which fix an id for every
+     unit; new evidence keeps its unit id ("uid") as well as the name. */
+  const unitId=(c,name)=>!c||!name?null:window.eviaPacks?window.eviaPacks.unitId(c,name):c+"/"+slug(name);
   const shared=key=>(readJson("evia7-shared",{})||{})[key]||null;
   const submission=key=>{const at=shared(key);return {status:at?"shared":"not sent",at:iso(at),by:null,feedback:null}};
   const base=(id,extra)=>Object.assign({id:String(id),v:V,learnerId:learnerId()},extra);
@@ -54,7 +54,7 @@
     evidence(){
       return (G("evidence")||readJson("evia7-evidence",[])||[]).filter(Boolean).map(e=>{
         const lp=e.learnerProfile||{},made=iso(e.savedAt)||iso(e.d);
-        return base(e.id,{course:e.c||"",unitId:unitId(e.c,e.u),unit:e.u||"",text:e.w||"",ksbs:(e.k||[]).filter(Boolean),
+        return base(e.id,{course:e.c||"",unitId:e.uid||unitId(e.c,e.u),unit:e.u||"",text:e.w||"",ksbs:(e.k||[]).filter(Boolean),
           photoIds:Array.isArray(e.photoIds)?e.photoIds.slice():[],inlinePhotos:Array.isArray(e.p)?e.p.length:0,photoTakenAt:(e.photoTimes||[]).map(iso),
           guidedAreas:(e.guidedAreas||[]).slice(),signedAs:{name:lp.name||""},hasSignature:!!e.signature,
           createdAt:made,updatedAt:iso(e.updatedAt)||made,deletedAt:null,submission:submission("pack:"+e.id)});
@@ -161,6 +161,7 @@
         const legacy={id:String(r.id||(Date.now()+"-"+Math.random().toString(36).slice(2,8))),c:r.course||courseNow(),u:r.unit||"",d:now.toLocaleString("en-GB"),p:inline,
           w:String(r.text||"").trim(),k:(r.ksbs||[]).slice(),learnerProfile:{name:p.name||"",start:p.start||"",end:p.end||""},signature:p.signature||"",
           savedAt:now.toISOString(),photoCount:photoIds.length+inline.length};
+        legacy.uid=r.unitId||unitId(legacy.c,legacy.u);   /* the unit's stable id (packs.js), kept even if the unit is renamed */
         if(photoIds.length)legacy.photoIds=photoIds;
         if(r.photoTakenAt)legacy.photoTimes=r.photoTakenAt.slice();
         if(r.guidedAreas)legacy.guidedAreas=r.guidedAreas.slice();
@@ -240,7 +241,13 @@
         const p=readJson("evia7-profile",{})||{};let changed=false;
         Object.keys(r).forEach(k=>{if(!SKIP.has(k)&&r[k]!==undefined){p[k]=r[k];changed=true}});
         if(changed){p.updatedAt=new Date().toISOString();writeJson("evia7-profile",p)}
-        if(r.course){if(typeof course!=="undefined")course=r.course;try{localStorage.setItem("evia7-course",r.course)}catch(_){}save()}
+        if(r.course){
+          if(typeof course!=="undefined")course=r.course;try{localStorage.setItem("evia7-course",r.course)}catch(_){}save();
+          /* Only the learner's own course pack is loaded (packs.js): fetch the new one, then redraw. */
+          if(window.eviaPacks&&!window.eviaPacks.loaded(r.course))window.eviaPacks.ensure(r.course)
+            .then(()=>{emit("learner");if(typeof render==="function"&&typeof course!=="undefined"&&course===r.course)render()})
+            .catch(err=>{console.error(err);if(typeof showEvidenceToast==="function")showEvidenceToast(err.message,true)});
+        }
         return "learner";
       }
     },

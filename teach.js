@@ -41,14 +41,14 @@
 
   /* ---------- Lessons ----------
      The trade units come from the teach-*.js files (window.EVIA_TEACH). */
-  const COURSES={};
+  /* The live list from the course packs (teach-kit.js fills it), so a pack loaded after a course switch shows up. */
+  const COURSES=T.courses;
   /* Maths and English: the same style, for every course, when switched on in the profile. No off-the-job time. */
   /* Maths and English come from teach-maths.js and teach-english.js (Functional Skills Level 2, by area). */
   const FS=[];
   const profile=()=>{try{return JSON.parse(localStorage.getItem("evia7-profile")||"{}")||{}}catch(_){return {}}};
   /* Trade units for the course, then maths and English if they're switched on in the profile. */
   const EXT=T;
-  Object.keys(EXT.courses).forEach(c=>{COURSES[c]=(COURSES[c]||[]).concat(EXT.courses[c])});
   if(EXT.fs&&EXT.fs.length)FS.splice(0,FS.length,...EXT.fs);
   /* Units follow the order of the course (lessons for units not in the course list go last). */
   const courseOrder=()=>{try{return data().u.map(u=>u[0])}catch(_){return []}};

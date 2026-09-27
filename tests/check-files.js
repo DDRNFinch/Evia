@@ -11,7 +11,14 @@ for(const f of fs.readdirSync(root).filter(f=>f.endsWith(".js"))){
   catch(e){problems.push(f+" does not parse: "+String(e.stderr).split("\n").find(l=>/Error/.test(l)))}
 }
 const html=read("index.html");
-const loader=(html.match(/data-app-scripts="([^"]*)"/)||[])[1]||"";
+/* "@course-pack" stands for each course's own files (packs.js): each must exist, and they're cached when first
+   loaded rather than up front, so they aren't expected in the offline list. */
+const packFiles=[...(read("packs.js").match(/const FILES=\{([\s\S]*?)\n  \};/)||[,""])[1].matchAll(/"([^"]+\.js[^"]*)"/g)].map(m=>m[1]);
+if(!packFiles.length)problems.push("packs.js lists no course pack files");
+const loaderRaw=(html.match(/data-app-scripts="([^"]*)"/)||[])[1]||"";
+if(!/(^|\s)@course-pack(\s|$)/.test(loaderRaw))problems.push("index.html has no @course-pack in its app scripts");
+const loader=loaderRaw.split(/\s+/).filter(f=>f&&f!=="@course-pack").join(" ");
+packFiles.forEach(f=>{if(!exists(f))problems.push("packs.js lists a missing file: "+f)});
 const pageFiles=[...loader.split(/\s+/).filter(Boolean),...[...html.matchAll(/(?:src|href)="([^"#:]+)"/g)].map(m=>m[1])];
 pageFiles.forEach(f=>{if(!exists(f))problems.push("index.html loads a missing file: "+f)});
 const sw=read("sw-v16.js");

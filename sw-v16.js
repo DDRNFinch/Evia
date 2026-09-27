@@ -1,4 +1,4 @@
-const VERSION = "2026-10-15-evia7-v152";
+const VERSION = "2026-10-15-evia7-v153";
 const CACHE_NAME = "evia7-offline-" + VERSION;
 
 const APP_SHELL = [
@@ -13,6 +13,7 @@ const APP_SHELL = [
   "./vendor/fonts/lexend-latin-400-normal.woff2",
   "./vendor/fonts/lexend-latin-600-normal.woff2",
   "./vendor/fonts/inter-latin-wght-normal.woff2",
+  "./packs.js",
   "./storage.js",
   "./nvq-data.js",
   "./nvq.js",
@@ -41,10 +42,6 @@ const APP_SHELL = [
   "./teach-maths.js",
   "./teach-english.js",
   "./teach-edi.js",
-  "./teach-bricklayer.js",
-  "./teach-joiner.js",
-  "./teach-site.js",
-  "./teach-trowel3.js",
   "./strength.js",
   "./guide.js",
   "./teach.js",

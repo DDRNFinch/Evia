@@ -374,6 +374,11 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       D.put("reviews",{id:rid,signoff:{tutor:{name:"Jo Tutor",sig:"data:x",date:new Date().toISOString()}}});
       const rv=D.get("reviews",rid);out.reviews=rv.targetIds[0]==="t-a"&&rv.signedBy.tutor.name==="Jo Tutor"&&rv.signedBy.tutor.signed===true&&rv.reflection.good==="Laying to the line";
       out.oldReviewGone=typeof window.eviaProgressReview==="undefined"&&typeof window.eviaGetTargets==="undefined";
+      /* Course packs: stable unit ids, the pack format, and evidence keeping its unit id. */
+      const pk=window.eviaPacks.pack(course);
+      out.pack=!!pk&&pk.units.length===data().u.length&&pk.units.every(u=>u.id&&u.id.startsWith(course+"/")&&u.ksbs.every(k=>k.code))&&pk.lessons.length>0;
+      out.unitIds=window.eviaPacks.unitId("bricklayer","Set out Cavity Walling")==="bricklayer/set-out-cavity-walling"&&window.eviaPacks.unitId("bricklayer","A brand new unit")==="bricklayer/a-brand-new-unit";
+      const eid2=D.put("evidence",{course,unit:data().u[1][0],text:"x",ksbs:[]});out.evUnitId=evidence.find(x=>x.id===eid2).uid===window.eviaPacks.unitId(course,data().u[1][0]);D.remove("evidence",eid2);
       /* The learner's details and course, and rewards (coins and items, XP and the streak). */
       ["evia7-profile","evia7-rewards","evia7-teach"].forEach(k=>{keys.push(k);kept[k]=localStorage.getItem(k)});
       const was=course,other=Object.keys(C).find(k=>k!==was);
@@ -388,6 +393,19 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       return out;
     });
     check("Learner data: every record in the new shape (ids, learner id, ISO dates, unit ids), hours, evidence, supporting evidence, NVQ answers, tests, lessons, confidence, scenarios, reviews, targets, the learner and rewards written through eviaData, and sync sees changes and deletions",Object.values(dm).every(Boolean),JSON.stringify(dm));
+    // Course packs: only the learner's own trade's lessons load; switching course fetches the new pack.
+    const pk=await page.evaluate(async()=>{
+      const w=ms=>new Promise(r=>setTimeout(r,ms)),P=window.eviaPacks,was=course,out={};
+      const onPage=c=>P.files(c).every(f=>[...document.scripts].some(s=>s.src&&s.src.includes(f.split("?")[0])));
+      out.ownLoaded=onPage(was)&&P.loaded(was);
+      const other=P.COURSES.find(c=>c!==was&&!P.loaded(c));out.otherNotLoaded=!!other&&!(window.EVIA_TEACH.courses[other]||[]).length;
+      window.eviaData.put("learner",{course:other});
+      for(let i=0;i<40&&!P.loaded(other);i++)await w(100);await w(200);
+      out.switched=P.loaded(other)&&(window.EVIA_TEACH.courses[other]||[]).length>0&&window.eviaTeach.COURSES[other].length>0;
+      window.eviaData.put("learner",{course:was});await w(200);
+      return out;
+    });
+    check("Course packs: only the learner's own trade loads, and switching course fetches the new one",Object.values(pk).every(Boolean),JSON.stringify(pk));
     // Mini games: locked until unlocked in Rewards, played from Teach me, small coins with a daily cap.
     const gm=await page.evaluate(async()=>{
       const w=ms=>new Promise(r=>setTimeout(r,ms)),R=window.eviaRewards,G=window.eviaGames,out={},keep=localStorage.getItem("evia7-rewards");
@@ -487,9 +505,9 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       return ok&&JSON.parse(localStorage.getItem("evia7-profile")).englishEnabled===true});
     check("English lessons open from Teach me, and the profile switch saves even when closed without saving",fsOn);
 
-    // Teach me has every unit for every course, and maths and English by area.
+    // Teach me has every unit for every course (each course pack loaded first), and maths and English by area.
     const allUnits=await page.evaluate(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms)),out={},was=course;
-      for(const c of ["bricklayer","joiner","site","trowel3"]){course=c;window.eviaTeach.open("course");await w(80);out[c]=document.querySelectorAll(".tm-unit").length;document.querySelector(".tm-x").click();await w(220)}
+      for(const c of ["bricklayer","joiner","site","trowel3"]){await window.eviaPacks.ensure(c);course=c;window.eviaTeach.open("course");await w(80);out[c]=document.querySelectorAll(".tm-unit").length;document.querySelector(".tm-x").click();await w(220)}
       for(const f of ["maths","english"]){window.eviaTeach.open(f);await w(80);out[f]=document.querySelectorAll(".tm-node").length;document.querySelector(".tm-x").click();await w(220)}
       course=was;return out});
     check("Teach me covers every unit on every course, plus maths (13 areas) and English (17 areas)",allUnits.bricklayer===10&&allUnits.joiner===10&&allUnits.site===12&&allUnits.trowel3===12&&allUnits.maths===13&&allUnits.english===17);

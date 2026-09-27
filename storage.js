@@ -280,7 +280,10 @@
 
   /* ---------- Boot: load data, then the app scripts in order ---------- */
   function loadScripts(me){
-    const list=(me&&me.dataset.appScripts||"").split(/\s+/).filter(Boolean);
+    /* "@course-pack" is where the learner's own course pack goes (packs.js): only that trade's content is loaded. */
+    const saved=(()=>{try{return localStorage.getItem("evia7-course")||"bricklayer"}catch(_){return "bricklayer"}})();
+    const list=(me&&me.dataset.appScripts||"").split(/\s+/).filter(Boolean)
+      .flatMap(src=>src==="@course-pack"?(window.eviaPacks?window.eviaPacks.files(saved):[]):[src]);
     const reveal=()=>document.documentElement.classList.remove("evia-booting");
     if(!list.length){reveal();return}
     list.forEach((src,i)=>{
