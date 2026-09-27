@@ -40,13 +40,17 @@
   }
   /* Mini games: unlocked in Rewards, played here. */
   const LOCK='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>';
+  const SHOTS=["brickle","crossword","flappy","siterun","quest"]; /* games/<key>.jpg */
   function games(){
     const G=window.eviaGames,R=window.eviaRewards;if(!G||!R)return "";
     const PRICE={common:30,rare:80,epic:180},room=R.gameRoom(),earned=R.GAME_DAILY-room;
     return '<section class="tt-games"><div class="tt-games-head"><h2 class="ui-section-label">Mini games</h2><span>'+(room?earned+" of "+R.GAME_DAILY+" game coins today":"Today’s game coins collected")+'</span></div><div class="tg-games">'+
       G.GAMES.map(g=>{const own=R.owns(g.id);
-        return '<button type="button" class="tt-game tg-game g-'+g.key+(own?"":" locked")+'" data-game="'+g.id+'" data-key="'+g.key+'"><span class="tg-game-ic" aria-hidden="true">'+G.iconFor(g.key)+'</span><strong>'+esc(g.label)+'</strong><small>'+esc(own?g.about:"Unlock in Rewards")+'</small>'+
-          (own?'<span class="tg-game-go">'+PLAY+'Play</span>':'<span class="tg-game-go lock">'+LOCK+(PRICE[g.rarity]?'<b>'+PRICE[g.rarity]+'</b>':"")+'</span>')+'</button>'}).join("")+'</div></section>';
+        /* Top three-quarters: a screenshot of the game. Bottom quarter: its name and what it is. */
+        return '<button type="button" class="tt-game tg-game g-'+g.key+(own?"":" locked")+'" data-game="'+g.id+'" data-key="'+g.key+'" aria-label="'+esc(g.label+". "+g.about+(own?"":" Unlock in Rewards."))+'">'+
+          '<span class="tg-shot">'+(SHOTS.includes(g.key)?'<img src="games/'+g.key+'.jpg" alt="" loading="lazy" decoding="async">':'<span class="tg-game-ic" aria-hidden="true">'+G.iconFor(g.key)+'</span>')+
+          (own?'<span class="tg-game-go">'+PLAY+'Play</span>':'<span class="tg-game-go lock">'+LOCK+(PRICE[g.rarity]?'<b>'+PRICE[g.rarity]+'</b>':"")+'</span>')+'</span>'+
+          '<span class="tg-info"><strong>'+esc(g.label)+'</strong><small>'+esc(g.about)+'</small></span></button>'}).join("")+'</div></section>';
   }
   function rewardsPage(){if(window.eviaRewards)window.eviaRewards.page();else scr().innerHTML=head("Rewards")}
 
