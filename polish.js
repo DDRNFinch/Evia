@@ -289,8 +289,8 @@
       html body .eg-full .pr-body:has(.fr-mention) .eg-text{flex:none;min-height:170px}
       /* Free range: a prohibited sign (🚫) over Evia at half size. */
       .fr-no{position:relative;flex:0 0 auto;width:34px;height:34px;border-radius:50%;border:2.5px solid #d92d20;background:#fff;display:grid;place-items:center;box-sizing:border-box}
-      .fr-no .evia-mini{transform:scale(.5);margin:0}
-      .fr-strike{position:absolute;z-index:2;left:50%;top:50%;width:100%;height:2.5px;border-radius:2px;background:#d92d20;transform:translate(-50%,-50%) rotate(-45deg);pointer-events:none}
+      .fr-no .evia-mini{position:absolute;left:50%;top:50%;margin:0;transform:translate(-50%,-50%) scale(.5)}
+      .fr-strike{position:absolute;z-index:2;left:50%;top:50%;width:100%;height:2.5px;border-radius:2px;background:#d92d20;transform:translate(-50%,-50%) rotate(45deg);pointer-events:none}
       html body .eg-full .fr-no{width:30px;height:30px}
       /* The two ways to make a pack, always the same size. */
       .ev-modes{display:grid;grid-auto-rows:1fr;gap:12px;margin:4px 0 14px}
