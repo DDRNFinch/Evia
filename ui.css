@@ -2188,7 +2188,10 @@ html body .evia-fab:has(> .evia-kit){overflow:visible!important}
 html body .bottom-nav button[data-nav]{position:relative}
 
 /* ---------- Evia's expressions (rewards.js puts the one in use on <html>; previews use data-x) ---------- */
-html[data-evia-expr="wink"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i:nth-child(2),html body .evia-face[data-x="wink"] i:nth-child(2){border-top-color:transparent!important;border-left-color:transparent!important;border-right-color:transparent!important;translate:0 -22%!important;scale:1.15 1!important}
+html[data-evia-expr="wink"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i,html body .evia-face[data-x="wink"] i{border-color:var(--yellow)!important;background:var(--yellow)!important;border-radius:999px!important;scale:.72 1.3}
+html[data-evia-expr="wink"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i:after,html body .evia-face[data-x="wink"] i:after{display:none!important}
+/* the winking eye: the same solid pill, squeezed shut */
+html[data-evia-expr="wink"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i:nth-child(2),html body .evia-face[data-x="wink"] i:nth-child(2){scale:.9 .3!important;translate:0 30%!important}
 html[data-evia-expr="surprised"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i,html body .evia-face[data-x="surprised"] i{scale:1.25 1.25;border-radius:50%!important;aspect-ratio:1;height:auto!important}
 html[data-evia-expr="surprised"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i:after,html body .evia-face[data-x="surprised"] i:after{content:""!important;display:block!important;position:absolute;left:32%!important;top:32%!important;width:36%!important;height:36%!important;translate:none!important;transform:none!important;animation:none!important;border-radius:50%;background:var(--yellow)!important}
 html[data-evia-expr="happy"]:not(.evia-happy):not(.evia-sleepy) body .evia-face:not([data-x]) i,html body .evia-face[data-x="happy"] i{border-bottom-color:transparent!important;translate:0 -8%!important}
