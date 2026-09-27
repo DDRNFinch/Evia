@@ -45,7 +45,6 @@ let course=localStorage.getItem("evia7-course")||"bricklayer", screen="course", 
 hours=hours.map((x,i)=>Object.assign({id:"legacy-"+i,createdAt:x.createdAt||Date.parse(x.d)||Date.now(),savedAt:x.savedAt||x.d||""},x));
 const $=s=>document.querySelector(s), data=()=>C[course], code=x=>x.split("|")[0], text=x=>x.split("|").slice(1).join("|");
 function persist(){localStorage.setItem("evia7-course",course);localStorage.setItem("evia7-evidence",JSON.stringify(evidence));localStorage.setItem("evia7-hours",JSON.stringify(hours));localStorage.setItem("evia7-otj-batches",JSON.stringify(otjBatches))}
-function picker(){return '<div class="course-picker">'+Object.keys(C).map(k=>'<button class="pill '+(k===course?"active":"")+'" data-c="'+k+'">'+esc(C[k].name)+'</button>').join("")+'</div>'}
 function nav(s){screen=s;render();}
 function render(){
  const profileBtn=document.getElementById("profile-btn");
@@ -124,7 +123,6 @@ function learning(){
 function supportingMeta(){try{const all=JSON.parse(localStorage.getItem("evia7-supporting-evidence")||"[]");return Array.isArray(all)?all:[]}catch(_){return[]}}
 function supportingSlug(value){return String(value||"").trim().replace(/[^a-z0-9]+/gi,"-").replace(/^-+|-+$/g,"").slice(0,80)||"supporting-evidence"}
 function supportingTypeLabel(type){return ({photo:"Photo",video:"Video",audio:"Audio",document:"Files"}[type]||"File")}
-function supportingFilename(title,type,mime){const base=supportingSlug(title),ext=type==="photo"?"jpg":type==="video"?(mime&&mime.includes("mp4")?"mp4":"webm"):type==="audio"?(mime&&mime.includes("mp4")?"m4a":"webm"):"bin";return base+"."+ext}
 async function supportingSaveRecord(record,blob){if(!window.eviaSupportingFilePut)throw new Error("Supporting evidence storage is unavailable");await window.eviaSupportingFilePut({id:record.id,blob});window.eviaData.put("supporting",record)}
 function supportingCardIcon(type){const icons={photo:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="18" height="14" rx="3"></rect><path d="M8 6.5l1.4-2h5.2l1.4 2"></path><circle cx="12" cy="13.5" r="3.5"></circle></svg>',video:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="13" height="11" rx="2.5"></rect><path d="M16 10l5-3v10l-5-3z"></path></svg>',audio:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="8" height="12" rx="4"></rect><path d="M5 11.5a7 7 0 0 0 14 0M12 18.5V22M9 22h6"></path></svg>',document:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2.5h8l4 4v15H6z"></path><path d="M14 2.5v5h4M9 12h6M9 16h6"></path></svg>'};return '<span class="evidence-type-icon">'+(icons[type]||icons.document)+'</span>'}
 async function openSupportingEvidence(){
@@ -135,7 +133,6 @@ async function openSupportingEvidence(){
  $("#back-supporting-course").onclick=()=>nav("course");
  document.querySelectorAll("[data-supporting-type]").forEach(btn=>btn.onclick=()=>supportingPrepare(base,btn.dataset.supportingType));
 }
-function supportingCapture(){openSupportingEvidence()}
 let eviaToastTimer=null;
 function showEvidenceToast(message,isError){
  const existing=document.querySelector(".evidence-toast");
@@ -318,9 +315,8 @@ function courses(){
    const level=unitStrengthForCourse(u[0]);
    return '<div class="card unit-card" data-u="'+i+'"><div class="unit-title">'+esc(u[0])+draftChip(u[0])+'</div>'+strengthBars(level)+'</div>';
  }).join("")+'<div class="card unit-card supporting-course-card" data-supporting-evidence><div class="unit-title">Supporting Evidence</div><small>Witness testimony, photos, videos and files</small><span class="supporting-course-arrow">›</span></div>';
- bindCourses();document.querySelectorAll("[data-u]").forEach(b=>b.onclick=()=>openUnit(+b.dataset.u));const supportingCard=document.querySelector("[data-supporting-evidence]");if(supportingCard)supportingCard.onclick=()=>openSupportingEvidence();
+ document.querySelectorAll("[data-u]").forEach(b=>b.onclick=()=>openUnit(+b.dataset.u));const supportingCard=document.querySelector("[data-supporting-evidence]");if(supportingCard)supportingCard.onclick=()=>openSupportingEvidence();
 }
-function bindCourses(){document.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{window.eviaData.put("learner",{course:b.dataset.c});render()})}
 function allK(){if(window.eviaNvq&&window.eviaNvq.on())return window.eviaNvq.allK();let m=new Map();data().u.forEach(u=>u[1].forEach(k=>m.set(code(k),text(k))));return [...m].sort((a,b)=>a[0][0].localeCompare(b[0][0])||Number(a[0].slice(1))-Number(b[0].slice(1)))}
 function courseProgressMeta(){
  const metas={
@@ -348,13 +344,6 @@ function ksbDetail(codeValue,wording,mapped){
    '<div class="ksb-modal-foot">'+(mapped?'<span class="ksb-met">✓ Evidence captured</span>':'<span class="ksb-not-met">Not yet captured</span>')+(supporting.length?'<span class="ksb-supporting-status">○ Supporting evidence attached</span>':"")+(units.length?'<span>'+units.length+' unit'+(units.length===1?"":"s")+" mapped</span>":"")+'</div>'+
    '</section></div>';
  document.getElementById("ksb-close").onclick=()=>document.getElementById("modal-root").innerHTML="";
-}
-function openSavedLearningLogs(){
- const entries=hours.slice().reverse();
- $("#page-title").textContent="Learning Logs";
- $("#screen").innerHTML='<button class="secondary" id="back-learning-logs-portfolio" type="button">‹ Back to portfolio</button><div class="card portfolio-intro"><div class="section-title">PORTFOLIO</div><h2>Learning Logs</h2><p>All learning hours learning entries saved for this course.</p></div>'+
- (entries.length?'<div class="saved-learning-list">'+entries.map(x=>'<div class="card saved-learning-item"><div class="saved-learning-top"><strong>'+esc(window.eviaHM(x.n))+'</strong><span>'+esc(x.savedAt||formatDateTime(x.createdAt))+'</span></div><p>'+esc(x.description||"No description recorded.")+'</p></div>').join("")+'</div>':'<div class="card"><p>No learning logs have been added yet.</p></div>');
- $("#back-learning-logs-portfolio").onclick=()=>nav("portfolio");
 }
 function openSavedReviews(){
  const reviews=window.eviaGetReviews?window.eviaGetReviews():[];
@@ -434,27 +423,12 @@ function chat(){
  if(profileBtn)profileBtn.style.display="none";
  const fab=$("#evia-fab");
  fab.classList.add("chat-active");
- const options=[
-  ["Portfolio check",""],
-  ["Test me",""],
-  ["Progress review",""],
-  ["Confidence check",""]
- ];
- $("#modal-root").innerHTML='<div class="overlay"><section class="sheet chat-sheet"><div class="sheet-head"><div><div class="chat-kicker">EVIA</div><h2>What would you like to do?</h2></div><button class="close" id="x" aria-label="Close">×</button></div><div class="chat" id="chat"><div class="bubble evia">I can help you review your learning, evidence and confidence.</div><div class="chat-options">'+options.map((o,i)=>'<button class="chat-pill" data-chat-option="'+i+'"><strong>'+o[0]+'</strong></button>').join("")+'</div></div></section></div>';
+ $("#modal-root").innerHTML='<div class="overlay"><section class="sheet chat-sheet"><div class="sheet-head"><div><div class="chat-kicker">EVIA</div><h2>What would you like to do?</h2></div><button class="close" id="x" aria-label="Close">×</button></div><div class="chat" id="chat"></div></section></div>'; /* ui.js fills the chat */
  $("#x").onclick=()=>{ $("#modal-root").innerHTML=""; fab.classList.remove("chat-active"); const profileBtn=$("#profile-btn"); if(profileBtn && ["learning","course","progress","portfolio"].includes(screen))profileBtn.style.display="flex"; };
  const scroll=()=>{const c=$("#chat");if(c)c.scrollTop=c.scrollHeight};
- const addBubble=v=>$("#chat").insertAdjacentHTML("beforeend",'<div class="bubble user">'+esc(v)+'</div>');
  /* Evia's messages "think" one at a time, so several added together still arrive in order. */
  let thoughtChainEnd=0;
  const chatObserver=new MutationObserver(mutations=>{mutations.forEach(m=>m.addedNodes.forEach(node=>{if(!(node instanceof HTMLElement))return;const list=[];if(node.matches&&node.matches(".bubble.evia"))list.push(node);if(node.querySelectorAll)list.push(...node.querySelectorAll(".bubble.evia"));list.forEach(el=>{if(el.classList.contains("evia-thinking")||el.dataset.thoughtComplete==="1"||el.dataset.thoughtQueued==="1")return;el.dataset.thoughtQueued="1";const html=el.innerHTML;el.className="bubble evia evia-thinking";el.innerHTML='<span class="thinking-label">Evia is thinking</span><span class="thinking-dots"><i></i><i></i><i></i></span>';scroll();const now=Date.now(),revealAt=Math.max(now,thoughtChainEnd)+1200;thoughtChainEnd=revealAt;setTimeout(()=>{el.className="bubble evia";el.dataset.thoughtComplete="1";el.innerHTML=html;scroll()},revealAt-now);});}));});chatObserver.observe($("#chat"),{childList:true,subtree:true});
- /* "Portfolio check" and "Confidence check" are taken over by ui.js (My stats, and the Practice sheet). */
- document.querySelectorAll("[data-chat-option]").forEach(b=>b.onclick=()=>{
-   const choice=options[Number(b.dataset.chatOption)];
-   addBubble(choice[0]);
-   if(choice[0]==="Progress review"&&window.eviaProgressReview)window.eviaProgressReview();
-   else if(choice[0]==="Test me"&&window.eviaTestMe)window.eviaTestMe();
-   scroll();
- });
 }
 document.querySelectorAll("[data-nav]").forEach(b=>b.onclick=()=>nav(b.dataset.nav));
 $("#evia-fab").onclick=chat;

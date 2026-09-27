@@ -147,20 +147,12 @@ html body .tg-tile{display:flex;flex-direction:column;align-items:flex-start;gap
 .tg-game-go.lock{background:rgba(255,255,255,.96);color:var(--ui-muted)}.tg-game-go.lock b{color:var(--ui-ink)}.tg-game-go.lock svg{fill:none;stroke:currentColor;stroke-width:2}
 .tg-game.locked .tg-shot img{filter:grayscale(.85);opacity:.55}
 .tg-game.locked .tg-game-ic{color:#98a2b3}
-
-/* ---------- Rewards: the loot box in the same premium neutrals ---------- */
-html body .rw-box{background:var(--pm-card);color:var(--ui-ink);border:1px solid var(--pm-hair);box-shadow:var(--pm-shadow)}
-html body .rw-box-copy small{color:var(--ui-muted)}
-html body .rw-box .rw-btn.buy{background:var(--ui-ink);color:#fff}
-html body .rw-box .rw-btn.buy:disabled{background:#efede8;color:var(--ui-muted);opacity:1}
 html body .g-box{fill:var(--yellow)}html body .g-lid{fill:color-mix(in srgb,var(--yellow) 70%,#fff)}html body .g-rib,html body .g-bow{fill:var(--ui-ink)}
-html body .rw-odds span{background:#f5f3ee!important;color:var(--ui-muted)!important;font-weight:700}
 html body .tg-evia .evia-face{gap:8px}html body .tg-evia .evia-face i{width:13px!important;height:17px!important;border-width:3px!important}
 html body .rw-item{border:1px solid var(--pm-hair);box-shadow:var(--pm-shadow);background:var(--pm-card)}
 html body .rw-item.r-rare,html body .rw-item.r-epic{border-color:var(--pm-hair)}
 html body .rw-item.r-legendary{border-color:color-mix(in srgb,var(--yellow) 35%,transparent);background:linear-gradient(180deg,color-mix(in srgb,var(--yellow) 6%,#fff),#fff)}
 html body .rw-bal{background:linear-gradient(180deg,#fff,var(--soft));border-color:var(--yellow-line);box-shadow:var(--pm-shadow)}
-.ui-hours-what{margin:-4px 4px 14px;font-size:13.5px;line-height:1.45;color:var(--ui-muted)}
 /* The shape picker clips its avatars to their shape; Evias wearing kit must never be clipped (hats sit above the head). */
 html body .rw-evia,html body .evia-shape-avatar:has(.evia-kit),html body .evia-theme-avatar:has(.evia-kit){overflow:visible!important}
 

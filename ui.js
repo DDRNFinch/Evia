@@ -693,47 +693,6 @@
   /* Page heading in the strip beside the profile button: where you are, and which course. */
   const pageHead=title=>'<header class="ui-page-head"><h1>'+escHtml(title)+'</h1><span>'+escHtml(data().name)+'</span></header>';
 
-  /* ---------- Hours: off-the-job learning ---------- */
-  /* Quick amounts to tap, one line about what you did, and the log underneath. */
-  function hoursScreen(){
-    $("#page-title").textContent="Hours";
-    const lastBatch=otjBatches[otjBatches.length-1],cutoff=Number(lastBatch?lastBatch.cutoff:0);
-    const pending=hours.filter(x=>Number(x.createdAt)>cutoff).length;
-    const total=hours.reduce((n,x)=>n+Number(x.n||0),0);
-    const weekStart=(()=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return d.getTime()})();
-    const week=hours.filter(x=>Number(x.createdAt)>=weekStart).reduce((n,x)=>n+Number(x.n||0),0);
-    const fmt=n=>window.eviaHM(n);
-    const day=t=>new Date(Number(t)).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
-    $("#screen").innerHTML='<button class="secondary ui-back" id="ui-hours-back" type="button">‹ My progress</button><h1 class="ui-sub-title">Learning hours</h1>'+
-      '<p class="ui-hours-what">'+(window.eviaNvq&&window.eviaNvq.on()?"Your guided learning hours (GLH): the time you spend learning, like college, training and research.":"Your off-the-job training: time in your paid hours spent learning, like college, training and research.")+'</p>'+
-      '<div class="ui-page">'+
-        '<section class="ui-card ui-hours-sum"><div><strong>'+fmt(total)+'</strong><small>logged</small></div><div><strong>'+fmt(week)+'</strong><small>this week</small></div></section>'+
-        '<section class="ui-card ui-hours-log">'+
-          '<h2>Log learning hours</h2>'+
-          '<div class="ui-hours-chips" role="group" aria-label="Hours">'+[0.5,1,2,3,7.5].map(n=>'<button type="button" class="ui-hours-chip" data-hrs="'+n+'">'+n+'</button>').join("")+'<input id="hrs" type="number" min="0" step=".25" inputmode="decimal" placeholder="Other" aria-label="Hours"></div>'+
-          '<textarea id="otj-description" rows="2" placeholder="What did you do or learn? For example: toolbox talk on working at height"></textarea>'+
-          '<button class="primary" id="add" type="button">Save hours</button>'+
-          '<p class="ui-hours-hint">College days, training, toolbox talks, research and shadowing all count.</p>'+
-        '</section>'+
-        (pending||lastBatch?'<div class="ui-hours-pdf"><span>'+(pending?"<strong>"+pending+" new "+(pending===1?"entry":"entries")+"</strong> for your learning hours PDF":"All entries are in your last PDF")+'</span>'+(pending?'<button class="secondary" id="download-otj" type="button">Download PDF</button>':'<button class="secondary" id="download-last-otj" type="button">Last PDF again</button>')+'</div>':"")+
-        (hours.length?'<h2 class="ui-hours-h">Your log</h2><div class="ui-card ui-hours-list">'+hours.slice().reverse().map(x=>'<div class="ui-hours-item"><span class="ui-hours-n">'+fmt(Number(x.n||0))+'</span><span class="ui-hours-copy"><strong>'+escHtml(x.description||"No description recorded.")+'</strong><small>'+escHtml(day(x.createdAt))+(Number(x.createdAt)>cutoff&&lastBatch?' · <em>New</em>':"")+'</small></span></div>').join("")+'</div>':"")+
-      '</div>';
-    const input=$("#hrs");
-    document.querySelectorAll("[data-hrs]").forEach(b=>b.onclick=()=>{document.querySelectorAll("[data-hrs]").forEach(x=>x.classList.toggle("on",x===b));input.value=b.dataset.hrs});
-    input.oninput=()=>document.querySelectorAll("[data-hrs]").forEach(x=>x.classList.toggle("on",x.dataset.hrs===input.value));
-    $("#add").onclick=()=>{
-      const n=Number(input.value),description=$("#otj-description").value.trim();
-      if(!(n>0)){input.focus();if(typeof showEvidenceToast==="function")showEvidenceToast("Pick how many hours first",true);return}
-      if(!description){$("#otj-description").focus();if(typeof showEvidenceToast==="function")showEvidenceToast("Add a few words about what you did",true);return}
-      window.eviaData.put("hours",{minutes:Math.round(n*60),description,source:"manual"});
-      hoursScreen();if(typeof showEvidenceToast==="function")showEvidenceToast(fmt(n)+" saved");
-      if(window.eviaCheckTargets)window.eviaCheckTargets();
-    };
-    $("#ui-hours-back").onclick=()=>nav("learning");
-    const dl=$("#download-otj");if(dl)dl.onclick=()=>downloadOTJPDF("new");
-    const lp=$("#download-last-otj");if(lp)lp.onclick=()=>downloadOTJPDF("last");
-  }
-
   /* ---------- Date wheel: every date field opens a day / month / year wheel instead of the phone's calendar ---------- */
   const MONTHS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const fmtDate=v=>{if(!v)return"";const d=new Date(v+"T12:00:00");return isNaN(d)?"":d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})};
@@ -791,18 +750,18 @@
     if(screen==="portfolio")screen="course";
     if(screen==="progress")screen="learning";
     /* Hours are logged with Evia now: the old Hours page opens My progress with Evia asking what you did. */
-    if(screen==="hours"&&window.eviaCoachFlows){screen="learning";setTimeout(()=>{window.chat({quiet:true});setTimeout(()=>window.eviaCoachFlows.hours(),60)},200)}
+    if(screen==="hours"){screen="learning";setTimeout(()=>{window.chat({quiet:true});setTimeout(()=>window.eviaCoachFlows&&window.eviaCoachFlows.hours(),60)},200)}
     const scr=document.getElementById("screen");if(scr)scr.classList.toggle("ui-top",TOP_SCREENS.includes(screen));
-    if(screen==="learning"||screen==="hours"){
-      const pb=document.getElementById("profile-btn");if(pb)pb.style.display=screen==="learning"?"flex":"none";
+    if(screen==="learning"){
+      const pb=document.getElementById("profile-btn");if(pb)pb.style.display="flex";
       document.querySelectorAll("[data-nav]").forEach(b=>b.classList.toggle("active",b.dataset.nav==="learning"));
-      if(screen==="hours")hoursScreen();else if(window.eviaProgressPage)window.eviaProgressPage();else progressScreen();
+      if(window.eviaProgressPage)window.eviaProgressPage();else progressScreen();
       return;
     }
     originalRender();
   };
   window.progress=progressScreen;
-  window.learning=()=>screen==="hours"?hoursScreen():window.eviaProgressPage?window.eviaProgressPage():progressScreen();
+  window.learning=()=>window.eviaProgressPage?window.eviaProgressPage():progressScreen();
   const originalCourses=window.courses;
   window.courses=function(){
     originalCourses();
