@@ -87,7 +87,7 @@
   /* ---------- Confidence check: one skill at a time ---------- */
   const LEVELS=["Need more training","Know the basics","Quite confident","Mastered"],SHORT=["Need training","Basics","Confident","Mastered"];
   /* Evia's view of a skill from Teach me lessons, shown beside the learner's own rating. */
-  const eviaView=area=>{const v=window.eviaTeach&&window.eviaTeach.viewFor(area);return v?'<p class="cf-evia"><span class="evia-mini" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span><span>From your Teach me lessons, Evia says: <strong>'+esc(v.label)+'</strong></span></p>':""};
+  const eviaView=area=>{const v=window.eviaTeach&&window.eviaTeach.viewFor(area);return v?'<p class="cf-evia"><span class="evia-mini" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span><span>Your lesson scores suggest: <strong>'+esc(v.label)+'</strong></span></p>':""};
   function confidence(){
     const k=K(),qs=typeof confidenceQuestions==="function"?confidenceQuestions():[];
     /* Runs as its own full-screen flow in the Teach me style (teach.js). */

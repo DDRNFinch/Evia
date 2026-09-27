@@ -15,17 +15,21 @@
     let L={};try{L=((JSON.parse(localStorage.getItem("evia7-teach")||"{}")||{})[course]||{}).lessons||{}}catch(_){}
     const ls=[].concat(...us.map(u=>u.lessons));return {done:ls.filter(l=>L[l.id]&&L[l.id].done).length,total:ls.length};
   }
-  /* Level from all-time XP: a new level every 200 XP. */
-  const LEVEL_XP=200;
+  /* Medals from Teach me, by best score: gold 90%+, silver 70%+, bronze below (as teach.js). */
+  function medals(){
+    let L={};try{L=((JSON.parse(localStorage.getItem("evia7-teach")||"{}")||{})[course]||{}).lessons||{}}catch(_){}
+    const m={gold:0,silver:0,bronze:0};Object.values(L).forEach(r=>{if(r&&r.done)m[r.best>=.9?"gold":r.best>=.7?"silver":"bronze"]++});return m;
+  }
   const PLAY='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg>';
   function teachPage(){
     const T=window.eviaTeach,E=window.EVIA_TEACH||{fs:[]},R=window.eviaRewards,I=(E.ui&&E.ui.ICON)||{};
     const trade=(T&&T.COURSES&&T.COURSES[course])||[],fs=f=>(E.fs||[]).filter(u=>u.fs===f);
     const subjects=[["course",courseName()||"Your course",count(trade)],["maths","Maths",count(fs("maths"))],["english","English",count(fs("english"))],["edi","EDI and safeguarding",count(fs("edi"))]].filter(x=>x[2].total||x[0]==="course");
-    const me=T&&T.stats?T.stats():{xp:0,streak:0,today:false},lvl=1+Math.floor(me.xp/LEVEL_XP),inLvl=me.xp%LEVEL_XP,bal=R&&R.balance?R.balance():0;
-    /* The player card: Evia, the level and XP to the next one, the day streak and coins. */
-    const player='<section class="tg-player"><div class="tg-me"><span class="tg-evia evia-mini" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span><span class="tg-lvl">Level '+lvl+'</span></div>'+
-      '<div class="tg-xp"><div class="tg-xp-top"><strong>'+inLvl+'<small> / '+LEVEL_XP+' XP</small></strong><span>to level '+(lvl+1)+'</span></div><i class="tg-xp-bar"><i style="width:'+Math.round(inLvl/LEVEL_XP*100)+'%"></i></i>'+
+    const me=T&&T.stats?T.stats():{xp:0,streak:0,today:false},bal=R&&R.balance?R.balance():0,md=medals(),won=md.gold+md.silver+md.bronze;
+    /* The player card: Evia, the medals won in Teach me, the day streak and coins. */
+    const player='<section class="tg-player"><div class="tg-me"><span class="tg-evia evia-mini" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span></div>'+
+      '<div class="tg-xp"><div class="tg-xp-top"><strong>'+won+'<small> '+(won===1?"medal":"medals")+'</small></strong><span>'+(won?"Replay a lesson to go for gold":"Finish a lesson to win one")+'</span></div>'+
+      '<div class="tg-medals">'+["gold","silver","bronze"].map(k=>'<span class="tg-medal medal-'+k+'" aria-label="'+md[k]+' '+k+'"><i aria-hidden="true"></i><b>'+md[k]+'</b></span>').join("")+'</div>'+
       '<div class="tg-pills"><span class="tg-pill fire'+(me.today?" lit":"")+'">'+(I.flame||"")+'<b>'+me.streak+'</b> day streak</span><span class="tg-pill coin">'+(R&&R.coin?R.coin():"")+'<b>'+bal+'</b> coins</span></div></div></section>';
     /* Up next: one tap straight into the next lesson. */
     const nx=T&&T.nextUp?T.nextUp():null;
@@ -40,7 +44,7 @@
   }
   /* Mini games: unlocked in Rewards, played here. */
   const LOCK='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>';
-  const SHOTS=["brickle","crossword","flappy","siterun","quest"]; /* games/<key>.jpg */
+  const SHOTS=["brickle","crossword","flappy","siterun","quest"]; /* games/<key>.jpg (siterun and quest are parked) */
   function games(){
     const G=window.eviaGames,R=window.eviaRewards;if(!G||!R)return "";
     const PRICE={common:30,rare:80,epic:180},room=R.gameRoom(),earned=R.GAME_DAILY-room;

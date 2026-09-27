@@ -1,3 +1,5 @@
+/* PARKED: not loaded by index.html or cached by sw-v16.js. To bring it back, add it to data-app-scripts and
+   APP_SHELL (and games/siterun.jpg). */
 /* Evia's Site Run: a platform game, laid out like a handheld console. The game is at the top, a text panel in the
    middle (messages, conversations, questions and Evia's tool belt) and the controller at the bottom: ◀ ▶ to move,
    A to jump, B to use. In landscape the controls sit either side of the game.

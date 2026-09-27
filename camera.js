@@ -41,6 +41,8 @@
       /* Things to capture as plain text under the picture: ideas for what to photograph, nothing to tick off. */
       (guide?'<div class="cam-guide" aria-live="polite"><span class="evia-mini" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span><div><small class="cam-guide-n"></small><p class="cam-guide-say"></p><span class="cam-guide-hint"></span></div></div>':
        prompts.length?'<div class="cam-prompts"><span class="cam-prompts-h">Things to capture</span><p>'+prompts.map(escHtml).join('<span class="cam-dot" aria-hidden="true"> · </span>')+'</p></div>':"")+
+      /* Photos are of the learner's work, not people: one plain reminder every time the camera opens. */
+      '<p class="cam-consent">Photograph your work, not people. Ask first if anyone’s in shot.</p>'+
       '<div class="cam-strip" aria-label="Photos taken"></div>'+
       '<footer class="cam-bottom"><label class="cam-gallery"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 16.5l5-5 4 4 3-3 4 4"/></svg><span>Gallery</span><input type="file" accept="image/*" multiple hidden></label><button type="button" class="cam-shutter" aria-label="Take photo"><i></i></button><button type="button" class="cam-done" disabled>Done</button></footer>');
     const video=el.querySelector("video"),strip=el.querySelector(".cam-strip"),count=el.querySelector(".cam-count"),doneBtn=el.querySelector(".cam-done"),shutter=el.querySelector(".cam-shutter");

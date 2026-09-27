@@ -1,17 +1,15 @@
-/* Evia7 Rewards: tokens, the collection, the loot box and Evia's kit.
+/* Evia7 Rewards: tokens, the collection and Evia's kit.
    Coins (called tokens in the code): real work (evidence, learning hours, targets), Teach me (1 for every 5 XP, no
    daily limit), mini games (up to 60 a day) and achievements. See "Coins" below. Coins aren't meant to be scarce:
    learning matters more than saving them.
    Items have a rarity (common, rare, epic, legendary). Three shapes and three colours are free; everything else is
-   bought with tokens (common to epic) or won in a loot box (legendary only comes from boxes).
-   Loot boxes cost tokens only, show their odds, refund tokens for a duplicate, and guarantee an epic or better
-   after 9 boxes without one.
-   Store "evia7-rewards": {bank, spent, lastXp, day, dayEarned, owned[], hat, expr, pity, seenAch[]}.
+   bought directly with tokens: no loot boxes, no chance. (Free boxes saved from before are paid out as coins.)
+   Store "evia7-rewards": {bank, spent, lastXp, day, dayEarned, owned[], hat, expr, seenAch[]}.
    window.eviaRewards: page(), locked(kind,name), openItem(id), hatHtml(shape,hat), wearOn(), sync(), balance(). */
 (function(){
   const KEY="evia7-rewards",XP_PER_COIN=5,ACH_TOKENS=25,BOX=60;
   const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  const blank=()=>({bank:0,spent:0,owned:[],hat:"",pity:0,seenAch:[]});
+  const blank=()=>({bank:0,spent:0,owned:[],hat:"",seenAch:[]});
   /* Hazard spotter was swapped for the Crossword: anyone who had it gets the Crossword. */
   const migrate=r=>{const i=r.owned.indexOf("game-hazard");if(i>=0){r.owned.splice(i,1);if(!r.owned.includes("game-crossword"))r.owned.push("game-crossword")}return r};
   const read=()=>{try{return migrate(Object.assign(blank(),JSON.parse(localStorage.getItem(KEY)||"{}")||{}))}catch(_){return blank()}};
@@ -19,13 +17,13 @@
   const today=()=>{const d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()};
 
   /* ---------- The catalogue ---------- */
-  const RARITY={common:{label:"Common",price:30,refund:10,odds:55},rare:{label:"Rare",price:80,refund:25,odds:30},epic:{label:"Epic",price:180,refund:60,odds:12},legendary:{label:"Legendary",price:0,refund:150,odds:3}};
+  const RARITY={common:{label:"Common",price:30},rare:{label:"Rare",price:80},epic:{label:"Epic",price:180},legendary:{label:"Legendary",price:400}};
   const ORDER=["common","rare","epic","legendary"];
   const HATS={
     "hat-blue":{label:"Blue hard hat",rarity:"common",about:"The colour site operatives wear."},
     "hat-silver":{label:"Silver hard hat",rarity:"rare",about:"A trophy hat for a hard worker."},
     "hat-gold":{label:"Gold hard hat",rarity:"epic",about:"For the very best on site."},
-    "hat-glow":{label:"Glowing hard hat",rarity:"legendary",about:"Legendary. Only from a loot box."},
+    "hat-glow":{label:"Glowing hard hat",rarity:"legendary",about:"Legendary. The brightest hat on site."},
     "hat-beanie":{label:"Beanie",rarity:"common",about:"For the frosty mornings on site."},
     "hat-cap":{label:"Sideways cap",rarity:"common",about:"Worn the cool way round."},
     "hat-cowboy":{label:"Cowboy hat",rarity:"rare",about:"The wild west of the building site."}
@@ -37,7 +35,7 @@
     "ppe-ears":{slot:"ears",label:"Ear defenders",rarity:"rare",about:"For the noisy jobs, like breakers and saws."},
     "ppe-ears-gold":{slot:"ears",label:"Gold ear defenders",rarity:"epic",about:"Top-spec hearing protection."},
     "ppe-hivis":{slot:"body",label:"Hi-vis vest",rarity:"common",about:"Be seen on site, every day."},
-    "ppe-hivis-glow":{slot:"body",label:"Glowing hi-vis",rarity:"legendary",about:"Legendary. Only from a loot box."},
+    "ppe-hivis-glow":{slot:"body",label:"Glowing hi-vis",rarity:"legendary",about:"Legendary. Seen from the far side of site."},
     /* Accessories, for fun: sunglasses sit on the eyes; a moustache or beard goes on the face. */
     "acc-sunglasses":{slot:"eyes",label:"Sunglasses",rarity:"rare",about:"Summer on the scaffold."},
     "acc-moustache":{slot:"face",label:"Moustache",rarity:"common",about:"A proper tash."},
@@ -53,7 +51,7 @@
     sleepy:{label:"Sleepy",rarity:"rare",about:"Early start on site."},
     focused:{label:"Focused",rarity:"epic",about:"Locked in and ready to learn."},
     stars:{label:"Star eyes",rarity:"epic",about:"Star struck."},
-    hearts:{label:"Heart eyes",rarity:"legendary",about:"Legendary. Only from a loot box."},
+    hearts:{label:"Heart eyes",rarity:"legendary",about:"Legendary. For people who love the job."},
     tiny:{label:"Tiny eyes",rarity:"common",about:"Small but mighty."},
     big:{label:"Big eyes",rarity:"common",about:"All ears. Well, all eyes."},
     dots:{label:"Dot eyes",rarity:"rare",about:"Simple and sweet."},
@@ -121,20 +119,22 @@
       const n=first?Math.min(due,back):due;if(first)back-=n;
       r.paid[w.key]=first?w.coins:(r.paid[w.key]||0)+due;if(n>0){r.bank+=n;if(!first)gained.push({n,why:w.why})}});
     r.workV=1;
-    /* A unit reaching strong evidence for the first time earns a free loot box, and Evia says it's ready for the
-       online portfolio. Units already strong before this came in are counted as seen, so nobody gets a flood. */
+    /* A unit reaching strong evidence for the first time: Evia says it's ready for the online portfolio. Units
+       already strong before this came in are counted as seen, so nobody gets a flood. */
     r.strong=r.strong||{};const fresh=[],quiet=!r.strongV;
     work().forEach(w=>{if(w.lv!=="strong"||r.strong[w.key])return;r.strong[w.key]=1;if(!quiet&&!first)fresh.push(w.unit)});
-    r.strongV=1;if(fresh.length)r.freeBox=(r.freeBox||0)+fresh.length;
+    r.strongV=1;
+    /* Loot boxes are gone: any free boxes still saved are paid out as the coins they would have cost. */
+    if(r.freeBox>0){r.bank+=r.freeBox*BOX;r.freeBox=0}
     write(r);badge();if(gained.length){toast(gained);if(isOpen())setTimeout(page,0)}
     if(fresh.length)setTimeout(()=>strongNews(fresh),gained.length?3200:600);
     return r;
   }
   function strongNews(units){
     const u=units[units.length-1],n=units.length,say=window.eviaSay;
-    const msg='<strong>'+esc(u)+'</strong>'+(n>1?" and "+(n-1)+" more":"")+' now '+(n>1?"have":"has")+' strong evidence, so '+(n>1?"they’re":"it’s")+' ready to add to your <strong>online portfolio</strong> for your assessor. You’ve earned a <strong>free loot box</strong> too!';
-    if(!say){toast([{n:0,why:"Free loot box earned"}]);return}
-    say(msg,[{label:"Add to portfolio",primary:true,run:()=>{if(window.eviaOpenSendToPortfolio)window.eviaOpenSendToPortfolio(u)}},{label:"Open my box",run:()=>openBox(true)}],{keep:true});
+    const msg='<strong>'+esc(u)+'</strong>'+(n>1?" and "+(n-1)+" more":"")+' now '+(n>1?"have":"has")+' strong evidence, so '+(n>1?"they’re":"it’s")+' ready to add to your <strong>online portfolio</strong> for your assessor.';
+    if(!say)return;
+    say(msg,[{label:"Add to portfolio",primary:true,run:()=>{if(window.eviaOpenSendToPortfolio)window.eviaOpenSendToPortfolio(u)}},{label:"Not now",run:()=>{}}],{keep:true});
   }
   /* Mini games pay a few coins each, up to GAME_DAILY a day (they can be played again and again). */
   const GAME_DAILY=60;
@@ -276,13 +276,13 @@
     });
   }
 
-  /* ---------- Buying, wearing and loot boxes ---------- */
+  /* ---------- Buying and wearing ---------- */
   function buy(id){
     const it=item(id),r=read();if(!it||r.owned.includes(id))return;
     const price=RARITY[it.rarity].price;if(!price||balance()<price)return;
     r.spent+=price;r.owned.push(id);write(r);if(it.kind!=="game")use(id);
     if(window.eviaMood)window.eviaMood("happy");
-    reveal(it,false);
+    reveal(it);
   }
   function use(id){
     const it=item(id);if(!it||!owns(id))return;
@@ -294,23 +294,6 @@
     if(isOpen())page();
   }
   const inUse=it=>it.kind==="game"?false:it.kind==="expr"?read().expr===it.key:it.kind==="hat"?read()[it.slot||"hat"]===it.id:it.kind==="shape"?window.eviaCurrentShape&&window.eviaCurrentShape()===it.key:window.eviaCurrentTheme&&window.eviaCurrentTheme()===it.key;
-  /* A loot box: roll a rarity from the odds (an epic or better is guaranteed after 9 without one), then an item of
-     that rarity the learner doesn't have yet. If they have them all, they get tokens back instead. */
-  function openBox(free){
-    const r=read();free=free===true&&(r.freeBox||0)>0;if(!free&&balance()<BOX)return;
-    if(free)r.freeBox-=1;else r.spent+=BOX;
-    let roll=Math.random()*100,rar="common",acc=0;
-    for(const k of ORDER){acc+=RARITY[k].odds;if(roll<acc){rar=k;break}}
-    if(r.pity>=9&&(rar==="common"||rar==="rare"))rar="epic";
-    r.pity=rar==="epic"||rar==="legendary"?0:r.pity+1;
-    const pool=catalogue().filter(x=>x.rarity===rar&&!r.owned.includes(x.id));
-    let won=null,refund=0;
-    if(pool.length){won=pool[Math.floor(Math.random()*pool.length)];r.owned.push(won.id)}
-    else{refund=RARITY[rar].refund;r.bank+=refund}
-    write(r);badge();
-    boxAnim(()=>{if(won){reveal(won,true)}else reveal({label:"Duplicate",rarity:rar,refund},true)});
-  }
-
   /* ---------- The Rewards page ---------- */
   const scr=()=>document.getElementById("screen");
   const isOpen=()=>typeof screen!=="undefined"&&screen==="rewards"&&!!document.getElementById("rw-page");
@@ -331,18 +314,14 @@
     const r=sync(),bal=balance(),all=catalogue(),got=all.filter(x=>r.owned.includes(x.id)).length;
     const list=all.filter(x=>x.kind===tab).sort((a,b)=>ORDER.indexOf(a.rarity)-ORDER.indexOf(b.rarity));
     scr().innerHTML='<div id="rw-page"><header class="ui-page-head"><h1>Rewards</h1><span>'+got+' of '+all.length+' collected</span></header>'+
-      '<section class="rw-bal"><div>'+coin+'<b>'+bal+'</b></div><p>Coins</p><details class="rw-earn"><summary>How to earn coins</summary><ul>'+EARN.map(e=>'<li><span>'+e[0]+'</span><b>'+e[1]+'</b></li>').join("")+'</ul><p>Improve your evidence later and you get the difference. A unit reaching strong evidence also wins a free loot box.</p></details></section>'+
-      '<section class="rw-box"><div class="rw-box-art" aria-hidden="true">'+GIFT+'</div><div class="rw-box-copy"><strong>Loot box</strong><small>Win something you don’t have yet. Duplicates give coins back, and 10 boxes always include an Epic or better.</small>'+
-        '<div class="rw-odds">'+ORDER.map(k=>'<span class="r-'+k+'">'+RARITY[k].label+' '+RARITY[k].odds+'%</span>').join("")+'</div>'+
-        (r.freeBox>0?'<button type="button" class="rw-btn buy rw-free" id="rw-open">Open your free box'+(r.freeBox>1?" ("+r.freeBox+")":"")+'</button>':'<button type="button" class="rw-btn buy" id="rw-open"'+(bal>=BOX?"":" disabled")+'>'+coin+BOX+' · Open</button>')+'</div></section>'+
+      '<section class="rw-bal"><div>'+coin+'<b>'+bal+'</b></div><p>Coins</p><details class="rw-earn"><summary>How to earn coins</summary><ul>'+EARN.map(e=>'<li><span>'+e[0]+'</span><b>'+e[1]+'</b></li>').join("")+'</ul><p>Improve your evidence later and you get the difference.</p></details></section>'+
       '<div class="rw-tabs" role="tablist">'+[["hat","Kit"],["expr","Faces"],["shape","Shapes"],["colour","Colours"],["game","Games"]].map(t=>'<button type="button" role="tab" aria-selected="'+(tab===t[0])+'" class="'+(tab===t[0]?"on":"")+'" data-tab="'+t[0]+'">'+t[1]+'</button>').join("")+'</div>'+
       '<div class="rw-grid">'+list.map(it=>{const own=r.owned.includes(it.id),on=own&&inUse(it),price=RARITY[it.rarity].price;
         return '<div class="rw-item r-'+it.rarity+(own?" own":"")+(on?" on":"")+'" id="rw-'+it.id+'">'+tag(it.rarity)+preview(it)+'<strong>'+esc(it.label)+'</strong><small>'+esc(it.about)+'</small>'+
           (own?'<button type="button" class="rw-btn'+(on?" on":"")+'" data-use="'+it.id+'">'+(on?(it.kind==="hat"?"Wearing":"In use"):(it.kind==="hat"?"Wear":it.kind==="game"?"Play":"Use"))+'</button>'
-            :price?'<button type="button" class="rw-btn buy" data-buy="'+it.id+'"'+(bal>=price?"":" disabled")+'>'+coin+price+'</button>':'<span class="rw-only">Loot box only</span>')+'</div>'}).join("")+'</div>'+
+            :'<button type="button" class="rw-btn buy" data-buy="'+it.id+'"'+(bal>=price?"":" disabled")+'>'+coin+price+'</button>')+'</div>'}).join("")+'</div>'+
       (tab==="shape"||tab==="colour"?'<p class="rw-note">Circle, Squircle and Cloud, and Yellow, Green and Blue, are always free.</p>':tab==="expr"?'<p class="rw-note">Evia’s classic face is always free. Tap “In use” to go back to it.</p>':tab==="game"?'<p class="rw-note">Games you unlock are in the Teach me tab too. Each game pays a few coins, up to '+GAME_DAILY+' a day.</p>':"")+'</div>';
     requestAnimationFrame(()=>fitAll(scr()));
-    scr().querySelector("#rw-open").onclick=()=>openBox(r.freeBox>0);
     scr().querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{tab=b.dataset.tab;page()});
     scr().querySelectorAll("[data-buy]").forEach(b=>b.onclick=()=>buy(b.dataset.buy));
     scr().querySelectorAll("[data-use]").forEach(b=>b.onclick=()=>use(b.dataset.use));
@@ -353,30 +332,21 @@
     window.nav("rewards");setTimeout(()=>{const el=document.getElementById("rw-"+id);if(el){el.scrollIntoView({block:"center",behavior:"smooth"});el.classList.add("rw-flash")}},450);
   }
 
-  /* ---------- The loot box opening and the reveal ---------- */
-  const GIFT='<svg viewBox="0 0 64 64"><rect class="g-box" x="10" y="28" width="44" height="28" rx="4"/><rect class="g-lid" x="7" y="19" width="50" height="11" rx="3"/><rect class="g-rib" x="28.5" y="19" width="7" height="37"/><path class="g-bow" d="M32 19c-3-9-14-11-14-4 0 4 7 5 14 4Zm0 0c3-9 14-11 14-4 0 4-7 5-14 4Z"/></svg>';
-  const reduced=()=>window.eviaAccessibility?window.eviaAccessibility.reducedMotion():matchMedia("(prefers-reduced-motion: reduce)").matches;
+  /* ---------- The reveal when something is bought ---------- */
   function overlay(html){const o=document.createElement("div");o.className="rw-over";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");o.innerHTML=html;document.body.appendChild(o);return o}
-  function boxAnim(done){
-    if(reduced())return done();
-    const o=overlay('<div class="rw-shake">'+GIFT+'</div><p class="rw-over-t">Opening…</p>');
-    setTimeout(()=>{o.remove();done()},1500);
-  }
-  function reveal(it,fromBox){
-    const dup=it.refund!=null;
+  function reveal(it){
     const o=overlay('<div class="rw-reveal r-'+it.rarity+'"><span class="rw-burst" aria-hidden="true"></span>'+tag(it.rarity)+
-      (dup?'<div class="rw-dup">'+coin+'</div><h2>You have them all</h2><p>Every '+RARITY[it.rarity].label.toLowerCase()+' item is already yours, so here’s <strong>'+it.refund+' coins</strong> back.</p>'
-          :'<div class="rw-big">'+preview(it)+'</div><h2>'+esc(it.label)+'</h2><p>'+(fromBox?"New in your collection!":"It’s yours.")+'</p>')+
-      '<div class="rw-reveal-btns">'+(dup?"":'<button type="button" class="rw-btn buy" data-go="use">'+(it.kind==="hat"?"Wear it":it.kind==="game"?"Play it":"Use it")+'</button>')+'<button type="button" class="rw-btn" data-go="ok">'+(dup?"OK":"Later")+'</button></div></div>');
+      '<div class="rw-big">'+preview(it)+'</div><h2>'+esc(it.label)+'</h2><p>It’s yours.</p>'+
+      '<div class="rw-reveal-btns"><button type="button" class="rw-btn buy" data-go="use">'+(it.kind==="hat"?"Wear it":it.kind==="game"?"Play it":"Use it")+'</button><button type="button" class="rw-btn" data-go="ok">Later</button></div></div>');
     requestAnimationFrame(()=>fitAll(o));
     const close=()=>{o.classList.add("out");setTimeout(()=>o.remove(),200);if(isOpen())page();badge()};
     o.querySelector('[data-go="ok"]').onclick=close;
-    const u=o.querySelector('[data-go="use"]');if(u)u.onclick=()=>{const r=read();if(it.kind==="hat"&&r.hat===it.id){close();return}use(it.id);close()};
+    o.querySelector('[data-go="use"]').onclick=()=>{const r=read();if(it.kind==="hat"&&r.hat===it.id){close();return}use(it.id);close()};
     if(it.rarity==="legendary"&&window.eviaMood)window.eviaMood("happy");
   }
 
-  /* A dot on the Rewards tab when a loot box can be opened. */
-  function badge(){const b=document.querySelector('[data-nav="rewards"]');if(b)b.classList.toggle("rw-dot",balance()>=BOX||(read().freeBox||0)>0)}
+  /* No nagging dot on the Rewards tab (it was for loot boxes); cleared for anyone who still has it. */
+  function badge(){const b=document.querySelector('[data-nav="rewards"]');if(b)b.classList.remove("rw-dot")}
 
   /* The expression in use goes on <html>, so every Evia in the app shows it (moods still win for a moment). */
   function applyExpr(){const r=read(),on=r.expr&&owns("expr-"+r.expr);if(on)document.documentElement.setAttribute("data-evia-expr",r.expr);else document.documentElement.removeAttribute("data-evia-expr")}

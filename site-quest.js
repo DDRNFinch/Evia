@@ -1,3 +1,5 @@
+/* PARKED: not loaded by index.html or cached by sw-v16.js. To bring it back, add it to data-app-scripts and
+   APP_SHELL (and games/quest.jpg). */
 /* Evia's Site Quest (demo): a Pokémon-style adventure on a building site.
    The whole screen is the game. Tap anywhere and Evia walks there; tap a person or thing and she walks up and talks
    to them or uses it. Encounters (fires, spills, defects, a pushy foreman) start battles. Like Pokémon, Evia has a

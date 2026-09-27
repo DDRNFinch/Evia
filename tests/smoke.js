@@ -268,7 +268,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       document.querySelector(".tm-x").click();await w(400);nav("teach");await w(300);document.querySelector("[data-play]").click();await w(500);
       const inLesson=!!document.querySelector(".tm")&&!document.querySelector(".tm-path");document.querySelector(".tm-x").click();await w(300);const x=document.querySelector(".tm-x");if(x)x.click();await w(300);nav("teach");await w(300);return edi&&inLesson}));
     await page.evaluate(()=>document.querySelector('[data-go="course"]').click());await page.waitForTimeout(600);
-    // Rewards: free starters, locked items, buying, and loot boxes that refund duplicates and guarantee an epic.
+    // Rewards: free starters, locked items, and buying everything directly (no loot boxes).
     await page.evaluate(()=>{const x=document.querySelector(".tm-x");if(x)x.click()});await page.waitForTimeout(300);
     const rw=await page.evaluate(async()=>{
       const w=ms=>new Promise(r=>setTimeout(r,ms)),R=window.eviaRewards,out={};
@@ -276,19 +276,15 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       localStorage.setItem("evia7-rewards",JSON.stringify({bank:1000,spent:0,owned:[],hat:"",pity:0,seenAch:[],lastXp:0,day:""}));
       out.free=!R.locked("shape","cloud")&&!R.locked("colour","green")&&R.locked("shape","gear")==="epic"&&R.locked("colour","orange")==="common";
       nav("rewards");await w(500);
-      out.page=!!document.getElementById("rw-page")&&document.querySelectorAll(".rw-item").length===16&&/Loot box only/.test(document.getElementById("rw-hat-glow").textContent);
+      out.page=!!document.getElementById("rw-page")&&document.querySelectorAll(".rw-item").length===16&&!document.getElementById("rw-open")&&/400/.test(document.querySelector('#rw-hat-glow [data-buy]').textContent);
       document.querySelector('[data-buy="hat-blue"]').click();await w(300);
       out.bought=JSON.parse(localStorage.getItem("evia7-rewards")).owned.includes("hat-blue")&&!!document.querySelector("#evia-fab .evia-kit");
       document.querySelectorAll(".rw-over").forEach(o=>o.remove());
-      const box=async()=>{document.getElementById("rw-open").click();await w(1700);document.querySelectorAll(".rw-over").forEach(o=>o.remove())};
-      Math.random=()=>0.01;await box();
-      const s1=JSON.parse(localStorage.getItem("evia7-rewards"));
-      out.dupe=window.eviaRewards.catalogue().filter(x=>x.rarity==="common"&&x.id!=="hat-blue").some(x=>s1.owned.includes(x.id));
-      for(let k=0;k<5;k++)await box();
-      const s2=JSON.parse(localStorage.getItem("evia7-rewards"));out.refund=s2.bank>1000;
-      const st=JSON.parse(localStorage.getItem("evia7-rewards"));st.pity=9;localStorage.setItem("evia7-rewards",JSON.stringify(st));
-      await box();const s3=JSON.parse(localStorage.getItem("evia7-rewards"));
-      out.pity=s3.owned.some(id=>["hat-gold","shape-gear","shape-shield","colour-teal","colour-midnight","expr-focused","expr-stars","ppe-ears-gold"].includes(id))&&s3.pity===0;
+      /* A legendary is bought like anything else, and free boxes saved from before are paid out as coins. */
+      document.querySelector('[data-buy="hat-glow"]').click();await w(300);document.querySelectorAll(".rw-over").forEach(o=>o.remove());
+      const s1=JSON.parse(localStorage.getItem("evia7-rewards"));out.legendary=s1.owned.includes("hat-glow")&&s1.spent===430;
+      s1.freeBox=2;localStorage.setItem("evia7-rewards",JSON.stringify(s1));const b0=s1.bank;R.sync();
+      const s2=JSON.parse(localStorage.getItem("evia7-rewards"));out.freeBoxPaid=!s2.freeBox&&s2.bank>=b0+120;
       const s5=JSON.parse(localStorage.getItem("evia7-rewards"));["ppe-specs","ppe-ears","ppe-hivis"].forEach(id=>{if(!s5.owned.includes(id))s5.owned.push(id)});localStorage.setItem("evia7-rewards",JSON.stringify(s5));
       nav("rewards");await w(400);for(const id of ["ppe-specs","ppe-ears","ppe-hivis"]){const b=document.querySelector('[data-use="'+id+'"]');if(b&&!b.classList.contains("on"))b.click();await w(150)}
       const fab=document.getElementById("evia-fab");
@@ -301,7 +297,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       window.eviaSetShape(shapeBefore);await w(100);
       const s4=JSON.parse(localStorage.getItem("evia7-rewards"));s4.owned.push("expr-wink");localStorage.setItem("evia7-rewards",JSON.stringify(s4));
       nav("rewards");await w(400);document.querySelector('[data-tab="expr"]').click();await w(200);
-      out.faces=document.querySelectorAll(".rw-item").length===12&&/Loot box only/.test(document.getElementById("rw-expr-hearts").textContent);
+      out.faces=document.querySelectorAll(".rw-item").length===12&&!!document.querySelector('#rw-expr-hearts [data-buy]');
       document.querySelector('[data-use="expr-wink"]').click();await w(200);
       out.expr=document.documentElement.getAttribute("data-evia-expr")==="wink";
       document.querySelector('[data-use="expr-wink"]').click();await w(200);
@@ -309,10 +305,10 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       Math.random=rnd;if(keep)localStorage.setItem("evia7-rewards",keep);else localStorage.removeItem("evia7-rewards");R.wearOn();
       return out;
     });
-    check("Rewards: three shapes and colours are free, others are locked by rarity, and the glowing hat is loot box only",rw.free&&rw.page,JSON.stringify(rw));
+    check("Rewards: three shapes and colours are free, others are locked by rarity, and there are no loot boxes (legendaries cost 400)",rw.free&&rw.page,JSON.stringify(rw));
     check("Buying a hard hat puts it on Evia",rw.bought);
     check("PPE: specs, ear defenders and hi-vis can be worn together on Evia, with a hard hat",rw.ppe,JSON.stringify(rw));
-    check("Loot boxes give items you don't have, refund tokens for duplicates, and guarantee an epic after 9 without one",rw.dupe&&rw.refund&&rw.pity,JSON.stringify(rw));
+    check("A legendary can be bought directly, and free boxes saved from before are paid out as coins",rw.legendary&&rw.freeBoxPaid,JSON.stringify(rw));
     check("Advanced Evias: six legendary orbs, drawn on the Evia button with the particle sphere animated",rw.orbLocked&&rw.orb,JSON.stringify(rw));
     // Coins: real work pays (evidence by strength, upgrades pay the difference, off-the-job hours capped per week), and Teach me shows coins, not XP.
     const cn=await page.evaluate(async()=>{
@@ -339,7 +335,11 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       const w=ms=>new Promise(r=>setTimeout(r,ms)),R=window.eviaRewards,G=window.eviaGames,out={},keep=localStorage.getItem("evia7-rewards");
       localStorage.setItem("evia7-rewards",JSON.stringify({bank:500,spent:0,owned:[],hat:"",pity:0,seenAch:[],lastXp:1e9,day:"",workV:1,paid:{}}));
       nav("teach");await w(500);
-      out.locked=document.querySelectorAll(".tt-game.locked").length===5;
+      out.locked=document.querySelectorAll(".tt-game.locked").length===3;
+      /* The Teach me card shows medals, the streak and coins: no XP or levels. */
+      out.medals=!!document.querySelector(".tg-player .tg-medals")&&!/\bXP\b|Level \d/.test(document.querySelector(".tg-player").textContent);
+      /* The camera always carries the photo-consent line (opened without a real camera, then closed). */
+      if(window.eviaCamera&&window.eviaCamera.open){window.eviaCamera.open({title:"Test",prompts:[],onDone(){}});await w(300);out.consent=/not people/.test((document.querySelector(".cam-consent")||{}).textContent||"");const cx=document.querySelector("[data-cam-close]");if(cx)cx.click();await w(300);document.querySelectorAll(".cam").forEach(c=>c.remove());document.body.classList.remove("cam-open")}
       document.querySelector('[data-game="game-brickle"]').click();await w(700);
       out.toRewards=screen==="rewards"&&!!document.querySelector('#rw-game-brickle [data-buy]');
       document.querySelector('#rw-game-brickle [data-buy]').click();await w(300);document.querySelectorAll(".rw-over").forEach(o=>o.remove());
@@ -363,28 +363,12 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       document.querySelector(".gm-x").click();G.open("flappy");await w(400);
       out.flappy=!!document.querySelector(".gm-flappy canvas")&&!!document.querySelector(".fl-tip");
       document.querySelector(".gm-x").click();await w(100);
-      /* Evia's Site Run: level list, then a level with the HUD, pad and a question from the course */
-      const sr=JSON.parse(localStorage.getItem("evia7-rewards"));sr.owned.push("game-siterun");localStorage.setItem("evia7-rewards",JSON.stringify(sr));
-      out.srItem=R.owns("game-siterun");G.open("siterun");await w(300);
-      out.srMenu=document.querySelectorAll(".sr-lv").length===4&&document.querySelectorAll(".sr-lv.locked").length===3;
-      document.querySelector('[data-lv="0"]').click();await w(300);
-      const S=document.querySelector(".gm-siterun").srState();
-      out.srPlay=S.state==="play"&&S.w.stations.length===2&&S.w.stations.every(s=>s.q&&s.q.opts[s.q.a])&&!!document.querySelector(".sr-hearts svg.on");
-      /* level 1: the turnstile is shut until Sam's induction; the panel and controller are there */
-      out.srPanel=!!document.querySelector(".sr-panel .sr-msg")&&!!document.querySelector(".sr-a")&&!!document.querySelector(".sr-b")&&!S.S.pass;
-      document.querySelector(".sr-hud .sr-x").click();await w(100);
-      /* Evia's Site Quest demo: a new game starts on the map, and Sam starts the induction */
-      const eq=JSON.parse(localStorage.getItem("evia7-rewards"));eq.owned.push("game-quest");localStorage.setItem("evia7-rewards",JSON.stringify(eq));
-      G.open("quest");await w(300);document.querySelector('.eq-over [data-t="new"]').click();await w(300);
-      const Q=document.querySelector(".gm-quest").eqState();
-      out.questStart=Q.mode==="world"&&!!Q.ents.find(e=>e.id==="sam")&&Q.S.moves.length===0&&Q.queue.length===1;
-      document.querySelector(".eq-x").click();await w(100);
       out.closed=!document.querySelector(".gm")&&!document.documentElement.classList.contains("gm-open");
       if(keep)localStorage.setItem("evia7-rewards",keep);else localStorage.removeItem("evia7-rewards");
       return out;
     });
-    check("Mini games: locked until bought in Rewards, then Brickle, the crossword, Flappy Evia and Evia’s Site Run and Site Quest play from Teach me and pay capped coins",Object.values(gm).every(Boolean),JSON.stringify(gm));
-    check("Expressions: twelve faces (heart eyes loot box only); using one shows it on Evia, and tapping again goes back to classic",rw.faces&&rw.expr&&rw.exprOff,JSON.stringify(rw));
+    check("Teach me card shows medals (no XP or levels); the camera reminds learners not to photograph people. Mini games: locked until bought in Rewards, then Brickle, the crossword and Flappy Evia play from Teach me (Site Run and Site Quest are parked) and pay capped coins",Object.values(gm).every(Boolean),JSON.stringify(gm));
+    check("Expressions: twelve faces, all bought directly; using one shows it on Evia, and tapping again goes back to classic",rw.faces&&rw.expr&&rw.exprOff,JSON.stringify(rw));
     await page.evaluate(()=>nav("teach"));await page.waitForTimeout(600);
     await page.evaluate(()=>document.querySelector('[data-go="course"]').click());await page.waitForTimeout(600);
     // Teach me: play the whole Mixing mortar unit (every kind of screen, a mistake to fix and a surprise question),

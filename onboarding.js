@@ -347,7 +347,7 @@
     nav("rewards");window.scrollTo(0,0);
     setTimeout(()=>{
       const bal=document.querySelector("#screen .rw-bal");
-      guide('And this is <strong>Rewards</strong>. Spend your coins on new looks for me, loot boxes and mini games. You earn them from lessons, your learning hours and good evidence.',{
+      guide('And this is <strong>Rewards</strong>. Spend your coins on new looks for me and mini games. You earn them from lessons, your learning hours and good evidence.',{
         targets:[bal],button:"Next",onNext:()=>{writeState("evia");showEviaStep()}
       });
     },450);

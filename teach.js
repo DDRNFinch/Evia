@@ -290,7 +290,7 @@
         '<div class="tm-stats three"><div class="xp">'+COIN()+'<b data-count="'+got+'">'+got+'</b><span>'+(got===1?"coin":"coins")+'</span></div><div>'+ICON.target+'<b>'+Math.round(score*100)+'%</b><span>accuracy</span></div><div>'+ICON.clock+'<b>'+mmss(secs)+'</b><span>time</span></div></div>'+
         '<div class="tm-streak'+(me.extended?" up":"")+'"><div class="tm-streak-top">'+ICON.flame+'<b>'+me.n+'</b><span>day streak'+(me.extended?(me.n>1?" · kept going!":" · started!"):"")+'</span></div><div class="tm-week">'+week+'</div></div>'+
         (badges.length?'<div class="tm-badges">'+badges.map((b,k)=>'<span class="tm-badge" style="--k:'+k+'">'+ICON[b[0]]+esc(b[1])+'</span>').join("")+'</div>':"")+
-        (view?'<p class="tm-view">From your lessons'+(view.soFar?" so far":"")+', Evia rates your <strong>'+esc(String(sk).toLowerCase())+'</strong> as <strong>'+esc(view.label)+'</strong>. You’ll see this next to your own rating in the confidence check.</p>':"")+
+        (view?'<p class="tm-view">Your lesson scores'+(view.soFar?" so far":"")+' suggest <strong>'+esc(view.label)+'</strong> for <strong>'+esc(String(sk).toLowerCase())+'</strong>. That’s practice feedback, not an assessment. You’ll see this next to your own rating in the confidence check.</p>':"")+
         '</div><footer class="tm-foot">'+(nx?'<button type="button" class="primary tm-go" id="tm-next">Next lesson</button>':"")+'<button type="button" class="'+(nx?"secondary":"primary")+' tm-go" id="tm-path">Back to the path</button></footer>';
       /* The coins count up. */
       const cnt=root.querySelector("[data-count]");
@@ -328,7 +328,7 @@
         '<div class="tm-scroll tm-step"><span class="tm-kicker">Skill '+(i+1)+' of '+qs.length+'</span><h2 class="tm-q cf-area">'+esc(q.area)+'</h2>'+
         '<div class="cf-ask">'+EVIA.replace("tm-evia","tm-evia sm")+'<p>'+esc(q.question)+'</p></div>'+
         '<div class="cf-opts" role="radiogroup">'+CHOICES.map((c,k)=>'<button type="button" class="tm-opt cf-opt'+(cur===k+1?" on":"")+'" role="radio" aria-checked="'+(cur===k+1)+'" data-v="'+(k+1)+'"><span class="cf-bars" aria-hidden="true">'+[1,2,3,4].map(n=>'<i'+(n<=k+1?' class="on"':"")+'></i>').join("")+'</span><span class="cf-txt"><strong>'+c[0]+'</strong><small>'+c[1]+'</small></span>'+
-          ((was&&was.score===k+1)||(v&&v.level===k+1)?'<span class="cf-tags">'+(was&&was.score===k+1?'<em class="cf-tag">Last time</em>':"")+(v&&v.level===k+1?'<em class="cf-tag evia">Evia’s view</em>':"")+'</span>':"")+'</button>').join("")+'</div></div>'+
+          ((was&&was.score===k+1)||(v&&v.level===k+1)?'<span class="cf-tags">'+(was&&was.score===k+1?'<em class="cf-tag">Last time</em>':"")+(v&&v.level===k+1?'<em class="cf-tag evia">Lesson scores</em>':"")+'</span>':"")+'</button>').join("")+'</div></div>'+
         '<footer class="tm-foot tm-row">'+(i?'<button type="button" class="secondary tm-go" id="cf-back">Back</button>':"")+(was?'<button type="button" class="secondary tm-go" id="cf-same">Same as last time</button>':"")+'</footer>';
       root.querySelector(".tm-x").onclick=close;
       const next=val=>{picks.set(i,val);buzz(8);setTimeout(()=>{i++;ask()},reduced()?0:260)};
