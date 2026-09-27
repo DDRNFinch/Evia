@@ -421,5 +421,7 @@
 
   const RUN={brickle,crossword,flappy};
   function open(key){const g=GAMES.find(x=>x.key===key);if(!g||!RUN[key])return;const ctx=shell(g);RUN[key](ctx)}
-  window.eviaGames={GAMES,open,group,iconFor:k=>ICONS[k]||"",WORDS,CLUES,build,GATES,score};
+  /* Bigger games live in their own files (site-run.js) and add themselves here. */
+  function register(g,run,icon){if(!GAMES.some(x=>x.key===g.key))GAMES.push(g);RUN[g.key]=run;if(icon)ICONS[g.key]=icon}
+  window.eviaGames={GAMES,open,register,group,iconFor:k=>ICONS[k]||"",WORDS,CLUES,build,GATES,score,esc,buzz,reduced};
 })();

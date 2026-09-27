@@ -113,7 +113,7 @@
     document.documentElement.setAttribute("data-evia-theme",THEMES[name]?name:"yellow");
   }
   function currentTheme(){return localStorage.getItem(KEY)||"yellow"}
-  function currentShape(){const saved=({sun:"gear",alien:"oval"})[localStorage.getItem(SHAPE_KEY)]||localStorage.getItem(SHAPE_KEY);return SHAPES[saved]?saved:"circle"}
+  function currentShape(){const saved=({sun:"gear"})[localStorage.getItem(SHAPE_KEY)]||localStorage.getItem(SHAPE_KEY);return SHAPES[saved]?saved:"circle"}
   function setShape(name){
     if(!SHAPES[name])return;
     localStorage.setItem(SHAPE_KEY,name);
@@ -267,6 +267,7 @@
   window.eviaShowThemePicker=showPicker;
   window.eviaThemeHasBeenPicked=hasPickedTheme;
   window.eviaShapes=SHAPES;
+  window.eviaOutlines=OUTLINES;
   window.eviaSetShape=setShape;
   window.eviaCurrentShape=currentShape;
   window.eviaShowShapePicker=showShapePicker;

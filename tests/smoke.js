@@ -339,7 +339,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       const w=ms=>new Promise(r=>setTimeout(r,ms)),R=window.eviaRewards,G=window.eviaGames,out={},keep=localStorage.getItem("evia7-rewards");
       localStorage.setItem("evia7-rewards",JSON.stringify({bank:500,spent:0,owned:[],hat:"",pity:0,seenAch:[],lastXp:1e9,day:"",workV:1,paid:{}}));
       nav("teach");await w(500);
-      out.locked=document.querySelectorAll(".tt-game.locked").length===3;
+      out.locked=document.querySelectorAll(".tt-game.locked").length===4;
       document.querySelector('[data-game="game-brickle"]').click();await w(700);
       out.toRewards=screen==="rewards"&&!!document.querySelector('#rw-game-brickle [data-buy]');
       document.querySelector('#rw-game-brickle [data-buy]').click();await w(300);document.querySelectorAll(".rw-over").forEach(o=>o.remove());
@@ -363,11 +363,19 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       document.querySelector(".gm-x").click();G.open("flappy");await w(400);
       out.flappy=!!document.querySelector(".gm-flappy canvas")&&!!document.querySelector(".fl-tip");
       document.querySelector(".gm-x").click();await w(100);
+      /* Evia's Site Run: level list, then a level with the HUD, pad and a question from the course */
+      const sr=JSON.parse(localStorage.getItem("evia7-rewards"));sr.owned.push("game-siterun");localStorage.setItem("evia7-rewards",JSON.stringify(sr));
+      out.srItem=R.owns("game-siterun");G.open("siterun");await w(300);
+      out.srMenu=document.querySelectorAll(".sr-lv").length===4&&document.querySelectorAll(".sr-lv.locked").length===3;
+      document.querySelector('[data-lv="0"]').click();await w(300);
+      const S=document.querySelector(".gm-siterun").srState();
+      out.srPlay=S.state==="play"&&S.w.stations.length===2&&S.w.stations.every(s=>s.q&&s.q.opts[s.q.a])&&!!document.querySelector(".sr-hearts svg.on");
+      document.querySelector(".sr-hud .sr-x").click();await w(100);
       out.closed=!document.querySelector(".gm")&&!document.documentElement.classList.contains("gm-open");
       if(keep)localStorage.setItem("evia7-rewards",keep);else localStorage.removeItem("evia7-rewards");
       return out;
     });
-    check("Mini games: locked until bought in Rewards, then Brickle, the crossword and Flappy Evia play from Teach me and pay capped coins",Object.values(gm).every(Boolean),JSON.stringify(gm));
+    check("Mini games: locked until bought in Rewards, then Brickle, the crossword, Flappy Evia and Evia’s Site Run play from Teach me and pay capped coins",Object.values(gm).every(Boolean),JSON.stringify(gm));
     check("Expressions: twelve faces (heart eyes loot box only); using one shows it on Evia, and tapping again goes back to classic",rw.faces&&rw.expr&&rw.exprOff,JSON.stringify(rw));
     await page.evaluate(()=>nav("teach"));await page.waitForTimeout(600);
     await page.evaluate(()=>document.querySelector('[data-go="course"]').click());await page.waitForTimeout(600);
