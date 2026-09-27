@@ -288,17 +288,17 @@
      "Tap this" steps wait for the learner to tap the highlighted thing; the others have Next. */
   const $q=s=>document.querySelector(s);
   const TOUR=[
-    {nav:"course",target:"#screen .unit-card[data-u]",tap:true,text:"This is <strong>My course</strong>. All your units are here. Tap one."},
-    {target:".ev-modes",text:"Add evidence two ways: <strong>I guide you</strong>, or <strong>free range</strong>. Your saved work shows underneath."},
+    {nav:"course",seen:"course",target:"#screen .unit-card[data-u]",tap:true,text:"This is <strong>My course</strong>. All your units are here. Tap one."},
+    {seen:"unit",target:".ev-modes",text:"Add evidence two ways: <strong>I guide you</strong>, or <strong>free range</strong>. Your saved work shows underneath."},
     {target:'[data-nav="learning"]',tap:true,text:"Tap <strong>Progress</strong>."},
-    {text:"<strong>My progress</strong> shows how you’re doing on your course, and what to do next."},
+    {seen:"learning",text:"<strong>My progress</strong> shows how you’re doing on your course, and what to do next."},
     {target:'[data-nav="teach"]',tap:true,text:"Tap <strong>Teach me</strong>."},
-    {text:"Short lessons and games for your course. Each one earns <strong>coins</strong>."},
+    {seen:"teach",text:"Short lessons and games for your course. Each one earns <strong>coins</strong>."},
     {target:'[data-nav="rewards"]',tap:true,text:"Tap <strong>Rewards</strong>."},
-    {text:"Spend your coins on new looks for me, and mini games."},
-    {target:"#evia-fab",text:"And this is me. Tap me any time for help, evidence checks and practice tests."},
+    {seen:"rewards",text:"Spend your coins on new looks for me, and mini games."},
+    {seen:"evia",target:"#evia-fab",text:"And this is me. Tap me any time for help, evidence checks and practice tests."},
     {nav:"course",target:"#profile-btn",tap:true,text:"Last one: tap your <strong>profile</strong>."},
-    {profile:true}
+    {profile:true,seen:"profile"}
   ];
   let card=null,tapWatch=null,profileObserver=null;
   const stopWatch=()=>{if(tapWatch)document.removeEventListener("click",tapWatch,true);tapWatch=null};
@@ -318,6 +318,8 @@
     if(i>=TOUR.length){finish();return}
     writeState("tour:"+i);
     const s=TOUR[i];
+    /* What the tour explains doesn't get a first-visit note later (tips.js). */
+    if(s.seen&&window.eviaTips)window.eviaTips.seen(s.seen);
     if(s.profile){profileStep();return}
     if(s.nav&&screen!==s.nav){const m=document.getElementById("modal-root");if(m)m.innerHTML="";nav(s.nav)}
     showCard(i,s);

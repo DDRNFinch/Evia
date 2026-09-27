@@ -25,7 +25,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     // A learner part-way through the course, with the first-run screens already done.
     await page.goto(url+"manifest.json");
     await page.evaluate(()=>{localStorage.clear();["evia7-theme-picked","evia7-shape-picked"].forEach(k=>localStorage.setItem(k,"1"));
-      localStorage.setItem("evia7-onboarding",'{"stage":"done"}');localStorage.setItem("evia7-home-tip",JSON.stringify({day:new Date().toDateString(),id:"x"}));
+      localStorage.setItem("evia7-onboarding",'{"stage":"done"}');localStorage.setItem("evia7-tips-seen",'["*"]');localStorage.setItem("evia7-home-tip",JSON.stringify({day:new Date().toDateString(),id:"x"}));
       localStorage.setItem("evia7-profile",JSON.stringify({name:"Sam Taylor",start:"2024-11-01",end:"2026-12-01",mathsEnabled:true}))});
     await page.goto(url);await page.waitForTimeout(2000);
     await page.evaluate(async()=>{document.getElementById("app").classList.remove("welcome-app-hidden");const w=document.getElementById("welcome-screen");if(w)w.remove();
@@ -609,9 +609,33 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       await p2.evaluate(()=>document.getElementById("save-profile").click());await p2.waitForTimeout(1200);
       ob.done=await p2.evaluate(()=>/"done"/.test(localStorage.getItem("evia7-onboarding")));
       ob.ticked=await p2.evaluate(()=>{try{return window.eviaStats.compute().a.met>=2}catch(_){return false}});
+      await p2.waitForTimeout(800);
+      ob.tourCountsAsSeen=await p2.evaluate(()=>{const s=JSON.parse(localStorage.getItem("evia7-tips-seen")||"[]");return ["course","unit","learning","teach","rewards","evia","profile"].every(k=>s.includes(k))&&!document.querySelector(".ev-tip")});
       ob.noErrors=!e2.length&&await p2.evaluate(()=>!window.eviaErrors.list().filter(x=>x.kind!=="reported").length);
       check("First run: course from Nisia, a Teach me style welcome and PPE unit saved to Supporting evidence (ticking K2 and S2), then a short tap-through tour",Object.values(ob).every(Boolean),JSON.stringify(ob)+" "+e2.join(" | "));
       await c2.close();
+    }
+
+    // First-visit notes: once the tour is done, the first time a page or section opens Evia says what it's for; never again.
+    {
+      const c3=await browser.newContext({...devices["Pixel 7"],serviceWorkers:"block"}),p3=await c3.newPage(),e3=[];p3.on("pageerror",e=>e3.push(e.message));
+      await p3.goto(url+"manifest.json");
+      await p3.evaluate(()=>{localStorage.clear();["evia7-theme-picked","evia7-shape-picked"].forEach(k=>localStorage.setItem(k,"1"));localStorage.setItem("evia7-onboarding",'{"stage":"done"}');localStorage.setItem("evia7-home-tip",JSON.stringify({day:new Date().toDateString(),id:"x"}));localStorage.setItem("evia7-profile",JSON.stringify({name:"Jo",start:"2025-01-01",end:"2026-12-01"}))});
+      await p3.goto(url);await p3.waitForTimeout(2500);
+      await p3.evaluate(()=>{document.getElementById("app").classList.remove("welcome-app-hidden");const w=document.getElementById("welcome-screen");if(w)w.remove()});
+      const tipText=()=>p3.evaluate(()=>{const t=document.querySelector(".ev-tip");return t?t.querySelector("strong").textContent:""});
+      const gotIt=()=>p3.evaluate(()=>{const b=document.querySelector(".ev-tip button");if(b)b.click()});
+      const tp={};
+      await p3.evaluate(()=>nav("teach"));await p3.waitForTimeout(900);tp.first=await tipText()==="Teach me";
+      await gotIt();await p3.waitForTimeout(400);
+      await p3.evaluate(()=>nav("course"));await p3.waitForTimeout(900);tp.course=await tipText()==="My course";await gotIt();await p3.waitForTimeout(400);
+      await p3.evaluate(()=>nav("teach"));await p3.waitForTimeout(900);tp.onlyOnce=await tipText()==="";
+      await p3.evaluate(()=>window.chat());await p3.waitForTimeout(1200);tp.section=await tipText()==="That’s me";
+      await p3.evaluate(()=>{document.getElementById("modal-root").innerHTML=""});await p3.waitForTimeout(500);tp.closesWithSection=await tipText()==="";
+      await p3.evaluate(()=>window.chat());await p3.waitForTimeout(1200);tp.sectionOnce=await tipText()==="";
+      tp.noErrors=!e3.length;
+      check("First-visit notes: Evia explains each page and section the first time it opens, and never again",Object.values(tp).every(Boolean),JSON.stringify(tp)+" "+e3.join(" | "));
+      await c3.close();
     }
 
     check("No script errors",!errors.length,errors.join(" | "));

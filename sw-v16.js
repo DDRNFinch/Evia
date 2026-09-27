@@ -1,4 +1,4 @@
-const VERSION = "2026-10-15-evia7-v163";
+const VERSION = "2026-10-15-evia7-v164";
 const CACHE_NAME = "evia7-offline-" + VERSION;
 
 const APP_SHELL = [
@@ -55,6 +55,7 @@ const APP_SHELL = [
   "./tabs.js",
   "./rewards.js",
   "./orbs.js",
+  "./tips.js",
   "./games.js",
   "./games/brickle.jpg",
   "./games/crossword.jpg",
