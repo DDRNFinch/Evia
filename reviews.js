@@ -75,7 +75,8 @@
   /* ---------- Stored targets ---------- */
   const all=()=>readJson(TARGETS,[]);
   const mine=()=>all().filter(t=>t.course===course);
-  function setTargets(list){write(TARGETS,all().filter(t=>t.course!==course).concat(list))}
+  /* All target and review writes go through eviaData (data.js). */
+  function setTargets(list){window.eviaData.replace("targets",{course},list)}
   function ensureTargets(){
     let list=mine();
     if(list.length)return {list,created:false};
@@ -282,7 +283,7 @@
     const body=root.querySelector("#rv-body"),next=root.querySelector("#rv-next"),back=root.querySelector("#rv-back");
     const keepSigns=()=>signKeep(body,r);
     const bindSigns=()=>signBind(body,r);
-    const saveSignsOnSaved=()=>{if(!readOnly)return;keepSigns();const all=readJson(REVIEWS,[]),k=all.findIndex(x=>x.id===r.id);if(k>=0){all[k].signoff=r.signoff;write(REVIEWS,all)}};
+    const saveSignsOnSaved=()=>{if(!readOnly)return;keepSigns();window.eviaData.put("reviews",{id:r.id,signoff:r.signoff})};
     const keepComments=()=>{keepSigns();saveSignsOnSaved();if(readOnly)return;body.querySelectorAll("[data-reflect]").forEach(t=>{r.reflection=r.reflection||{};r.reflection[t.dataset.reflect]=t.value.trim()})};
     const show=n=>{
       keepComments();i=Math.max(0,Math.min(list.length-1,n));
@@ -366,7 +367,7 @@
     step(0);
   }
   function save(r){
-    const reviews=readJson(REVIEWS,[]);reviews.push(r);write(REVIEWS,reviews.slice(-30));
+    window.eviaData.put("reviews",r);
     setTargets(r.targets.map(t=>Object.assign({},t,{reviewId:r.id,reviewDate:r.date})));
   }
   function startReview(resume){

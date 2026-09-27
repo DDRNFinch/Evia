@@ -2,7 +2,6 @@
 (function(){
   const TEST_KEY="evia7-test-results";
   const REVIEW_KEY="evia7-progress-reviews";
-  const TARGET_KEY="evia7-targets";
   const read=(key,fallback)=>{try{const v=JSON.parse(localStorage.getItem(key)||"");return v??fallback}catch(_){return fallback}};
   const write=(key,v)=>localStorage.setItem(key,JSON.stringify(v));
   const courseMap={bricklayer:"bricklaying",site:"siteCarpentry",joiner:"benchJoinery"};
@@ -199,24 +198,6 @@
     }
   }
 
-  function targetReasoning(metrics){
-    const targets=[];
-    const now=new Date();
-    const add=(title,reason,weeks,kind,targetValue,measure)=>{
-      const deadline=new Date(now);deadline.setDate(deadline.getDate()+weeks*7);
-      targets.push({title,reason,deadline:deadline.toISOString().slice(0,10),kind,targetValue:targetValue||null,measure:measure||null});
-    };
-    add("Gather 15 learning hours","Build up your learning hours.",8,"otj_hours",15,"otj_hours");
-    if(metrics.unitGap>0)add("Capture evidence for your next outstanding unit","You have "+metrics.unitGap+" course unit"+(metrics.unitGap===1?"":"s")+" without saved evidence.",2,"units");
-    else if(metrics.weakUnits>0)add("Strengthen weaker evidence","Some started units need additional photos or written detail.",2,"portfolio");
-    if(academicEnabled("maths"))add(metrics.mathsPct!==null&&metrics.mathsPct<70?"Practise Maths Level 2":"Maintain Maths Level 2 practice",metrics.mathsPct===null?"No Maths test has been recorded yet.":"Your latest Maths result was "+metrics.mathsPct+"%.",6,"maths");
-    if(academicEnabled("english"))add(metrics.englishPct!==null&&metrics.englishPct<70?"Practise English Level 2":"Maintain English Level 2 practice",metrics.englishPct===null?"No English test has been recorded yet.":"Your latest English result was "+metrics.englishPct+"%.",6,"english");
-    if(metrics.epaPct===null)add("Complete EPA MCQ practice","No EPA MCQ result has been recorded yet.",8,"epa");
-    else add(metrics.epaPct<70?"Build EPA MCQ knowledge":"Maintain EPA MCQ practice","Your latest EPA MCQ result was "+metrics.epaPct+"%.",8,"epa");
-    if(metrics.lowConfidence)add("Revisit a low-confidence practical area","Your latest confidence check identifies a practical area to revisit.",8,"confidence");
-    while(targets.length<5)add("Strengthen your next practical task","Use your next job to gather stronger evidence and reflect on what you have learned.",8+targets.length*2,"practical");
-    return targets.slice(0,5).map((t,i)=>({...t,id:"target-"+Date.now()+"-"+i,priority:i+1,createdAt:new Date().toISOString(),completed:false,progress:0}));
-  }
   function targetProgress(t){
     const value=String(t.measure||"");
     if(value==="otj_hours"){
@@ -230,44 +211,6 @@
     if(t.completed||progress>=100)return "complete";
     if(new Date(t.deadline+"T23:59:59").getTime()<Date.now())return "overdue";
     return "active";
-  }
-  function showTargetComplete(t){
-    const key="evia7-target-notified-"+String(t.id);
-    if(localStorage.getItem(key)==="1")return;
-    localStorage.setItem(key,"1");
-    const pct=Math.round(Math.max(0,Math.min(100,targetProgress(t))));
-    const root=document.getElementById("modal-root");
-    if(!root)return;
-    root.innerHTML='<div class="target-complete-overlay"><section class="target-complete-modal" role="dialog" aria-modal="true" aria-label="Target complete"><button class="target-complete-close" aria-label="Close">×</button><div class="target-evia"><span class="evia-face"><i></i><i></i></span></div><div class="target-complete-kicker">TARGET COMPLETE</div><h2>'+escLocal(t.title)+'</h2><p>You reached '+pct+'% of this target.</p><div class="target-complete-bar"><i></i></div><div class="target-complete-percent">0%</div><div class="target-complete-message">Target complete</div></section></div>';
-    const close=root.querySelector(".target-complete-close");
-    const bar=root.querySelector(".target-complete-bar i"),percent=root.querySelector(".target-complete-percent"),message=root.querySelector(".target-complete-message");
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{
-      bar.style.width="100%";
-      let start=performance.now();
-      const animate=now=>{
-        const p=Math.min(1,(now-start)/1400);
-        const shown=Math.round(p*100);
-        percent.textContent=shown+"%";
-        if(p<1)requestAnimationFrame(animate);else{message.classList.add("show");bar.classList.add("complete")}
-      };
-      requestAnimationFrame(animate);
-    }));
-    close.onclick=()=>root.innerHTML="";
-  }
-  function syncTargets(showNotification=true){
-    const all=read(TARGET_KEY,[]);
-    let changed=false;
-    all.forEach(t=>{
-      if(t.course!==course)return;
-      const progress=Math.round(Math.max(0,Math.min(100,targetProgress(t))));
-      if(Number(t.progress||0)!==progress){t.progress=progress;changed=true}
-      if(progress>=100&&!t.completed){
-        t.completed=true;t.completedAt=t.completedAt||new Date().toISOString();changed=true;
-        if(showNotification)showTargetComplete(t);
-      }
-    });
-    if(changed)write(TARGET_KEY,all);
-    return all.filter(t=>t.course===course);
   }
   function metrics(){
     const entries=evidence.filter(e=>e.c===course), units=data().u;
@@ -297,11 +240,6 @@
   function targetHtml(t){
     const status=targetStatus(t), progress=Math.round(targetProgress(t)), label=status==="complete"?"Completed":status==="overdue"?"Overdue":"Active";
     return '<div class="target-item '+status+'"><div><strong>'+escLocal(t.title)+'</strong><p>'+escLocal(t.reason)+'</p><small>Due '+escLocal(new Date(t.deadline+"T00:00:00").toLocaleDateString("en-GB"))+' · '+label+'</small></div><b>'+progress+'%</b></div>';
-  }
-  function quickTarget(m){
-    const existing=syncTargets(false).filter(t=>!t.completed);
-    if(existing.length)return existing[0];
-    const t=targetReasoning(m)[0];t.course=course;write(TARGET_KEY,read(TARGET_KEY,[]).concat(t));return t;
   }
   function reviewKsbFollowUp(metrics){
     const captured=new Set(evidence.filter(e=>e.c===course).flatMap(e=>Array.isArray(e.k)?e.k:[]));
@@ -337,63 +275,7 @@
     if(!development.length)development.push("Continue building evidence across your remaining learning activities and strengthen existing evidence where needed.");
     return {successes:successes.join(" "),development:development.join(" ")};
   }
-  function progressReview(){
-    const m=metrics(), target=quickTarget(m);
-    const name=String(read("evia7-profile",{}).name||"").split(/\s+/)[0];
-    const test=latestTests();
-    const testSummary=["epa","maths","english"].filter(t=>test[t]).map(t=>testLabel(t)+" "+test[t].pct+"%").join(" · ");
-    reply('<strong>Progress review'+(name?", "+escLocal(name):"")+'</strong><br>Course evidence: '+m.completion+'% ('+m.covered+'/'+m.units+' units).<br>Learning hours: '+window.eviaHM(m.totalOTJ)+(m.otjTarget?" of "+m.otjTarget+" hours":"")+"."+(testSummary?"<br>Test results: "+escLocal(testSummary)+".":"")+
-      '<br><br><strong>Quick target</strong><br>I’ve set a target to help you catch up: '+escLocal(target.title)+'. Aim to complete it by '+escLocal(new Date(target.deadline+"T00:00:00").toLocaleDateString("en-GB"))+'.<br><br><button class="chat-pill" id="start-full-review"><strong>Start full review</strong></button>');
-    setTimeout(()=>{const b=$("#start-full-review");if(b)b.onclick=()=>fullReview();},950);
-  }
-  function fullReview(){
-    const m=metrics(), targets=targetReasoning(m).map(t=>({...t,course})), test=latestTests(), p=read("evia7-profile",{}), name=String(p.name||"").trim(), id="review-"+Date.now();
-    const auto=reviewAutoSummary(m), followUp=reviewKsbFollowUp(m);
-    const review={id,course,date:new Date().toISOString(),learner:name,profile:{start:p.start||"",end:p.end||""},metrics:m,tests:{discussion:test.discussion?.pct??null,epa:test.epa?.pct??null,maths:academicEnabled("maths")?(test.maths?.pct??null):null,english:academicEnabled("english")?(test.english?.pct??null):null},testDetails:m.tests,confidence:m.confidenceRatings,previousConfidence:m.previousConfidenceRatings,targets,autoSummary:auto,ksbFollowUp:followUp};
-    const all=read(REVIEW_KEY,[]);all.push(review);write(REVIEW_KEY,all.slice(-30));
-    const existing=read(TARGET_KEY,[]).filter(t=>t.course!==course||t.completed);write(TARGET_KEY,existing.concat(targets));
-    renderFullReview(review);
-  }
   function reviewDashboardHtml(review){ensureReviewStyles();const m=review.metrics,p=read("evia7-profile",{}),name=String(review.learner||p.name||"Apprentice").split(/\\s+/)[0]||"Apprentice",timePct=Number(m.timePercent||m.elapsed*100||0),ksbPct=Number(m.ksbCompletion||0),strengthCounts={strong:0,good:0,weak:0};m.unitDetails.forEach(u=>{const s=evidenceStrength(u.photos,u.words);if(s)strengthCounts[s]++});const testCards=["maths","english","epa","discussion"].map(k=>{const t=m.tests[k],enabled=k==="maths"||k==="english"?academicEnabled(k):true;if(!enabled)return stat(testLabel(k),"Not enabled");if(!t)return stat(testLabel(k),"No test yet","0 attempts");const all=read(TEST_KEY,[]).filter(x=>x.course===course&&x.type===k),scores=all.map(x=>Number(x.pct)||0);return stat(testLabel(k),t.pct+"%",all.length+" attempts · best "+Math.max(...scores)+"%")}).join(""),recentTests=["maths","english","epa","discussion"].flatMap(k=>read(TEST_KEY,[]).filter(x=>x.course===course&&x.type===k).map(x=>({k,pct:Number(x.pct)||0,date:x.savedAt||""}))).sort((a,b)=>new Date(a.date)-new Date(b.date)).slice(-4),testChart=recentTests.length?'<div class="review-chart">'+recentTests.map(x=>'<div class="review-chart-col"><i style="height:'+Math.max(4,Math.min(100,x.pct))+'%"></i><span>'+escLocal(testLabel(x.k))+'<br>'+x.pct+'%</span></div>').join("")+'</div>':'<p class="review-sub">No test attempts recorded yet.</p>',unitHtml=m.unitDetails.map(u=>{const s=evidenceStrength(u.photos,u.words);return '<details class="review-detail"><summary><strong>'+escLocal(u.unit)+'</strong><span>'+u.entries+' occasions · '+u.photos+' photos</span></summary><div class="review-unit-strength"><span class="review-strength-bars">'+[0,1,2].map(i=>'<i class="'+(i<(s==="strong"?3:s==="good"?2:s==="weak"?1:0)?"filled":"")+'"></i>').join("")+'</span><strong>'+strengthLabel(s)+'</strong></div><p class="review-generated">'+escLocal(unitStatement(u.unit,name))+'</p><p>'+u.words+' written words · '+u.ksbs.length+' KSBs captured.</p>'+u.evidence.map(e=>'<div class="review-detail-row"><strong>'+escLocal(e.date)+'</strong><span>'+e.photos+' photos · '+escLocal(e.ksbs.join(", "))+'</span></div>').join("")+'</details>'}).join(""),subjectCards=["maths","english"].map(k=>'<div class="review-stat"><span>'+testLabel(k)+'</span><strong>'+(academicEnabled(k)?"Enabled":"Not enabled")+'</strong><small>'+(!academicEnabled(k)?"Not part of current learner setup.":m.tests[k]?m.tests[k].pct+"% latest · "+read(TEST_KEY,[]).filter(x=>x.course===course&&x.type===k).length+" attempts":"Enabled · no test completed yet")+'</small></div>').join(""),conf=m.confidenceRatings.length?m.confidenceRatings.map(x=>'<span class="review-pill">'+escLocal(x.area)+': '+x.score+'/4</span>').join(""):'<span class="review-pill">No confidence check yet</span>';return '<div class="review-dashboard"><section class="review-section"><h3>Time on programme vs KSB coverage</h3><p class="review-sub">Elapsed course time compared with KSBs captured in evidence.</p>'+bar("Time on programme",timePct)+bar("KSBs captured",ksbPct)+'</section><section class="review-section"><h3>KSB coverage</h3><div class="review-stat-grid">'+stat("Overall",m.ksbCaptured+"/"+m.ksbTotal,ksbPct+"% captured")+stat("Skills",m.ksbGroups.capturedS+"/"+m.ksbGroups.S,m.ksbGroups.S?Math.round(m.ksbGroups.capturedS/m.ksbGroups.S*100)+"%":"0%")+stat("Knowledge",m.ksbGroups.capturedK+"/"+m.ksbGroups.K,m.ksbGroups.K?Math.round(m.ksbGroups.capturedK/m.ksbGroups.K*100)+"%":"0%")+stat("Behaviours",m.ksbGroups.capturedB+"/"+m.ksbGroups.B,m.ksbGroups.B?Math.round(m.ksbGroups.capturedB/m.ksbGroups.B*100)+"%":"0%")+'</div></section><section class="review-section"><h3>Evidence portfolio</h3><div class="review-stat-grid">'+stat("Evidence occasions",m.entries)+stat("Photos",m.totalPhotos)+stat("Written words",m.totalWords)+stat("Units covered",m.covered+"/"+m.units,m.completion+"%")+'</div><div class="review-pills"><span class="review-pill">Strong: '+strengthCounts.strong+'</span><span class="review-pill">Good: '+strengthCounts.good+'</span><span class="review-pill">Weak: '+strengthCounts.weak+'</span></div></section><section class="review-section"><h3>Maths & English</h3><div class="review-stat-grid">'+subjectCards+'</div></section><section class="review-section"><h3>EPA & practice tests</h3><div class="review-stat-grid">'+testCards+'</div>'+testChart+'</section><section class="review-section"><h3>Confidence</h3><div class="review-stat-grid">'+stat("Checks",m.confidenceChecks)+stat("Latest average",m.confidenceAverage!==null?m.confidenceAverage+"/4":"No check")+'</div><div class="review-pills">'+conf+'</div></section><section class="review-section"><h3>Off-the-job learning</h3><div class="review-stat-grid">'+stat("Total OTJ",m.totalOTJ.toFixed(2)+" hours")+stat("Learning entries",m.otjEntries)+stat("OTJ PDF batches",m.otjBatches)+'</div></section><section class="review-section"><h3>Evidence by unit</h3>'+unitHtml+'</section><section class="review-section"><h3>Targets</h3>'+review.targets.map(targetHtml).join("")+'</section></div>'}
-  function renderFullReview(review){ensureReviewStyles();reply('<strong>Review prepared</strong><br>I’ve analysed your completed work, KSB progress and review data.<br><br>'+reviewDashboardHtml(review)+'<br><button class="chat-pill" id="open-saved-review"><strong>Open review</strong></button>');setTimeout(()=>{const b=document.querySelector("#open-saved-review");if(b)b.onclick=()=>showReview(review.id)},950)}
-  function showReview(id){const review=read(REVIEW_KEY,[]).find(x=>x.id===id);if(!review)return;if(review.course===course){const fresh=metrics();review.metrics={...review.metrics,totalPhotos:fresh.totalPhotos,unitDetails:fresh.unitDetails,timePercent:fresh.timePercent,elapsed:fresh.elapsed};const all=read(REVIEW_KEY,[]),idx=all.findIndex(x=>x.id===id);if(idx>=0){all[idx]=review;write(REVIEW_KEY,all)}}startReviewConversation(review)}
-  function saveReviewUpdate(review){const all=read(REVIEW_KEY,[]),idx=all.findIndex(x=>x.id===review.id);if(idx>=0){all[idx]=review;write(REVIEW_KEY,all)}}
-  function startReviewConversation(review){
-    const chatEl=$("#chat");
-    if(!chatEl){openSavedReview(review);return}
-    const followUp=review.ksbFollowUp;
-    const prompts=[
-      ["wellbeing","Is there anything affecting your wellbeing, learning or work that you would like your tutor or assessor to know about?","You can leave this blank if there is nothing you need to raise."],
-      ["learnerFeedback","How are you finding your apprenticeship? Is there anything you would like to tell us about your learning or support?","Tell us anything you think is useful for your review."]
-    ];
-    if(followUp)prompts.push(["ksbFollowUp",followUp.question,"This is a review question only; your answer will be included in the review and will not automatically mark the KSB as evidenced."]);
-    const blockId="review-short-"+Date.now();
-    chatEl.insertAdjacentHTML("beforeend",'<div id="'+blockId+'" class="review-text-block"><div class="bubble evia"><strong>Short review</strong><br>I’ll use your completed work and KSB progress for the main review. I only need a couple of short comments from you.</div>'+prompts.map((p,i)=>'<div class="review-short-question" data-review-short-index="'+i+'" data-review-short-key="'+escLocal(p[0])+'"><div class="bubble evia"><strong>'+escLocal(p[1])+'</strong><br><span class="review-sub">'+escLocal(p[2])+'</span></div><textarea class="test-response" data-review-short-answer placeholder="Type your answer..."></textarea></div>').join("")+'<button type="button" class="chat-pill test-submit" data-review-short-complete><strong>Complete review</strong></button></div>');
-    const root=document.getElementById(blockId);
-    if(!root){openSavedReview(review);return}
-    const answers=root.querySelectorAll("[data-review-short-answer]");
-    const complete=root.querySelector("[data-review-short-complete]");
-    complete.onclick=e=>{
-      e.preventDefault();e.stopPropagation();
-      if(complete.disabled)return;
-      const reflection={};
-      root.querySelectorAll(".review-short-question").forEach(q=>{
-        const key=q.dataset.reviewShortKey, input=q.querySelector("[data-review-short-answer]");
-        const value=String(input?.value||"").trim();
-        if(value)reflection[key]=value;
-      });
-      review.reflection=reflection;
-      saveReviewUpdate(review);
-      answers.forEach(x=>x.disabled=true);
-      complete.disabled=true;
-      complete.remove();
-      root.insertAdjacentHTML("beforeend",'<div class="bubble user">Review comments submitted.</div><div class="bubble evia"><strong>Your review is ready.</strong><br>I’ve used your completed work, KSB progress and comments to prepare it.</div><button type="button" class="chat-pill" data-open-review-final><strong>Open full review</strong></button>');
-      const open=root.querySelector("[data-open-review-final]");
-      if(open)open.onclick=e=>{e.preventDefault();e.stopPropagation();open.remove();openSavedReview(review)};
-      chatEl.scrollTop=chatEl.scrollHeight;
-    };
-    chatEl.scrollTop=chatEl.scrollHeight;
-  }
   function openSavedReview(review){
     ensureReviewStyles();
     const auto=review.autoSummary||reviewAutoSummary(review.metrics);
@@ -421,28 +303,13 @@
     win.document.write('<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Evia Progress Review</title><style>@page{size:A4;margin:14mm}*{box-sizing:border-box}body{margin:0;color:#172033;font:10pt -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.45}header{border-bottom:2px solid #e6b800;padding-bottom:14px;margin-bottom:18px}h1{font-size:23pt;margin:4px 0}h2{font-size:16pt;margin:20px 0 9px}h3{font-size:12pt;margin:0 0 6px}.eyebrow{font-size:8pt;letter-spacing:.13em;color:#667085;font-weight:800}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.stat{border:1px solid #e4e7ec;border-radius:10px;padding:10px;display:flex;justify-content:space-between}.unit,.test,.target{border:1px solid #e4e7ec;border-radius:10px;padding:11px;margin:8px 0;break-inside:avoid}.record{border-top:1px solid #eef0f3;padding:8px 0}.record:first-of-type{border-top:0}.record strong{display:block}.record span,.target span{color:#667085;font-size:9pt}.record p{margin:4px 0}.pill{display:inline-block;border:1px solid #dfe3e8;border-radius:999px;padding:4px 7px;margin:2px}.small{color:#667085;font-size:9pt}.page-break{break-before:page}@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}</style></head><body><header><div class="eyebrow">EVIA · FULL PROGRESS REVIEW</div><h1>'+escLocal(p.name||"Apprentice")+'</h1><p>'+escLocal(data().name)+' · '+escLocal(data().std)+' · Review date '+new Date(review.date).toLocaleDateString("en-GB")+'</p></header><h2>Course progress</h2><div class="grid"><div class="stat"><strong>Unit completion</strong><span>'+m.completion+'% ('+m.covered+'/'+m.units+')</span></div><div class="stat"><strong>Evidence entries</strong><span>'+m.entries+'</span></div><div class="stat"><strong>Evidence photos</strong><span>'+m.totalPhotos+'</span></div><div class="stat"><strong>Written evidence</strong><span>'+m.totalWords+' words</span></div><div class="stat"><strong>KSB coverage</strong><span>'+m.ksbCompletion+'% ('+m.ksbCaptured+'/'+m.ksbTotal+')</span></div><div class="stat"><strong>OTJ learning</strong><span>'+m.totalOTJ.toFixed(2)+(m.otjTarget?" / "+m.otjTarget:"")+' hours</span></div></div><p class="small">KSB breakdown: Skills '+m.ksbGroups.capturedS+'/'+m.ksbGroups.S+' · Knowledge '+m.ksbGroups.capturedK+'/'+m.ksbGroups.K+' · Behaviours '+m.ksbGroups.capturedB+'/'+m.ksbGroups.B+'.</p><h2>Unit-by-unit evidence tracking</h2>'+unitHtml+'<h2>Off-the-job learning records</h2>'+otjHtml+'<h2>Practice and tests</h2><div class="grid">'+testHtml+'</div>'+qHtml+'<h2>Confidence tracking</h2><p>'+m.confidenceChecks+' checks recorded'+(m.confidenceAverage!==null?' · latest average '+m.confidenceAverage+'/4':'')+'.</p><p><strong>Latest:</strong> '+confHtml+'</p><p><strong>Previous:</strong> '+prevConf+'</p>'+(m.lowConfidence.length?'<p><strong>Low-confidence areas:</strong> '+escLocal(m.lowConfidence.join(", "))+'</p>':"")+'<h2>Review summary</h2><p><strong>Successes:</strong> '+escLocal(auto.successes)+'</p><p><strong>Areas for development:</strong> '+escLocal(auto.development)+'</p>'+(followUp?'<h2>Additional KSB review question</h2><p><strong>'+escLocal(followUp.area)+'</strong> was not fully evidenced at the time of this review.</p><p>'+escLocal(reflection.ksbFollowUp||"No response recorded.")+'</p>':"")+'<h2>Learner comments</h2><p><strong>Wellbeing:</strong> '+escLocal(reflection.wellbeing||"No comment recorded.")+'</p><p><strong>Learner feedback:</strong> '+escLocal(reflection.learnerFeedback||"No comment recorded.")+'</p><h2>Review targets</h2>'+targets+'</body></html>');
     win.document.close();win.focus();setTimeout(()=>win.print(),250);
   }
-  function targetsCardHtml(){
-    const targets=eviaGetTargets().sort((a,b)=>a.priority-b.priority);
-    if(!targets.length)return '<div class="card targets-card"><div class="section-title">TARGETS</div><h2>My targets</h2><p>No active targets yet. Complete a full progress review to create five.</p></div>';
-    return '<div class="card targets-card"><div class="section-title">TARGETS</div><h2>My targets</h2>'+targets.map(t=>'<div class="target-item '+targetStatus(t)+'"><div><strong>'+escLocal(t.title)+'</strong><p>'+escLocal(t.reason)+'</p><small>Due '+new Date(t.deadline+"T00:00:00").toLocaleDateString("en-GB")+(targetStatus(t)==="overdue"?" · Overdue":"")+'</small></div>'+(targetStatus(t)==="complete"?'<b>Completed</b>':'<button class="secondary" data-target-complete="'+escLocal(t.id||"")+'">Mark complete</button>')+'</div>').join("")+'</div>';
-  }
-  function bindTargets(){ syncTargets(false); }
   /* reviews.js builds the new click-through review on top of these saved fields, so old screens and the PDF keep working. */
   window.eviaBuildReviewRecord=()=>{
     const m=metrics(),test=latestTests(),p=read("evia7-profile",{});
     return {course,date:new Date().toISOString(),learner:String(p.name||"").trim(),profile:{start:p.start||"",end:p.end||""},metrics:m,tests:{discussion:test.discussion?.pct??null,epa:test.epa?.pct??null,maths:academicEnabled("maths")?(test.maths?.pct??null):null,english:academicEnabled("english")?(test.english?.pct??null):null},testDetails:m.tests,confidence:m.confidenceRatings,previousConfidence:m.previousConfidenceRatings,autoSummary:reviewAutoSummary(m),ksbFollowUp:reviewKsbFollowUp(m)};
   };
   window.eviaOpenLegacyReview=openSavedReview;
-  window.eviaTargetsCardHtml=targetsCardHtml;
-  window.eviaBindTargets=bindTargets;
   window.eviaTestMe=eviaTestMe;
-  window.eviaProgressReview=progressReview;
-  window.eviaFullReview=fullReview;
-  window.eviaShowReview=showReview;
   window.eviaDownloadReviewPdf=downloadReviewPdf;
   window.eviaGetReviews=()=>read(REVIEW_KEY,[]).filter(x=>x.course===course).slice().reverse();
-  window.eviaGetTargets=()=>read(TARGET_KEY,[]).filter(x=>x.course===course);
-  window.eviaTargetStatus=targetStatus;
-  window.eviaTargetHtml=targetHtml;
-  window.eviaCheckTargets=()=>syncTargets(true);
 })();

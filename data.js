@@ -9,7 +9,8 @@
    eviaData.files.get(fileId, kind)    eviaData.snapshot()
    Sync (for Nisia, nothing else):     eviaData.changesSince()  eviaData.markSynced(records)
    Collections: learner, evidence, supporting, nvqAnswers, hours, lessonResults, tests, confidence, scenarios,
-   reviews, targets, rewards. Writes: everything but reviews, targets, rewards and the learner, which move next. */
+   reviews, targets, rewards. Writes: everything but rewards and the learner, which move next.
+   eviaData.replace("targets", {course}, list) swaps a course's targets after a review. */
 (function(){
   const V=1,ID_KEY="evia7-learner-id",SYNC_KEY="evia7-data-synced";
   const readJson=(k,f)=>{try{const v=JSON.parse(localStorage.getItem(k)||"null");return v??f}catch(_){return f}};
@@ -100,15 +101,18 @@
     },
     reviews(){
       return (readJson("evia7-progress-reviews",[])||[]).filter(Boolean).map((r,i)=>base(r.id||("review-"+i),{course:r.course||"",date:iso(r.date),format:r.format||1,
-        snapshot:r.snapshot||r.metrics||null,reflection:r.reflection||null,targetIds:(r.targets||[]).map(t=>t.id).filter(Boolean),updatedAt:iso(r.date)}));
+        snapshot:r.snapshot||r.metrics||null,reflection:r.reflection||null,targetIds:(r.targets||[]).map(t=>t.id).filter(Boolean),
+        signedBy:Object.fromEntries(Object.keys(r.signoff||{}).map(k=>[k,{name:(r.signoff[k]||{}).name||"",at:iso((r.signoff[k]||{}).date),signed:!!(r.signoff[k]||{}).sig}])),
+        updatedAt:iso(r.updatedAt||r.date)}));
     },
-    /* Two target stores today (reviews.js and review.js): read as one, marked with where they came from. */
+    /* One target store (evia7-review-targets). evia7-targets is the old one from before the review was rebuilt: nothing
+       writes it now, and its targets are read as history (store "legacy") so nothing on the phone is lost. */
     targets(){
       const a=(readJson("evia7-review-targets",[])||[]).filter(Boolean).map(t=>base(t.id,{course:t.course||"",kind:t.kind||"",title:t.title||"",why:t.why||t.reason||"",
         goal:t.target??null,baseline:t.baseline??0,param:t.param||null,due:iso(t.due||t.deadline),setBy:"evia",reviewId:t.reviewId||null,metAt:t.done?iso(t.doneAt||t.createdAt):null,
         createdAt:iso(t.createdAt),updatedAt:iso(t.updatedAt||t.createdAt),store:"review-targets"}));
       const b=(readJson("evia7-targets",[])||[]).filter(Boolean).map((t,i)=>base(t.id||("target-"+i),{course:t.course||courseNow(),kind:t.kind||"",title:t.title||"",why:t.reason||"",
-        goal:t.targetValue??null,baseline:0,param:t.measure||null,due:iso(t.deadline),setBy:"evia",reviewId:null,metAt:t.done?iso(t.doneAt):null,createdAt:null,updatedAt:null,store:"targets"}));
+        goal:t.targetValue??null,baseline:0,param:t.measure||null,due:iso(t.deadline),setBy:"evia",reviewId:null,metAt:t.done||t.completed?iso(t.doneAt||t.completedAt):null,createdAt:null,updatedAt:null,store:"legacy"}));
       return a.concat(b);
     },
     rewards(){
@@ -215,10 +219,36 @@
     },
     scenarios:{
       put(r){const d=readJson("evia7-scenarios",{})||{},id=String(r.scenarioId||r.id);d[id]={at:Date.now(),best:!!r.best};writeJson("evia7-scenarios",d);return id}
+    },
+    /* A review as reviews.js builds it. A new one is added (the phone keeps 30); an existing one only takes the fields
+       that change after saving: sign-offs and the learner's comments. */
+    reviews:{
+      put(r){
+        const all=readJson("evia7-progress-reviews",[])||[],i=all.findIndex(x=>x&&x.id===r.id);
+        if(i>=0){["signoff","reflection"].forEach(k=>{if(r[k]!==undefined)all[i][k]=r[k]});all[i].updatedAt=new Date().toISOString()}
+        else{const rec=Object.assign({},r);delete rec.v;delete rec.learnerId;rec.id=String(r.id||("review-"+Date.now()));rec.course=r.course||courseNow();all.push(rec)}
+        writeJson("evia7-progress-reviews",all.slice(-30));return String(r.id||all[all.length-1].id);
+      }
+    },
+    /* Targets in reviews.js's shape. put adds or updates one; replace("targets",{course},list) swaps a course's set. */
+    targets:{
+      put(t){
+        const all=readJson("evia7-review-targets",[])||[],rec=Object.assign({},t);delete rec.v;delete rec.learnerId;delete rec.store;
+        rec.id=String(t.id||("t-"+Date.now()+"-"+Math.random().toString(36).slice(2,6)));rec.course=t.course||courseNow();rec.updatedAt=Date.now();
+        const i=all.findIndex(x=>x&&x.id===rec.id);if(i>=0)all[i]=Object.assign({},all[i],rec);else all.push(rec);
+        writeJson("evia7-review-targets",all);return rec.id;
+      },
+      remove(id){const all=readJson("evia7-review-targets",[])||[],i=all.findIndex(x=>x&&x.id===String(id));if(i<0)return false;all.splice(i,1);writeJson("evia7-review-targets",all);return true},
+      replace(filter,list){
+        const c=(filter&&filter.course)||courseNow(),now=Date.now();
+        const keep=(readJson("evia7-review-targets",[])||[]).filter(t=>t&&t.course!==c);
+        writeJson("evia7-review-targets",keep.concat((list||[]).map(t=>Object.assign({},t,{course:t.course||c,updatedAt:t.updatedAt||now}))));
+      }
     }
   };
   function put(c,r){if(!W[c])throw new Error("eviaData: "+c+" can't be written through eviaData yet");const id=W[c].put(r||{});emit(c);return id}
-  function remove(c,id){if(!W[c])throw new Error("eviaData: "+c+" can't be written through eviaData yet");const ok=W[c].remove(id);if(ok)emit(c);return ok}
+  function remove(c,id){if(!W[c]||!W[c].remove)throw new Error("eviaData: "+c+" can't be removed through eviaData");const ok=W[c].remove(id);if(ok)emit(c);return ok}
+  function replace(c,filter,list){if(!W[c]||!W[c].replace)throw new Error("eviaData: "+c+" can't be replaced through eviaData");W[c].replace(filter,list);emit(c)}
 
   /* ---------- Files: photos, supporting files (signatures later) ---------- */
   const files={
@@ -248,6 +278,6 @@
   /* Everything, in the new shape: for Nisia's first upload, and for checking the move worked. */
   const snapshot=()=>{const o={v:V,learnerId:learnerId(),at:new Date().toISOString()};COLLECTIONS.forEach(c=>{o[c]=list(c)});return o};
 
-  window.eviaData={V,COLLECTIONS,list,get,put,remove,files,learnerId,iso,unitId,changesSince,markSynced,snapshot,
+  window.eviaData={V,COLLECTIONS,list,get,put,remove,replace,files,learnerId,iso,unitId,changesSince,markSynced,snapshot,
     on(ev,fn){if(ev==="change"&&typeof fn==="function")listeners.push(fn);return()=>{const i=listeners.indexOf(fn);if(i>=0)listeners.splice(i,1)}}};
 })();

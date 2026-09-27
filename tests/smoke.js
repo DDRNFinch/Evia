@@ -365,10 +365,19 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       const lr=D.get("lessonResults",course+":zz-data");out.lessons=lr.best===.9&&lr.last===.5&&lr.attempts===3;
       const cid=D.put("confidence",{course,scores:[{area:"Mixing",score:3}]});out.confidence=D.get("confidence",cid).scores[0].score===3;
       D.put("scenarios",{scenarioId:"sc-data",best:true});out.scenarios=D.get("scenarios","sc-data").best===true;
+      /* Reviews and targets: one store for targets, replaced after a review; a sign-off added to a saved review. */
+      ["evia7-progress-reviews","evia7-review-targets"].forEach(k=>{keys.push(k);kept[k]=localStorage.getItem(k)});
+      D.replace("targets",{course},[{id:"t-a",kind:"otj",title:"Log 6 hours",why:"x",target:6,due:"2030-01-01",createdAt:Date.now(),done:false},{id:"t-b",kind:"units",title:"Two units",why:"y",target:2,due:"2030-01-01",createdAt:Date.now(),done:false}]);
+      out.targets=D.list("targets",{course,store:"review-targets"}).length===2&&window.eviaTargets.mine().length===2;
+      D.put("targets",{id:"t-a",done:true,doneAt:Date.now()});out.targetDone=D.get("targets","t-a").metAt!==null&&window.eviaTargets.mine().find(t=>t.id==="t-a").done===true;
+      const rid=D.put("reviews",{id:"review-data",course,date:new Date().toISOString(),format:2,snapshot:{},targets:[{id:"t-a"}],reflection:{good:"Laying to the line"}});
+      D.put("reviews",{id:rid,signoff:{tutor:{name:"Jo Tutor",sig:"data:x",date:new Date().toISOString()}}});
+      const rv=D.get("reviews",rid);out.reviews=rv.targetIds[0]==="t-a"&&rv.signedBy.tutor.name==="Jo Tutor"&&rv.signedBy.tutor.signed===true&&rv.reflection.good==="Laying to the line";
+      out.oldReviewGone=typeof window.eviaProgressReview==="undefined"&&typeof window.eviaGetTargets==="undefined";
       keys.forEach(k=>{if(kept[k]==null)localStorage.removeItem(k);else localStorage.setItem(k,kept[k])});
       return out;
     });
-    check("Learner data: every record in the new shape (ids, learner id, ISO dates, unit ids), hours, evidence, supporting evidence, NVQ answers, tests, lessons, confidence and scenarios written through eviaData, and sync sees changes and deletions",Object.values(dm).every(Boolean),JSON.stringify(dm));
+    check("Learner data: every record in the new shape (ids, learner id, ISO dates, unit ids), hours, evidence, supporting evidence, NVQ answers, tests, lessons, confidence, scenarios, reviews and targets written through eviaData, and sync sees changes and deletions",Object.values(dm).every(Boolean),JSON.stringify(dm));
     // Mini games: locked until unlocked in Rewards, played from Teach me, small coins with a daily cap.
     const gm=await page.evaluate(async()=>{
       const w=ms=>new Promise(r=>setTimeout(r,ms)),R=window.eviaRewards,G=window.eviaGames,out={},keep=localStorage.getItem("evia7-rewards");
