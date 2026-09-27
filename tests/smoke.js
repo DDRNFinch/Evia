@@ -255,14 +255,16 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>openUnit(0,"write"));await page.waitForTimeout(700);
     check("The evidence pack shows no score, just a link to how to build a strong portfolio",stHow&&await page.evaluate(()=>!document.getElementById("st-meter")&&document.querySelectorAll(".eg-sheet .fr-mention .compact-prompts").length===1));
     await page.evaluate(()=>{const w=document.getElementById("write");w.value="";w.dispatchEvent(new Event("input"));nav("learning")});await page.waitForTimeout(600);
-    await page.evaluate(()=>document.getElementById("pv-guide").click());await page.waitForTimeout(400);
+    await page.evaluate(()=>{window._camSupported=window.eviaCamera.supported;window.eviaCamera.supported=()=>false;document.getElementById("pv-guide").click()});await page.waitForTimeout(400);
     check("My progress explains how to build a strong portfolio",await page.evaluate(()=>/strong portfolio/.test(document.getElementById("st-title").textContent)&&document.querySelectorAll(".st-tip").length===8));
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML=""});
 
     // Guided evidence: Evia asks a question for each thing to mention and puts the answers together as the statement.
     await page.evaluate(()=>{course="bricklayer";persist();openUnit(data().u.findIndex(u=>u[0]==="Cavity opening"))});await page.waitForTimeout(700);
     await page.evaluate(()=>document.getElementById("eg-start").click());await page.waitForTimeout(300);
-    await page.evaluate(()=>[...document.querySelectorAll(".eg-sheet button")].find(b=>/questions/.test(b.textContent)).click());await page.waitForTimeout(300);
+    // The first sheet has one full-width Get started; with no camera it goes straight to the questions.
+    const oneStart=await page.evaluate(()=>{const b=[...document.querySelectorAll(".eg-sheet .eg-actions button")];return b.length===1&&b[0].textContent.trim()==="Get started"&&!!b[0].closest(".eg-wide")});
+    await page.evaluate(()=>document.querySelector(".eg-sheet .eg-actions button").click());await page.waitForTimeout(300);
     const q1=await page.evaluate(()=>document.querySelector(".eg-q").textContent+" "+[...document.querySelectorAll(".eg-pill")].map(b=>b.textContent).join(" · "));
     const pick=async(k,text)=>{await page.evaluate(k=>document.querySelectorAll(".eg-pill")[k].click(),k);await page.waitForTimeout(250);
       await page.evaluate(t=>{document.getElementById("eg-text").value=t;[...document.querySelectorAll(".eg-sheet button")].find(b=>/^Done$/.test(b.textContent)).click()},text);await page.waitForTimeout(250)};
@@ -278,9 +280,9 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await btn("Carry on from there");
     const at2=await page.evaluate(()=>/QUESTION 2 OF/.test(document.querySelector(".eg-sheet .chat-kicker").textContent)&&document.querySelectorAll(".eg-pill.done").length===1);
     for(let i=0;i<12;i++){const more=await page.evaluate(()=>{const b=[...document.querySelectorAll(".eg-sheet button")].find(b=>/^(Next|Finish)$/.test(b.textContent.trim()));if(b){b.click();return true}return false});if(!more)break;await page.waitForTimeout(200)}
-    await btn("Use this statement");await page.waitForTimeout(500);
+    await btn("Use this statement");await page.evaluate(()=>{window.eviaCamera.supported=window._camSupported});await page.waitForTimeout(500);
     check("Evia guides a pack through the stages of the job with topic pills, then the answers become the statement",/step by step/i.test(q1)&&/cavity closure/i.test(q1)&&ticked&&await page.evaluate(()=>document.getElementById("write").value==="I fitted the cavity closer at the reveal.\n\nThe ties go in at 450 centres."));
-    check("Guided evidence carries on where the learner left off",back&&at2);
+    check("Guided evidence carries on where the learner left off, and starts with one Get started button",back&&at2&&oneStart);
     await page.evaluate(()=>{const w=document.getElementById("write");w.value="";w.dispatchEvent(new Event("input"))});
 
     // Teach me: the tile, a lesson played through, and Evia's view in the confidence check.

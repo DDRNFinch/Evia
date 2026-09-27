@@ -124,10 +124,11 @@
     sheet('<p class="eg-say">'+(answered?"Welcome back. You’ve answered "+answered+" of my "+P.asks.length+" questions.":"I’ll guide you through this job from start to finish: one photo at a time, then a few questions about how it went. I’ll put your answers together into your statement.")+'</p>'+
       (answered?"":'<ol class="eg-stages">'+[...new Set(P.photos.map(p=>(STAGES.find(s=>s.key===p.key)||{}).title))].map(t=>'<li>'+esc(t)+'</li>').join("")+'</ol>')+
       '<p class="eg-small">Skip anything you like. Everything saves as you go, so you can stop and carry on later, even hours later.</p>',
-      [answered?{label:"Carry on with the questions",primary:true,run:()=>ask(ctx,P,firstGap(P,g))}:null,
-       canCam?{label:"Start with photos",primary:!answered,run:()=>photos(ctx,P,0)}:null,
-       {label:canCam?"Skip to the questions":"Start the questions",primary:!canCam&&!answered,run:()=>ask(ctx,P,answered?firstGap(P,g):0)}].filter(Boolean),
-      {kicker:"EVIA · GUIDED EVIDENCE",title:ctx.unitName});
+      /* First time: one button. Back part-way through: carry on, or more photos. */
+      answered?[{label:"Carry on with the questions",primary:true,run:()=>ask(ctx,P,firstGap(P,g))},
+         canCam?{label:"Take more photos",run:()=>photos(ctx,P,0)}:null].filter(Boolean)
+        :[{label:"Get started",primary:true,run:()=>canCam?photos(ctx,P,0):ask(ctx,P,0)}],
+      {kicker:"EVIA · GUIDED EVIDENCE",title:ctx.unitName,wide:!answered});
   }
   const firstGap=(P,g)=>{const i=P.asks.findIndex(a=>!String(g.answers[a.key]||"").trim());return i<0?P.asks.length:i};
   const mark=(ctx,at)=>{ctx.pack.guide.at=at;ctx.save()};
@@ -223,7 +224,7 @@
     fit(false);
     root.innerHTML='<div class="overlay eg-overlay'+(o.full?" eg-full":"")+'"><section class="sheet pr-sheet eg-sheet" role="dialog" aria-modal="true" aria-labelledby="eg-title">'+
       '<div class="sheet-head"><div class="eg-head">'+(o.free?AVATAR_OFF:AVATAR)+'<div><div class="chat-kicker">'+esc(o.kicker)+'</div><h2 id="eg-title">'+esc(o.title)+'</h2></div></div><button class="close" id="eg-close" type="button" aria-label="Close">×</button></div>'+
-      '<div class="pr-body">'+body+'<div class="pr-actions eg-actions'+(o.compact?" eg-compact":"")+'">'+(o.back?'<button type="button" class="eg-back" id="eg-back">'+esc(o.backLabel||"‹ Back")+'</button>':"")+buttons.map((b,i)=>'<button type="button" class="'+(b.primary?"primary":"secondary")+'" data-eg="'+i+'">'+esc(b.label)+'</button>').join("")+'</div></div></section></div>';
+      '<div class="pr-body">'+body+'<div class="pr-actions eg-actions'+(o.compact?" eg-compact":"")+(o.wide?" eg-wide":"")+'">'+(o.back?'<button type="button" class="eg-back" id="eg-back">'+esc(o.backLabel||"‹ Back")+'</button>':"")+buttons.map((b,i)=>'<button type="button" class="'+(b.primary?"primary":"secondary")+'" data-eg="'+i+'">'+esc(b.label)+'</button>').join("")+'</div></div></section></div>';
     const el=root.querySelector(".eg-sheet");
     /* Full screens keep the buttons outside the scrolling part, so they sit just above the keyboard. */
     if(o.full){el.appendChild(el.querySelector(".eg-actions"));fit(true)}
@@ -270,7 +271,7 @@
       '<ol class="eg-stages"><li>Photos</li><li>Write-up</li></ol>'+
       '<p class="eg-small">Everything saves as you go, so you can stop and carry on later.</p>',
       [{label:"Get started",primary:true,run:()=>freePhotos(ctx)}],
-      {kicker:"FREE RANGE",title:ctx.unitName,free:true});
+      {kicker:"FREE RANGE",title:ctx.unitName,free:true,wide:true});
     closeRefreshes(ctx);
   }
   /* Closing a free range sheet redraws the unit page, so what's in progress shows there. */

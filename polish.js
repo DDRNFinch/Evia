@@ -295,6 +295,9 @@
       /* The two ways to make a pack, always the same size. */
       .ev-modes{display:grid;grid-auto-rows:1fr;gap:12px;margin:4px 0 14px}
       .ev-modes .eg-start{margin:0;height:100%}
+      /* One full-width button, e.g. "Get started". */
+      html body .eg-wide{display:flex}
+      html body .eg-wide>button{flex:1 1 100%;width:100%}
       .submit-hint{text-align:center;font-size:11.5px;line-height:1.45;color:#98a2b3;margin:9px 6px 0}
       .prompt-list,.writeup-prompts,.photo-guide,.capture-intro{display:none}
       button:disabled{opacity:.45;cursor:not-allowed}
