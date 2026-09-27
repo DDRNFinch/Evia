@@ -18,7 +18,7 @@
   const escHtml=s=>String(s??"").replace(/[&<>"']/g,x=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[x]));
   const readState=()=>{try{return JSON.parse(localStorage.getItem(KEY)||"null")}catch(_){return null}};
   const writeState=stage=>{try{localStorage.setItem(KEY,JSON.stringify({stage,updatedAt:new Date().toISOString()}))}catch(_){}};
-  const firstName=()=>{try{return String(JSON.parse(localStorage.getItem("evia7-profile")||"{}").name||"").trim().split(/\s+/)[0]||""}catch(_){return""}};
+  const firstName=()=>String(window.eviaData.learner().name||"").trim().split(/\s+/)[0]||"";
 
   function injectStyles(){
     if(document.getElementById("evia-onboarding-styles"))return;

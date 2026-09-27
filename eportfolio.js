@@ -42,7 +42,7 @@
   async function buildUnitPdf(unitName,entries,photosByEntry){
     const {jsPDF}=await loadJsPdf();
     const doc=new jsPDF({unit:"mm",format:"a4",compress:true});
-    const profile=readJson("evia7-profile",{}),learner=profile.name||"Apprentice";
+    const profile=window.eviaData.learner(),learner=profile.name||"Apprentice";
     const W=210,H=297,M=16,CW=W-2*M,BOTTOM=H-M-8;
     const ink=[23,32,51],muted=[102,112,133],accent=accentRgb();
     let y=M;
@@ -229,7 +229,7 @@
     const profileBtn=document.getElementById("profile-btn");if(profileBtn)profileBtn.style.display="none";
     const unitIndex=data().u.findIndex(u=>u[0]===unitName);
     const entries=evidence.filter(e=>e.c===course&&e.u===unitName&&(entryId==null||String(e.id)===String(entryId))).sort((a,b)=>entryTime(a)-entryTime(b));
-    const learnerSlug=slug(readJson("evia7-profile",{}).name||"");
+    const learnerSlug=slug(window.eviaData.learner().name||"");
     const base=(learnerSlug&&learnerSlug!=="Evidence"?learnerSlug+"_":"")+slug(unitName);
     const sent=readJson(SENT_KEY,{})[course+"|"+unitName];
     const goBack=()=>{if(unitIndex>=0)openUnit(unitIndex);else nav("course")};
@@ -299,7 +299,7 @@
     const preview=pdf?'<button type="button" class="eport-sheet" id="eport-preview" aria-label="Open the full evidence PDF">'+
         '<span class="eport-sheet-kicker">EVIA · EVIDENCE PACK</span>'+
         '<strong class="eport-sheet-title">'+escHtml(unitName)+'</strong>'+
-        '<span class="eport-sheet-sub">'+escHtml(readJson("evia7-profile",{}).name||"Apprentice")+' · '+entries.length+' evidence entr'+(entries.length===1?"y":"ies")+'</span>'+
+        '<span class="eport-sheet-sub">'+escHtml(window.eviaData.learner().name||"Apprentice")+' · '+entries.length+' evidence entr'+(entries.length===1?"y":"ies")+'</span>'+
         '<span class="eport-sheet-rule"></span>'+
         (firstPhotos.length?'<span class="eport-sheet-photos">'+firstPhotos.map(src=>'<img src="'+src+'" alt="">').join("")+'</span>':"")+
         (excerpt?'<span class="eport-sheet-text">'+escHtml(excerpt.length>150?excerpt.slice(0,150).trim()+"…":excerpt)+'</span>':"")+
@@ -333,7 +333,7 @@
   async function buildOtjPdf(entries,createdAt){
     const {jsPDF}=await loadJsPdf();
     const doc=new jsPDF({unit:"mm",format:"a4",compress:true});
-    const profile=readJson("evia7-profile",{}),learner=profile.name||"Apprentice";
+    const profile=window.eviaData.learner(),learner=profile.name||"Apprentice";
     const W=210,H=297,M=16,CW=W-2*M,BOTTOM=H-M-8,ink=[23,32,51],muted=[102,112,133],accent=accentRgb();
     const total=entries.reduce((n,x)=>n+Number(x.n||0),0);
     let y=M;
@@ -382,7 +382,7 @@
   async function openOtjPdf(entries,createdAt,onReady){
     injectStyles();
     const profileBtn=document.getElementById("profile-btn");if(profileBtn)profileBtn.style.display="none";
-    const learner=readJson("evia7-profile",{}).name||"Apprentice",total=entries.reduce((n,x)=>n+Number(x.n||0),0);
+    const learner=window.eviaData.learner().name||"Apprentice",total=entries.reduce((n,x)=>n+Number(x.n||0),0);
     const sorted=entries.slice().sort((a,b)=>Number(a.createdAt)-Number(b.createdAt));
     $("#page-title").textContent="Learning hours PDF";
     $("#screen").innerHTML='<button class="secondary" id="eport-back" type="button">‹ Learning logs</button>'+
@@ -418,7 +418,7 @@
   async function buildReviewPdf(r){
     const {jsPDF}=await loadJsPdf();
     const doc=new jsPDF({unit:"mm",format:"a4",compress:true});
-    const s=r.snapshot||{},profile=readJson("evia7-profile",{}),learner=r.learner||profile.name||"Apprentice";
+    const s=r.snapshot||{},profile=window.eviaData.learner(),learner=r.learner||profile.name||"Apprentice";
     const W=210,H=297,M=14,CW=W-2*M,BOTTOM=H-18,ink=[23,32,51],muted=[102,112,133],faint=[152,162,179],line=[228,231,236],accent=accentRgb();
     const GREEN=[18,183,106],AMBER=[247,144,9],RED=[217,45,32],GREY=[190,196,206];
     const nvq=!!s.nvq,w=nvq?"criteria":"KSBs",tp=s.timePct;
@@ -578,7 +578,7 @@
     // Signatures
     section("Signed and agreed by all three",31);
     {const sw=(CW-gap*2)/3,so=r.signoff||{};
-     [["Apprentice",learner,profile.signature||r.signature,r.date],["Employer",(so.employer||{}).name,(so.employer||{}).sig,(so.employer||{}).date],["Training provider",(so.provider||{}).name,(so.provider||{}).sig,(so.provider||{}).date]].forEach(([role,name,sig,date],i)=>{const x=M+i*(sw+gap);box(x,y,sw,28,[255,255,255],line,2.5);T(role,x+3,y+4.6,7.4,"bold",muted);
+     [["Apprentice",learner,window.eviaData.files.signature()||r.signature,r.date],["Employer",(so.employer||{}).name,(so.employer||{}).sig,(so.employer||{}).date],["Training provider",(so.provider||{}).name,(so.provider||{}).sig,(so.provider||{}).date]].forEach(([role,name,sig,date],i)=>{const x=M+i*(sw+gap);box(x,y,sw,28,[255,255,255],line,2.5);T(role,x+3,y+4.6,7.4,"bold",muted);
        if(sig){try{doc.addImage(sig,"PNG",x+3,y+6,sw-6,9,undefined,"FAST")}catch(_){}}
        doc.setDrawColor(...line);doc.line(x+3,y+16.5,x+sw-3,y+16.5);
        T("Name: "+(name||""),x+3,y+21,7.4,"normal",name?ink:faint);T("Date: "+((sig||i===0)&&date?ukDate(date):""),x+3,y+25.5,7.4,"normal",sig||i===0?ink:faint)});
@@ -597,7 +597,7 @@
   async function openReviewPdf(r){
     injectStyles();
     const root=document.getElementById("modal-root");
-    const learner=r.learner||readJson("evia7-profile",{}).name||"Apprentice";
+    const learner=r.learner||window.eviaData.learner().name||"Apprentice";
     root.innerHTML='<div class="overlay"><section class="sheet pr-sheet" role="dialog" aria-modal="true"><div class="sheet-head"><div><div class="chat-kicker">PROGRESS REVIEW · '+escHtml(ukDate(r.date).toUpperCase())+'</div><h2>Review PDF</h2></div><button class="close" id="rvp-close" type="button" aria-label="Close">×</button></div>'+
       '<div class="eport-files" id="rvp-files"><div class="card eport-pdf"><div class="eport-sheet is-loading" aria-hidden="true"><span></span><span></span><span></span></div><p class="eport-status">Preparing your review PDF…</p></div></div>'+
       '<p class="pg-note">Two pages: where you are, then your targets and signatures. Share it with your employer and tutor so all three of you can sign it.</p></section></div>';

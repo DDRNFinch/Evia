@@ -7,12 +7,13 @@
    Store "evia7-rewards": {bank, spent, lastXp, day, dayEarned, owned[], hat, expr, seenAch[]}.
    window.eviaRewards: page(), locked(kind,name), openItem(id), hatHtml(shape,hat), wearOn(), sync(), balance(). */
 (function(){
-  const KEY="evia7-rewards",XP_PER_COIN=5,ACH_TOKENS=25,BOX=60;
+  const XP_PER_COIN=5,ACH_TOKENS=25,BOX=60;
   const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const blank=()=>({bank:0,spent:0,owned:[],hat:"",seenAch:[]});
   /* Hazard spotter was swapped for the Crossword: anyone who had it gets the Crossword. */
   const migrate=r=>{const i=r.owned.indexOf("game-hazard");if(i>=0){r.owned.splice(i,1);if(!r.owned.includes("game-crossword"))r.owned.push("game-crossword")}return r};
-  const read=()=>{try{return migrate(Object.assign(blank(),JSON.parse(localStorage.getItem(KEY)||"{}")||{}))}catch(_){return blank()}};
+  /* Read and written through eviaData (data.js). */
+  const read=()=>migrate(Object.assign(blank(),window.eviaData.list("rewards")[0].state));
   const write=r=>{window.eviaData.put("rewards",{state:r})};
   const today=()=>{const d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()};
 
@@ -86,7 +87,6 @@
   const xp=()=>window.eviaTeach&&window.eviaTeach.stats?window.eviaTeach.stats().xp:0;
   const achievements=()=>{try{const S=window.eviaStats.compute();return window.eviaStats.achievements(S).list.filter(a=>a.earned).map(a=>a.id)}catch(_){return []}};
   const weekOf=t=>{const d=new Date(t);d.setHours(0,0,0,0);d.setDate(d.getDate()-(d.getDay()+6)%7);return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()};
-  const readJ=(k,f)=>{try{return JSON.parse(localStorage.getItem(k)||"null")||f}catch(_){return f}};
   /* What real work has earned so far: [{key, coins, why}] with each key's full value (paid ones are skipped later). */
   function work(){
     const out=[],c=typeof course!=="undefined"?course:"";

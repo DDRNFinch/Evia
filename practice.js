@@ -18,16 +18,16 @@
   };
   const pctOf=t=>typeof t.pct==="number"?t.pct:(t.total?Math.round((t.score||0)/t.total*100):0);
   const ago=t=>window.eviaStats?window.eviaStats.ago(t).toLowerCase():"";
-  function testsOf(type,filter){return readJson("evia7-test-results",[]).filter(t=>t&&t.course===course&&t.type===type&&(!filter||filter(t)))}
+  function testsOf(type,filter){return window.eviaData.list("tests").filter(t=>t&&t.course===course&&t.type===type&&(!filter||filter(t)))}
   function summary(type,filter){
     const list=testsOf(type,filter);if(!list.length)return {count:0,text:"Not tried yet"};
     const last=list[list.length-1],best=Math.max(...list.map(pctOf));
-    return {count:list.length,last:Date.parse(last.savedAt),text:"Last "+pctOf(last)+"% "+ago(Date.parse(last.savedAt))+" · best "+best+"%"};
+    return {count:list.length,last:Date.parse(last.takenAt),text:"Last "+pctOf(last)+"% "+ago(Date.parse(last.takenAt))+" · best "+best+"%"};
   }
-  function profile(){return readJson("evia7-profile",{})}
+  function profile(){return window.eviaData.learner()}
   function timePct(){try{return window.eviaCoach.analyse().timePct}catch(_){return null}}
   const daysAgo=t=>t==null?Infinity:(Date.now()-t)/DAY;
-  function epaDue(){if((window.eviaNvq&&window.eviaNvq.on()))return false;const tp=timePct();if(tp==null||tp<75)return false;const t=testsOf("epa");const last=t.length?Date.parse(t[t.length-1].savedAt):null;return daysAgo(last)>(tp>=90?7:14)}
+  function epaDue(){if((window.eviaNvq&&window.eviaNvq.on()))return false;const tp=timePct();if(tp==null||tp<75)return false;const t=testsOf("epa");const last=t.length?Date.parse(t[t.length-1].takenAt):null;return daysAgo(last)>(tp>=90?7:14)}
 
   function closeSheet(){const r=document.getElementById("modal-root");if(r)r.innerHTML=""}
   function sheet(kicker,title,body,cls){
@@ -82,11 +82,11 @@
   /* ---------- Confidence self-assessment ---------- */
   /* Every save stores the full picture: skills not re-rated keep their last rating, so the latest record is always complete. */
   function skills(){try{return (typeof confidenceQuestions==="function"?confidenceQuestions():[]).map(q=>({area:q[0],question:q[1],desc:String(q[1]).replace(/^How confident are you (?:at|with|in) /i,"").replace(/\?$/,"").replace(/^./,c=>c.toUpperCase())}))}catch(_){return[]}}
-  function history(){return readJson("evia7-confidence",[]).filter(x=>x&&x.course===course&&Array.isArray(x.scores)&&x.scores.length)}
+  function history(){return window.eviaData.list("confidence").filter(x=>x&&x.course===course&&Array.isArray(x.scores)&&x.scores.length)}
   function latestMap(){const m=new Map();history().forEach(s=>s.scores.forEach(sc=>m.set(sc.area,sc)));return m}
   function confidenceState(){
     const h=history(),last=h[h.length-1],m=latestMap();
-    return {last:last?Date.parse(last.savedAt||last.startedAt)||null:null,practise:[...m.values()].filter(x=>x.score<=2).map(x=>x.area)};
+    return {last:last?Date.parse(last.takenAt)||null:null,practise:[...m.values()].filter(x=>x.score<=2).map(x=>x.area)};
   }
   /* One slider per skill (1 = need more training … 4 = mastered). Each starts at last time's rating, marked on the
      track, so a repeat check only means moving what's changed. The overall score at the top updates live. */

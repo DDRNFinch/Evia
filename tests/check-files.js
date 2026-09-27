@@ -27,6 +27,15 @@ shell.forEach(f=>{if(!exists(f))problems.push("Offline list (sw-v16.js) has a mi
 loader.split(/\s+/).filter(Boolean).map(f=>"./"+f.replace(/^\.\//,"").replace(/\?.*$/,"")).forEach(f=>{if(!shell.includes(f))problems.push("Loaded but not saved for offline use: "+f)});
 const swVersion=(sw.match(/VERSION = "([^"]+)"/)||[])[1],regVersion=(html.match(/sw-v16\.js\?v=([^"]+)"/)||[])[1];
 if(!swVersion||!regVersion||!swVersion.endsWith(regVersion))problems.push("Service worker version ("+swVersion+") and the one index.html registers ("+regVersion+") don't match");
+/* Learner data is read and written only through data.js (eviaData), so the storage under it can change in one place.
+   Evidence and hours are still loaded by app.js, which data.js wraps. teach.js keeps where a lesson was left. */
+const DATA_KEYS=["profile","confidence","test-results","progress-reviews","review-targets","scenarios","nvq-answers","teach","rewards","supporting-evidence"];
+const ALLOWED={"data.js":1,"storage.js":1,"sw-v16.js":1,"app.js":["supporting-evidence"],"teach.js":["teach"]};
+for(const f of fs.readdirSync(root).filter(f=>f.endsWith(".js"))){
+  if(ALLOWED[f]===1)continue;
+  const src=read(f).replace(/\/\*[\s\S]*?\*\//g,"");
+  DATA_KEYS.filter(k=>src.includes('"evia7-'+k+'"')&&!(ALLOWED[f]||[]).includes(k)).forEach(k=>problems.push(f+" reads evia7-"+k+" directly; use eviaData (data.js)"));
+}
 
 if(problems.length){console.error("✗ "+problems.length+" problem(s):\n  "+problems.join("\n  "));process.exit(1)}
 console.log("✓ All scripts parse and every loaded/offline file exists.");

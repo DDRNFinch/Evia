@@ -6,7 +6,9 @@
 
    eviaData.list(collection, filter)   eviaData.get(collection, id)   eviaData.put(collection, record)
    eviaData.remove(collection, id)     eviaData.on("change", fn)       eviaData.learnerId()
-   eviaData.files.get(fileId, kind)    eviaData.snapshot()
+   eviaData.files.get(fileId, kind)    eviaData.files.signature()/photo()   eviaData.learner()   eviaData.snapshot()
+   Screens read through here too. "detail" on tests, reviews and targets (and "state" on rewards) is Evia's own working
+   copy of the record, for the screens that show it; the fields around it are what Nisia reads.
    Sync (for Nisia, nothing else):     eviaData.changesSince()  eviaData.markSynced(records)
    Collections: learner, evidence, supporting, nvqAnswers, hours, lessonResults, tests, confidence, scenarios,
    reviews, targets, rewards. Every collection is written through here.
@@ -47,8 +49,9 @@
   /* ---------- Reading: today's storage into the new shape ---------- */
   const R={
     learner(){
-      const p=readJson("evia7-profile",{})||{};
-      return [base("learner",{course:courseNow(),name:p.name||"",start:p.start||"",end:p.end||"",mathsEnabled:!!p.mathsEnabled,englishEnabled:!!p.englishEnabled,
+      const p=readJson("evia7-profile",{})||{},rest=Object.assign({},p);delete rest.signature;delete rest.avatar;
+      /* Other details (safeguarding lead and so on) are kept as they are; the signature and photo are files. */
+      return [base("learner",{...rest,course:courseNow(),name:p.name||"",start:p.start||"",end:p.end||"",mathsEnabled:!!p.mathsEnabled,englishEnabled:!!p.englishEnabled,
         nvqOptional:Array.isArray(p.nvqOptional)?p.nvqOptional.slice():null,hasSignature:!!p.signature,hasPhoto:!!p.avatar,updatedAt:iso(p.updatedAt)})];
     },
     evidence(){
@@ -89,7 +92,7 @@
     tests(){
       return (readJson("evia7-test-results",[])||[]).filter(Boolean).map((t,i)=>base(t.id||("test-"+(ms(t.savedAt))+"-"+i),{course:t.course||"",type:t.type||"test",
         score:t.score??null,total:t.total??null,pct:t.pct??(t.total?Math.round((t.score||0)/t.total*100):null),full:!!t.full,missed:(t.missed||[]).slice(),
-        questions:Array.isArray(t.questions)?t.questions:null,takenAt:iso(t.savedAt),updatedAt:iso(t.savedAt)}));
+        questions:Array.isArray(t.questions)?t.questions:null,takenAt:iso(t.savedAt),updatedAt:iso(t.savedAt),detail:t}));
     },
     confidence(){
       return (readJson("evia7-confidence",[])||[]).filter(Boolean).map((c,i)=>base(c.id||("confidence-"+i),{course:c.course||"",takenAt:iso(c.savedAt||c.startedAt),
@@ -103,22 +106,22 @@
       return (readJson("evia7-progress-reviews",[])||[]).filter(Boolean).map((r,i)=>base(r.id||("review-"+i),{course:r.course||"",date:iso(r.date),format:r.format||1,
         snapshot:r.snapshot||r.metrics||null,reflection:r.reflection||null,targetIds:(r.targets||[]).map(t=>t.id).filter(Boolean),
         signedBy:Object.fromEntries(Object.keys(r.signoff||{}).map(k=>[k,{name:(r.signoff[k]||{}).name||"",at:iso((r.signoff[k]||{}).date),signed:!!(r.signoff[k]||{}).sig}])),
-        updatedAt:iso(r.updatedAt||r.date)}));
+        updatedAt:iso(r.updatedAt||r.date),detail:r}));
     },
     /* One target store (evia7-review-targets). evia7-targets is the old one from before the review was rebuilt: nothing
        writes it now, and its targets are read as history (store "legacy") so nothing on the phone is lost. */
     targets(){
       const a=(readJson("evia7-review-targets",[])||[]).filter(Boolean).map(t=>base(t.id,{course:t.course||"",kind:t.kind||"",title:t.title||"",why:t.why||t.reason||"",
         goal:t.target??null,baseline:t.baseline??0,param:t.param||null,due:iso(t.due||t.deadline),setBy:"evia",reviewId:t.reviewId||null,metAt:t.done?iso(t.doneAt||t.createdAt):null,
-        createdAt:iso(t.createdAt),updatedAt:iso(t.updatedAt||t.createdAt),store:"review-targets"}));
+        createdAt:iso(t.createdAt),updatedAt:iso(t.updatedAt||t.createdAt),store:"review-targets",detail:t}));
       const b=(readJson("evia7-targets",[])||[]).filter(Boolean).map((t,i)=>base(t.id||("target-"+i),{course:t.course||courseNow(),kind:t.kind||"",title:t.title||"",why:t.reason||"",
-        goal:t.targetValue??null,baseline:0,param:t.measure||null,due:iso(t.deadline),setBy:"evia",reviewId:null,metAt:t.done||t.completed?iso(t.doneAt||t.completedAt):null,createdAt:null,updatedAt:null,store:"legacy"}));
+        goal:t.targetValue??null,baseline:0,param:t.measure||null,due:iso(t.deadline),setBy:"evia",reviewId:null,metAt:t.done||t.completed?iso(t.doneAt||t.completedAt):null,createdAt:null,updatedAt:null,store:"legacy",detail:t}));
       return a.concat(b);
     },
     rewards(){
       const r=readJson("evia7-rewards",{})||{},me=(readJson("evia7-teach",{})||{})._me||{};
       return [base("rewards",{coins:Math.max(0,(r.bank||0)-(r.spent||0)),earned:r.bank||0,spent:r.spent||0,owned:(r.owned||[]).slice(),hat:r.hat||"",expr:r.expr||"",
-        xp:me.xp||0,streak:me.streak||0,lastDay:me.last||null,updatedAt:iso(r.updatedAt)})];
+        xp:me.xp||0,streak:me.streak||0,lastDay:me.last||null,updatedAt:iso(r.updatedAt),state:r,me})];
     }
   };
   const COLLECTIONS=Object.keys(R);
@@ -284,7 +287,10 @@
     async get(fileId,kind){
       if(kind==="supporting"||!kind){const rec=window.eviaSupportingFileGet?await window.eviaSupportingFileGet(fileId):null;if(rec&&rec.blob)return rec.blob;if(kind)return null}
       return window.eviaGetEvidencePhoto?window.eviaGetEvidencePhoto(fileId):null;
-    }
+    },
+    /* The learner's signature and photo, as image data (they go on PDFs, so screens need them straight away). */
+    signature:()=>(readJson("evia7-profile",{})||{}).signature||"",
+    photo:()=>(readJson("evia7-profile",{})||{}).avatar||""
   };
 
   /* ---------- Sync with Nisia ----------
@@ -307,6 +313,9 @@
   /* Everything, in the new shape: for Nisia's first upload, and for checking the move worked. */
   const snapshot=()=>{const o={v:V,learnerId:learnerId(),at:new Date().toISOString()};COLLECTIONS.forEach(c=>{o[c]=list(c)});return o};
 
-  window.eviaData={V,COLLECTIONS,list,get,put,remove,replace,files,learnerId,iso,unitId,changesSince,markSynced,snapshot,
+  /* The learner's own record, for screens that only need a name or dates. */
+  const learner=()=>R.learner()[0];
+
+  window.eviaData={V,COLLECTIONS,list,get,put,remove,replace,files,learner,learnerId,iso,unitId,changesSince,markSynced,snapshot,
     on(ev,fn){if(ev==="change"&&typeof fn==="function")listeners.push(fn);return()=>{const i=listeners.indexOf(fn);if(i>=0)listeners.splice(i,1)}}};
 })();

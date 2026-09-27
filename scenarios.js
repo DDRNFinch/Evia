@@ -2,9 +2,7 @@
    short "what would you do?" stories from site and college. Content should be reviewed by the provider's DSL.
    Progress is stored in evia7-scenarios as {scenarioId:{at, best}}. */
 (function(){
-  const KEY="evia7-scenarios";
   const escHtml=v=>String(v??"").replace(/[&<>"']/g,x=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[x]));
-  const readJson=(k,f)=>{try{const v=JSON.parse(localStorage.getItem(k)||"null");return v??f}catch(_){return f}};
   const icon=d=>'<svg viewBox="0 0 24 24" aria-hidden="true">'+d+'</svg>';
 
   const TOPICS=[
@@ -125,7 +123,7 @@
   ];
   const ALL=TOPICS.flatMap(t=>t.scenarios.map(s=>Object.assign({topic:t},s)));
 
-  const done=()=>readJson(KEY,{});
+  const done=()=>Object.fromEntries(window.eviaData.list("scenarios").map(s=>[s.scenarioId,{at:Date.parse(s.doneAt)||0,best:s.best}]));
   function progress(){
     const d=done(),ids=Object.keys(d).filter(id=>ALL.some(s=>s.id===id));
     const last=ids.reduce((n,id)=>Math.max(n,d[id].at||0),0)||null;
@@ -149,7 +147,7 @@
   function contactsHtml(topicId){
     const P=window.EVIA_PROVIDER||{},dep=P.deputy||{};
     /* A college-wide setting (provider.js) wins; otherwise the lead the learner added in Profile. */
-    let mine={};try{mine=JSON.parse(localStorage.getItem("evia7-profile")||"{}").safeguarding||{}}catch(_){}
+    const mine=window.eviaData.learner().safeguarding||{};
     const dsl=P.safeguarding&&P.safeguarding.name?P.safeguarding:mine;
     const tel=n=>'<a href="tel:'+escHtml(String(n).replace(/[^\d+]/g,""))+'">'+escHtml(n)+'</a>';
     const person=(role,x)=>x&&x.name?'<li><strong>'+escHtml(role)+': '+escHtml(x.name)+'</strong>'+(x.phone?'<span>'+tel(x.phone)+'</span>':"")+(x.email?'<span><a href="mailto:'+escHtml(x.email)+'">'+escHtml(x.email)+'</a></span>':"")+(x.hours?'<span>'+escHtml(x.hours)+'</span>':"")+'</li>':"";

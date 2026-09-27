@@ -12,12 +12,12 @@
   };
   /* Lessons done out of the total for a list of units, from the Teach me store. */
   function count(us){
-    let L={};try{L=((JSON.parse(localStorage.getItem("evia7-teach")||"{}")||{})[course]||{}).lessons||{}}catch(_){}
+    const L=Object.fromEntries(window.eviaData.list("lessonResults",{course}).map(r=>[r.lessonId,r]));
     const ls=[].concat(...us.map(u=>u.lessons));return {done:ls.filter(l=>L[l.id]&&L[l.id].done).length,total:ls.length};
   }
   /* Medals from Teach me, by best score: gold 90%+, silver 70%+, bronze below (as teach.js). */
   function medals(){
-    let L={};try{L=((JSON.parse(localStorage.getItem("evia7-teach")||"{}")||{})[course]||{}).lessons||{}}catch(_){}
+    const L=Object.fromEntries(window.eviaData.list("lessonResults",{course}).map(r=>[r.lessonId,r]));
     const m={gold:0,silver:0,bronze:0};Object.values(L).forEach(r=>{if(r&&r.done)m[r.best>=.9?"gold":r.best>=.7?"silver":"bronze"]++});return m;
   }
   const PLAY='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg>';

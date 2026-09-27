@@ -3,17 +3,17 @@
    - "My targets" shows them with progress; if there are none, Evia sets some.
    - A full review is a click-through of short sections; finishing it replaces the targets with new ones. */
 (function(){
-  const TARGETS="evia7-review-targets",REVIEWS="evia7-progress-reviews";
   const DAY=864e5;
   const escHtml=v=>String(v??"").replace(/[&<>"']/g,x=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[x]));
   const readJson=(k,f)=>{try{const v=JSON.parse(localStorage.getItem(k)||"null");return v??f}catch(_){return f}};
-  const write=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+  /* Reviews and targets are read and written through eviaData (data.js); "detail" is the stored review or target. */
+  const reviewsNow=()=>window.eviaData.list("reviews",{course}).map(r=>r.detail);
   const ukDate=t=>new Date(t).toLocaleDateString("en-GB",{day:"numeric",month:"short"});
   const plural=(n,w)=>n+" "+w+(n===1?"":"s");
   const clamp=v=>Math.max(0,Math.min(1,v));
   const stats=()=>{try{return window.eviaStats.compute()}catch(_){return null}};
-  const skillMap=()=>{const m=new Map();readJson("evia7-confidence",[]).filter(x=>x&&x.course===course&&Array.isArray(x.scores)).forEach(s=>s.scores.forEach(sc=>m.set(sc.area,sc.score)));return m};
-  const bestTestSince=(types,since,full)=>readJson("evia7-test-results",[]).filter(t=>t&&t.course===course&&types.includes(t.type)&&Date.parse(t.savedAt)>=since&&(!full||t.full||t.total>=20)).reduce((n,t)=>Math.max(n,typeof t.pct==="number"?t.pct:Math.round((t.score||0)/(t.total||1)*100)),-1);
+  const skillMap=()=>{const m=new Map();window.eviaData.list("confidence").filter(x=>x&&x.course===course&&Array.isArray(x.scores)).forEach(s=>s.scores.forEach(sc=>m.set(sc.area,sc.score)));return m};
+  const bestTestSince=(types,since,full)=>window.eviaData.list("tests").filter(t=>t&&t.course===course&&types.includes(t.type)&&Date.parse(t.takenAt)>=since&&(!full||t.full||t.total>=20)).reduce((n,t)=>Math.max(n,typeof t.pct==="number"?t.pct:Math.round((t.score||0)/(t.total||1)*100)),-1);
   const startedUnits=S=>S.a.units.filter(u=>u.started).length;
 
   /* ---------- What each kind of target measures ---------- */
@@ -73,7 +73,7 @@
   }
 
   /* ---------- Stored targets ---------- */
-  const all=()=>readJson(TARGETS,[]);
+  const all=()=>window.eviaData.list("targets",{store:"review-targets"}).map(t=>t.detail);
   const mine=()=>all().filter(t=>t.course===course);
   /* All target and review writes go through eviaData (data.js). */
   function setTargets(list){window.eviaData.replace("targets",{course},list)}
@@ -140,13 +140,13 @@
     const a=S.a,gap=a.timePct==null?null:a.timePct-a.ksbPct;
     const checks=S.checks.slice().sort((x,y)=>(y.covered.length/y.terms.length)-(x.covered.length/x.terms.length));
     const conf=S.confidence.scores,confPct=conf.length?Math.round(conf.reduce((n,x)=>n+x.score,0)/conf.length/4*100):null;
-    const hist=readJson("evia7-confidence",[]).filter(x=>x&&x.course===course&&Array.isArray(x.scores)&&x.scores.length);
+    const hist=window.eviaData.list("confidence").filter(x=>x&&x.course===course&&Array.isArray(x.scores)&&x.scores.length);
     const prevConf=hist.length>1?hist[hist.length-2].scores:null,confPrevPct=prevConf?Math.round(prevConf.reduce((n,x)=>n+x.score,0)/prevConf.length/4*100):null;
-    const lastFull=readJson("evia7-test-results",[]).filter(t=>t&&t.course===course&&t.type==="epa"&&(t.full||t.total>=20)).pop();
+    const lastFull=window.eviaData.list("tests").filter(t=>t&&t.course===course&&t.type==="epa"&&(t.full||t.total>=20)).pop();
     const task=window.eviaPractice&&window.eviaPractice.suggestTasks(1)[0];
-    const prevReview=readJson(REVIEWS,[]).filter(r=>r.course===course).pop();
+    const prevReview=reviewsNow().pop();
     const prevTargets=mine();
-    const prof=readJson("evia7-profile",{}),startMs=Date.parse(prof.start||"");
+    const prof=window.eviaData.learner(),startMs=Date.parse(prof.start||"");
     return {
       weeksIn:isNaN(startMs)?null:Math.max(0,(Date.now()-startMs)/(7*864e5)),maths:!!prof.mathsEnabled,english:!!prof.englishEnabled,
       ksbPct:a.ksbPct,met:a.met,total:a.total,timePct:a.timePct,verdict:gap==null?null:gap>10?"behind":gap<-5?"ahead":"ontrack",weeksPerUnit:S.weeksPerUnit!=null?Math.max(1,Math.floor(S.weeksPerUnit)):null,weeksLeft:S.weeksLeft,
@@ -235,7 +235,7 @@
       '<ol class="rv-targets">'+r.targets.map(t=>'<li><strong>'+escHtml(t.title)+'</strong><small>'+escHtml(t.why)+'</small><em>Due '+ukDate(t.due+"T12:00:00")+'</em></li>').join("")+'</ol>'+
       say(readOnly?"You can see how you’re getting on with your current targets in My targets.":"These become your targets when you save the review. I’ll track them for you.")});
     /* Sign-off: all three agree the review. Employer and tutor can sign on this phone now, or on the PDF later. */
-    const so=r.signoff||{},pf=readJson("evia7-profile",{});
+    const so=r.signoff||{},pf={signature:window.eviaData.files.signature()};
     const pad=(who,label,hint)=>{const v=so[who]||{};return '<div class="rv-sign" data-sign="'+who+'"><div class="rv-sign-top"><strong>'+label+'</strong>'+(v.sig?'<span class="rv-signed">✓ Signed '+escHtml(ukDate(v.date||r.date))+'</span>':'<small>'+hint+'</small>')+'</div>'+
       '<input type="text" class="rv-sign-name" placeholder="Their name" value="'+escHtml(v.name||"")+'" aria-label="'+label+' name">'+
       '<div class="rv-sign-pad"><canvas width="600" height="170" aria-label="'+label+' signature"></canvas><button type="button" class="rv-sign-clear">Clear</button></div></div>'};
@@ -379,7 +379,7 @@
   }
   /* Opening a saved review: new ones use the click-through, older ones the original screen. */
   function showReview(id){
-    const r=readJson(REVIEWS,[]).find(x=>x.id===id);if(!r)return;
+    const r=(window.eviaData.get("reviews",id)||{}).detail;if(!r)return;
     if(r.format===2)openReview(r,true);else if(window.eviaOpenLegacyReview)window.eviaOpenLegacyReview(r);
   }
 
@@ -389,7 +389,7 @@
   window.eviaResumeReview=resumeReview;
   /* Reviews are due every 3 calendar months: 3 months after the last one, or after the course start. */
   window.eviaReviewDue=()=>{
-    const last=readJson(REVIEWS,[]).filter(x=>x&&x.course===course).pop(),p=readJson("evia7-profile",{});
+    const last=reviewsNow().pop(),p=window.eviaData.learner();
     const from=last?new Date(last.date):p.start?new Date(p.start+"T12:00:00"):null;if(!from||isNaN(from))return null;
     const due=new Date(from);due.setMonth(due.getMonth()+3);
     const days=Math.ceil((due-Date.now())/864e5);return {due,days,first:!last};

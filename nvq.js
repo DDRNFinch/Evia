@@ -10,9 +10,8 @@
   const ID=N.id,UNITS=N.units,BY={};UNITS.forEach(u=>BY[u.n]=u);
   const BEHAVIOUR=["102","300","303","502"];          // evidenced by witness testimony, documents and questions
   const DEFAULT_OPTIONAL=["690"];
-  const ANSWERS_KEY="evia7-nvq-answers",MIN_WORDS=12;
+  const MIN_WORDS=12;
   const escH=s=>String(s??"").replace(/[&<>"']/g,x=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[x]));
-  const readJson=(k,f)=>{try{const v=JSON.parse(localStorage.getItem(k)||"null");return v==null?f:v}catch(_){return f}};
   const words=t=>String(t||"").trim().split(/\s+/).filter(Boolean).length;
   const subLetter=i=>i<26?String.fromCharCode(97+i):String.fromCharCode(71+i).repeat(2);
 
@@ -88,13 +87,13 @@
 
   /* ---------- Which units, which criteria, what's evidenced ---------- */
   const on=()=>typeof course!=="undefined"&&course===ID;
-  const profile=()=>readJson("evia7-profile",{});
+  const profile=()=>window.eviaData.learner();
   function optionalChosen(){const o=profile().nvqOptional;const list=(Array.isArray(o)?o:[]).filter(n=>BY[n]&&BY[n].opt);return list.length?list:DEFAULT_OPTIONAL.slice()}
   function setOptional(list){const p=profile();p.nvqOptional=list.filter(n=>BY[n]&&BY[n].opt);if(!p.nvqOptional.length)p.nvqOptional=DEFAULT_OPTIONAL.slice();window.eviaData.put("learner",{nvqOptional:p.nvqOptional})}
   const selected=()=>{const o=optionalChosen();return UNITS.filter(u=>!u.opt||o.includes(u.n))};
   const unitCodes=u=>u.o.flatMap(o=>o.c.map(c=>u.n+"."+c.n));
   function allK(){return selected().flatMap(u=>u.o.flatMap(o=>o.c.map(c=>[u.n+"."+c.n,c.t])))}
-  const answers=()=>readJson(ANSWERS_KEY,{});
+  const answers=()=>Object.fromEntries(window.eviaData.list("nvqAnswers").map(a=>[a.questionId,{t:a.text}]));
   const answered=(q,a)=>{const x=(a||answers())[q];return !!x&&words(x.t)>=MIN_WORDS};
   function supportingFor(){try{return supportingMeta().filter(x=>x.course===ID&&Array.isArray(x.ksbs))}catch(_){return[]}}
   function evidenced(){

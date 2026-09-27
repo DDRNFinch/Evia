@@ -21,7 +21,9 @@
   const KEY="evia7-teach";
   const readStore=()=>{try{return JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(_){return {}}};
   const writeStore=s=>{try{localStorage.setItem(KEY,JSON.stringify(s))}catch(_){}};
-  const mine=()=>{const s=readStore();return (s[course]=s[course]||{lessons:{}}).lessons};
+  /* Lesson results and XP are read through eviaData (data.js); the store here only keeps where a lesson was left. */
+  const mine=()=>Object.fromEntries(window.eviaData.list("lessonResults",{course}).map(r=>[r.lessonId,{done:r.done,best:r.best,last:r.last,attempts:r.attempts}]));
+  const me=()=>Object.assign(blankMe(),window.eviaData.list("rewards")[0].me);
   const saveResult=(id,score)=>{window.eviaData.put("lessonResults",{course,lessonId:id,last:score})};
 
   /* XP, the daily streak and this week, kept with the lessons under "_me" (never a course name). */
@@ -29,13 +31,13 @@
   const dayBefore=()=>{const d=new Date();d.setDate(d.getDate()-1);return ymd(d)};
   const blankMe=()=>({xp:0,days:{},streak:0,last:null});
   function addXp(n){
-    const s=readStore(),m=s._me=s._me||blankMe(),today=ymd(new Date()),extended=m.last!==today;
+    const m=me(),today=ymd(new Date()),extended=m.last!==today;
     m.xp+=n;m.days[today]=(m.days[today]||0)+n;
     if(extended){m.streak=m.last===dayBefore()?m.streak+1:1;m.last=today}
     Object.keys(m.days).sort().slice(0,-70).forEach(k=>delete m.days[k]);
     window.eviaData.put("rewards",{me:m});return {n:m.streak,extended,total:m.xp,days:m.days};
   }
-  function stats(){const m=readStore()._me||blankMe(),live=m.last===ymd(new Date())||m.last===dayBefore();return {xp:m.xp,streak:live?m.streak:0,today:m.last===ymd(new Date()),days:m.days}}
+  function stats(){const m=me(),live=m.last===ymd(new Date())||m.last===dayBefore();return {xp:m.xp,streak:live?m.streak:0,today:m.last===ymd(new Date()),days:m.days}}
   /* Pictures are in teach-pics.js; the screens and games in teach-play.js. */
   const pic=(name,o)=>U.pic?U.pic(name,o):"";
 
@@ -46,7 +48,7 @@
   /* Maths and English: the same style, for every course, when switched on in the profile. No off-the-job time. */
   /* Maths and English come from teach-maths.js and teach-english.js (Functional Skills Level 2, by area). */
   const FS=[];
-  const profile=()=>{try{return JSON.parse(localStorage.getItem("evia7-profile")||"{}")||{}}catch(_){return {}}};
+  const profile=()=>window.eviaData.learner();
   /* Trade units for the course, then maths and English if they're switched on in the profile. */
   const EXT=T;
   if(EXT.fs&&EXT.fs.length)FS.splice(0,FS.length,...EXT.fs);
@@ -310,7 +312,7 @@
   function confidence(){
     const qs=(typeof confidenceQuestions==="function"?confidenceQuestions():[]).map(q=>({area:q[0],question:q[1]}));
     if(!qs.length)return;
-    const hist=(()=>{try{return JSON.parse(localStorage.getItem("evia7-confidence")||"[]")}catch(_){return []}})().filter(x=>x&&x.course===course&&Array.isArray(x.scores));
+    const hist=window.eviaData.list("confidence",{course});
     const prev=new Map();hist.forEach(h=>h.scores.forEach(x=>prev.set(x.area,x)));
     const picks=new Map();let i=0;
     shell("Confidence check");

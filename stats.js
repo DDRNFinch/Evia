@@ -33,17 +33,17 @@
     const checks=coach.checkUnit?a.units.filter(u=>u.started&&prompts[u.name]).map(u=>coach.checkUnit(u,prompts)).filter(c=>c.terms.length):[];
     const coverage=checks.length?Math.round(checks.reduce((n,c)=>n+c.covered.length/c.terms.length,0)/checks.length*100):null;
     /* Tests saved by review.js. */
-    const tests=readJson("evia7-test-results",[]).filter(t=>t&&t.course===course);
+    const tests=window.eviaData.list("tests").filter(t=>t&&t.course===course);
     const byType={};
-    tests.forEach(t=>{const k=t.type;if(!byType[k])byType[k]={type:k,name:(k==="epa"&&(window.eviaNvq&&window.eviaNvq.on())?"Knowledge test":TEST_NAMES[k])||k,count:0,best:0,latest:null};const s=byType[k];s.count++;s.best=Math.max(s.best,testPct(t));if(!s.latest||Date.parse(t.savedAt)>Date.parse(s.latest.savedAt))s.latest=t});
+    tests.forEach(t=>{const k=t.type;if(!byType[k])byType[k]={type:k,name:(k==="epa"&&(window.eviaNvq&&window.eviaNvq.on())?"Knowledge test":TEST_NAMES[k])||k,count:0,best:0,latest:null};const s=byType[k];s.count++;s.best=Math.max(s.best,testPct(t));if(!s.latest||Date.parse(t.takenAt)>Date.parse(s.latest.takenAt))s.latest=t});
     /* Confidence: the learner's own rating. 1–2 = needs practice, 3–4 = confident. */
-    const sessions=readJson("evia7-confidence",[]).filter(x=>x&&x.course===course&&Array.isArray(x.scores)&&x.scores.length);
+    const sessions=window.eviaData.list("confidence").filter(x=>x&&x.course===course&&Array.isArray(x.scores)&&x.scores.length);
     const lastConf=sessions[sessions.length-1]||null;
     const latestByArea=new Map();
     sessions.forEach(sess=>sess.scores.forEach(sc=>latestByArea.set(sc.area,sc.score)));
     const practise=[...latestByArea].filter(([,v])=>v<=2).map(([k])=>k);
     const confident=[...latestByArea].filter(([,v])=>v>=3).map(([k])=>k);
-    const p=readJson("evia7-profile",{});
+    const p=window.eviaData.learner();
     return {
       a,now,packs:unitEntries.length,allPacks:entries.length,
       lastUpload:a.lastEntry?entryTime(a.lastEntry):null,daysSince:a.daysSince,
@@ -53,8 +53,8 @@
       unitsLeft,weeksLeft,weeksPerUnit:weeksLeft!=null&&unitsLeft?weeksLeft/unitsLeft:null,
       coverage,checks,avgPhotos:unitEntries.length?unitEntries.reduce((n,e)=>n+photoCount(e),0)/unitEntries.length:null,
       tests:Object.values(byType),testCount:tests.length,bestTest:tests.reduce((n,t)=>Math.max(n,testPct(t)),0),
-      lastTestAt:type=>{const s=byType[type];return s&&s.latest?Date.parse(s.latest.savedAt):null},
-      confidence:{last:lastConf?Date.parse(lastConf.startedAt||lastConf.savedAt||0)||null:null,practise,confident,sessions:sessions.length,scores:[...latestByArea].map(([area,score])=>({area,score}))},
+      lastTestAt:type=>{const s=byType[type];return s&&s.latest?Date.parse(s.latest.takenAt):null},
+      confidence:{last:lastConf?Date.parse(lastConf.takenAt||0)||null:null,practise,confident,sessions:sessions.length,scores:[...latestByArea].map(([area,score])=>({area,score}))},
       maths:!!p.mathsEnabled,english:!!p.englishEnabled,
       ppeDone:entries.some(e=>e.u===PPE_UNIT),
       scenarios:window.eviaScenarios?window.eviaScenarios.progress():{done:0,total:0,last:null,topicsDone:0}
@@ -120,7 +120,7 @@
     /* Targets and reviews */
     const T=window.eviaTargets,targets=T?T.mine():[],overdue=targets.filter(t=>!t.done&&new Date(t.due+"T23:59:59").getTime()<s.now);
     if(overdue.length)list.push({id:"target-overdue",text:"Your target “"+overdue[0].title+"” is past its date. Want to take a look?",action:{label:"My targets",kind:"targets"}});
-    const reviews=readJson("evia7-progress-reviews",[]).filter(r=>r&&r.course===course),lastReview=reviews.length?Date.parse(reviews[reviews.length-1].date):null;
+    const reviews=window.eviaData.list("reviews",{course}).map(r=>r.detail),lastReview=reviews.length?Date.parse(reviews[reviews.length-1].date):null;
     const rd=window.eviaReviewDue?window.eviaReviewDue():null,dueTxt=rd?rd.due.toLocaleDateString("en-GB",{day:"numeric",month:"short"}):"";
     if(rd&&rd.days<=14&&(s.packs>=1||!rd.first))list.push({id:"review",text:rd.days<0?"Your progress review was due on "+dueTxt+". It takes about 3 minutes and sets your next targets.":rd.days===0?"Your progress review is due today. It takes about 3 minutes and sets your next targets.":"Your next progress review is due on "+dueTxt+". It takes about 3 minutes and sets your next targets.",action:{label:"Start a review",kind:"review"}});
     else if(!rd&&s.packs>=2&&(lastReview==null||daysAgo(lastReview)>70))list.push({id:"review",text:lastReview?"It’s been over 10 weeks since your last progress review. It takes about 3 minutes and sets your next targets.":"Ready for your first progress review? It takes about 3 minutes and sets your targets.",action:{label:"Start a review",kind:"review"}});
@@ -180,7 +180,7 @@
   /* Learning tab: one number per thing, the detail one tap away. */
   function tilesHtml(s){
     const nvq=window.eviaNvq&&window.eviaNvq.on(),ach=achievements(s),sp=s.scenarios;
-    const last=s.tests.map(t=>t.latest).filter(Boolean).sort((x,y)=>Date.parse(y.savedAt||0)-Date.parse(x.savedAt||0))[0];
+    const last=s.tests.map(t=>t.latest).filter(Boolean).sort((x,y)=>Date.parse(y.takenAt||0)-Date.parse(x.takenAt||0))[0];
     const lastPct=last?(typeof last.pct==="number"?last.pct:Math.round((last.score||0)/(last.total||1)*100)):null;
     const low=s.confidence.scores.filter(x=>x.score<=2).length;
     const tasks=((window.EVIA_PRACTICE_TASKS||{})[course]||[]).length,picks=window.eviaPractice?window.eviaPractice.suggestTasks(1):[];

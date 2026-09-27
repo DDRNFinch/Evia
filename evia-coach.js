@@ -92,7 +92,7 @@
     /* Runs as its own full-screen flow in the Teach me style (teach.js). */
     if(qs.length&&window.eviaTeach&&window.eviaTeach.confidence){k.say("Let’s check your confidence, one skill at a time.");setTimeout(()=>{k.closeChat();setTimeout(window.eviaTeach.confidence,80)},700);return}
     if(!qs.length){k.say("I don’t have a skills list for your course yet.");k.replies([{label:"Something else",run:k.somethingElse}]);return}
-    const prev=new Map();readJson("evia7-confidence",[]).filter(x=>x&&x.course===course&&Array.isArray(x.scores)).forEach(s=>s.scores.forEach(x=>prev.set(x.area,x.score)));
+    const prev=new Map();window.eviaData.list("confidence").filter(x=>x&&x.course===course&&Array.isArray(x.scores)).forEach(s=>s.scores.forEach(x=>prev.set(x.area,x.score)));
     k.say("Be honest, there are no wrong answers. I’ll ask about "+qs.length+" skills: slide each one to where you are now."+(prev.size?" The faint dot shows where you were last time.":"")+" It takes about two minutes.");
     const scores=[];let i=0;
     const ask=()=>{
@@ -311,7 +311,7 @@
     const T=window.eviaTeach,st=T&&T.stats?T.stats():{days:{}},sum=T&&T.summary?T.summary():{done:0,total:0};
     const recent=Object.keys(st.days||{}).some(d=>Date.now()-Date.parse(d)<8*864e5);
     add("teach","Teach me",recent,sum.done+" of "+sum.total+" lessons done"+(recent?", learning this week":", nothing this week"));
-    const tests=readJson("evia7-test-results",[]).filter(t=>t&&t.course===course&&(t.type==="epa")),lt=tests[tests.length-1];
+    const tests=window.eviaData.list("tests").filter(t=>t&&t.course===course&&(t.type==="epa")),lt=tests[tests.length-1];
     add("tests",nvqOn()?"Knowledge tests":"EPA practice",!!lt&&lt.pct>=70,lt?"Last score "+lt.pct+"%"+(lt.pct>=70?"":" (aim for 70%)"):"No practice yet");
     const TG=window.eviaTargets,tg=TG?TG.mine():[],open=tg.filter(t=>!t.done),late=open.filter(t=>t.due&&Date.parse(t.due)<Date.now());
     add("targets","Targets",tg.length>0&&!late.length,!tg.length?"None set yet":tg.length-open.length+" of "+tg.length+" done"+(late.length?", "+late.length+" overdue":""));
@@ -324,7 +324,7 @@
     if(window.eviaMood)window.eviaMood(work.length<=2?"happy":"think");
     k.say(!work.length?"Everything looks good. Brilliant.":good.length?"<strong>"+good.length+"</strong> area"+(good.length===1?" looks":"s look")+" good and <strong>"+work.length+"</strong> need"+(work.length===1?"s":"")+" work.":"Every area needs a bit of work. Let’s take them one at a time.");
     k.widget('<div class="qr">'+list.map(x=>'<div class="qr-row '+(x.ok?"ok":"no")+'"><span class="qr-ic" aria-hidden="true">'+(x.ok?"✓":"!")+'</span><span><strong>'+esc(x.title)+'</strong><small>'+esc(x.text)+'</small></span></div>').join("")+'</div>');
-    k.replies(work.slice(0,4).map((x,i)=>({label:"Open "+x.title,primary:!i,run:()=>x.id==="teach"?(k.closeChat(),setTimeout(()=>nav("teach"),60)):openProgress(x.id==="tests"&&!readJson("evia7-test-results",[]).some(t=>t&&t.course===course)?"tests":x.id)})).concat([{label:"Something else",run:k.somethingElse}]));
+    k.replies(work.slice(0,4).map((x,i)=>({label:"Open "+x.title,primary:!i,run:()=>x.id==="teach"?(k.closeChat(),setTimeout(()=>nav("teach"),60)):openProgress(x.id==="tests"&&!window.eviaData.list("tests").some(t=>t&&t.course===course)?"tests":x.id)})).concat([{label:"Something else",run:k.somethingElse}]));
   }
 
   /* ---------- Show targets: what's done, what's left, and the most urgent one to do now ---------- */

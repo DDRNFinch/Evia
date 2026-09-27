@@ -120,8 +120,8 @@
     const counts=new Map(),add=t=>{if(t>0){const d=dayStart(t);counts.set(d,(counts.get(d)||0)+1)}};
     a.entries.forEach(e=>add(entryTime(e)));hours.forEach(x=>add(Number(x.createdAt)));
     try{supportingMeta().filter(x=>x.course===course).forEach(x=>add(Date.parse(x.createdAt||x.addedAt)||Number(x.createdAt)))}catch(_){}
-    const tests=readJson("evia7-test-results",[]).filter(t=>t&&t.course===course).sort((x,y)=>Date.parse(x.savedAt)-Date.parse(y.savedAt));
-    const sessions=readJson("evia7-confidence",[]).filter(x=>x&&x.course===course&&Array.isArray(x.scores)&&x.scores.length);
+    const tests=window.eviaData.list("tests").filter(t=>t.course===course).sort((x,y)=>Date.parse(x.takenAt)-Date.parse(y.takenAt));
+    const sessions=window.eviaData.list("confidence").filter(x=>x&&x.course===course&&Array.isArray(x.scores)&&x.scores.length);
     return {S,a,verdict,otjWeeks,counts,tests,sessions};
   }
 
@@ -230,7 +230,7 @@
     }
     const {S,a,verdict}=D,T=term();
     if(id==="where"){
-      const p=readJson("evia7-profile",{}),rd=window.eviaReviewDue&&window.eviaReviewDue();
+      const p=window.eviaData.learner(),rd=window.eviaReviewDue&&window.eviaReviewDue();
       const el=sheet("MY PROGRESS","Where you are",
         '<div class="pv-deep-hero">'+num(a.ksbPct,"%")+'<span>of '+esc(T.many)+' have evidence</span></div>'+timeline(a.timePct,a.ksbPct,true)+
         '<div class="pv-stats">'+

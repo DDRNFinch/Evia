@@ -67,7 +67,7 @@ function otjEntriesForBatch(batch){
  return hours.filter(x=>ids.has(x.id));
 }
 function buildOTJPrintWindow(entries,title,downloadedAt){
- const p=JSON.parse(localStorage.getItem("evia7-profile")||"{}");
+ const p=window.eviaData.learner();
  const learner=p.name||"Apprentice";
  const total=entries.reduce((a,x)=>a+Number(x.n||0),0);
  const w=window.open("","_blank");
@@ -366,10 +366,7 @@ function openSavedReviews(){
    const id=b.getAttribute("data-review-id");
    if(window.eviaShowReview)window.eviaShowReview(id);
  });
-}function confidenceHistory(){
- try{return JSON.parse(localStorage.getItem("evia7-confidence")||"[]")}catch(_){return[]}
-}
-function saveConfidenceHistory(history){localStorage.setItem("evia7-confidence",JSON.stringify(history))}
+}function confidenceHistory(){return window.eviaData.list("confidence")}
 function confidenceQuestions(){
  const banks={
   bricklayer:[

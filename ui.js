@@ -6,7 +6,7 @@
   const readJson=(k,f)=>{try{const v=JSON.parse(localStorage.getItem(k)||"null");return v??f}catch(_){return f}};
   const pick=list=>list[Math.floor(Math.random()*list.length)];
   const entryTime=e=>{const t=Date.parse(e.savedAt||"");if(!isNaN(t))return t;const m=String(e.d||"").match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);return m?new Date(+m[3],m[2]-1,+m[1]).getTime():0};
-  const firstName=()=>String(readJson("evia7-profile",{}).name||"").trim().split(/\s+/)[0]||"";
+  const firstName=()=>String(window.eviaData.learner().name||"").trim().split(/\s+/)[0]||"";
   const partOfDay=()=>{const h=new Date().getHours();return h<12?"Morning":h<18?"Afternoon":"Evening"};
   const icon=(d,size=20)=>'<svg width="'+size+'" height="'+size+'" viewBox="0 0 24 24" aria-hidden="true">'+d+'</svg>';
   const ICONS={
@@ -41,7 +41,7 @@
     const drafts=Object.values(packs).filter(p=>p&&p.course===course&&((p.photos||[]).length||String(p.write||"").trim())).map(p=>unitInfo.find(u=>u.name===p.unit)).filter(Boolean);
     const lastEntry=entries.slice().sort((a,b)=>entryTime(b)-entryTime(a))[0]||null;
     const daysSince=lastEntry?Math.floor((Date.now()-entryTime(lastEntry))/864e5):null;
-    const p=readJson("evia7-profile",{});
+    const p=window.eviaData.learner();
     let timePct=null,endDate=null;
     if(p.start&&p.end){
       const s=new Date(p.start+"T00:00:00").getTime(),e=new Date(p.end+"T23:59:59").getTime();
