@@ -28,7 +28,7 @@
   /* ---------- Shared analysis used by Home and the coach ---------- */
   function analyse(){
     const units=data().u,entries=evidence.filter(e=>e.c===course);
-    const evidenced=window.eviaNvq&&window.eviaNvq.on()?window.eviaNvq.evidenced():new Set(entries.flatMap(e=>Array.isArray(e.k)?e.k:[]));
+    const evidenced=window.eviaNvq&&window.eviaNvq.on()?window.eviaNvq.evidenced():new Set(entries.flatMap(e=>Array.isArray(e.k)?e.k:[]).concat(inductionKsbs()));
     const all=allK(),met=all.filter(x=>evidenced.has(x[0])).length;
     const ksbPct=all.length?Math.round(met/all.length*100):0;
     const unitInfo=units.map((u,i)=>{

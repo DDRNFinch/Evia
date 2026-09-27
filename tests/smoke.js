@@ -581,6 +581,39 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     const tb=await page.evaluate(()=>({course,nvq:!!window.eviaNvq,groups:document.querySelectorAll(".nvq-group").length,problems:window.eviaErrors.list().filter(x=>x.kind!=="reported").map(x=>x.message)}));
     check("A Trowel L3 learner opens straight onto the NVQ course, with nothing going wrong",tb.course==="trowel3"&&tb.nvq&&tb.groups>=4&&!tb.problems.length,JSON.stringify(tb));
 
+    // First run: the course comes from Nisia's enrolment (?course= stands in), then a Teach me style welcome and PPE
+    // unit (saved to Supporting evidence, linked to its KSBs), then a short tap-through tour ending in the profile.
+    {
+      const c2=await browser.newContext({...devices["Pixel 7"],serviceWorkers:"block"}),p2=await c2.newPage(),e2=[];p2.on("pageerror",e=>e2.push(e.message));
+      await p2.goto(url+"manifest.json");
+      await p2.evaluate(()=>{localStorage.clear();["evia7-theme-picked","evia7-shape-picked"].forEach(k=>localStorage.setItem(k,"1"))});
+      await p2.goto(url+"?course=site&demo");await p2.waitForTimeout(2500);
+      const ob={};
+      ob.welcome=await p2.evaluate(()=>/You’re on Site Carpenter/.test((document.getElementById("ob-lesson")||{}).textContent||"")&&!document.getElementById("evia-onboard-course"));
+      await p2.click('#ob-lesson [data-ob="0"]');await p2.waitForTimeout(500);
+      const jpg=await p2.evaluate(()=>{const c=document.createElement("canvas");c.width=60;c.height=80;const x=c.getContext("2d");x.fillStyle="#c77";x.fillRect(0,0,60,80);return c.toDataURL("image/jpeg").split(",")[1]});
+      await p2.setInputFiles("#ob-gallery",{name:"ppe.jpg",mimeType:"image/jpeg",buffer:Buffer.from(jpg,"base64")});await p2.waitForTimeout(700);
+      ob.photo=await p2.evaluate(()=>!!document.querySelector(".ob-photo img")&&!document.querySelector('#ob-lesson [data-ob="1"]').disabled);
+      await p2.click('#ob-lesson [data-ob="1"]');await p2.waitForTimeout(400);
+      await p2.fill("#write","My hard hat protects my head from falling objects.");
+      await p2.click('#ob-lesson [data-ob="1"]');await p2.waitForTimeout(2500);
+      Object.assign(ob,await p2.evaluate(()=>{const s=window.eviaData.list("supporting");return {saved:/Supporting evidence/.test(document.getElementById("ob-lesson").textContent),
+        supporting:s.length===1&&s[0].title==="PPE induction"&&s[0].mime==="application/pdf"&&s[0].induction&&s[0].criteria.join()==="K2,S2",notUnitEvidence:!evidence.length}}));
+      await p2.click('#ob-lesson [data-ob="0"]');await p2.waitForTimeout(1000);
+      let steps=0;
+      for(let i=0;i<14;i++){
+        const st=await p2.evaluate(()=>{const c=document.querySelector(".ob-card");if(document.querySelector(".profile-sheet .ob-inline"))return "profile";if(!c)return "none";const n=c.querySelector(".ob-next");if(n){n.click();return "next"}const t=document.querySelector(".evia-guide-target");if(t){t.click();return "tap"}return "stuck"});
+        if(st==="profile"||st==="none"||st==="stuck")break;steps++;await p2.waitForTimeout(1100);
+      }
+      ob.tour=steps>=9&&await p2.evaluate(()=>!!document.querySelector(".profile-sheet .ob-inline"));
+      await p2.evaluate(()=>document.getElementById("save-profile").click());await p2.waitForTimeout(1200);
+      ob.done=await p2.evaluate(()=>/"done"/.test(localStorage.getItem("evia7-onboarding")));
+      ob.ticked=await p2.evaluate(()=>{try{return window.eviaStats.compute().a.met>=2}catch(_){return false}});
+      ob.noErrors=!e2.length&&await p2.evaluate(()=>!window.eviaErrors.list().filter(x=>x.kind!=="reported").length);
+      check("First run: course from Nisia, a Teach me style welcome and PPE unit saved to Supporting evidence (ticking K2 and S2), then a short tap-through tour",Object.values(ob).every(Boolean),JSON.stringify(ob)+" "+e2.join(" | "));
+      await c2.close();
+    }
+
     check("No script errors",!errors.length,errors.join(" | "));
   }catch(e){check("Test run finished",false,e.message)}
   await browser.close();server.close();

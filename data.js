@@ -68,7 +68,7 @@
       const list=typeof supportingMeta==="function"?supportingMeta():readJson("evia7-supporting-evidence",[]);
       return (list||[]).filter(Boolean).map(x=>base(x.id,{course:x.course||"",title:x.title||x.filename||"",type:x.witness&&x.witness.name?"witness":x.type||"file",
         fileId:x.id,mime:x.mime||"",size:x.size||0,filename:x.filename||"",witness:x.witness&&x.witness.name?{name:x.witness.name,role:x.witness.role||""}:null,
-        nvqUnit:x.nvqUnit||null,criteria:(x.ksbs||x.criteria||[]).slice(),createdAt:iso(x.addedAt),updatedAt:iso(x.updatedAt||x.addedAt),deletedAt:null,submission:submission("sup:"+x.id)}));
+        nvqUnit:x.nvqUnit||null,criteria:(x.ksbs||x.criteria||[]).slice(),induction:!!x.induction,createdAt:iso(x.addedAt),updatedAt:iso(x.updatedAt||x.addedAt),deletedAt:null,submission:submission("sup:"+x.id)}));
     },
     nvqAnswers(){
       const all=readJson("evia7-nvq-answers",{})||{},nvq=(window.EVIA_NVQ||{}).id||"trowel3";   /* the only NVQ; its pack may not be loaded */
@@ -187,6 +187,8 @@
         ["title","type","mime","filename","size"].forEach(k=>{if(r[k]!=null)rec[k]=r[k]});
         if(r.witness!==undefined){if(r.witness&&r.witness.name)rec.witness={name:r.witness.name,role:r.witness.role||""};else delete rec.witness}
         if(r.nvqUnit!==undefined){if(r.nvqUnit){rec.nvqUnit=r.nvqUnit;rec.ksbs=(r.criteria||[]).slice()}else{delete rec.nvqUnit;rec.ksbs=[]}}
+        /* The one-time PPE induction (onboarding.js) is linked to its KSBs on any course, and ticks them off. */
+        if(r.induction){rec.induction=true;rec.ksbs=(r.criteria||[]).slice()}
         if(x)rec.updatedAt=new Date().toISOString();else list.push(rec);
         writeJson("evia7-supporting-evidence",list.slice(-500));return rec.id;
       },
@@ -321,9 +323,19 @@
   /* Everything, in the new shape: for Nisia's first upload, and for checking the move worked. */
   const snapshot=()=>{const o={v:V,learnerId:learnerId(),at:new Date().toISOString()};COLLECTIONS.forEach(c=>{o[c]=list(c)});return o};
 
+  /* The learner's enrolment, set by Nisia when they're signed up: {course, name, start, end, nvqOptional}. Nisia saves
+     it with enrol() at sign-in; until Nisia is connected, ?course=bricklayer in the address does the same for testing.
+     Onboarding takes the course from here, so the learner doesn't pick it. */
+  const ENROL_KEY="evia7-enrolment";
+  function enrolment(){
+    let e=readJson(ENROL_KEY,null);
+    try{const q=new URLSearchParams(location.search).get("course");if(q&&!(e&&e.course))e=Object.assign({},e,{course:q})}catch(_){}
+    return e&&e.course&&(!window.eviaPacks||window.eviaPacks.COURSES.includes(e.course))?e:null;
+  }
+  const enrol=e=>writeJson(ENROL_KEY,Object.assign({},e,{at:new Date().toISOString()}));
   /* The learner's own record, for screens that only need a name or dates. */
   const learner=()=>R.learner()[0];
 
-  window.eviaData={V,COLLECTIONS,list,get,put,remove,replace,files,learner,learnerId,iso,unitId,changesSince,markSynced,snapshot,
+  window.eviaData={V,COLLECTIONS,list,get,put,remove,replace,files,learner,enrolment,enrol,learnerId,iso,unitId,changesSince,markSynced,snapshot,
     on(ev,fn){if(ev==="change"&&typeof fn==="function")listeners.push(fn);return()=>{const i=listeners.indexOf(fn);if(i>=0)listeners.splice(i,1)}}};
 })();

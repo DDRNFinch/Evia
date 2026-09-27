@@ -215,7 +215,7 @@
     const totalPhotos=entries.reduce((n,e)=>n+(Array.isArray(e.photoIds)?e.photoIds.length:(Number.isFinite(Number(e.photoCount))?Number(e.photoCount):(Array.isArray(e.p)?e.p.length:0))),0);
     const totalWords=entries.reduce((n,e)=>n+String(e.w||"").trim().split(/\s+/).filter(Boolean).length,0);
     const allKsb=new Map(); units.forEach(u=>u[1].forEach(k=>allKsb.set(code(k),text(k))));
-    const captured=new Set(entries.flatMap(e=>Array.isArray(e.k)?e.k:[]));
+    const captured=new Set(entries.flatMap(e=>Array.isArray(e.k)?e.k:[]).concat(inductionKsbs()));
     const groups={S:0,K:0,B:0,capturedS:0,capturedK:0,capturedB:0};
     allKsb.forEach((_,k)=>{if(groups[k[0]]!==undefined)groups[k[0]]++});
     captured.forEach(k=>{if(groups["captured"+k[0]]!==undefined)groups["captured"+k[0]]++});
@@ -239,7 +239,7 @@
     return '<div class="target-item '+status+'"><div><strong>'+escLocal(t.title)+'</strong><p>'+escLocal(t.reason)+'</p><small>Due '+escLocal(new Date(t.deadline+"T00:00:00").toLocaleDateString("en-GB"))+' · '+label+'</small></div><b>'+progress+'%</b></div>';
   }
   function reviewKsbFollowUp(metrics){
-    const captured=new Set(evidence.filter(e=>e.c===course).flatMap(e=>Array.isArray(e.k)?e.k:[]));
+    const captured=new Set(evidence.filter(e=>e.c===course).flatMap(e=>Array.isArray(e.k)?e.k:[]).concat(inductionKsbs()));
     const areas=[
       {key:"Teamwork",question:"Can you describe a recent time when you worked effectively as part of a team?",match:k=>/^B5$/i.test(code(k))||/team[- ]?focus|team work|teamwork|team goals|wider build team/i.test(text(k))},
       {key:"Equality, diversity and inclusion",question:"Can you describe a recent example of treating people fairly, respectfully and inclusively at work?",match:k=>/^B3$/i.test(code(k))||/inclusive|inclusion|divers|equity/i.test(text(k))},

@@ -1,10 +1,10 @@
-/* Evia7 first-run demo: choose a course, complete the one-time PPE unit, then a guided tour of Progress, My course, Teach me, Rewards, Evia and Profile. */
+/* Evia7 first-run tour, in the Teach me style: short steps, one line each, about a minute.
+   The course comes from Nisia (eviaData.enrolment()); a welcome, the one-time PPE unit (saved to Supporting evidence,
+   linked to its KSBs), then "tap this" steps round My course, Progress, Teach me, Rewards, Evia and the profile. */
 (function(){
   const KEY="evia7-onboarding";
-  const PPE_UNIT="Personal protective equipment";
   const nvqOn=()=>!!(window.eviaNvq&&window.eviaNvq.on());
   const ppeCodes=()=>nvqOn()?["102.1.2","102.1.4"]:["K2","S2"]; /* NVQ: using H&S control equipment, and why and when to use it */
-  const MAX_PHOTOS=4;
   const COURSES=[
     {key:"bricklayer",label:"Bricklayer",sub:"Brickwork and blockwork",
       ic:'<svg viewBox="0 0 24 24"><rect x="3" y="13.5" width="8" height="5.5" rx="1"/><rect x="13" y="13.5" width="8" height="5.5" rx="1"/><rect x="8" y="6.5" width="8" height="5.5" rx="1"/></svg>'},
@@ -51,15 +51,8 @@
       html body .ew-evia{width:100px;height:100px;border-width:6px;background:#fffdfa;box-shadow:0 12px 30px rgba(16,24,40,.12)}
       html body .ew-evia .evia-face{gap:12px}
       html body .ew-evia .evia-face i{width:18px!important;height:24px!important;border-width:4.5px!important;animation:ewBlink 4.2s infinite}
-      .ew-wave{position:absolute;right:-16px;top:-2px;font-size:28px;transform-origin:70% 80%;animation:ewWave 2.2s ease-in-out .6s 2}
       .ew-say{position:relative;z-index:1;display:inline-block;margin:16px auto 0;padding:9px 16px;border-radius:16px;background:#fff;color:#172033;font-size:14.5px;font-weight:700;border:1px solid rgba(16,24,40,.07);box-shadow:0 6px 18px rgba(16,24,40,.07)}
       .ew-say::before{content:"";position:absolute;left:50%;top:-6px;width:12px;height:12px;margin-left:-6px;background:#fff;transform:rotate(45deg);border-left:1px solid rgba(16,24,40,.07);border-top:1px solid rgba(16,24,40,.07);border-radius:2px 0 0 0}
-      .ew-title{position:relative;z-index:1;margin:18px 0 8px;font-size:30px;line-height:1.12;font-weight:800;letter-spacing:-.035em;color:#172033}
-      .ew-title span{background:linear-gradient(transparent 60%,color-mix(in srgb,var(--yellow) 45%,transparent) 60%);padding:0 2px}
-      .ew-sub{position:relative;z-index:1;margin:0 auto;max-width:330px;font-size:14.5px;line-height:1.5;color:#667085}
-      .ew-chips{position:relative;z-index:1;display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:18px}
-      .ew-chip{display:inline-flex;align-items:center;gap:6px;padding:7px 12px 7px 9px;border-radius:999px;background:#fff;border:1px solid rgba(16,24,40,.08);box-shadow:0 1px 2px rgba(16,24,40,.04);font-size:12.5px;font-weight:650;color:#344054}
-      .ew-chip svg{width:16px;height:16px;fill:none;stroke:var(--yellow-ink);stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
       .ew-pick{position:relative;z-index:2;max-width:440px;margin:-18px auto 0;padding:8px 18px calc(28px + env(safe-area-inset-bottom));background:transparent;text-align:left}
       .ew-pick h2{margin:0 4px 4px;font-size:22px;letter-spacing:-.02em;color:#172033}
       .ew-pick>p{margin:0 4px 16px;font-size:13.5px;color:#7b8797;line-height:1.45}
@@ -70,98 +63,44 @@
       @keyframes ewBlink{0%,46%,50%,100%{transform:scaleY(1)}48%{transform:scaleY(.1)}}
       @media (prefers-reduced-motion:reduce){.ew-evia-wrap,.ew-wave,html body .ew-evia .evia-face i{animation:none}.ew-in{animation:none;opacity:1;transform:none}}
 
+
       body.evia-onboarding .bottom-nav,body.evia-onboarding .evia-fab,body.evia-onboarding #profile-btn{pointer-events:none}
       body.evia-onboarding .bottom-nav{opacity:.55}
       body.evia-onboarding #screen{padding-bottom:230px}
-
-      .evia-guide{position:fixed;z-index:60;left:50%;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 84px);width:min(520px,calc(100% - 32px));transform:translate(-50%,10px);opacity:0;background:#fff;border:1px solid #e9edf2;border-radius:22px;padding:14px 16px;box-shadow:0 14px 38px rgba(16,24,40,.16);transition:opacity .25s ease,transform .25s ease}
-      .evia-guide.show{opacity:1;transform:translate(-50%,0)}
-      .evia-guide:after{content:"";position:absolute;left:50%;bottom:-9px;width:18px;height:18px;background:#fff;border-right:1px solid #e9edf2;border-bottom:1px solid #e9edf2;transform:translateX(-50%) rotate(45deg);border-radius:3px}
-      .evia-guide-kicker,.evia-guide-inline .evia-guide-kicker{font-size:10px;letter-spacing:.14em;color:var(--yellow-ink);font-weight:800;margin-bottom:5px}
-      .evia-guide-text{font-size:14px;line-height:1.5;color:#273244}
-      .evia-guide-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px}
-      .evia-guide-top .evia-guide-kicker{margin-bottom:0}
-      .evia-guide-skip{border:0;background:none;min-height:36px;padding:6px 2px 6px 10px;font:inherit;font-size:12.5px;font-weight:700;color:#667085;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
-      .evia-guide-actions{display:flex;justify-content:flex-end;margin-top:10px}
-      .evia-guide-actions button{min-height:40px;padding:8px 18px;border-radius:13px;background:#1b2435;color:#fff;font-weight:700;font-size:13px;cursor:pointer}
-      body.evia-keyboard-editing .evia-guide{opacity:0;pointer-events:none}
-      .evia-guide-inline{margin:4px 0 16px;padding:14px 16px;border-radius:18px;background:var(--soft);border:1px solid var(--yellow-line)}
-      .evia-guide-inline .evia-guide-text{font-size:13.5px}
-
+      /* The thing to tap stays tappable, and stands out. */
+      body.evia-onboarding .evia-guide-target{pointer-events:auto;opacity:1}
       .evia-guide-target{scroll-margin-top:90px;outline:3px solid var(--yellow)!important;outline-offset:4px;border-radius:14px;animation:eviaGuidePulse 1.6s ease-in-out infinite}
       @keyframes eviaGuidePulse{0%,100%{outline-offset:3px}50%{outline-offset:7px}}
+      body.evia-onboarding .bottom-nav:has(.evia-guide-target){opacity:1}
+      body.evia-onboarding .bottom-nav:has(.evia-guide-target) button:not(.evia-guide-target){opacity:.45}
 
-      .evia-ppe-ksbs{display:grid;gap:8px;margin-top:14px}
-      .evia-ppe-ksb{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid #e9edf2;border-radius:14px;background:#fff}
-      .evia-ppe-ksb .code{flex:0 0 auto}
-      .evia-ppe-ksb span:last-child{font-size:12px;line-height:1.45;color:#475467}
-      .evia-ppe-page .pack-actions{grid-template-columns:1fr}
-      @media(prefers-reduced-motion:reduce){.evia-guide-target{animation:none}.evia-guide{transition:none}}
+      /* Teach me style screens (the welcome and the PPE unit) */
+      .ob-lesson{z-index:10035}
+      .ob-skip{margin-left:auto;border:0;background:none;min-height:36px;padding:6px 4px;font:inherit;font-size:13px;font-weight:700;color:var(--ui-muted,#667085);cursor:pointer}
+      .ob-lesson .tm-bar strong+.ob-skip{margin-left:0}
+      .ob-body{display:flex;flex-direction:column;gap:14px;max-width:520px;margin:0 auto}
+      .ob-body .tm-hero{padding-top:28px}
+      .ob-body .tm-says p{font-size:16px}
+      .ob-prompts{margin:0 2px;font-size:13px;line-height:1.6;color:var(--ui-muted,#667085)}
+      .ob-photo img{display:block;width:100%;max-height:52vh;object-fit:cover;border-radius:20px;border:1px solid var(--pm-hair,rgba(16,24,40,.08))}
+      .ob-photo-actions{margin-top:4px}
+      .ob-text{width:100%;min-height:150px;box-sizing:border-box;padding:14px 15px;border:1px solid #dfe4ea;border-radius:16px;background:#fff;font:inherit;font-size:15px;line-height:1.5;resize:vertical}
+
+      /* The tour card: one line at a time, above the menu */
+      .ob-card{position:fixed;z-index:10020;left:50%;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 96px);width:min(460px,calc(100% - 28px));transform:translate(-50%,12px);opacity:0;
+        display:flex;flex-direction:column;gap:10px;padding:12px 14px 14px;border-radius:22px;background:#fff;border:1px solid var(--pm-hair,rgba(16,24,40,.08));box-shadow:0 16px 40px rgba(16,24,40,.16);transition:opacity .22s ease,transform .22s ease}
+      .ob-card.show{opacity:1;transform:translate(-50%,0)}
+      .ob-card-top{display:flex;align-items:center;gap:10px}
+      .ob-card-top .tm-prog{height:8px}
+      .ob-card .tm-says p{font-size:15px}
+      .ob-card .ob-next{width:100%}
+      body.evia-keyboard-editing .ob-card{opacity:0;pointer-events:none}
+      .ob-inline{margin:4px 0 14px;padding:12px 14px;border-radius:18px;background:var(--soft);border:1px solid var(--yellow-line)}
+      @media(prefers-reduced-motion:reduce){.evia-guide-target{animation:none}.ob-card{transition:none}}
     `;
     document.head.appendChild(style);
   }
 
-  /* ---------- Evia speech bubble ---------- */
-  const SKIP_BUTTON='<button type="button" class="evia-guide-skip">Skip demo</button>';
-  let guideEl=null;
-  function clearTargets(){document.querySelectorAll(".evia-guide-target").forEach(el=>el.classList.remove("evia-guide-target"))}
-  function hideGuide(){
-    clearTargets();
-    if(guideEl){const el=guideEl;guideEl=null;el.classList.remove("show");setTimeout(()=>el.remove(),260)}
-  }
-  function guide(html,opts={}){
-    injectStyles();
-    clearTargets();
-    if(!guideEl){
-      guideEl=document.createElement("div");
-      guideEl.className="evia-guide";
-      guideEl.setAttribute("role","status");
-      guideEl.setAttribute("aria-live","polite");
-      document.body.appendChild(guideEl);
-      requestAnimationFrame(()=>requestAnimationFrame(()=>guideEl&&guideEl.classList.add("show")));
-    }
-    guideEl.innerHTML='<div class="evia-guide-top"><div class="evia-guide-kicker">EVIA · GETTING STARTED</div>'+SKIP_BUTTON+'</div><div class="evia-guide-text">'+html+'</div>'+
-      (opts.button?'<div class="evia-guide-actions"><button type="button" id="evia-guide-next">'+escHtml(opts.button)+'</button></div>':"");
-    if(opts.button)document.getElementById("evia-guide-next").onclick=opts.onNext;
-    (opts.targets||[]).forEach(el=>el&&el.classList.add("evia-guide-target"));
-  }
-
-  /* ---------- Step 1: choose course ---------- */
-  function showCoursePicker(){
-    injectStyles();
-    const root=document.createElement("div");
-    root.id="evia-onboard-course";
-    root.className="welcome";
-    const I=d=>'<svg viewBox="0 0 24 24" aria-hidden="true">'+d+'</svg>';
-    root.innerHTML='<section class="ew-hero">'+
-        '<div class="ew-evia-wrap ew-in" style="--d:0"><span class="evia-mini ew-evia" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span></div><br>'+
-        '<div class="ew-say ew-in" style="--d:1">Hi, I’m Evia!</div>'+
-        '<h1 class="ew-title ew-in" style="--d:2">Your apprenticeship, <span>sorted</span></h1>'+
-        '<p class="ew-sub ew-in" style="--d:3">I’ll help you build your portfolio, learn your trade and get ready for your end-point assessment.</p>'+
-        '<div class="ew-chips ew-in" style="--d:4">'+
-          '<span class="ew-chip">'+I('<rect x="3" y="6.5" width="18" height="14" rx="3"/><path d="M8 6.5l1.4-2h5.2l1.4 2"/><circle cx="12" cy="13.5" r="3.5"/>')+'Capture evidence</span>'+
-          '<span class="ew-chip">'+I('<path d="M6.5 3h12v15h-12a2 2 0 0 0-2 2V5a2 2 0 0 1 2-2Z"/><path d="M4.5 20a2 2 0 0 0 2 1.5h12V18"/>')+'Learn with games</span>'+
-          '<span class="ew-chip">'+I('<rect x="3.5" y="8.5" width="17" height="4" rx="1"/><path d="M5 12.5v8h14v-8M12 8.5v12"/><path d="M12 8.5C10.5 5 6.8 4.2 6.8 6.4c0 1.6 2.7 2.1 5.2 2.1ZM12 8.5c1.5-3.5 5.2-4.3 5.2-2.1 0 1.6-2.7 2.1-5.2 2.1Z"/>')+'Earn rewards</span>'+
-        '</div></section>'+
-      '<section class="ew-pick"><h2 class="ew-in" style="--d:5">Which course are you on?</h2><p class="ew-in" style="--d:5">I’ll set up your units and everything you need to evidence.</p>'+
-      '<div class="evia-onboard-courses">'+COURSES.filter(c=>window.eviaPacks.COURSES.includes(c.key)).map((c,i)=>
-        '<button type="button" class="evia-onboard-course ew-in" style="--d:'+(6+i)+'" data-onboard-course="'+c.key+'"><span class="evia-onboard-course-dot" aria-hidden="true">'+c.ic+'</span><span class="evia-onboard-course-copy"><strong>'+escHtml(c.label)+'</strong><small>'+escHtml(c.sub)+'</small></span><span class="evia-onboard-course-arrow" aria-hidden="true">›</span></button>'
-      ).join("")+'</div></section>';
-    document.body.appendChild(root);
-    requestAnimationFrame(()=>root.classList.add("visible"));
-    root.querySelectorAll("[data-onboard-course]").forEach(b=>b.onclick=async()=>{
-      /* The course's pack is downloaded first if it isn't on the phone (packs.js). */
-      const k=b.dataset.onboardCourse;b.disabled=true;
-      try{await window.eviaPacks.ensure(k)}catch(err){b.disabled=false;if(typeof showEvidenceToast==="function")showEvidenceToast(err.message,true);return}
-      window.eviaData.put("learner",{course:k});
-      const nvq=nvqOn();
-      writeState(nvq?"optional":"unit");
-      const next=()=>nvq?showOptionalPicker():pickersThen(showPpeUnit);
-      if(window.eviaHandoff)window.eviaHandoff(root,next);else{root.remove();next()}
-    });
-  }
-
-  /* ---------- Step 2: one-time PPE unit ---------- */
   const compressPhoto=file=>new Promise((resolve,reject)=>{
     const url=URL.createObjectURL(file),img=new Image();
     img.onload=()=>{
@@ -174,7 +113,6 @@
     img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error("Photo could not be read"))};
     img.src=url;
   });
-  const blobToDataUrl=blob=>new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(r.error);r.readAsDataURL(blob)});
   function ppeKsbs(){const c=ppeCodes();return allK().filter(x=>c.includes(x[0]))}
 
   /* ---------- NVQ only: choose the optional unit(s) ---------- */
@@ -194,8 +132,8 @@
     root.querySelectorAll(".nvq-opt input").forEach(i=>i.onchange=upd);upd();
     go.onclick=()=>{
       window.eviaNvq.setOptional(window.eviaNvq.readOptional(root));
-      writeState("unit");
-      const next=()=>pickersThen(showPpeUnit);
+      writeState("ppe");
+      const next=()=>pickersThen(startPpe);
       if(window.eviaHandoff)window.eviaHandoff(root,next);else{root.remove();next()}
     };
   }
@@ -206,240 +144,247 @@
     if(!shape&&window.eviaShowShapePicker)window.eviaShowShapePicker(doColour);else doColour();
   }
 
-  function showPpeUnit(){
+  /* ---------- Welcome: the course comes from Nisia ----------
+     Nisia enrols the learner (eviaData.enrolment(): course, name, dates), so they don't pick a course. Until Nisia is
+     connected, the course picker below is the fallback. */
+  const courseName=()=>{try{return C[course].name}catch(_){return ""}};
+  const EVIA_BIG='<span class="tm-evia evia-mini xl" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span>';
+  const EVIA_SM='<span class="tm-evia evia-mini sm" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span>';
+  /* A full screen in the Teach me style: a bar (progress or a title), Evia, the content, and buttons at the bottom. */
+  function lessonScreen(o){
     injectStyles();
-    document.body.classList.add("evia-onboarding");
-    screen="unit";
-    document.querySelectorAll("[data-nav]").forEach(b=>b.classList.remove("active"));
-    const profileBtn=document.getElementById("profile-btn");if(profileBtn)profileBtn.style.display="none";
-    $("#page-title").textContent=PPE_UNIT;
-    const photos=[];
-    $("#screen").innerHTML=
-      '<div class="evidence-pack-page evia-ppe-page">'+
-        '<div class="evidence-heading">'+
-          '<div class="evidence-label">INDUCTION UNIT · ONE TIME ONLY</div>'+
-          '<h2>'+PPE_UNIT+'</h2>'+
-          '<p>Show that you have the right PPE and know how to use it. Take a photo of yourself <strong>wearing your PPE</strong>, then explain what each item is used for.</p>'+
-          '<div class="evia-ppe-ksbs">'+ppeKsbs().map(k=>'<div class="evia-ppe-ksb"><span class="code">'+escHtml(k[0])+'</span><span>'+escHtml(k[1])+'</span></div>').join("")+'</div>'+
-        '</div>'+
-        '<div class="evidence-photo-actions" id="ppe-photo-actions">'+
-          '<label class="evidence-photo-button" for="ppe-camera"><span class="evidence-photo-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="18" height="14" rx="3"></rect><path d="M8 6.5l1.4-2h5.2l1.4 2"></path><circle cx="12" cy="13.5" r="3.5"></circle></svg></span><span>Camera</span><input id="ppe-camera" type="file" accept="image/*" capture="user"></label>'+
-          '<label class="evidence-photo-button" for="ppe-gallery"><span class="evidence-photo-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"></rect><circle cx="8.5" cy="9.5" r="1.6"></circle><path d="M4 16.5l5-5 4 4 3-3 4 4"></path></svg></span><span>Gallery</span><input id="ppe-gallery" type="file" accept="image/*" multiple></label>'+
-        '</div>'+
-        '<div class="evidence-thumbs" id="ppe-photos"></div>'+
-        '<section class="evidence-section">'+
-          '<div class="evidence-section-title">THINGS TO CAPTURE</div>'+
-          '<div class="compact-prompts">you wearing your PPE · hard hat · hi-vis · safety boots · gloves · eye protection · ear protection · dust mask (RPE)</div>'+
-        '</section>'+
-        '<div class="evidence-section-divider"></div>'+
-        '<section class="evidence-section writeup-section">'+
-          '<div class="evidence-section-title">THINGS TO MENTION</div>'+
-          '<div class="compact-prompts">each item of PPE · what it protects you from · when you need to wear it · checking it for damage · storing and replacing it · RPE and dust · site rules</div>'+
-          '<textarea id="write" placeholder="Explain your PPE and what it’s for, e.g. My hard hat protects my head from falling objects…"></textarea>'+
-        '</section>'+
-        '<div class="pack-actions"><button class="primary" id="ppe-submit" type="button" disabled>Submit to Portfolio</button></div>'+
-        '<p class="submit-hint" id="ppe-hint">Add at least one photo and complete the write-up before submitting.</p>'+
-      '</div>';
-    window.scrollTo(0,0);
-    const actions=$("#ppe-photo-actions"),thumbs=$("#ppe-photos"),write=$("#write"),submit=$("#ppe-submit"),hint=$("#ppe-hint");
-    let stage="intro";
-    const ready=()=>photos.length>0&&write.value.trim().length>0;
-    const step=()=>{
-      submit.disabled=!ready();
-      hint.textContent=ready()?"Your evidence is ready to submit.":"Add at least one photo and complete the write-up before submitting.";
-      if(stage==="intro")return;
-      if(!photos.length){
-        stage="photo";
-        guide('First, take a photo of yourself <strong>wearing your PPE</strong> using <strong>Camera</strong>, or upload one from your <strong>Gallery</strong>.',{targets:[actions]});
-      }else if(!write.value.trim()){
-        if(stage!=="write"){stage="write";guide('Great photo! Now use the text box to <strong>explain your PPE</strong> — what each item is and what it protects you from.',{targets:[write]});}
-      }else if(stage!=="submit"){
-        stage="submit";
-        guide('Looking good. When you are happy with your write-up, tap <strong>Submit to Portfolio</strong>.',{targets:[submit]});
-      }
-    };
-    const renderThumbs=()=>{
-      thumbs.innerHTML=photos.map((p,i)=>'<div class="photo-item"><img class="thumb" src="'+p.url+'" alt="PPE evidence photo"><button type="button" class="photo-remove" data-ppe-remove="'+i+'" aria-label="Remove photo">×</button></div>').join("");
-      thumbs.querySelectorAll("[data-ppe-remove]").forEach(b=>b.onclick=()=>{const [p]=photos.splice(+b.dataset.ppeRemove,1);if(p)URL.revokeObjectURL(p.url);renderThumbs();step()});
-    };
-    const addFiles=async files=>{
-      const chosen=[...files].filter(f=>f&&f.size&&/^image\//i.test(f.type)).slice(0,Math.max(0,MAX_PHOTOS-photos.length));
-      if(!chosen.length)return;
-      try{
-        for(const f of chosen){const blob=await compressPhoto(f);photos.push({blob,url:URL.createObjectURL(blob)})}
-      }catch(err){console.error("Evia PPE photo failed",err);alert("That photo could not be added. Please try again.")}
-      renderThumbs();step();
-    };
-    $("#ppe-camera").onchange=e=>{addFiles(e.target.files).finally(()=>e.target.value="")};
-    const camLabel=document.querySelector('label[for="ppe-camera"]');
-    if(camLabel&&window.eviaCamera&&window.eviaCamera.supported())camLabel.onclick=e=>{e.preventDefault();window.eviaCamera.open({title:"Personal protective equipment",prompts:["you wearing your PPE","hard hat","hi-vis","safety boots","gloves","eye protection","ear protection","dust mask (RPE)"],onDone:files=>addFiles(files)})};
-    $("#ppe-gallery").onchange=e=>{addFiles(e.target.files).finally(()=>e.target.value="")};
-    write.oninput=step;
-    let saving=false;
-    submit.onclick=async()=>{
-      if(saving||!ready())return;
-      saving=true;submit.disabled=true;submit.textContent="Saving to Portfolio…";
-      try{
-        const photoIds=[],inline=[];
-        for(const p of photos){
-          if(window.eviaStoreEvidencePhoto)photoIds.push(await window.eviaStoreEvidencePhoto(p.blob));
-          else inline.push(await blobToDataUrl(p.blob));
-        }
-        window.eviaData.put("evidence",{course,unit:PPE_UNIT,text:write.value,ksbs:ppeCodes(),photoIds,inlinePhotos:inline,induction:true});
-        photos.forEach(p=>URL.revokeObjectURL(p.url));
-        writeState("progress");
-        showProgressStep();
-      }catch(err){
-        console.error("Evia PPE submission failed",err);
-        saving=false;submit.disabled=false;submit.textContent="Submit to Portfolio";
-        alert("Evia could not save this evidence to your portfolio. Please try again.");
-      }
-    };
-    guide('Welcome to your first unit, <strong>'+PPE_UNIT+'</strong>. It is a one-time unit, but every unit in Evia works the same way — I will show you how to collect evidence.',{button:"Show me",onNext:()=>{stage="guided";step()}});
+    let root=document.getElementById("ob-lesson");
+    if(!root){root=document.createElement("div");root.id="ob-lesson";root.className="tm ob-lesson";root.setAttribute("role","dialog");root.setAttribute("aria-modal","true");document.body.appendChild(root)}
+    root.innerHTML='<header class="tm-bar tm-lbar">'+(o.prog!=null?'<span class="tm-prog" aria-hidden="true"><i style="width:'+o.prog+'%"></i></span>':'<strong>'+escHtml(o.title||"")+'</strong>')+
+        '<button type="button" class="ob-skip" id="ob-skip">Skip</button></header>'+
+      '<div class="tm-scroll"><div class="ob-body">'+o.body+'</div></div>'+
+      '<footer class="tm-foot tm-row">'+o.buttons.map((b,i)=>'<button type="button" class="'+(b.primary?"primary":"secondary")+' tm-go" data-ob="'+i+'"'+(b.disabled?" disabled":"")+'>'+escHtml(b.label)+'</button>').join("")+'</footer>';
+    root.querySelectorAll("[data-ob]").forEach(el=>el.onclick=()=>o.buttons[+el.dataset.ob].run());
+    root.querySelector("#ob-skip").onclick=skipDemo;
+    root.querySelector(".tm-scroll").scrollTop=0;
+    return root;
+  }
+  const closeLesson=()=>{const r=document.getElementById("ob-lesson");if(r)r.remove()};
+
+  async function applyEnrolment(en){
+    await window.eviaPacks.ensure(en.course);
+    const p={course:en.course};["name","start","end"].forEach(k=>{if(en[k])p[k]=en[k]});
+    if(Array.isArray(en.nvqOptional)&&en.nvqOptional.length)p.nvqOptional=en.nvqOptional.slice();
+    window.eviaData.put("learner",p);
+  }
+  function showWelcome(){
+    const name=firstName();
+    lessonScreen({title:"Welcome",
+      body:'<div class="tm-hero">'+EVIA_BIG+'<p class="tm-say">Hi'+(name?" "+escHtml(name):"")+', I’m Evia. You’re on <strong>'+escHtml(courseName())+'</strong>.<br>Let me show you around. It takes a minute.</p></div>',
+      buttons:[{label:"Let’s go",primary:true,run:()=>{closeLesson();afterCourse()}}]});
+  }
+  /* NVQ learners choose their optional unit unless Nisia already has it; then Evia's look, then the PPE unit. */
+  function afterCourse(){
+    const needOptional=nvqOn()&&!(window.eviaData.learner().nvqOptional||[]).length;
+    if(needOptional){writeState("optional");showOptionalPicker();return}
+    writeState("ppe");pickersThen(startPpe);
   }
 
-  /* ---------- Step 3: progress ---------- */
-  function showProgressStep(){
-    document.body.classList.add("evia-onboarding");
-    nav("progress");
-    const name=firstName(),[c1,c2]=ppeCodes(),nvq=nvqOn();
-    setTimeout(()=>{
-      const card=document.getElementById("pv-ksb");
-      document.querySelectorAll(".pv-card").forEach(c=>c.classList.add("pv-in"));
-      if(card)card.scrollIntoView({block:"center",behavior:"smooth"});
-      guide('Your PPE evidence is saved'+(name?", "+escHtml(name):"")+'. This is <strong>My progress</strong>: it shows how you’re getting on, and every card opens up for more detail. Your PPE work has already ticked off '+(nvq?'criteria <strong>1.2</strong> and <strong>1.4</strong> in Unit 102':'<strong>'+escHtml(c1||"K2")+'</strong> and <strong>'+escHtml(c2||"S2")+'</strong>')+'. Keep capturing jobs and these fill up.',{
-        targets:[card],button:"Next",onNext:()=>{writeState("portfolio");showPortfolioStep()}
-      });
-    },200);
-  }
-
-  /* ---------- Step 4: my course ---------- */
-  const closePanels=()=>{const m=document.getElementById("modal-root");if(m&&!m.querySelector(".profile-sheet"))m.innerHTML=""};
-  function showPortfolioStep(){
-    document.body.classList.add("evia-onboarding");closePanels();
-    nav("course");
-    window.scrollTo(0,0);
-    const tile=document.querySelector("#screen .unit-card[data-u]");
-    guide('This is <strong>My course</strong>. Open any unit to capture evidence. Everything you save stays inside that unit, underneath, ready to look back at or share with your assessor.',{
-      targets:[tile],button:"Next",onNext:()=>{
-        const grid=document.getElementById("ui-logs-grid");
-        if(grid)grid.scrollIntoView({block:"center",behavior:"smooth"});
-        guide('Your <strong>learning logs</strong> (learning hours) are kept here too, ready to download for your assessor. Progress reviews are at the top of <strong>My progress</strong>.',{
-          targets:[grid],button:"Next",onNext:()=>{writeState("teach");showTeachStep()}
-        });
-      }
+  /* ---------- Fallback: pick the course (only until Nisia sends it) ---------- */
+  function showCoursePicker(){
+    injectStyles();
+    const root=document.createElement("div");
+    root.id="evia-onboard-course";
+    root.className="welcome";
+    root.innerHTML='<section class="ew-hero">'+
+        '<div class="ew-evia-wrap ew-in" style="--d:0"><span class="evia-mini ew-evia" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span></div><br>'+
+        '<div class="ew-say ew-in" style="--d:1">Hi, I’m Evia! Which course are you on?</div></section>'+
+      '<section class="ew-pick"><div class="evia-onboard-courses">'+COURSES.filter(c=>window.eviaPacks.COURSES.includes(c.key)).map((c,i)=>
+        '<button type="button" class="evia-onboard-course ew-in" style="--d:'+(2+i)+'" data-onboard-course="'+c.key+'"><span class="evia-onboard-course-dot" aria-hidden="true">'+c.ic+'</span><span class="evia-onboard-course-copy"><strong>'+escHtml(c.label)+'</strong><small>'+escHtml(c.sub)+'</small></span><span class="evia-onboard-course-arrow" aria-hidden="true">›</span></button>'
+      ).join("")+'</div></section>';
+    document.body.appendChild(root);
+    requestAnimationFrame(()=>root.classList.add("visible"));
+    root.querySelectorAll("[data-onboard-course]").forEach(b=>b.onclick=async()=>{
+      /* The course's pack is downloaded first if it isn't on the phone (packs.js). */
+      const k=b.dataset.onboardCourse;b.disabled=true;
+      try{await window.eviaPacks.ensure(k)}catch(err){b.disabled=false;if(typeof showEvidenceToast==="function")showEvidenceToast(err.message,true);return}
+      window.eviaData.put("learner",{course:k});
+      if(window.eviaHandoff)window.eviaHandoff(root,afterCourse);else{root.remove();afterCourse()}
     });
   }
 
-  /* ---------- Teach me and Rewards ---------- */
-  function showTeachStep(){
-    document.body.classList.add("evia-onboarding");closePanels();
-    nav("teach");window.scrollTo(0,0);
-    setTimeout(()=>{
-      const list=document.querySelector("#screen .tt-list");
-      guide('This is <strong>Teach me</strong>: short lessons for your course, maths and English, with quick games to check what you know. Every lesson earns you <strong>coins</strong>.',{
-        targets:[list],button:"Next",onNext:()=>{writeState("rewards");showRewardsStep()}
-      });
-    },450);
+  /* ---------- The PPE unit, like a Teach me lesson ----------
+     One photo of the learner in their PPE and a few words about it. It's saved once, as a PDF in Supporting evidence,
+     linked to the KSBs it shows (and ticks them off). */
+  const PPE_CAPTURE="hard hat · hi-vis · safety boots · gloves · eye and ear protection · dust mask";
+  const PPE_MENTION="what each item protects you from · when you wear it · checking it for damage";
+  const ppe={photo:null,url:"",text:""};
+  function ksbLabel(){const c=ppeCodes();return nvqOn()?"Unit 102 criteria 1.2 and 1.4":"<strong>"+escHtml(c[0])+"</strong> and <strong>"+escHtml(c[1])+"</strong>"}
+  function startPpe(){
+    injectStyles();document.body.classList.add("evia-onboarding");
+    const has=!!ppe.photo;
+    const el=lessonScreen({prog:25,
+      body:'<div class="tm-says">'+EVIA_SM+'<p>First job: show me your <strong>PPE</strong>. Take a photo of you wearing it.</p></div>'+
+        (has?'<div class="ob-photo"><img src="'+ppe.url+'" alt="You in your PPE"></div>':
+          '<div class="evidence-photo-actions ob-photo-actions">'+
+            '<label class="evidence-photo-button" for="ob-camera"><span class="evidence-photo-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="18" height="14" rx="3"></rect><path d="M8 6.5l1.4-2h5.2l1.4 2"></path><circle cx="12" cy="13.5" r="3.5"></circle></svg></span><span>Camera</span><input id="ob-camera" type="file" accept="image/*" capture="user" hidden></label>'+
+            '<label class="evidence-photo-button" for="ob-gallery"><span class="evidence-photo-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"></rect><circle cx="8.5" cy="9.5" r="1.6"></circle><path d="M4 16.5l5-5 4 4 3-3 4 4"></path></svg></span><span>Gallery</span><input id="ob-gallery" type="file" accept="image/*" hidden></label>'+
+          '</div>')+
+        '<p class="ob-prompts">'+escHtml(PPE_CAPTURE)+'</p>',
+      buttons:(has?[{label:"Retake",run:()=>{URL.revokeObjectURL(ppe.url);ppe.photo=null;startPpe()}}]:[]).concat([{label:"Next",primary:true,disabled:!has,run:ppeWrite}])});
+    const add=async files=>{const f=[...(files||[])].find(x=>x&&x.size&&/^image\//i.test(x.type));if(!f)return;
+      try{ppe.photo=await compressPhoto(f);ppe.url=URL.createObjectURL(ppe.photo);startPpe()}catch(err){console.error("Evia PPE photo failed",err);alert("That photo could not be added. Please try again.")}};
+    const cam=el.querySelector("#ob-camera"),gal=el.querySelector("#ob-gallery");
+    if(cam)cam.onchange=e=>add(e.target.files);
+    if(gal)gal.onchange=e=>add(e.target.files);
+    const camLabel=el.querySelector('label[for="ob-camera"]');
+    if(camLabel&&window.eviaCamera&&window.eviaCamera.supported())camLabel.onclick=e=>{e.preventDefault();window.eviaCamera.open({title:"Your PPE",prompts:PPE_CAPTURE.split("·"),onDone:files=>add(files)})};
   }
-  function showRewardsStep(){
-    document.body.classList.add("evia-onboarding");closePanels();
-    nav("rewards");window.scrollTo(0,0);
-    setTimeout(()=>{
-      const bal=document.querySelector("#screen .rw-bal");
-      guide('And this is <strong>Rewards</strong>. Spend your coins on new looks for me and mini games. You earn them from lessons, your learning hours and good evidence.',{
-        targets:[bal],button:"Next",onNext:()=>{writeState("evia");showEviaStep()}
-      });
-    },450);
+  function ppeWrite(){
+    const el=lessonScreen({prog:60,
+      body:'<div class="tm-says">'+EVIA_SM+'<p>Now tell me about it. What does each bit <strong>protect you from</strong>?</p></div>'+
+        '<p class="ob-prompts">'+escHtml(PPE_MENTION)+'</p>'+
+        '<textarea id="write" class="ob-text" rows="6" placeholder="e.g. My hard hat protects my head from falling objects…">'+escHtml(ppe.text)+'</textarea>',
+      buttons:[{label:"Back",run:startPpe},{label:"Save",primary:true,disabled:!ppe.text.trim(),run:ppeSave}]});
+    const box=el.querySelector("#write"),save=el.querySelector('[data-ob="1"]');
+    box.oninput=()=>{ppe.text=box.value;save.disabled=!ppe.text.trim()};
+  }
+  /* The PPE page: the photo, what they wrote, the KSBs it shows, their name and signature. */
+  async function ppePdf(){
+    const {jsPDF}=await window.eviaLoadJsPdf(),T=window.eviaPdfText||(s=>String(s||"")),L=window.eviaData.learner();
+    const doc=new jsPDF({unit:"mm",format:"a4"}),W=210,M=16;let y=22;
+    doc.setFont("helvetica","bold");doc.setFontSize(20);doc.setTextColor(23,32,51);doc.text("PPE induction",M,y);y+=7;
+    doc.setFont("helvetica","normal");doc.setFontSize(10);doc.setTextColor(102,112,133);
+    doc.text(T([L.name,courseName(),new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})].filter(Boolean).join("  ·  ")),M,y);y+=8;
+    const src=await new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.readAsDataURL(ppe.photo)});
+    const img=await new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=src});
+    if(img){const maxW=W-2*M,maxH=120,s=Math.min(maxW/img.width,maxH/img.height),w=img.width*s,h=img.height*s;doc.addImage(src,"JPEG",M,y,w,h);y+=h+8}
+    doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(23,32,51);doc.text("My PPE and what it's for",M,y);y+=6;
+    doc.setFont("helvetica","normal");doc.setFontSize(10.5);const lines=doc.splitTextToSize(T(ppe.text),W-2*M);doc.text(lines,M,y);y+=lines.length*5+6;
+    doc.setFont("helvetica","bold");doc.setFontSize(11);doc.text("Linked to",M,y);y+=6;
+    doc.setFont("helvetica","normal");doc.setFontSize(9.5);doc.setTextColor(71,84,103);
+    ppeKsbs().forEach(k=>{const t=doc.splitTextToSize(T(k[0]+"  "+k[1]),W-2*M);if(y+t.length*4.5>280){doc.addPage();y=20}doc.text(t,M,y);y+=t.length*4.5+2});
+    const sig=window.eviaData.files.signature();
+    if(sig){if(y>250){doc.addPage();y=20}y+=4;try{doc.addImage(sig,"PNG",M,y,50,14)}catch(_){}doc.setFontSize(9);doc.text("Signed",M,y+18)}
+    return doc.output("blob");
+  }
+  let saving=false;
+  async function ppeSave(){
+    if(saving||!ppe.photo||!ppe.text.trim())return;saving=true;
+    const btn=document.querySelector('#ob-lesson [data-ob="1"]');if(btn){btn.disabled=true;btn.textContent="Saving…"}
+    try{
+      const pdf=await ppePdf(),id="supporting-"+Date.now()+"-"+Math.random().toString(36).slice(2,8);
+      await window.eviaSupportingFilePut({id,blob:pdf});
+      window.eviaData.put("supporting",{id,course,title:"PPE induction",type:"document",mime:"application/pdf",filename:"PPE-induction.pdf",size:pdf.size,
+        nvqUnit:nvqOn()?"102":undefined,criteria:ppeCodes(),induction:true});
+      URL.revokeObjectURL(ppe.url);ppe.photo=null;ppe.text="";saving=false;
+      writeState("tour:0");
+      lessonScreen({prog:100,
+        body:'<div class="tm-hero">'+EVIA_BIG+'<p class="tm-say">Saved to <strong>Supporting evidence</strong>. That’s '+ksbLabel()+' ticked off.<br>Every unit works like this.</p></div>',
+        buttons:[{label:"Next",primary:true,run:()=>{closeLesson();tour(0)}}]});
+    }catch(err){
+      console.error("Evia PPE save failed",err);saving=false;
+      if(btn){btn.disabled=false;btn.textContent="Save"}
+      alert("Evia couldn’t save your PPE evidence. Please try again.");
+    }
   }
 
-  /* ---------- Step 5: Evia ---------- */
-  function showEviaStep(){
-    document.body.classList.add("evia-onboarding");closePanels();
-    window.scrollTo(0,0);
-    const fab=document.getElementById("evia-fab");
-    if(window.eviaMood)window.eviaMood("happy");
-    guide('And this is me. Tap me any time: I can <strong>check your evidence</strong>, give you a <strong>quick review</strong> of how you’re doing, show your <strong>targets</strong> and help you practise for your <strong>EPA</strong>.',{
-      targets:[fab],button:"Next",onNext:()=>{writeState("profile");showProfileStep()}
-    });
+  /* ---------- The tour: one short card per step ----------
+     "Tap this" steps wait for the learner to tap the highlighted thing; the others have Next. */
+  const $q=s=>document.querySelector(s);
+  const TOUR=[
+    {nav:"course",target:"#screen .unit-card[data-u]",tap:true,text:"This is <strong>My course</strong>. All your units are here. Tap one."},
+    {target:".ev-modes",text:"Add evidence two ways: <strong>I guide you</strong>, or <strong>free range</strong>. Your saved work shows underneath."},
+    {target:'[data-nav="learning"]',tap:true,text:"Tap <strong>Progress</strong>."},
+    {text:"<strong>My progress</strong> shows how you’re doing on your course, and what to do next."},
+    {target:'[data-nav="teach"]',tap:true,text:"Tap <strong>Teach me</strong>."},
+    {text:"Short lessons and games for your course. Each one earns <strong>coins</strong>."},
+    {target:'[data-nav="rewards"]',tap:true,text:"Tap <strong>Rewards</strong>."},
+    {text:"Spend your coins on new looks for me, and mini games."},
+    {target:"#evia-fab",text:"And this is me. Tap me any time for help, evidence checks and practice tests."},
+    {nav:"course",target:"#profile-btn",tap:true,text:"Last one: tap your <strong>profile</strong>."},
+    {profile:true}
+  ];
+  let card=null,tapWatch=null,profileObserver=null;
+  const stopWatch=()=>{if(tapWatch)document.removeEventListener("click",tapWatch,true);tapWatch=null};
+  const clearTargets=()=>document.querySelectorAll(".evia-guide-target").forEach(el=>el.classList.remove("evia-guide-target"));
+  function hideCard(){stopWatch();clearTargets();if(card){const c=card;card=null;c.classList.remove("show");setTimeout(()=>c.remove(),220)}}
+  function showCard(i,s){
+    if(!card){card=document.createElement("div");card.className="ob-card";card.setAttribute("role","status");card.setAttribute("aria-live","polite");document.body.appendChild(card);requestAnimationFrame(()=>requestAnimationFrame(()=>card&&card.classList.add("show")))}
+    card.innerHTML='<div class="ob-card-top"><span class="tm-prog" aria-hidden="true"><i style="width:'+Math.round((i+1)/TOUR.length*100)+'%"></i></span><button type="button" class="ob-skip">Skip</button></div>'+
+      '<div class="tm-says">'+EVIA_SM+'<p>'+s.text+'</p></div>'+
+      (s.tap?'':'<button type="button" class="primary tm-go ob-next">Next</button>');
+    card.querySelector(".ob-skip").onclick=skipDemo;
+    const n=card.querySelector(".ob-next");if(n)n.onclick=()=>tour(i+1);
   }
-
-  /* ---------- Step 6: profile ---------- */
-  function showProfileStep(){
-    document.body.classList.add("evia-onboarding");closePanels();
-    hideGuide();
+  function tour(i){
+    stopWatch();clearTargets();
+    document.body.classList.add("evia-onboarding");
+    if(i>=TOUR.length){finish();return}
+    writeState("tour:"+i);
+    const s=TOUR[i];
+    if(s.profile){profileStep();return}
+    if(s.nav&&screen!==s.nav){const m=document.getElementById("modal-root");if(m)m.innerHTML="";nav(s.nav)}
+    showCard(i,s);
+    /* The screen may still be drawing: find the thing to point at, then highlight it. */
+    let tries=0;
+    const point=()=>{
+      const el=s.target&&$q(s.target);
+      if(s.target&&!el&&tries++<20){setTimeout(point,100);return}
+      if(el){el.classList.add("evia-guide-target");el.scrollIntoView({block:"center",behavior:"smooth"})}
+      if(s.tap){
+        tapWatch=e=>{if(!(e.target.closest&&e.target.closest(s.target)))return;stopWatch();clearTargets();setTimeout(()=>tour(i+1),500)};
+        document.addEventListener("click",tapWatch,true);
+        if(!el)setTimeout(()=>tour(i+1),300); /* nothing to tap on this phone: carry on */
+      }
+    };
+    setTimeout(point,s.nav?350:120);
+  }
+  /* The profile: Evia's note sits in the sheet, over the signature. Closing the profile finishes the tour. */
+  function profileStep(){
+    hideCard();
     if(!window.eviaOpenProfile){finish();return}
-    const modal=document.getElementById("modal-root");
-    let seen=false;
+    const modal=document.getElementById("modal-root");let seen=false;
     if(profileObserver)profileObserver.disconnect();
-    /* Evia walks through the profile one section at a time: name, dates, signature, then Save. */
-    const STEPS=[
-      ["#profile-name","First, type your <strong>name</strong> here. It goes on all your evidence."],
-      ["#profile-start","Now your apprenticeship <strong>start and end dates</strong>. I use them to tell you if you’re on track."],
-      ["#signature-pad","Sign here with your finger. Your <strong>signature</strong> is added to the evidence you save."],
-      ["#save-profile","That’s it. Tap <strong>Save</strong> and you’re all set."]
-    ];
-    let at=-1;
-    const showStep=(sheet,i)=>{
-      at=i;const [sel,text]=STEPS[i],target=sheet.querySelector(sel);
-      let box=sheet.querySelector(".evia-guide-inline");
-      if(!box){box=document.createElement("div");box.className="evia-guide-inline";box.setAttribute("role","status")}
-      box.innerHTML='<div class="evia-guide-top"><div class="evia-guide-kicker">EVIA · LAST STEP · '+(i+1)+' OF '+STEPS.length+'</div>'+SKIP_BUTTON+'</div><div class="evia-guide-text">'+text+'</div>'+(i<STEPS.length-1?'<div class="evia-guide-actions"><button type="button" id="evia-guide-pnext">Next</button></div>':"");
-      /* Sit Evia's note just above the section it's talking about. */
-      const anchor=target&&(target.closest(".pf-group")||target.closest(".pf-head")||target.closest(".pf-save"));
-      if(anchor)anchor.insertAdjacentElement(sel==="#profile-name"?"afterend":"beforebegin",box);else sheet.prepend(box);
-      sheet.querySelectorAll(".evia-guide-target").forEach(el=>el.classList.remove("evia-guide-target"));
-      const hl=sel==="#profile-start"?target&&target.closest(".pf-dates"):sel==="#signature-pad"?target&&target.closest(".pf-sign"):target;
-      if(hl)hl.classList.add("evia-guide-target");
-      const nb=box.querySelector("#evia-guide-pnext");if(nb)nb.onclick=()=>showStep(sheet,i+1);
-      setTimeout(()=>{(hl||box).scrollIntoView({block:"center",behavior:"smooth"});if(sel==="#profile-name"&&target&&!target.value)target.focus({preventScroll:true})},120);
-    };
     const decorate=()=>{
       const sheet=modal.querySelector(".profile-sheet");
       if(sheet){
         seen=true;
-        if(at<0||!sheet.querySelector(".evia-guide-inline"))showStep(sheet,Math.max(0,at));
-      }else if(seen&&!modal.innerHTML.trim()){
-        observer.disconnect();finish();
-      }
+        if(sheet.querySelector(".ob-inline"))return;
+        const needName=!String(window.eviaData.learner().name||"").trim();
+        const box=document.createElement("div");box.className="ob-inline";box.setAttribute("role","status");
+        box.innerHTML='<div class="tm-says">'+EVIA_SM+'<p>'+(needName?"Add your <strong>name</strong> and dates, then sign":"Sign")+' here with your finger. It goes on your evidence. Then tap <strong>Save</strong>.</p></div>';
+        const pad=sheet.querySelector("#signature-pad"),group=pad&&pad.closest(".pf-group");
+        if(group){group.insertAdjacentElement("beforebegin",box);(pad.closest(".pf-sign")||pad).classList.add("evia-guide-target");setTimeout(()=>box.scrollIntoView({block:"start",behavior:"smooth"}),150)}
+        else sheet.prepend(box);
+      }else if(seen&&!modal.innerHTML.trim()){observer.disconnect();profileObserver=null;finish()}
     };
     const observer=profileObserver=new MutationObserver(decorate);
     observer.observe(modal,{childList:true,subtree:true});
-    window.eviaOpenProfile();
-    decorate();
+    window.eviaOpenProfile();decorate();
   }
 
-  let profileObserver=null;
-  /* Skip demo: available from every step after choosing a course. */
   function skipDemo(){
     if(profileObserver){profileObserver.disconnect();profileObserver=null}
-    const modal=document.getElementById("modal-root");
-    if(modal&&modal.querySelector(".evia-guide-inline"))modal.innerHTML="";
+    const modal=document.getElementById("modal-root");if(modal&&modal.querySelector(".ob-inline"))modal.innerHTML="";
     finish();
   }
-  document.addEventListener("click",e=>{if(e.target.closest(".evia-guide-skip"))skipDemo()});
-
   function finish(){
     writeState("done");
-    hideGuide();
+    hideCard();closeLesson();clearTargets();
     document.body.classList.remove("evia-onboarding");
+    const pick=document.getElementById("evia-onboard-course");if(pick)pick.remove();
     nav("course");
-    if(typeof showEvidenceToast==="function")showEvidenceToast("You're all set");
+    if(typeof showEvidenceToast==="function")showEvidenceToast("You’re all set");
   }
 
+  /* Picks up where the learner left off. Stages from the old, longer demo carry on at the nearest step. */
   function resume(stage){
-    if(stage==="course")showCoursePicker();
-    else if(stage==="optional"&&nvqOn())showOptionalPicker();
-    else if(stage==="unit")showPpeUnit();
-    else if(stage==="progress")showProgressStep();
-    else if(stage==="portfolio")showPortfolioStep();
-    else if(stage==="teach")showTeachStep();
-    else if(stage==="rewards")showRewardsStep();
-    else if(stage==="evia")showEviaStep();
-    else if(stage==="profile")showProfileStep();
+    const t=/^tour:(\d+)$/.exec(stage||"");
+    if(t)return tour(+t[1]);
+    if(stage==="course"){const en=window.eviaData.enrolment&&window.eviaData.enrolment();
+      if(en)applyEnrolment(en).then(showWelcome).catch(err=>{console.error(err);showCoursePicker()});else showCoursePicker();return}
+    if(stage==="optional"&&nvqOn())return showOptionalPicker();
+    if(stage==="ppe"||stage==="unit"||stage==="optional")return pickersThen(startPpe);
+    tour(0);
   }
 
-  /* Called after the shape/colour pickers. Returns true when the demo takes over from the welcome screen. */
+  /* Called after the welcome screen. Returns true when the tour takes over. */
   window.eviaMaybeStartOnboarding=function(firstRun){
     let forced=false;
     try{
@@ -448,8 +393,10 @@
         forced=true;params.delete("demo");
         history.replaceState(null,"",location.pathname+(params.toString()?"?"+params:"")+location.hash);
       }
-      /* Shared test pages only pass a plain #anchor, so #demo replays it too. */
-      if(location.hash==="#demo"){forced=true;history.replaceState(null,"",location.pathname+location.search)}
+      /* Shared test pages only pass a plain #anchor, so #demo replays it too, and #demo&course=site stands in for
+         Nisia's enrolment. */
+      const hash=new URLSearchParams(location.hash.slice(1));
+      if(hash.has("demo")){forced=true;const c=hash.get("course");if(c&&!window.eviaData.enrolment())window.eviaData.enrol({course:c});history.replaceState(null,"",location.pathname+location.search)}
     }catch(_){}
     const state=readState();
     if(forced||(!state&&firstRun)){writeState("course");resume("course");return true}

@@ -620,6 +620,8 @@
     document.getElementById("rvp-save").onclick=()=>saveFile(file);
   }
   window.eviaBuildReviewPdf=buildReviewPdf;
+  window.eviaLoadJsPdf=loadJsPdf;
+  window.eviaPdfText=pdfText;
   window.eviaOpenReviewPdf=openReviewPdf;
   window.eviaOpenOtjPdf=openOtjPdf;
   window.eviaOpenSendToPortfolio=openSendToPortfolio;

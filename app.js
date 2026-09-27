@@ -120,6 +120,8 @@ function learning(){
 
 
 /* Supporting Evidence: optional course portfolio attachments. */
+/* KSBs ticked off by the one-time PPE induction, kept in Supporting evidence (onboarding.js). */
+function inductionKsbs(){return supportingMeta().filter(x=>x&&x.induction&&x.course===course).flatMap(x=>Array.isArray(x.ksbs)?x.ksbs:[])}
 function supportingMeta(){try{const all=JSON.parse(localStorage.getItem("evia7-supporting-evidence")||"[]");return Array.isArray(all)?all:[]}catch(_){return[]}}
 function supportingSlug(value){return String(value||"").trim().replace(/[^a-z0-9]+/gi,"-").replace(/^-+|-+$/g,"").slice(0,80)||"supporting-evidence"}
 function supportingTypeLabel(type){return ({photo:"Photo",video:"Video",audio:"Audio",document:"Files"}[type]||"File")}
