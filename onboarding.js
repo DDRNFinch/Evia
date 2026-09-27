@@ -72,6 +72,22 @@
       .evia-guide-target{scroll-margin-top:90px;outline:3px solid var(--yellow)!important;outline-offset:4px;border-radius:14px;animation:eviaGuidePulse 1.6s ease-in-out infinite}
       @keyframes eviaGuidePulse{0%,100%{outline-offset:3px}50%{outline-offset:7px}}
       body.evia-onboarding .bottom-nav:has(.evia-guide-target){opacity:1}
+      /* During the tour only what Evia asks for can be used: the thing she's pointing at (if she says tap it), her notes,
+         and the date wheel she opens. Pointed-at things with a Next button are only looked at. */
+      body.ob-lock #app,body.ob-lock #modal-root,body.ob-lock .bottom-nav,body.ob-lock .evia-fab,body.ob-lock #profile-btn{pointer-events:none}
+      body.ob-lock .evia-guide-target,body.ob-lock .evia-guide-target *,body.ob-lock .dw-overlay,body.ob-lock .dw-overlay *{pointer-events:auto}
+      body.ob-lock .evia-guide-target.ob-look,body.ob-lock .evia-guide-target.ob-look *{pointer-events:none}
+      body.ob-lock .profile-sheet{overflow:hidden}
+      .profile-sheet.ob-profile .evia-guide-target{scroll-margin-top:24px}
+      /* Save sits at the end of the profile during the tour, so it isn't under Evia; she scrolls to it last. */
+      .profile-sheet.ob-profile .pf-save{position:static;margin-top:16px}
+      #ob-spot i,#ob-spot b{position:fixed;z-index:10010;display:block}
+      #ob-spot i{background:rgba(15,23,42,.22);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+      #ob-spot b{background:transparent}
+      #ob-spot.none i{background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none}
+      #ob-spot.none i:first-child{inset:0!important;width:auto!important;height:auto!important}
+      /* Evia's button stays in view, above the blur, for her speech bubble. */
+      body.ob-lock .evia-fab{z-index:10020!important;opacity:1!important;translate:none!important}
       body.evia-onboarding .bottom-nav:has(.evia-guide-target) button:not(.evia-guide-target){opacity:.45}
 
       /* Teach me style screens (the welcome and the PPE unit) */
@@ -87,15 +103,15 @@
       .ob-text{width:100%;min-height:150px;box-sizing:border-box;padding:14px 15px;border:1px solid #dfe4ea;border-radius:16px;background:#fff;font:inherit;font-size:15px;line-height:1.5;resize:vertical}
 
       /* The tour card: one line at a time, above the menu */
-      .ob-card{position:fixed;z-index:10020;left:50%;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 96px);width:min(460px,calc(100% - 28px));transform:translate(-50%,12px);opacity:0;
+      .ob-card{position:fixed;z-index:10030;left:14px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 96px);width:min(420px,calc(100% - 28px));transform:translateY(12px);opacity:0;
         display:flex;flex-direction:column;gap:10px;padding:12px 14px 14px;border-radius:22px;background:#fff;border:1px solid var(--pm-hair,rgba(16,24,40,.08));box-shadow:0 16px 40px rgba(16,24,40,.16);transition:opacity .22s ease,transform .22s ease}
-      .ob-card.show{opacity:1;transform:translate(-50%,0)}
+      .ob-card.show{opacity:1;transform:none}
+      .ob-card::after{content:"";position:absolute;bottom:-8px;left:var(--tail,50%);width:16px;height:16px;margin-left:-8px;background:#fff;border-right:1px solid var(--pm-hair,rgba(16,24,40,.08));border-bottom:1px solid var(--pm-hair,rgba(16,24,40,.08));transform:rotate(45deg)}
       .ob-card-top{display:flex;align-items:center;gap:10px}
       .ob-card-top .tm-prog{height:8px}
       .ob-card .tm-says p{font-size:15px}
       .ob-card .ob-next{width:100%}
       body.evia-keyboard-editing .ob-card{opacity:0;pointer-events:none}
-      .ob-inline{margin:4px 0 14px;padding:12px 14px;border-radius:18px;background:var(--soft);border:1px solid var(--yellow-line)}
       @media(prefers-reduced-motion:reduce){.evia-guide-target{animation:none}.ob-card{transition:none}}
     `;
     document.head.appendChild(style);
@@ -301,20 +317,53 @@
     {profile:true,seen:"profile"}
   ];
   let card=null,tapWatch=null,profileObserver=null;
+  /* The spotlight: everything but what Evia is pointing at is blurred, and can't be used. Four blurred panels frame it;
+     when she's only showing it (Next), a clear cover stops it being tapped too. With nothing to point at, the page stays
+     sharp but can't be used. */
+  let spot=null,spotEl=null,spotLook=false,spotRaf=0;
+  function spotlight(el,look){
+    if(!spot){spot=document.createElement("div");spot.id="ob-spot";spot.innerHTML='<i></i><i></i><i></i><i></i><b></b>';document.body.appendChild(spot)}
+    spotEl=el||null;spotLook=!!look;spot.classList.toggle("none",!el);
+    cancelAnimationFrame(spotRaf);
+    const [t,r,btm,l]=spot.querySelectorAll("i"),cover=spot.querySelector("b");
+    const frame=()=>{
+      if(spotEl&&document.body.contains(spotEl)){
+        const R=spotEl.getBoundingClientRect(),p=6,x1=Math.max(0,R.left-p),y1=Math.max(0,R.top-p),x2=Math.min(innerWidth,R.right+p),y2=Math.min(innerHeight,R.bottom+p);
+        t.style.cssText="left:0;top:0;width:100%;height:"+y1+"px";btm.style.cssText="left:0;top:"+y2+"px;width:100%;bottom:0";
+        l.style.cssText="left:0;top:"+y1+"px;width:"+x1+"px;height:"+(y2-y1)+"px";r.style.cssText="left:"+x2+"px;top:"+y1+"px;right:0;height:"+(y2-y1)+"px";
+        cover.style.cssText=spotLook?"left:"+x1+"px;top:"+y1+"px;width:"+(x2-x1)+"px;height:"+(y2-y1)+"px":"display:none";
+      }
+      placeBubble();   /* Evia's button may still be sliding in */
+      spotRaf=requestAnimationFrame(frame);
+    };
+    frame();
+  }
+  function spotOff(){cancelAnimationFrame(spotRaf);spotEl=null;if(spot){spot.remove();spot=null}}
+  /* Evia's words come from her button in the menu, as a speech bubble pointing at her. */
+  function placeBubble(){
+    if(!card)return;const fab=document.getElementById("evia-fab");if(!fab)return;
+    const R=fab.getBoundingClientRect(),cw=card.offsetWidth;
+    card.style.bottom=Math.max(12,innerHeight-R.top+12)+"px";
+    const left=Math.max(14,Math.min(innerWidth-cw-14,R.left+R.width/2-cw/2));
+    card.style.left=left+"px";card.style.setProperty("--tail",(R.left+R.width/2-left)+"px");
+  }
+  addEventListener("resize",placeBubble);
   const stopWatch=()=>{if(tapWatch)document.removeEventListener("click",tapWatch,true);tapWatch=null};
-  const clearTargets=()=>document.querySelectorAll(".evia-guide-target").forEach(el=>el.classList.remove("evia-guide-target"));
-  function hideCard(){stopWatch();clearTargets();if(card){const c=card;card=null;c.classList.remove("show");setTimeout(()=>c.remove(),220)}}
-  function showCard(i,s){
+  const clearTargets=()=>document.querySelectorAll(".evia-guide-target").forEach(el=>el.classList.remove("evia-guide-target","ob-look"));
+  function hideCard(){stopWatch();clearTargets();spotOff();if(card){const c=card;card=null;c.classList.remove("show");setTimeout(()=>c.remove(),220)}}
+  function showCard(i,s){renderCard(Math.round((i+1)/TOUR.length*100),s.text,s.tap,()=>tour(i+1))}
+  function renderCard(pct,text,tap,onNext){
     if(!card){card=document.createElement("div");card.className="ob-card";card.setAttribute("role","status");card.setAttribute("aria-live","polite");document.body.appendChild(card);requestAnimationFrame(()=>requestAnimationFrame(()=>card&&card.classList.add("show")))}
-    card.innerHTML='<div class="ob-card-top"><span class="tm-prog" aria-hidden="true"><i style="width:'+Math.round((i+1)/TOUR.length*100)+'%"></i></span><button type="button" class="ob-skip">Skip</button></div>'+
-      '<div class="tm-says">'+EVIA_SM+'<p>'+s.text+'</p></div>'+
-      (s.tap?'':'<button type="button" class="primary tm-go ob-next">Next</button>');
+    card.innerHTML='<div class="ob-card-top"><span class="tm-prog" aria-hidden="true"><i style="width:'+pct+'%"></i></span><button type="button" class="ob-skip">Skip</button></div>'+
+      '<div class="tm-says">'+EVIA_SM+'<p>'+text+'</p></div>'+
+      (tap?'':'<button type="button" class="primary tm-go ob-next">Next</button>');
     card.querySelector(".ob-skip").onclick=skipDemo;
-    const n=card.querySelector(".ob-next");if(n)n.onclick=()=>tour(i+1);
+    const n=card.querySelector(".ob-next");if(n)n.onclick=onNext;
+    placeBubble();requestAnimationFrame(placeBubble);
   }
   function tour(i){
     stopWatch();clearTargets();
-    document.body.classList.add("evia-onboarding");
+    document.body.classList.add("evia-onboarding","ob-lock");
     if(i>=TOUR.length){finish();return}
     writeState("tour:"+i);
     const s=TOUR[i];
@@ -328,7 +377,8 @@
     const point=()=>{
       const el=s.target&&$q(s.target);
       if(s.target&&!el&&tries++<20){setTimeout(point,100);return}
-      if(el){el.classList.add("evia-guide-target");el.scrollIntoView({block:"center",behavior:"smooth"})}
+      if(el){el.classList.add("evia-guide-target");if(!s.tap)el.classList.add("ob-look");el.scrollIntoView({block:"center",behavior:"smooth"})}
+      spotlight(el,!s.tap);
       if(s.tap){
         tapWatch=e=>{if(!(e.target.closest&&e.target.closest(s.target)))return;stopWatch();clearTargets();setTimeout(()=>tour(i+1),500)};
         document.addEventListener("click",tapWatch,true);
@@ -337,24 +387,34 @@
     };
     setTimeout(point,s.nav?350:120);
   }
-  /* The profile: Evia's note sits in the sheet, over the signature. Closing the profile finishes the tour. */
+  /* The profile, one part at a time. Evia stays at the bottom, as in the rest of the tour; the part she's talking about is
+     scrolled up above her and is the only thing that can be used. Name and dates are skipped when Nisia already sent
+     them. Saving finishes the tour. */
+  const PSTEPS=[
+    {key:"name",sel:"#profile-name",hl:"#profile-name",text:"Type your <strong>name</strong>. It goes on all your evidence."},
+    {key:"dates",sel:"#profile-start",hl:".pf-dates",text:"Add the <strong>start and end dates</strong> of your apprenticeship."},
+    {key:"sign",sel:"#signature-pad",hl:".pf-sign",text:"Sign in the box with your finger. It goes on the evidence you save."},
+    {key:"save",sel:"#save-profile",hl:"#save-profile",tap:true,text:"All done. Tap <strong>Save</strong>."}
+  ];
   function profileStep(){
     hideCard();
     if(!window.eviaOpenProfile){finish();return}
-    const modal=document.getElementById("modal-root");let seen=false;
+    const L=window.eviaData.learner();
+    const steps=PSTEPS.filter(p=>!(p.key==="name"&&String(L.name||"").trim())&&!(p.key==="dates"&&L.start&&L.end));
+    const modal=document.getElementById("modal-root");let seen=false,at=-1;
     if(profileObserver)profileObserver.disconnect();
+    const place=sheet=>{
+      const p=steps[at],target=sheet.querySelector(p.sel);if(!target)return;
+      clearTargets();
+      const hl=sheet.querySelector(p.hl)||target;hl.classList.add("evia-guide-target");spotlight(hl,false);
+      renderCard(Math.round((at+1)/steps.length*100),p.text,p.tap,()=>{at++;place(sheet)});
+      if(card)card.classList.add("ob-over");
+      setTimeout(()=>{hl.scrollIntoView({block:p.key==="save"?"center":"start",behavior:"smooth"});if(p.key==="name"&&!target.value)target.focus({preventScroll:true})},150);
+    };
     const decorate=()=>{
       const sheet=modal.querySelector(".profile-sheet");
-      if(sheet){
-        seen=true;
-        if(sheet.querySelector(".ob-inline"))return;
-        const needName=!String(window.eviaData.learner().name||"").trim();
-        const box=document.createElement("div");box.className="ob-inline";box.setAttribute("role","status");
-        box.innerHTML='<div class="tm-says">'+EVIA_SM+'<p>'+(needName?"Add your <strong>name</strong> and dates, then sign":"Sign")+' here with your finger. It goes on your evidence. Then tap <strong>Save</strong>.</p></div>';
-        const pad=sheet.querySelector("#signature-pad"),group=pad&&pad.closest(".pf-group");
-        if(group){group.insertAdjacentElement("beforebegin",box);(pad.closest(".pf-sign")||pad).classList.add("evia-guide-target");setTimeout(()=>box.scrollIntoView({block:"start",behavior:"smooth"}),150)}
-        else sheet.prepend(box);
-      }else if(seen&&!modal.innerHTML.trim()){observer.disconnect();profileObserver=null;finish()}
+      if(sheet){seen=true;sheet.classList.add("ob-profile");if(at<0){at=0;place(sheet)}else if(!sheet.querySelector(".evia-guide-target"))place(sheet)}
+      else if(seen&&!modal.innerHTML.trim()){observer.disconnect();profileObserver=null;finish()}
     };
     const observer=profileObserver=new MutationObserver(decorate);
     observer.observe(modal,{childList:true,subtree:true});
@@ -363,13 +423,13 @@
 
   function skipDemo(){
     if(profileObserver){profileObserver.disconnect();profileObserver=null}
-    const modal=document.getElementById("modal-root");if(modal&&modal.querySelector(".ob-inline"))modal.innerHTML="";
+    const modal=document.getElementById("modal-root");if(modal&&modal.querySelector(".ob-profile"))modal.innerHTML="";
     finish();
   }
   function finish(){
     writeState("done");
     hideCard();closeLesson();clearTargets();
-    document.body.classList.remove("evia-onboarding");
+    document.body.classList.remove("evia-onboarding","ob-lock");spotOff();
     const pick=document.getElementById("evia-onboard-course");if(pick)pick.remove();
     nav("course");
     if(typeof showEvidenceToast==="function")showEvidenceToast("You’re all set");

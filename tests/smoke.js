@@ -602,11 +602,15 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       await p2.click('#ob-lesson [data-ob="0"]');await p2.waitForTimeout(1000);
       let steps=0;
       for(let i=0;i<14;i++){
-        const st=await p2.evaluate(()=>{const c=document.querySelector(".ob-card");if(document.querySelector(".profile-sheet .ob-inline"))return "profile";if(!c)return "none";const n=c.querySelector(".ob-next");if(n){n.click();return "next"}const t=document.querySelector(".evia-guide-target");if(t){t.click();return "tap"}return "stuck"});
+        const st=await p2.evaluate(()=>{const c=document.querySelector(".ob-card");if(document.querySelector(".profile-sheet.ob-profile"))return "profile";if(!c)return "none";const n=c.querySelector(".ob-next");if(n){n.click();return "next"}const t=document.querySelector(".evia-guide-target");if(t){t.click();return "tap"}return "stuck"});
         if(st==="profile"||st==="none"||st==="stuck")break;steps++;await p2.waitForTimeout(1100);
       }
-      ob.tour=steps>=9&&await p2.evaluate(()=>!!document.querySelector(".profile-sheet .ob-inline"));
-      await p2.evaluate(()=>document.getElementById("save-profile").click());await p2.waitForTimeout(1200);
+      ob.tour=steps>=9&&await p2.evaluate(()=>!!document.querySelector(".profile-sheet.ob-profile"));
+      // The profile a part at a time, with nothing else usable (the close button can't be tapped).
+      ob.locked=await p2.evaluate(()=>{const el=document.getElementById("profile-close"),r=el.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return !(hit&&(hit===el||el.contains(hit)))});
+      let parts=0;for(let k=0;k<5;k++){const more=await p2.evaluate(()=>{const n=document.querySelector(".ob-card.ob-over .ob-next");if(n){n.click();return true}return false});if(!more)break;parts++;await p2.waitForTimeout(500)}
+      ob.profileSteps=parts===3&&await p2.evaluate(()=>document.querySelector(".evia-guide-target").id==="save-profile");
+      await p2.evaluate(()=>document.querySelector(".evia-guide-target").click());await p2.waitForTimeout(1200);
       ob.done=await p2.evaluate(()=>/"done"/.test(localStorage.getItem("evia7-onboarding")));
       ob.ticked=await p2.evaluate(()=>{try{return window.eviaStats.compute().a.met>=2}catch(_){return false}});
       await p2.waitForTimeout(800);
