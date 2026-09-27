@@ -183,15 +183,24 @@ html[data-evia-theme="forest"],html[data-evia-theme="navy"],html[data-evia-theme
 .sr-hud>*{pointer-events:auto}
 .sr-hearts,.sr-coins,.sr-name{display:flex;align-items:center;gap:3px;height:34px;padding:0 9px;border-radius:999px;background:rgba(255,255,255,.9);box-shadow:0 1px 3px rgba(15,23,42,.1);backdrop-filter:blur(6px)}
 .sr-hearts svg{width:18px;height:18px;fill:#e5e7eb}.sr-hearts svg.on{fill:#e0445a}
-/* The kit bar: what Evia has picked up. Tap to wear (PPE, one at a time) or hold (a tool). */
-.sr-bag{position:absolute;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;align-items:center;gap:6px;padding:6px;border-radius:18px;background:rgba(255,255,255,.9);box-shadow:0 2px 10px rgba(15,23,42,.14);backdrop-filter:blur(6px);max-width:calc(100% - 340px)}
-.sr.port .sr-bag{max-width:calc(100% - 24px);bottom:calc(22px + env(safe-area-inset-bottom))}
-.sr-slot{position:relative;display:grid;place-items:center;width:44px;height:44px;border-radius:13px;border:0;padding:0;background:#f3f4f6;cursor:pointer;touch-action:none;-webkit-tap-highlight-color:transparent;transition:transform .12s,background .12s}
-.sr-slot svg{width:26px;height:26px;fill:#9aa3ad;transition:fill .12s}
-.sr-slot:active{transform:scale(.92)}
-.sr-slot.on{background:#fff;box-shadow:0 0 0 3px var(--yellow),0 4px 10px rgba(15,23,42,.15);transform:translateY(-3px)}.sr-slot.on svg{fill:var(--c)}
-.sr-bag-gap{width:1px;height:28px;background:var(--ui-line,#e3e6ea);margin:0 2px}
-@media (max-height:420px){.sr-slot{width:40px;height:40px}.sr-slot svg{width:24px;height:24px}}
+/* Evia's tool belt: opens at the bottom (inside the ground) when something is in her way. */
+.sr-belt{position:absolute;left:50%;bottom:calc(10px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(calc(100% - 20px),680px);display:flex;flex-direction:column;gap:6px;animation:srBelt .22s ease-out}
+@keyframes srBelt{from{transform:translate(-50%,24px);opacity:0}}
+.sr-belt-head{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:14px;background:rgba(255,255,255,.96);box-shadow:0 4px 16px rgba(15,23,42,.14)}
+.sr-belt-head p{margin:0;font-size:14px;line-height:1.35;font-weight:650;color:var(--ui-ink,#1f2937)}
+.sr-belt-head b{display:inline-block;margin-right:7px;padding:1px 7px;border-radius:6px;background:var(--ui-ink,#1f2937);color:#fff;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;vertical-align:1px}
+.sr-belt-pic{flex:none;width:92px;height:64px;display:grid;place-items:center;border-radius:10px;background:#f8fafc}.sr-belt-pic svg{width:88px;height:62px}
+.sr-belt-strap{position:relative;padding:7px;border-radius:16px;background:linear-gradient(180deg,#3b3530,#2a2521);box-shadow:0 6px 18px rgba(15,23,42,.28),inset 0 1px 0 rgba(255,255,255,.08)}
+.sr-belt-strap::before{content:"";position:absolute;inset:3px;border:1.5px dashed rgba(255,255,255,.18);border-radius:13px;pointer-events:none}
+.sr-belt-opts{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.sr-belt-opts.n3{grid-template-columns:repeat(3,1fr)}
+.sr-belt-opts button{display:flex;align-items:center;gap:8px;min-height:52px;padding:6px 10px;border:0;border-radius:11px;background:#fff;color:var(--ui-ink,#1f2937);font:inherit;font-size:13px;font-weight:700;line-height:1.2;text-align:left;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.25);transition:transform .1s}
+.sr-belt-opts button:active{transform:translateY(1px) scale(.98)}
+.sr-belt-opts button svg{flex:none;width:30px;height:30px}
+.sr-belt-opts button.txt{justify-content:center;text-align:center}
+.sr-belt-opts button.no{opacity:.38;text-decoration:line-through;cursor:default}
+.sr.port .sr-belt-opts{grid-template-columns:1fr 1fr}.sr.port .sr-belt-opts.n3 .txt:last-child{grid-column:1/-1}
+.sr.port .sr-belt{bottom:calc(18px + env(safe-area-inset-bottom))}
+@media (max-height:420px){.sr-belt{gap:4px}.sr-belt-head{padding:5px 10px}.sr-belt-head p{font-size:13px}.sr-belt-pic{width:70px;height:48px}.sr-belt-pic svg{width:68px;height:47px}.sr-belt-opts button{min-height:44px;font-size:12.5px}.sr-belt-opts button svg{width:26px;height:26px}}
 .sr-name{flex:1;justify-content:center;min-width:0;font-size:13.5px;font-weight:800;color:var(--ui-ink,#1f2937);background:none;box-shadow:none;backdrop-filter:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sr-coins{font-weight:800;font-size:14px;color:#8a6400}.sr-coins .rw-coin{width:18px;height:18px;fill:#f5b800;stroke:#b07f00}
 .sr-x{width:36px;height:36px;border-radius:50%;border:0;background:rgba(255,255,255,.9);box-shadow:0 1px 3px rgba(15,23,42,.1);font-size:22px;line-height:1;color:var(--ui-ink,#1f2937);cursor:pointer}
@@ -201,9 +210,10 @@ html[data-evia-theme="forest"],html[data-evia-theme="navy"],html[data-evia-theme
 .sr-q{pointer-events:auto;width:100%;padding:10px 12px;border-radius:16px;background:rgba(255,255,255,.95);box-shadow:0 6px 24px rgba(15,23,42,.14);border-top:4px solid var(--yellow)}
 .sr-q p{margin:0 0 8px;font-size:14.5px;line-height:1.35;font-weight:700;color:var(--ui-ink,#1f2937)}
 .sr-opts{display:flex;gap:6px;flex-wrap:wrap}
-.sr-opts button{flex:1 1 96px;display:flex;align-items:center;gap:7px;min-height:38px;padding:6px 9px;border-radius:11px;border:1.5px solid var(--ui-line,#e3e6ea);background:#fff;font-size:13px;line-height:1.25;text-align:left;color:var(--ui-ink,#1f2937);cursor:pointer}
-.sr-opts button b{flex:none;display:grid;place-items:center;width:22px;height:22px;border-radius:7px;background:var(--soft,#f3f4f6);font-size:12px}
-.sr-opts button.ok{border-color:#16a34a;background:#f0fdf4}.sr-opts button.no{opacity:.45}
+.sr-opts span{flex:1 1 96px;display:flex;align-items:center;gap:7px;min-height:34px;padding:5px 9px;border-radius:11px;border:1.5px solid var(--ui-line,#e3e6ea);background:#fff;font-size:13px;line-height:1.25;color:var(--ui-ink,#1f2937)}
+.sr-q small{display:block;margin-top:6px;font-size:11.5px;color:var(--ui-muted,#6b7280);text-align:center}
+.sr-opts span b{flex:none;display:grid;place-items:center;width:22px;height:22px;border-radius:7px;background:var(--soft,#f3f4f6);font-size:12px}
+.sr-opts span.ok{border-color:#16a34a;background:#f0fdf4}.sr-opts span.no{opacity:.45;text-decoration:line-through}
 .sr-toast{max-width:min(100%,460px);transform:translateY(-6px);padding:9px 14px;border-radius:14px;background:rgba(31,41,55,.92);color:#fff;font-size:13.5px;font-weight:600;line-height:1.35;text-align:center;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none}
 .sr-toast.on{opacity:1;transform:none}
 .sr-pad{position:absolute;inset:auto 0 0 0;display:flex;gap:10px;padding:0 calc(14px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left));pointer-events:none}
@@ -234,7 +244,7 @@ html[data-evia-theme="forest"],html[data-evia-theme="navy"],html[data-evia-theme
 .sr-btns{display:grid;gap:8px;margin-top:6px}.sr-btns button{height:46px;border-radius:14px;font-weight:800;font-size:15.5px}
 .sr-turn{display:flex;align-items:center;justify-content:center;gap:8px;text-align:left;margin:14px 0 0;font-size:13px;color:var(--ui-muted,#6b7280)}
 .sr-turn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
-@media (max-height:420px){.sr-card{padding:14px 14px 12px}.sr-card h2{font-size:19px}.sr-card>p{margin-bottom:8px}.sr-lv{padding:7px 10px}.sr-stars .sr-star{width:26px;height:26px}.sr-q{padding:7px 10px}.sr-q p{font-size:13.5px;margin-bottom:6px}.sr-opts button{min-height:32px}}
+@media (max-height:420px){.sr-card{padding:14px 14px 12px}.sr-card h2{font-size:19px}.sr-card>p{margin-bottom:8px}.sr-lv{padding:7px 10px}.sr-stars .sr-star{width:26px;height:26px}.sr-q{padding:7px 10px}.sr-q p{font-size:13.5px;margin-bottom:6px}.sr-opts span{min-height:30px}}
 @media (orientation:landscape) and (max-height:520px){
   .sr-card{width:min(100%,640px)}.sr-list{grid-template-columns:1fr 1fr}.sr-lv-t small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .sr-why{grid-template-columns:repeat(3,1fr)}.sr-why li{padding:7px 8px 7px 26px;font-size:12.5px}.sr-why li::before{left:9px}.sr-why li.ok::before{left:8px}
