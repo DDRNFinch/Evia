@@ -39,7 +39,7 @@
     const d=new Date(s);return isNaN(d)?null:d.toISOString();
   }
   const ms=v=>{const t=Date.parse(iso(v)||"");return isNaN(t)?Date.now():t};
-  const slug=s=>String(s||"").toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
+  const slug=s=>String(s||"").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
   /* Units are named in older evidence. Stable ids come from the course packs (packs.js), which fix an id for every
      unit; new evidence keeps its unit id ("uid") as well as the name. */
   const unitId=(c,name)=>!c||!name?null:window.eviaPacks?window.eviaPacks.unitId(c,name):c+"/"+slug(name);
