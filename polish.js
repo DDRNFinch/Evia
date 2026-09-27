@@ -126,9 +126,11 @@
     $("#page-title").textContent=u[0];
     $("#screen").innerHTML='<div class="evidence-pack-page">'+
       '<div class="evidence-heading"><div class="evidence-label">EVIDENCE PACK</div><h2>'+esc(u[0])+'</h2><p>Capture the whole job in one pack. Take photos from the <strong>beginning, middle and end</strong> of the job.</p></div>'+
+        '<div class="ev-modes">'+
         (window.eviaGuide?'<button type="button" class="eg-start" id="eg-start"><span class="evia-mini" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span><span><strong>'+(pack.guide&&!pack.guide.used&&(pack.guide.at||Object.values(pack.guide.answers||{}).some(Boolean))?"Carry on with Evia":"Let Evia guide you")+'</strong><small>'+(pack.guide&&!pack.guide.used&&pack.guide.at?"Pick up where you left off":"Photos one at a time, then a few questions")+'</small></span><span class="eg-start-chev" aria-hidden="true">›</span></button>':"")+
-        '<button type="button" class="eg-start fr-start" id="fr-start"><span class="evia-mini fr-no" aria-hidden="true"><span class="evia-face"><i></i><i></i></span><b class="fr-strike"></b></span><span><strong>'+(started?"Carry on in free range":"Free range mode")+'</strong><small>'+
+        '<button type="button" class="eg-start fr-start" id="fr-start"><span class="fr-no" aria-hidden="true"><span class="evia-mini"><span class="evia-face"><i></i><i></i></span></span><b class="fr-strike"></b></span><span><strong>'+(started?"Carry on in free range":"Free range mode")+'</strong><small>'+
           (started?photos.length+" photo"+(photos.length===1?"":"s")+(String(pack.write||"").trim()?" and a write-up":"")+" so far":"Add whatever you like: all your photos, then your write-up")+'</small></span><span class="eg-start-chev" aria-hidden="true">›</span></button>'+
+        '</div>'+
       (started?'<section class="evidence-section fr-progress"><div class="evidence-section-title">IN PROGRESS</div>'+
         '<div class="evidence-thumbs" id="evidence-photos"></div>'+
         '<p class="fr-progress-sum">'+photos.length+' photo'+(photos.length===1?"":"s")+' · '+(text?text.split(/\s+/).length+' words written':'no write-up yet')+'</p>'+
@@ -285,8 +287,14 @@
          so the writing check opens below it rather than under it. */
       html body .eg-full .pr-body:has(.fr-mention)>.wc-field{flex:0 0 auto}
       html body .eg-full .pr-body:has(.fr-mention) .eg-text{flex:none;min-height:170px}
-      /* Free range: Evia crossed out, as in "without Evia". */
-      .fr-strike{position:absolute;z-index:2;left:50%;top:50%;width:122%;height:2.5px;border-radius:2px;background:var(--yellow,#e7b900);box-shadow:0 0 0 1.5px var(--soft,#fff7d6);transform:translate(-50%,-50%) rotate(-45deg);pointer-events:none}
+      /* Free range: a prohibited sign (🚫) over Evia at half size. */
+      .fr-no{position:relative;flex:0 0 auto;width:34px;height:34px;border-radius:50%;border:2.5px solid #d92d20;background:#fff;display:grid;place-items:center;box-sizing:border-box}
+      .fr-no .evia-mini{transform:scale(.5);margin:0}
+      .fr-strike{position:absolute;z-index:2;left:50%;top:50%;width:100%;height:2.5px;border-radius:2px;background:#d92d20;transform:translate(-50%,-50%) rotate(-45deg);pointer-events:none}
+      html body .eg-full .fr-no{width:30px;height:30px}
+      /* The two ways to make a pack, always the same size. */
+      .ev-modes{display:grid;grid-auto-rows:1fr;gap:12px;margin:4px 0 14px}
+      .ev-modes .eg-start{margin:0;height:100%}
       .submit-hint{text-align:center;font-size:11.5px;line-height:1.45;color:#98a2b3;margin:9px 6px 0}
       .prompt-list,.writeup-prompts,.photo-guide,.capture-intro{display:none}
       button:disabled{opacity:.45;cursor:not-allowed}

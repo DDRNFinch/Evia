@@ -12,8 +12,8 @@
   const split=s=>{const seen=new Set();return String(s||"").split("·").map(t=>t.trim()).filter(t=>{const k=t.toLowerCase();if(!t||seen.has(k))return false;seen.add(k);return true})};
   const reduced=()=>window.eviaAccessibility?window.eviaAccessibility.reducedMotion():matchMedia("(prefers-reduced-motion: reduce)").matches;
   const AVATAR='<span class="evia-mini" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span>';
-  /* Free range is "without Evia": the same Evia, crossed out. */
-  const AVATAR_OFF='<span class="evia-mini fr-no" aria-hidden="true"><span class="evia-face"><i></i><i></i></span><b class="fr-strike"></b></span>';
+  /* Free range is "without Evia": a prohibited sign over a small Evia. */
+  const AVATAR_OFF='<span class="fr-no" aria-hidden="true"><span class="evia-mini"><span class="evia-face"><i></i><i></i></span></span><b class="fr-strike"></b></span>';
 
   /* ---------- The stages of a job ---------- */
   /* Each thing to capture, thing to mention and the unit's skills and behaviours is sorted into the stage of the job
