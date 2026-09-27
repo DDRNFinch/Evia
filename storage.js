@@ -2,8 +2,8 @@
    asks the browser to keep it, and provides portfolio backup/restore. Loads the app scripts once data is ready. */
 (function(){
   const DB_NAME="evia7-app-data",STORE="kv";
-  /* Small settings needed before first paint stay in localStorage; every other evia7-* key lives in IndexedDB. */
-  const KEEP=new Set(["evia7-theme","evia7-theme-picked","evia7-shape","evia7-shape-picked","evia7-accessibility"]);
+  /* Small settings needed before first paint, and the problem log (errors.js), stay in localStorage; every other evia7-* key lives in IndexedDB. */
+  const KEEP=new Set(["evia7-theme","evia7-theme-picked","evia7-shape","evia7-shape-picked","evia7-accessibility","evia7-errors"]);
   const BLOB_DBS=["evia7-evidence-db","evia7-supporting-files"];
   const LAST_BACKUP_KEY="evia7-last-backup";
   const moved=k=>typeof k==="string"&&k.startsWith("evia7-")&&!KEEP.has(k);

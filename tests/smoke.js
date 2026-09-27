@@ -406,6 +406,26 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       return out;
     });
     check("Course packs: only the learner's own trade loads, and switching course fetches the new one",Object.values(pk).every(Boolean),JSON.stringify(pk));
+    // Problem log: script errors are kept on the phone, counted once each, shown in Profile and synced.
+    const pl=await page.evaluate(async()=>{
+      const w=ms=>new Promise(r=>setTimeout(r,ms)),E=window.eviaErrors,out={};
+      const hidden=E.list().filter(x=>x.kind!=="reported");out.noneSoFar=!hidden.length;out.hidden=hidden.map(x=>x.message).join(" | ");if(!hidden.length)delete out.hidden;
+      const fire=()=>window.dispatchEvent(new ErrorEvent("error",{message:"Smoke test problem",filename:"https://x/app.js?v=1",lineno:12,colno:3,error:new Error("Smoke test problem")}));
+      fire();fire();
+      const mine=E.list().find(x=>x.message==="Smoke test problem");
+      out.logged=!!mine&&mine.count===2&&mine.where==="app.js:12:3"&&/^evia7-v\d+$/.test(mine.version);
+      out.synced=window.eviaData.changesSince().some(c=>c.collection==="errors"&&c.record.message==="Smoke test problem");
+      document.getElementById("profile-btn").click();await w(150);
+      const row=document.getElementById("open-problems");out.row=!!row&&/recorded/.test(row.textContent);
+      row.click();await w(150);
+      out.sheet=/Smoke test problem/.test(document.querySelector(".pf-problems").textContent)&&!!document.getElementById("pl-send");
+      document.getElementById("pl-clear").click();await w(100);
+      out.cleared=!E.list().length&&/Nothing has gone wrong/.test(document.querySelector(".pf-problems").textContent);
+      document.getElementById("pl-close").click();await w(600);
+      const pc=document.getElementById("profile-close");out.back=!!pc||document.getElementById("modal-root").innerHTML.slice(0,300);if(pc)pc.click();await w(100);
+      return out;
+    });
+    check("Problem log: no hidden script problems, errors are counted once each, shown in Profile to send to a tutor, and synced",Object.values(pl).every(v=>v===true),JSON.stringify(pl));
     // Mini games: locked until unlocked in Rewards, played from Teach me, small coins with a daily cap.
     const gm=await page.evaluate(async()=>{
       const w=ms=>new Promise(r=>setTimeout(r,ms)),R=window.eviaRewards,G=window.eviaGames,out={},keep=localStorage.getItem("evia7-rewards");

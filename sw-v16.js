@@ -13,7 +13,7 @@ const APP_SHELL = [
   "./vendor/fonts/lexend-latin-400-normal.woff2",
   "./vendor/fonts/lexend-latin-600-normal.woff2",
   "./vendor/fonts/inter-latin-wght-normal.woff2",
-  "./packs.js",
+  "./errors.js","./packs.js",
   "./storage.js",
   "./nvq-data.js",
   "./nvq.js",

@@ -11,7 +11,7 @@
    copy of the record, for the screens that show it; the fields around it are what Nisia reads.
    Sync (for Nisia, nothing else):     eviaData.changesSince()  eviaData.markSynced(records)
    Collections: learner, evidence, supporting, nvqAnswers, hours, lessonResults, tests, confidence, scenarios,
-   reviews, targets, rewards. Every collection is written through here.
+   reviews, targets, rewards, errors (the problem log, read only). Every other collection is written through here.
    eviaData.replace("targets", {course}, list) swaps a course's targets after a review. */
 (function(){
   const V=1,ID_KEY="evia7-learner-id",SYNC_KEY="evia7-data-synced";
@@ -117,6 +117,11 @@
       const b=(readJson("evia7-targets",[])||[]).filter(Boolean).map((t,i)=>base(t.id||("target-"+i),{course:t.course||courseNow(),kind:t.kind||"",title:t.title||"",why:t.reason||"",
         goal:t.targetValue??null,baseline:0,param:t.measure||null,due:iso(t.deadline),setBy:"evia",reviewId:null,metAt:t.done||t.completed?iso(t.doneAt||t.completedAt):null,createdAt:null,updatedAt:null,store:"legacy",detail:t}));
       return a.concat(b);
+    },
+    /* The problem log (errors.js): read only, so Nisia can see what went wrong on the phone. */
+    errors(){
+      return (window.eviaErrors?window.eviaErrors.list():[]).map(x=>base(x.id,{message:x.message,where:x.where||"",stack:x.stack||"",kind:x.kind||"error",
+        place:x.place||"",appVersion:x.version||"",count:x.count||1,createdAt:x.at,updatedAt:x.lastAt||x.at,device:navigator.userAgent.slice(0,160)}));
     },
     rewards(){
       const r=readJson("evia7-rewards",{})||{},me=(readJson("evia7-teach",{})||{})._me||{};
@@ -296,7 +301,7 @@
   /* ---------- Sync with Nisia ----------
      Works whoever wrote the data (a screen not yet moved here included): each record's fingerprint is compared with
      the one last sent. changesSince() gives new and changed records, plus ids that have gone (deleted). */
-  const SYNCED=["learner","evidence","supporting","nvqAnswers","hours","lessonResults","tests","confidence","scenarios","reviews","targets","rewards"];
+  const SYNCED=["learner","evidence","supporting","nvqAnswers","hours","lessonResults","tests","confidence","scenarios","reviews","targets","rewards","errors"];
   const fp=r=>{const s=JSON.stringify(r);let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)};
   function changesSince(){
     const done=readJson(SYNC_KEY,{})||{},out=[];

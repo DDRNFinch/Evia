@@ -701,6 +701,11 @@ html body .pf-row{display:flex;align-items:center;gap:12px;width:100%;min-height
 .pf-data{padding:12px 14px 4px}
 .pf-data p{margin:0 0 4px;font-size:12.5px;line-height:1.45;color:var(--ui-muted)}
 .pf-data-actions{display:flex;flex-wrap:wrap;gap:8px;padding:10px 14px 14px;border:0!important}
+.pl-list{list-style:none;margin:4px 0 8px;padding:0;display:grid;gap:8px;max-height:52vh;overflow:auto}
+.pl-list li{padding:10px 12px;border:1px solid var(--ui-line,rgba(0,0,0,.08));border-radius:12px;display:grid;gap:3px}
+.pl-list strong{font-size:13px;font-weight:600;overflow-wrap:anywhere}
+.pl-list small{font-size:12px;color:var(--ui-muted)}
+.pf-problems .pf-note,.pf-problems .pf-data-actions{padding-left:0;padding-right:0}
 html body .pf-data-actions>*{flex:1 1 auto;min-height:42px;padding:9px 12px;border-radius:12px;font-size:13.5px;text-align:center;display:flex;align-items:center;justify-content:center}
 .pf-save{position:sticky;bottom:0;margin:4px -18px 0;padding:12px 18px max(14px,env(safe-area-inset-bottom));background:linear-gradient(transparent,#f7f8fa 30%)}
 html body .pf-save button{width:100%;min-height:50px;border-radius:14px;font-size:16px}

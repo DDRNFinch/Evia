@@ -11,6 +11,34 @@
       : '<div class="'+(large?"welcome-avatar profile-placeholder":"profile-photo profile-placeholder")+'" role="img" aria-label="Default profile picture"><svg class="profile-silhouette" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="21" r="11"></circle><path d="M13 55c2-12 9-19 19-19s17 7 19 19"></path></svg></div>';
   }
 
+  /* Problem log (errors.js): what went wrong on this phone, to send to a tutor. */
+  const ago=t=>{const m=Math.round((Date.now()-Date.parse(t))/6e4);return m<1?"just now":m<60?m+" min ago":m<1440?Math.round(m/60)+" h ago":Math.round(m/1440)+" days ago"};
+  function problemsSummary(){
+    const list=window.eviaErrors?window.eviaErrors.list():[];
+    return list.length?list.length+" recorded · last "+ago(list[list.length-1].lastAt):"Nothing has gone wrong";
+  }
+  function openProblems(){
+    const E=window.eviaErrors,list=E?E.list().slice().reverse():[];
+    document.getElementById("modal-root").innerHTML='<div class="overlay"><section class="sheet pr-sheet pf-problems" role="dialog" aria-modal="true" aria-label="Problem log">'+
+      '<div class="sheet-head"><div><div class="chat-kicker">YOUR DATA</div><h2>Problem log</h2></div><button class="close" id="pl-close" aria-label="Close">×</button></div>'+
+      (list.length?'<p class="pf-note">If Evia isn’t working properly, send this to your tutor. It holds no evidence or personal details.</p>'+
+        '<ul class="pl-list">'+list.map(x=>'<li><strong>'+esc(x.message)+'</strong><small>'+esc(ago(x.lastAt))+(x.count>1?' · '+x.count+' times':"")+(x.place?' · '+esc(x.place):"")+'</small></li>').join("")+'</ul>'+
+        '<div class="pf-data-actions"><button type="button" class="primary" id="pl-send">Send to tutor</button><button type="button" class="secondary" id="pl-clear">Clear</button></div>'
+        :'<p class="pf-note">Nothing has gone wrong on this phone.</p>')+
+      '</section></div>';
+    const back=()=>openProfile();
+    document.getElementById("pl-close").onclick=back;
+    const send=document.getElementById("pl-send");
+    if(send)send.onclick=async()=>{
+      const text="Evia problem log\n\n"+E.text();
+      try{if(navigator.share){await navigator.share({title:"Evia problem log",text});return}}catch(e){if(e&&e.name==="AbortError")return}
+      try{await navigator.clipboard.writeText(text);if(typeof showEvidenceToast==="function")showEvidenceToast("Copied. Paste it into a message to your tutor")}
+      catch(_){if(typeof showEvidenceToast==="function")showEvidenceToast("Couldn’t copy the log",true)}
+    };
+    const clear=document.getElementById("pl-clear");
+    if(clear)clear.onclick=()=>{E.clear();openProblems()};
+  }
+
   function openProfile(){
     const p=get();
     const nvqOn=!!(window.eviaNvq&&window.eviaNvq.on()),dsl=p.safeguarding||{};
@@ -38,7 +66,8 @@
         '<details class="pf-more"'+(dsl.name?"":"")+'><summary>'+(dsl.name?esc(dsl.name):"Add your safeguarding lead")+'<span>'+(dsl.name?esc(dsl.phone||dsl.email||""):"Optional · your tutor can tell you who")+'</span></summary><div class="pf-fields"><label>Name<input id="profile-dsl-name" value="'+esc(dsl.name||"")+'" placeholder="e.g. Jo Smith" autocomplete="off"></label><label>Phone<input id="profile-dsl-phone" type="tel" value="'+esc(dsl.phone||"")+'" placeholder="e.g. 01234 567890"></label><label>Email<input id="profile-dsl-email" type="email" value="'+esc(dsl.email||"")+'" placeholder="e.g. safeguarding@college.ac.uk"></label></div></details>')+
       group("Your data",
         '<div class="evia-storage-block pf-data"><p id="evia-storage-usage">Checking storage…</p><p id="evia-storage-status"></p><p class="evia-storage-last" id="evia-storage-last"></p></div>'+
-        '<div class="pf-data-actions"><button type="button" class="secondary" id="evia-backup">Back up</button><label class="secondary evia-restore-label">Restore<input id="evia-restore" type="file" accept=".zip,application/zip" hidden></label><button type="button" class="secondary" id="download-portfolio">Portfolio PDF</button></div>')+
+        '<div class="pf-data-actions"><button type="button" class="secondary" id="evia-backup">Back up</button><label class="secondary evia-restore-label">Restore<input id="evia-restore" type="file" accept=".zip,application/zip" hidden></label><button type="button" class="secondary" id="download-portfolio">Portfolio PDF</button></div>'+
+        row("open-problems",'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3.5 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.2v.1"/></svg>',"Problem log",problemsSummary()))+
       '<div class="pf-save"><button type="button" class="primary" id="save-profile">Save</button></div>'+
       '</section></div>';
 
@@ -76,6 +105,7 @@
       refreshProfileButton();document.getElementById("modal-root").innerHTML="";
     };
     document.getElementById("download-portfolio").onclick=downloadEvidencePack;
+    document.getElementById("open-problems").onclick=openProblems;
     if(window.eviaStorage)window.eviaStorage.bindProfileCard(document.getElementById("modal-root"));
     document.getElementById("profile-maths").checked=!!p.mathsEnabled;
     document.getElementById("profile-english").checked=!!p.englishEnabled;
