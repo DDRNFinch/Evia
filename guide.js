@@ -269,9 +269,7 @@
         "Add whatever you like, your way. Take all your photos first, with everything worth capturing listed. Then write it up in your own words, with everything worth mentioning listed.")+'</p>'+
       '<ol class="eg-stages"><li>Photos</li><li>Write-up</li></ol>'+
       '<p class="eg-small">Everything saves as you go, so you can stop and carry on later.</p>',
-      [{label:n?"Take more photos":"Start with photos",primary:!n,run:()=>freePhotos(ctx)},
-       {label:"Choose from gallery",run:()=>gallery(ctx,()=>free(ctx))},
-       {label:"Go to the write-up",primary:!!n,run:()=>freeWrite(ctx)}],
+      [{label:"Get started",primary:true,run:()=>freePhotos(ctx)}],
       {kicker:"FREE RANGE",title:ctx.unitName,free:true});
     closeRefreshes(ctx);
   }

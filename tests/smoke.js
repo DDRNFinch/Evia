@@ -88,7 +88,9 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     const egBtn=async re=>{await page.evaluate(src=>{const b=[...document.querySelectorAll(".eg-sheet button")].find(b=>new RegExp(src).test(b.textContent.trim()));if(b)b.click()},re);await page.waitForTimeout(350)};
     await page.click("#fr-start");await page.waitForTimeout(400);
     fr.intro=await page.evaluate(()=>{const sh=document.querySelector(".eg-sheet");return !!sh&&/^FREE RANGE$/.test(sh.querySelector(".chat-kicker").textContent)&&!!sh.querySelector(".fr-no .fr-strike")&&/Photos/.test(sh.textContent)});
-    await egBtn("^Go to the write-up$");
+    fr.oneButton=await page.evaluate(()=>[...document.querySelectorAll(".eg-sheet .eg-actions button")].map(b=>b.textContent.trim()).join()==="Get started");
+    await page.evaluate(()=>document.getElementById("eg-close").click());await page.waitForTimeout(500);
+    await page.evaluate(()=>openUnit(data().u.findIndex(u=>u[0]==="Mixing mortar"),"write"));await page.waitForTimeout(900);
     fr.write=await page.evaluate(()=>{const sh=document.querySelector(".eg-sheet");return !!sh&&!!sh.querySelector("#write")&&/THINGS TO MENTION/.test(sh.querySelector(".fr-mention").textContent)&&!sh.querySelector(".eg-pill")&&sh.querySelector(".eg-actions .primary").disabled});
     await page.fill("#write","Mixed a batch of mortar at 1 to 5.");await page.waitForTimeout(300);
     await page.click("#eg-close");await page.waitForTimeout(700);
