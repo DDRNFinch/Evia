@@ -1,3 +1,5 @@
+/* Hours as a learner reads them: 5h:51m, never 5.917. Rounded to the nearest minute. Shared by every screen and PDF. */
+window.eviaHM=h=>{const m=Math.max(0,Math.round((Number(h)||0)*60)),H=Math.floor(m/60),M=m%60;return H&&M?H+"h:"+String(M).padStart(2,"0")+"m":H?H+"h":M+"m"};
 const C={
 bricklayer:{name:"Bricklayer",std:"ST0095 v1.2",u:[
 ["Mixing mortar",["S14|Gauge and hand mix mortar to ratio.","K20|Mixing Mortar: Ratios, silos, pre-mixed, gauging, hand mixing and mechanical mixing.","S1|Comply with health and safety regulations, standards, and guidance.","K1|signage, Safety signage.","S6|Estimate and select required resources: For example, the quantity of mortar,","K12|Simple resource estimation techniques: Quantity of mortar","S20|Applies team working principles to their own and the wider build team.","B1|Put health, safety and wellbeing first."]],
@@ -77,8 +79,8 @@ function buildOTJPrintWindow(entries,title,downloadedAt){
  (p.start?'<span><strong>Apprenticeship start:</strong> '+esc(p.start)+'</span>':"")+
  (p.end?'<span><strong>Apprenticeship end:</strong> '+esc(p.end)+'</span>':"")+
  '<span><strong>PDF generated:</strong> '+esc(formatDateTime(downloadedAt))+'</span></div></header>'+
- '<div class="summary"><strong>'+total.toFixed(2)+' hours</strong> across '+entries.length+' learning entries included in this download.</div>'+
- entries.slice().sort((a,b)=>Number(a.createdAt)-Number(b.createdAt)).map(x=>'<article class="entry"><div class="entry-date">'+esc(x.savedAt||formatDateTime(x.createdAt))+'</div><div class="entry-hours">'+esc(Number(x.n).toFixed(2))+' hours</div><div class="entry-description">'+esc(x.description||"No description recorded.")+'</div></article>').join("")+
+ '<div class="summary"><strong>'+window.eviaHM(total)+'</strong> across '+entries.length+' learning entries included in this download.</div>'+
+ entries.slice().sort((a,b)=>Number(a.createdAt)-Number(b.createdAt)).map(x=>'<article class="entry"><div class="entry-date">'+esc(x.savedAt||formatDateTime(x.createdAt))+'</div><div class="entry-hours">'+esc(window.eviaHM(x.n))+'</div><div class="entry-description">'+esc(x.description||"No description recorded.")+'</div></article>').join("")+
  '<div class="footer">This document contains the learning hours entries included at the time of this download. The next Evia learning hours download will contain new entries recorded after this download.</div>'+
  '</body></html>');
  w.document.close();w.focus();setTimeout(()=>w.print(),250);return true;
@@ -111,7 +113,7 @@ function learning(){
  const pending=hours.filter(x=>Number(x.createdAt)>Number(lastBatch?lastBatch.cutoff:0)).length;
  $("#screen").innerHTML='<div class="card"><h2>Log learning hours</h2><div class="learning-input" style="margin-top:14px"><input id="hrs" type="number" min="0" step=".25" placeholder="Hours"><button class="primary" id="add">Add</button></div><textarea id="otj-description" placeholder="What did you do or learn?"></textarea></div>'+
  (pending||lastBatch?'<div class="card otj-download-card otj-compact"><p><strong>'+(pending?pending+' new '+(pending===1?"entry":"entries"):"No new entries")+'</strong> for your learning hours PDF</p><div class="row">'+(pending?'<button class="primary" id="download-otj">Download PDF</button>':"")+(lastBatch?'<button class="secondary" id="download-last-otj">Last PDF again</button>':"")+'</div></div>':"")+
- hours.slice().reverse().map(x=>'<div class="card otj-entry"><div class="progress-row"><strong>'+esc(Number(x.n).toFixed(2))+' hours</strong><span class="status '+(lastBatch&&Number(x.createdAt)<=Number(lastBatch.cutoff)?"done":"")+'">'+(lastBatch&&Number(x.createdAt)<=Number(lastBatch.cutoff)?"Downloaded":"New")+'</span></div><small class="otj-date">'+esc(x.savedAt||formatDateTime(x.createdAt))+'</small><p>'+esc(x.description||"No description recorded.")+'</p></div>').join("");
+ hours.slice().reverse().map(x=>'<div class="card otj-entry"><div class="progress-row"><strong>'+esc(window.eviaHM(x.n))+'</strong><span class="status '+(lastBatch&&Number(x.createdAt)<=Number(lastBatch.cutoff)?"done":"")+'">'+(lastBatch&&Number(x.createdAt)<=Number(lastBatch.cutoff)?"Downloaded":"New")+'</span></div><small class="otj-date">'+esc(x.savedAt||formatDateTime(x.createdAt))+'</small><p>'+esc(x.description||"No description recorded.")+'</p></div>').join("");
  $("#add").onclick=()=>{let n=Number($("#hrs").value),description=$("#otj-description").value.trim();if(n>0&&description){const now=Date.now();hours.push({id:"otj-"+now+"-"+Math.random().toString(36).slice(0,8),n:n,description:description,createdAt:now,savedAt:formatDateTime(now)});persist();learning();if(window.eviaCheckTargets)window.eviaCheckTargets()}else if(n>0){alert("Add a short description of what you did or learned before saving.")}};
  const dl=$("#download-otj");if(dl)dl.onclick=()=>downloadOTJPDF("new");
  const last=$("#download-last-otj");if(last)last.onclick=()=>downloadOTJPDF("last");
@@ -351,7 +353,7 @@ function openSavedLearningLogs(){
  const entries=hours.slice().reverse();
  $("#page-title").textContent="Learning Logs";
  $("#screen").innerHTML='<button class="secondary" id="back-learning-logs-portfolio" type="button">‹ Back to portfolio</button><div class="card portfolio-intro"><div class="section-title">PORTFOLIO</div><h2>Learning Logs</h2><p>All learning hours learning entries saved for this course.</p></div>'+
- (entries.length?'<div class="saved-learning-list">'+entries.map(x=>'<div class="card saved-learning-item"><div class="saved-learning-top"><strong>'+esc(Number(x.n||0).toFixed(2))+' hours</strong><span>'+esc(x.savedAt||formatDateTime(x.createdAt))+'</span></div><p>'+esc(x.description||"No description recorded.")+'</p></div>').join("")+'</div>':'<div class="card"><p>No learning logs have been added yet.</p></div>');
+ (entries.length?'<div class="saved-learning-list">'+entries.map(x=>'<div class="card saved-learning-item"><div class="saved-learning-top"><strong>'+esc(window.eviaHM(x.n))+'</strong><span>'+esc(x.savedAt||formatDateTime(x.createdAt))+'</span></div><p>'+esc(x.description||"No description recorded.")+'</p></div>').join("")+'</div>':'<div class="card"><p>No learning logs have been added yet.</p></div>');
  $("#back-learning-logs-portfolio").onclick=()=>nav("portfolio");
 }
 function openSavedReviews(){

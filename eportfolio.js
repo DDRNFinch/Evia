@@ -340,7 +340,7 @@
     const label=(t,x,yy)=>{doc.setFont("helvetica","bold");doc.setFontSize(7.5);doc.setTextColor(...muted);doc.setCharSpace(.35);doc.text(pdfText(t).toUpperCase(),x,yy);doc.setCharSpace(0)};
     label("Evia · Learning hours",M,y+3);y+=6;
     doc.setFont("helvetica","bold");doc.setFontSize(21);doc.setTextColor(...ink);doc.text(pdfText(learner),M,y+7);y+=11;
-    const details=[["Course",data().name],["Standard",data().std],["Entries",String(entries.length)],["Total hours",total.toFixed(2)]];
+    const details=[["Course",data().name],["Standard",data().std],["Entries",String(entries.length)],["Total hours",window.eviaHM(total)]];
     if(profile.start)details.push(["Start date",ukDate(profile.start)]);
     if(profile.end)details.push(["End date",ukDate(profile.end)]);
     details.push(["PDF created",ukDate(createdAt)]);
@@ -360,7 +360,7 @@
         const room=Math.max(1,Math.floor((BOTTOM-y-PAD*2-(first?5:0))/lh)),chunk=rest.splice(0,room),hh=PAD*2+(first?5:0)+chunk.length*lh-1;
         doc.setFillColor(250,251,252);doc.setDrawColor(223,227,233);doc.setLineWidth(.3);doc.roundedRect(M,y,CW,hh,2.5,2.5,"FD");
         let ty=y+PAD;
-        if(first){doc.setFont("helvetica","bold");doc.setFontSize(10);doc.setTextColor(...ink);doc.text(pdfText(ukDate(Number(x.createdAt)||x.savedAt)),M+PAD,ty+3);doc.text(Number(x.n||0).toFixed(2)+" hours",W-M-PAD,ty+3,{align:"right"});ty+=5}
+        if(first){doc.setFont("helvetica","bold");doc.setFontSize(10);doc.setTextColor(...ink);doc.text(pdfText(ukDate(Number(x.createdAt)||x.savedAt)),M+PAD,ty+3);doc.text(window.eviaHM(x.n),W-M-PAD,ty+3,{align:"right"});ty+=5}
         doc.setFont("helvetica","normal");doc.setFontSize(size);doc.setTextColor(52,64,84);
         chunk.forEach((l,n)=>doc.text(l,M+PAD,ty+lh*.75+n*lh));
         y+=hh+4;first=false;
@@ -386,7 +386,7 @@
     const sorted=entries.slice().sort((a,b)=>Number(a.createdAt)-Number(b.createdAt));
     $("#page-title").textContent="Learning hours PDF";
     $("#screen").innerHTML='<button class="secondary" id="eport-back" type="button">‹ Learning logs</button>'+
-      '<div class="eport-page"><div class="card eport-intro"><div class="section-title">LEARNING HOURS</div><h2>Your learning hours</h2><p>'+entries.length+' entr'+(entries.length===1?"y":"ies")+' · '+total.toFixed(2)+' hours. Upload this PDF to Aptem or your e-portfolio so your hours are counted.</p></div>'+
+      '<div class="eport-page"><div class="card eport-intro"><div class="section-title">LEARNING HOURS</div><h2>Your learning hours</h2><p>'+entries.length+' entr'+(entries.length===1?"y":"ies")+' · '+window.eviaHM(total)+'. Upload this PDF to Aptem or your e-portfolio so your hours are counted.</p></div>'+
       '<div class="eport-files" id="eport-files"><div class="card eport-pdf"><div class="eport-sheet is-loading" aria-hidden="true"><span></span><span></span><span></span></div><p class="eport-status">Preparing your learning hours PDF…</p></div></div></div>';
     $("#eport-back").onclick=()=>window.eviaOpenLearningLogs?window.eviaOpenLearningLogs():nav("course");
     let pdf;
@@ -399,7 +399,7 @@
       '<button type="button" class="eport-sheet" id="eport-preview" aria-label="Open the full learning hours PDF">'+
         '<span class="eport-sheet-kicker">EVIA · LEARNING HOURS</span>'+
         '<strong class="eport-sheet-title">'+escHtml(learner)+'</strong>'+
-        '<span class="eport-sheet-sub">'+entries.length+' entr'+(entries.length===1?"y":"ies")+' · '+total.toFixed(2)+' hours</span>'+
+        '<span class="eport-sheet-sub">'+entries.length+' entr'+(entries.length===1?"y":"ies")+' · '+window.eviaHM(total)+'</span>'+
         '<span class="eport-sheet-rule"></span>'+
         sorted.slice(0,3).map(x=>'<span class="eport-sheet-text"><b>'+escHtml(ukDate(Number(x.createdAt)))+' · '+Number(x.n||0).toFixed(2)+' h</b> '+escHtml(String(x.description||"").slice(0,70))+'</span>').join("")+
         '<span class="eport-sheet-open">Tap to open the full PDF</span>'+

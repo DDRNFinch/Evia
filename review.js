@@ -344,7 +344,7 @@
     const name=String(read("evia7-profile",{}).name||"").split(/\s+/)[0];
     const test=latestTests();
     const testSummary=["epa","maths","english"].filter(t=>test[t]).map(t=>testLabel(t)+" "+test[t].pct+"%").join(" · ");
-    reply('<strong>Progress review'+(name?", "+escLocal(name):"")+'</strong><br>Course evidence: '+m.completion+'% ('+m.covered+'/'+m.units+' units).<br>Learning hours: '+m.totalOTJ.toFixed(1)+(m.otjTarget?" / "+m.otjTarget:"")+" hours."+(testSummary?"<br>Test results: "+escLocal(testSummary)+".":"")+
+    reply('<strong>Progress review'+(name?", "+escLocal(name):"")+'</strong><br>Course evidence: '+m.completion+'% ('+m.covered+'/'+m.units+' units).<br>Learning hours: '+window.eviaHM(m.totalOTJ)+(m.otjTarget?" of "+m.otjTarget+" hours":"")+"."+(testSummary?"<br>Test results: "+escLocal(testSummary)+".":"")+
       '<br><br><strong>Quick target</strong><br>I’ve set a target to help you catch up: '+escLocal(target.title)+'. Aim to complete it by '+escLocal(new Date(target.deadline+"T00:00:00").toLocaleDateString("en-GB"))+'.<br><br><button class="chat-pill" id="start-full-review"><strong>Start full review</strong></button>');
     setTimeout(()=>{const b=$("#start-full-review");if(b)b.onclick=()=>fullReview();},950);
   }
@@ -415,7 +415,7 @@
     const auto=review.autoSummary||reviewAutoSummary(review.metrics), followUp=review.ksbFollowUp, reflection=review.reflection||{};
     const testHtml=tests.map(([l,v])=>'<div class="stat"><strong>'+l+'</strong><span>'+v+'%</span></div>').join("");
     const unitHtml=m.unitDetails.map(u=>'<section class="unit"><h3>'+escLocal(u.unit)+'</h3><p><strong>'+u.entries+'</strong> evidence entries · <strong>'+u.photos+'</strong> photos · <strong>'+u.words+'</strong> written words · <strong>'+u.ksbs.length+'</strong> KSBs captured</p>'+u.evidence.map(e=>'<div class="record"><strong>'+escLocal(e.date)+'</strong><span>'+e.photos+' photos'+(e.ksbs.length?' · '+escLocal(e.ksbs.join(", ")):"")+'</span>'+(e.notes?'<p>'+escLocal(e.notes)+'</p>':"")+'</div>').join("")+'</section>').join("");
-    const otjHtml=m.otjDetails.map(x=>'<div class="record"><strong>'+escLocal(x.date)+'</strong><span>'+x.hours.toFixed(2)+' hours</span>'+(x.description?'<p>'+escLocal(x.description)+'</p>':"")+'</div>').join("");
+    const otjHtml=m.otjDetails.map(x=>'<div class="record"><strong>'+escLocal(x.date)+'</strong><span>'+window.eviaHM(x.hours)+'</span>'+(x.description?'<p>'+escLocal(x.description)+'</p>':"")+'</div>').join("");
     const confHtml=m.confidenceRatings.length?m.confidenceRatings.map(x=>'<span class="pill">'+escLocal(x.area)+': '+x.score+'/4</span>').join(""):'No confidence check recorded';
     const prevConf=m.previousConfidenceRatings.length?m.previousConfidenceRatings.map(x=>'<span class="pill">'+escLocal(x.area)+': '+x.score+'/4</span>').join(""):'No previous confidence check recorded';
     const targets=review.targets.map((t,i)=>'<section class="target"><strong>'+(i+1)+'. '+escLocal(t.title)+'</strong><p>'+escLocal(t.reason)+'</p><span>Due '+new Date(t.deadline+"T00:00:00").toLocaleDateString("en-GB")+' · '+(targetStatus(t)==="complete"?"Completed":targetStatus(t)==="overdue"?"Overdue":"Active")+' · '+Number(t.progress||0)+'%</span></section>').join("");

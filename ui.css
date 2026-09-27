@@ -2343,3 +2343,21 @@ html.gm-open #profile-btn,html.gm-open .evia-fab,html.gm-open #evia-fab,html.gm-
 html body .eg-actions.eg-compact{justify-content:flex-end;gap:8px}
 html body .eg-actions.eg-compact button{flex:0 0 auto;min-height:40px!important;padding:0 18px;font-size:14.5px;border-radius:12px}
 html body .eg-actions.eg-compact .eg-back{margin-right:auto;padding:0 4px}
+
+/* ---------- Teach me: finished lessons become bronze, silver or gold medals (teach.js) ---------- */
+.tm-node[class*="medal-"] .tm-dot{--m1:#f6d27a;--m2:#e0a82e;--m3:#b07a12;background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.75) 0 12%,transparent 34%),linear-gradient(145deg,var(--m1),var(--m2) 55%,var(--m3));color:#fff;box-shadow:0 6px 0 color-mix(in srgb,var(--m3) 75%,#000),inset 0 0 0 4px rgba(255,255,255,.35)}
+.tm-node.medal-gold .tm-dot,.tm-medal-won.medal-gold{--m1:#ffe99a;--m2:#f2bf1f;--m3:#b98500}
+.tm-node.medal-silver .tm-dot,.tm-medal-won.medal-silver{--m1:#f7f8fa;--m2:#c4cbd4;--m3:#848e9b}
+.tm-node.medal-bronze .tm-dot,.tm-medal-won.medal-bronze{--m1:#f6c9a2;--m2:#cd7f45;--m3:#8a4a20}
+.tm-node.trophy[class*="medal-"] .tm-dot{background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.75) 0 12%,transparent 34%),linear-gradient(145deg,var(--m1),var(--m2) 55%,var(--m3));color:#fff;box-shadow:0 6px 0 color-mix(in srgb,var(--m3) 75%,#000),inset 0 0 0 4px rgba(255,255,255,.35)}
+.tm-dot .tm-star{width:34px;height:34px;fill:currentColor;stroke:rgba(0,0,0,.12);stroke-width:1;filter:drop-shadow(0 1px 0 rgba(0,0,0,.18))}
+.tm-medal-tag{font-style:normal;font-weight:800;color:var(--ui-ink)}
+.tm-node.medal-gold .tm-medal-tag{color:#9a6b00}.tm-node.medal-silver .tm-medal-tag{color:#5b6573}.tm-node.medal-bronze .tm-medal-tag{color:#8a4a20}
+/* the medal on the lesson-complete screen */
+.tm-medal-won{display:flex;align-items:center;gap:12px;max-width:340px;margin:14px auto 0;padding:10px 14px 10px 10px;border-radius:18px;background:var(--ui-card,#fff);border:1px solid var(--ui-line);text-align:left;animation:tmMedalIn .5s cubic-bezier(.2,1.4,.4,1) both}
+.tm-medal-disc{flex:0 0 auto;width:52px;height:52px;border-radius:50%;display:grid;place-items:center;color:#fff;background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.75) 0 12%,transparent 34%),linear-gradient(145deg,var(--m1),var(--m2) 55%,var(--m3));box-shadow:0 4px 0 color-mix(in srgb,var(--m3) 75%,#000),inset 0 0 0 3px rgba(255,255,255,.35)}
+.tm-medal-disc .tm-star{width:26px;height:26px;fill:currentColor}
+.tm-medal-won strong{display:block;font-size:16px;color:var(--ui-ink)}
+.tm-medal-won small{display:block;margin-top:2px;font-size:12.5px;line-height:1.4;color:var(--ui-muted)}
+@keyframes tmMedalIn{from{transform:scale(.6);opacity:0}}
+@media (prefers-reduced-motion:reduce){.tm-medal-won{animation:none}}

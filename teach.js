@@ -97,15 +97,19 @@
   const LOCK='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="11" width="12" height="9" rx="2"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>';
   /* About how long a lesson takes: teaching screens are quick, games a little longer. */
   const mins=l=>Math.max(2,Math.round(l.steps.reduce((n,s)=>n+({banner:4,teach:14,learn:18,explore:30,watch:28,cards:30,quick:30,sort:40,judge:35,match:30,label:35}[s.t]||18),0)/60));
+  /* A finished lesson becomes a medal from its best score (right first time): gold 90%+, silver 70%+, else bronze. */
+  const medal=score=>score>=.9?"gold":score>=.7?"silver":"bronze";
+  const MEDAL={gold:"Gold",silver:"Silver",bronze:"Bronze"};
+  const STAR='<svg viewBox="0 0 24 24" aria-hidden="true" class="tm-star"><path d="M12 3.6l2.5 5.2 5.7.8-4.1 4 1 5.6L12 16.5l-5.1 2.7 1-5.6-4.1-4 5.7-.8z"/></svg>';
   function unitHtml(u,L,counter){
     const d=u.lessons.filter(l=>isDone(L,l)).length,nextI=u.lessons.findIndex(l=>!isDone(L,l));
     return '<section class="tm-unit'+(u.fs?" fs":"")+'"><div class="tm-unit-head"><span class="tm-unit-k">'+(u.fs==="edi"?"For everyone":u.fs?"Level 2":"Unit")+'</span><h2>'+esc(u.unit)+'</h2><small>'+u.lessons.length+' lessons'+(u.fs?"":" · covers the whole unit")+'</small><span class="tm-unit-bar"><i style="width:'+Math.round(d/u.lessons.length*100)+'%"></i></span></div>'+
       '<ol class="tm-path">'+u.lessons.map((l,k)=>{
-        const n=counter.n++,r=L[l.id],state=isDone(L,l)?"done":k===nextI?"next":u.fs?"open":"locked",res=state==="next"&&resumeOf(l.id);
-        return '<li class="tm-node '+state+(l.challenge?" trophy":"")+'" style="--i:'+(n%4)+'"><button type="button" data-lesson="'+l.id+'"'+(state==="locked"?' disabled aria-disabled="true"':"")+' aria-label="'+esc(l.title)+(state==="done"?", done":state==="locked"?", locked":"")+'">'+
-          '<span class="tm-dot">'+(state==="done"&&!l.challenge?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>':state==="locked"?LOCK:l.challenge?ICON.trophy:'<b>'+(k+1)+'</b>')+'</span>'+
+        const n=counter.n++,r=L[l.id],state=isDone(L,l)?"done":k===nextI?"next":"locked",md=state==="done"?medal(r.best):"",res=state==="next"&&resumeOf(l.id);
+        return '<li class="tm-node '+state+(md?" medal-"+md:"")+(l.challenge?" trophy":"")+'" style="--i:'+(n%4)+'"><button type="button" data-lesson="'+l.id+'"'+(state==="locked"?' disabled aria-disabled="true"':"")+' aria-label="'+esc(l.title)+(md?", "+MEDAL[md]+" medal":state==="locked"?", locked: finish the lesson before first":"")+'">'+
+          '<span class="tm-dot">'+(state==="done"&&!l.challenge?STAR:state==="locked"?LOCK:l.challenge?ICON.trophy:'<b>'+(k+1)+'</b>')+'</span>'+
           (state==="next"?'<span class="tm-start">'+(res?"Carry on":"Start")+'</span>':"")+
-          '<span class="tm-label"><strong>'+esc(l.title)+'</strong><small>'+esc(l.blurb)+(r?' · best '+Math.round(r.best*100)+'%':' · '+mins(l)+' min')+'</small></span></button></li>';
+          '<span class="tm-label"><strong>'+esc(l.title)+'</strong><small>'+esc(l.blurb)+(md?' · <em class="tm-medal-tag">'+MEDAL[md]+' '+Math.round(r.best*100)+'%</em>':' · '+mins(l)+' min')+'</small></span></button></li>';
       }).join("")+'</ol></section>';
   }
   /* Teach me opens on one section, chosen in Evia's chat: the course, maths or English. */
@@ -273,6 +277,8 @@
       if(otjKey)window.eviaOtj.stop(otjKey,{learned:l.title+": "+l.blurb});
       const before=coins(),earned=st.xp+XP.done+(perfect?XP.perfect:0)+(l.challenge?XP.unit:0),me=addXp(earned),got=Math.max(0,coins()-before);
       const secs=Math.max(1,Math.round((st.time+(Date.now()-t0))/1000));
+      const md=medal(score),bestMd=medal(Math.max(score,(mine()[l.id]||{}).best||0));
+      const medalHtml='<div class="tm-medal-won medal-'+md+'"><span class="tm-medal-disc">'+STAR+'</span><div><strong>'+MEDAL[md]+' medal</strong><small>'+(md==="gold"?"Top marks: right first time on 90% or more.":"Replay it and get "+(md==="silver"?"90%":"70%")+" right first time for "+(md==="silver"?"gold":"silver")+".")+(bestMd!==md?" Your best is still "+MEDAL[bestMd]+".":"")+'</small></div></div>';
       const badges=[l.challenge&&["trophy",(u?u.unit:"Unit")+": complete"],perfect&&["star","Perfect lesson"],best>=5&&["flame",best+" in a row"],fast&&["bolt","Quick hands"],fixTotal&&fixed>=fixTotal&&["again","Fixed every mistake"],bonusRight&&["gift","Surprise solved"]].filter(Boolean);
       const all=[].concat(...units().map(x=>x.lessons)),idx=all.findIndex(x=>x.id===l.id),nx=all[idx+1];
       const sk=u&&!u.fs?[].concat(u.skill||[])[0]:null,view=sk?viewFor(sk):null;
@@ -280,7 +286,7 @@
         return '<span class="tm-day'+(on?" on":"")+(k===dow?" today":"")+'"><i>'+(on?ICON.check:"")+'</i><small>'+"MTWTFSS"[k]+'</small></span>'}).join("");
       root.classList.remove("tm-oops");root.classList.add("tm-happy");
       root.innerHTML='<div class="tm-scroll tm-end"><div class="tm-confetti" aria-hidden="true">'+Array.from({length:18},(_,k)=>'<i style="--k:'+k+'"></i>').join("")+'</div>'+
-        EVIA.replace("tm-evia","tm-evia xl")+'<h2>'+(l.challenge?"Unit complete!":"Lesson complete!")+'</h2><p class="tm-end-sub">'+esc(l.title)+'</p>'+
+        EVIA.replace("tm-evia","tm-evia xl")+'<h2>'+(l.challenge?"Unit complete!":"Lesson complete!")+'</h2><p class="tm-end-sub">'+esc(l.title)+'</p>'+medalHtml+
         '<div class="tm-stats three"><div class="xp">'+COIN()+'<b data-count="'+got+'">'+got+'</b><span>'+(got===1?"coin":"coins")+'</span></div><div>'+ICON.target+'<b>'+Math.round(score*100)+'%</b><span>accuracy</span></div><div>'+ICON.clock+'<b>'+mmss(secs)+'</b><span>time</span></div></div>'+
         '<div class="tm-streak'+(me.extended?" up":"")+'"><div class="tm-streak-top">'+ICON.flame+'<b>'+me.n+'</b><span>day streak'+(me.extended?(me.n>1?" · kept going!":" · started!"):"")+'</span></div><div class="tm-week">'+week+'</div></div>'+
         (badges.length?'<div class="tm-badges">'+badges.map((b,k)=>'<span class="tm-badge" style="--k:'+k+'">'+ICON[b[0]]+esc(b[1])+'</span>').join("")+'</div>':"")+

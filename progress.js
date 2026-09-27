@@ -16,9 +16,9 @@
   const testPct=t=>typeof t.pct==="number"?t.pct:(t.total?Math.round((t.score||0)/t.total*100):0);
   const shortDate=t=>new Date(t).toLocaleDateString("en-GB",{day:"numeric",month:"short"});
   const longDate=t=>new Date(t).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"});
-  /* Hours as a learner says them: 1 h 30 min, never 1.5. */
-  const hm=h=>{const m=Math.round((Number(h)||0)*60),H=Math.floor(m/60),M=m%60;return H&&M?H+" h "+M+" min":H?H+" h":M+" min"};
-  const hmBig=h=>{const m=Math.round((Number(h)||0)*60),H=Math.floor(m/60),M=m%60;return '<b class="pv-num" data-to="'+H+'">'+H+'</b><small> h</small>'+(M?' <b>'+M+'</b><small> min</small>':"")};
+  /* Hours as a learner reads them: 1h:30m, never 1.5 (app.js). */
+  const hm=h=>window.eviaHM(h);
+  const hmBig=h=>{const m=Math.round((Number(h)||0)*60),H=Math.floor(m/60),M=m%60;return H?'<b class="pv-num" data-to="'+H+'">'+H+'</b><small>h</small>'+(M?'<small>:</small><b>'+String(M).padStart(2,"0")+'</b><small>m</small>':""):'<b>'+M+'</b><small>m</small>'};
   const num=(n,suffix)=>'<b class="pv-num" data-to="'+n+'">'+n+'</b>'+(suffix?'<small>'+suffix+'</small>':"");
   const CHEV='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
   const BADGE='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="6"/><path d="m8.5 14-1.5 7 5-3 5 3-1.5-7"/></svg>';
@@ -352,5 +352,4 @@
   }
   window.eviaProgressPage=page;
   window.eviaProgressDeep=openDeep;
-  window.eviaHM=hm;
 })();

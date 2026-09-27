@@ -186,10 +186,10 @@
     const tasks=((window.EVIA_PRACTICE_TASKS||{})[course]||[]).length,picks=window.eviaPractice?window.eviaPractice.suggestTasks(1):[];
     const epaDue=window.eviaPractice&&window.eviaPractice.epaDue&&window.eviaPractice.epaDue();
     const reviews=window.eviaGetReviews?window.eviaGetReviews().length:0;
-    const hrs=Math.round(s.otjTotal*10)/10,wk=Math.round(s.otjWeek*10)/10;
+    const hrs=window.eviaHM(s.otjTotal),wk=s.otjWeek>0?window.eviaHM(s.otjWeek):0;
     const tile=(id,icon,value,label,sub,flag)=>'<button type="button" class="ui-tile-stat" data-tile="'+id+'" id="lt-'+id+'"><span class="pg-icon">'+svg(ICON[icon])+'</span><strong>'+value+(flag?' <em class="pg-x-new">'+flag+'</em>':"")+'</strong><span>'+label+'</span><small>'+sub+'</small></button>';
     const out=[
-      tile("hours","clock",hrs+'<small> hrs</small>',"Learning hours",wk?"+"+wk+" this week":"None this week"),
+      tile("hours","clock",hrs,"Learning hours",wk?"+"+wk+" this week":"None this week"),
       tile("tests","tests",lastPct!=null?lastPct+"%":"–",nvq?"Knowledge tests":"Tests and EPA mocks",s.testCount?"Last score · "+s.testCount+" taken":"None taken yet",epaDue?"Due":""),
       nvq&&window.eviaNvq.myQuestions?(()=>{const qs=window.eviaNvq.myQuestions(),ans=window.eviaNvq.answers(),d=qs.filter(q=>ans[q]&&String(ans[q].t).trim().split(/\s+/).length>=12).length;return tile("knowledge","quality",d+'<small> / '+qs.length+'</small>',"Knowledge questions","Answered")})():"",
       tile("skills","skills",s.confidence.last?String(low):"–","Skills to practise",s.confidence.last?"Rated "+escHtml(ago(s.confidence.last).toLowerCase()):"Rate your skills",s.confidence.last&&Date.now()-s.confidence.last>30*DAY?"Due":""),

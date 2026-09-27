@@ -277,7 +277,7 @@
   };
 
   /* ---------- My course: learning logs and progress reviews, under the units ---------- */
-  const hmText=h=>window.eviaHM?window.eviaHM(h):h+" h";
+  const hmText=h=>window.eviaHM(h);
   function logsGridHtml(){
     const last=otjBatches[otjBatches.length-1],cutoff=Number(last?last.cutoff:0),fresh=hours.filter(x=>Number(x.createdAt)>cutoff).length;
     const reviews=window.eviaGetReviews?window.eviaGetReviews().length:0,total=hours.reduce((n,x)=>n+Number(x.n||0),0),rd=window.eviaReviewDue&&window.eviaReviewDue();
@@ -545,7 +545,7 @@
     if(st.confidence.practise.length)say("From your confidence check, you want more practice on "+escHtml(listText(st.confidence.practise.slice(0,4)))+"."+(task?" A good college task for that: <strong>"+escHtml(task.task.title)+"</strong>.":" Tell your tutor or supervisor so they can help."));
     replies([...(task?[{label:"Show me the task",primary:true,run:()=>{closeChat();setTimeout(()=>window.eviaPractice.openTask(0),60)}}]:[]),{label:"See all my stats",primary:!task,run:()=>{closeChat();setTimeout(showStats,60)}},{label:"Check my write-ups",run:writeups},{label:"Which KSBs am I missing?",run:ksbGaps},{label:"Something else",run:somethingElse}]);
   }
-  const hrsText=n=>{const v=Math.round(n*10)/10;return v+" hour"+(v===1?"":"s")};
+  const hrsText=n=>window.eviaHM(n);
   /* Evia opens the chat with what she'd do today, from the same nudges as Home. */
   /* Evia opens the chat with one suggestion: the same one she'd make on Home. */
   function today(){
@@ -625,7 +625,7 @@
   function catchUp(){
     try{
       const S=window.eviaStats.compute(),bits=[],rd=window.eviaReviewDue&&window.eviaReviewDue();
-      bits.push(S.otjWeek?"You’ve logged <strong>"+(window.eviaHM?window.eviaHM(S.otjWeek):S.otjWeek+" h")+"</strong> of learning this week.":"No learning hours this week yet.");
+      bits.push(S.otjWeek?"You’ve logged <strong>"+window.eviaHM(S.otjWeek)+"</strong> of learning this week.":"No learning hours this week yet.");
       if(rd)bits.push(rd.days<0?"Your progress review is <strong>overdue</strong>.":rd.days<=14?"Your progress review is due in <strong>"+plural(rd.days,"day")+"</strong>.":"");
       return bits.filter(Boolean).join(" ");
     }catch(_){return""}
@@ -702,12 +702,12 @@
     const total=hours.reduce((n,x)=>n+Number(x.n||0),0);
     const weekStart=(()=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return d.getTime()})();
     const week=hours.filter(x=>Number(x.createdAt)>=weekStart).reduce((n,x)=>n+Number(x.n||0),0);
-    const fmt=n=>Math.round(n*100)/100;
+    const fmt=n=>window.eviaHM(n);
     const day=t=>new Date(Number(t)).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
     $("#screen").innerHTML='<button class="secondary ui-back" id="ui-hours-back" type="button">‹ My progress</button><h1 class="ui-sub-title">Learning hours</h1>'+
       '<p class="ui-hours-what">'+(window.eviaNvq&&window.eviaNvq.on()?"Your guided learning hours (GLH): the time you spend learning, like college, training and research.":"Your off-the-job training: time in your paid hours spent learning, like college, training and research.")+'</p>'+
       '<div class="ui-page">'+
-        '<section class="ui-card ui-hours-sum"><div><strong>'+fmt(total)+'</strong><small>hours logged</small></div><div><strong>'+fmt(week)+'</strong><small>this week</small></div></section>'+
+        '<section class="ui-card ui-hours-sum"><div><strong>'+fmt(total)+'</strong><small>logged</small></div><div><strong>'+fmt(week)+'</strong><small>this week</small></div></section>'+
         '<section class="ui-card ui-hours-log">'+
           '<h2>Log learning hours</h2>'+
           '<div class="ui-hours-chips" role="group" aria-label="Hours">'+[0.5,1,2,3,7.5].map(n=>'<button type="button" class="ui-hours-chip" data-hrs="'+n+'">'+n+'</button>').join("")+'<input id="hrs" type="number" min="0" step=".25" inputmode="decimal" placeholder="Other" aria-label="Hours"></div>'+
@@ -716,7 +716,7 @@
           '<p class="ui-hours-hint">College days, training, toolbox talks, research and shadowing all count.</p>'+
         '</section>'+
         (pending||lastBatch?'<div class="ui-hours-pdf"><span>'+(pending?"<strong>"+pending+" new "+(pending===1?"entry":"entries")+"</strong> for your learning hours PDF":"All entries are in your last PDF")+'</span>'+(pending?'<button class="secondary" id="download-otj" type="button">Download PDF</button>':'<button class="secondary" id="download-last-otj" type="button">Last PDF again</button>')+'</div>':"")+
-        (hours.length?'<h2 class="ui-hours-h">Your log</h2><div class="ui-card ui-hours-list">'+hours.slice().reverse().map(x=>'<div class="ui-hours-item"><span class="ui-hours-n">'+fmt(Number(x.n||0))+'<small>hrs</small></span><span class="ui-hours-copy"><strong>'+escHtml(x.description||"No description recorded.")+'</strong><small>'+escHtml(day(x.createdAt))+(Number(x.createdAt)>cutoff&&lastBatch?' · <em>New</em>':"")+'</small></span></div>').join("")+'</div>':"")+
+        (hours.length?'<h2 class="ui-hours-h">Your log</h2><div class="ui-card ui-hours-list">'+hours.slice().reverse().map(x=>'<div class="ui-hours-item"><span class="ui-hours-n">'+fmt(Number(x.n||0))+'</span><span class="ui-hours-copy"><strong>'+escHtml(x.description||"No description recorded.")+'</strong><small>'+escHtml(day(x.createdAt))+(Number(x.createdAt)>cutoff&&lastBatch?' · <em>New</em>':"")+'</small></span></div>').join("")+'</div>':"")+
       '</div>';
     const input=$("#hrs");
     document.querySelectorAll("[data-hrs]").forEach(b=>b.onclick=()=>{document.querySelectorAll("[data-hrs]").forEach(x=>x.classList.toggle("on",x===b));input.value=b.dataset.hrs});
@@ -726,7 +726,7 @@
       if(!(n>0)){input.focus();if(typeof showEvidenceToast==="function")showEvidenceToast("Pick how many hours first",true);return}
       if(!description){$("#otj-description").focus();if(typeof showEvidenceToast==="function")showEvidenceToast("Add a few words about what you did",true);return}
       const now=Date.now();hours.push({id:"otj-"+now+"-"+Math.random().toString(36).slice(2,8),n,description,createdAt:now,savedAt:formatDateTime(now)});persist();
-      hoursScreen();if(typeof showEvidenceToast==="function")showEvidenceToast(fmt(n)+" hour"+(n===1?"":"s")+" saved");
+      hoursScreen();if(typeof showEvidenceToast==="function")showEvidenceToast(fmt(n)+" saved");
       if(window.eviaCheckTargets)window.eviaCheckTargets();
     };
     $("#ui-hours-back").onclick=()=>nav("learning");
