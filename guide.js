@@ -12,6 +12,8 @@
   const split=s=>{const seen=new Set();return String(s||"").split("·").map(t=>t.trim()).filter(t=>{const k=t.toLowerCase();if(!t||seen.has(k))return false;seen.add(k);return true})};
   const reduced=()=>window.eviaAccessibility?window.eviaAccessibility.reducedMotion():matchMedia("(prefers-reduced-motion: reduce)").matches;
   const AVATAR='<span class="evia-mini" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span>';
+  /* Free range is "without Evia": the same Evia, crossed out. */
+  const AVATAR_OFF='<span class="evia-mini fr-no" aria-hidden="true"><span class="evia-face"><i></i><i></i></span><b class="fr-strike"></b></span>';
 
   /* ---------- The stages of a job ---------- */
   /* Each thing to capture, thing to mention and the unit's skills and behaviours is sorted into the stage of the job
@@ -220,7 +222,7 @@
     const root=document.getElementById("modal-root");
     fit(false);
     root.innerHTML='<div class="overlay eg-overlay'+(o.full?" eg-full":"")+'"><section class="sheet pr-sheet eg-sheet" role="dialog" aria-modal="true" aria-labelledby="eg-title">'+
-      '<div class="sheet-head"><div class="eg-head">'+AVATAR+'<div><div class="chat-kicker">'+esc(o.kicker)+'</div><h2 id="eg-title">'+esc(o.title)+'</h2></div></div><button class="close" id="eg-close" type="button" aria-label="Close">×</button></div>'+
+      '<div class="sheet-head"><div class="eg-head">'+(o.free?AVATAR_OFF:AVATAR)+'<div><div class="chat-kicker">'+esc(o.kicker)+'</div><h2 id="eg-title">'+esc(o.title)+'</h2></div></div><button class="close" id="eg-close" type="button" aria-label="Close">×</button></div>'+
       '<div class="pr-body">'+body+'<div class="pr-actions eg-actions'+(o.compact?" eg-compact":"")+'">'+(o.back?'<button type="button" class="eg-back" id="eg-back">'+esc(o.backLabel||"‹ Back")+'</button>':"")+buttons.map((b,i)=>'<button type="button" class="'+(b.primary?"primary":"secondary")+'" data-eg="'+i+'">'+esc(b.label)+'</button>').join("")+'</div></div></section></div>';
     const el=root.querySelector(".eg-sheet");
     /* Full screens keep the buttons outside the scrolling part, so they sit just above the keyboard. */
@@ -253,5 +255,62 @@
     o.classList.add("ui-closing");setTimeout(()=>{if(root.contains(o))root.innerHTML=""},170);
   }
 
-  window.eviaGuide={start,plan,plain};
+  /* ---------- Free range ----------
+     The same look as the guide, without the steps: the camera lists every thing to capture at once, and the write-up
+     lists every thing to mention, with one box for the learner's own words. at: "photos" or "write" opens that part.
+     ctx is start()'s, plus submit() to send the pack to the portfolio. */
+  const words=t=>String(t||"").trim()?String(t).trim().split(/\s+/).length:0;
+  const plural=(n,w)=>n+" "+w+(n===1?"":"s");
+  function free(ctx,at){
+    if(at==="photos")return freePhotos(ctx);
+    if(at==="write")return freeWrite(ctx);
+    const n=(ctx.pack.photos||[]).length,w=words(ctx.pack.write);
+    sheet('<p class="eg-say">'+(n||w?"Welcome back. So far you’ve got "+plural(n,"photo")+(w?" and "+plural(w,"word")+" written":"")+".":
+        "Add whatever you like, your way. Take all your photos first, with everything worth capturing listed. Then write it up in your own words, with everything worth mentioning listed.")+'</p>'+
+      '<ol class="eg-stages"><li>Photos</li><li>Write-up</li></ol>'+
+      '<p class="eg-small">Everything saves as you go, so you can stop and carry on later.</p>',
+      [{label:n?"Take more photos":"Start with photos",primary:!n,run:()=>freePhotos(ctx)},
+       {label:"Choose from gallery",run:()=>gallery(ctx,()=>free(ctx))},
+       {label:"Go to the write-up",primary:!!n,run:()=>freeWrite(ctx)}],
+      {kicker:"FREE RANGE",title:ctx.unitName,free:true});
+    closeRefreshes(ctx);
+  }
+  /* Closing a free range sheet redraws the unit page, so what's in progress shows there. */
+  const closeRefreshes=ctx=>{const x=document.getElementById("eg-close");if(x){const was=x.onclick;x.onclick=()=>{was();ctx.done()}}};
+  function gallery(ctx,then){
+    const i=document.createElement("input");i.type="file";i.accept="image/*";i.multiple=true;
+    i.onchange=async()=>{const files=[...i.files];if(files.length)await ctx.addFiles(files);then()};i.click();
+  }
+  function freePhotos(ctx){
+    if(!(window.eviaCamera&&window.eviaCamera.supported()))return gallery(ctx,()=>free(ctx));
+    close(true);
+    window.eviaCamera.open({title:ctx.unitName,prompts:split(ctx.prompts&&ctx.prompts.photos),onDone:async files=>{
+      if(files.length)await ctx.addFiles(files);
+      const n=(ctx.pack.photos||[]).length;
+      setTimeout(()=>{
+        sheet('<p class="eg-say">'+(files.length?"Saved: "+plural(files.length,"photo")+". ":"")+"You’ve got "+plural(n,"photo")+" in this pack. Take more, or write it up.</p>",
+          [{label:"Write it up",primary:true,run:()=>freeWrite(ctx)},{label:"Take more photos",run:()=>freePhotos(ctx)},{label:"Stop for now",run:()=>{close();ctx.done()}}],
+          {kicker:"FREE RANGE · PHOTOS",title:ctx.unitName,free:true});
+        closeRefreshes(ctx);
+      },60);
+    }});
+  }
+  function freeWrite(ctx){
+    const pack=ctx.pack,terms=split(ctx.prompts&&ctx.prompts.writeup);
+    const ready=()=>(pack.photos||[]).length&&String(pack.write||"").trim();
+    const hintText=()=>ready()?"Ready to submit.":(pack.photos||[]).length?"Write something to submit.":"Add at least one photo to submit.";
+    const el=sheet(
+      '<p class="eg-ctx">Write about the job in your own words: what you did, how and why.</p>'+
+      (terms.length?'<div class="fr-mention"><div class="evidence-section-title">THINGS TO MENTION</div><div class="compact-prompts">'+esc(terms.join(" · "))+'</div></div>':"")+
+      '<textarea class="eg-text" id="write" data-otj="'+esc(ctx.unitName)+'" rows="8" placeholder="Write about the process and what you did…" aria-label="Your write-up">'+esc(pack.write||"")+'</textarea>'+
+      '<p class="eg-small fr-hint" id="fr-hint">'+hintText()+'</p>',
+      [{label:"Submit to Portfolio",primary:true,run:async()=>{if(!ready())return;close(true);await ctx.submit()}}],
+      {kicker:"FREE RANGE · WRITE-UP",title:ctx.unitName,back:()=>{close(true);free(ctx)},keep:true,full:true,compact:true,free:true});
+    const box=el.querySelector("#write"),btn=el.querySelector(".eg-actions .primary"),hint=el.querySelector("#fr-hint");
+    const update=()=>{btn.disabled=!ready();hint.textContent=hintText()};
+    box.oninput=()=>{pack.write=box.value;ctx.save();update()};
+    update();closeRefreshes(ctx);
+  }
+
+  window.eviaGuide={start,free,plan,plain};
 })();
