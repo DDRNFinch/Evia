@@ -9,7 +9,7 @@
    eviaData.files.get(fileId, kind)    eviaData.snapshot()
    Sync (for Nisia, nothing else):     eviaData.changesSince()  eviaData.markSynced(records)
    Collections: learner, evidence, supporting, nvqAnswers, hours, lessonResults, tests, confidence, scenarios,
-   reviews, targets, rewards. Writes: everything but rewards and the learner, which move next.
+   reviews, targets, rewards. Every collection is written through here.
    eviaData.replace("targets", {course}, list) swaps a course's targets after a review. */
 (function(){
   const V=1,ID_KEY="evia7-learner-id",SYNC_KEY="evia7-data-synced";
@@ -49,7 +49,7 @@
     learner(){
       const p=readJson("evia7-profile",{})||{};
       return [base("learner",{course:courseNow(),name:p.name||"",start:p.start||"",end:p.end||"",mathsEnabled:!!p.mathsEnabled,englishEnabled:!!p.englishEnabled,
-        hasSignature:!!p.signature,hasPhoto:!!p.avatar,updatedAt:null})];
+        nvqOptional:Array.isArray(p.nvqOptional)?p.nvqOptional.slice():null,hasSignature:!!p.signature,hasPhoto:!!p.avatar,updatedAt:iso(p.updatedAt)})];
     },
     evidence(){
       return (G("evidence")||readJson("evia7-evidence",[])||[]).filter(Boolean).map(e=>{
@@ -116,8 +116,9 @@
       return a.concat(b);
     },
     rewards(){
-      const r=readJson("evia7-rewards",{})||{};
-      return [base("rewards",{coins:Math.max(0,(r.bank||0)-(r.spent||0)),earned:r.bank||0,spent:r.spent||0,owned:(r.owned||[]).slice(),hat:r.hat||"",expr:r.expr||"",updatedAt:null})];
+      const r=readJson("evia7-rewards",{})||{},me=(readJson("evia7-teach",{})||{})._me||{};
+      return [base("rewards",{coins:Math.max(0,(r.bank||0)-(r.spent||0)),earned:r.bank||0,spent:r.spent||0,owned:(r.owned||[]).slice(),hat:r.hat||"",expr:r.expr||"",
+        xp:me.xp||0,streak:me.streak||0,lastDay:me.last||null,updatedAt:iso(r.updatedAt)})];
     }
   };
   const COLLECTIONS=Object.keys(R);
@@ -228,6 +229,27 @@
         if(i>=0){["signoff","reflection"].forEach(k=>{if(r[k]!==undefined)all[i][k]=r[k]});all[i].updatedAt=new Date().toISOString()}
         else{const rec=Object.assign({},r);delete rec.v;delete rec.learnerId;rec.id=String(r.id||("review-"+Date.now()));rec.course=r.course||courseNow();all.push(rec)}
         writeJson("evia7-progress-reviews",all.slice(-30));return String(r.id||all[all.length-1].id);
+      }
+    },
+    /* The learner's own details, merged into the profile; course switches the course. (Nisia will own course and dates.) */
+    learner:{
+      put(r){
+        /* Every profile field is kept (name, dates, photo, signature, maths and English, NVQ units, safeguarding lead…);
+           only the record's own fields and the course are left out. */
+        const SKIP=new Set(["id","v","learnerId","course","hasSignature","hasPhoto","updatedAt"]);
+        const p=readJson("evia7-profile",{})||{};let changed=false;
+        Object.keys(r).forEach(k=>{if(!SKIP.has(k)&&r[k]!==undefined){p[k]=r[k];changed=true}});
+        if(changed){p.updatedAt=new Date().toISOString();writeJson("evia7-profile",p)}
+        if(r.course){if(typeof course!=="undefined")course=r.course;try{localStorage.setItem("evia7-course",r.course)}catch(_){}save()}
+        return "learner";
+      }
+    },
+    /* Rewards are kept whole by rewards.js (state) and teach.js (me: XP and the day streak). */
+    rewards:{
+      put(r){
+        if(r.state){const st=Object.assign({},r.state,{updatedAt:new Date().toISOString()});writeJson("evia7-rewards",st)}
+        if(r.me){const s=readJson("evia7-teach",{})||{};s._me=r.me;writeJson("evia7-teach",s)}
+        return "rewards";
       }
     },
     /* Targets in reviews.js's shape. put adds or updates one; replace("targets",{course},list) swaps a course's set. */

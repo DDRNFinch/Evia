@@ -374,10 +374,20 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       D.put("reviews",{id:rid,signoff:{tutor:{name:"Jo Tutor",sig:"data:x",date:new Date().toISOString()}}});
       const rv=D.get("reviews",rid);out.reviews=rv.targetIds[0]==="t-a"&&rv.signedBy.tutor.name==="Jo Tutor"&&rv.signedBy.tutor.signed===true&&rv.reflection.good==="Laying to the line";
       out.oldReviewGone=typeof window.eviaProgressReview==="undefined"&&typeof window.eviaGetTargets==="undefined";
+      /* The learner's details and course, and rewards (coins and items, XP and the streak). */
+      ["evia7-profile","evia7-rewards","evia7-teach"].forEach(k=>{keys.push(k);kept[k]=localStorage.getItem(k)});
+      const was=course,other=Object.keys(C).find(k=>k!==was);
+      D.put("learner",{name:"Data Test",mathsEnabled:true,nvqOptional:["641"]});
+      const L1=D.get("learner","learner");out.learner=L1.name==="Data Test"&&L1.mathsEnabled===true&&L1.nvqOptional[0]==="641"&&!!L1.updatedAt;
+      D.put("learner",{course:other});out.courseSwitch=course===other&&localStorage.getItem("evia7-course")===other&&D.get("learner","learner").course===other;
+      D.put("learner",{course:was});out.courseBack=course===was;
+      const st=JSON.parse(localStorage.getItem("evia7-rewards")||"{}");D.put("rewards",{state:Object.assign({},st,{bank:(st.bank||0)+5})});
+      D.put("rewards",{me:{xp:123,days:{},streak:4,last:"2026-01-01"}});
+      const rw=D.get("rewards","rewards");out.rewards=rw.earned===(st.bank||0)+5&&rw.xp===123&&rw.streak===4&&!!rw.updatedAt;
       keys.forEach(k=>{if(kept[k]==null)localStorage.removeItem(k);else localStorage.setItem(k,kept[k])});
       return out;
     });
-    check("Learner data: every record in the new shape (ids, learner id, ISO dates, unit ids), hours, evidence, supporting evidence, NVQ answers, tests, lessons, confidence, scenarios, reviews and targets written through eviaData, and sync sees changes and deletions",Object.values(dm).every(Boolean),JSON.stringify(dm));
+    check("Learner data: every record in the new shape (ids, learner id, ISO dates, unit ids), hours, evidence, supporting evidence, NVQ answers, tests, lessons, confidence, scenarios, reviews, targets, the learner and rewards written through eviaData, and sync sees changes and deletions",Object.values(dm).every(Boolean),JSON.stringify(dm));
     // Mini games: locked until unlocked in Rewards, played from Teach me, small coins with a daily cap.
     const gm=await page.evaluate(async()=>{
       const w=ms=>new Promise(r=>setTimeout(r,ms)),R=window.eviaRewards,G=window.eviaGames,out={},keep=localStorage.getItem("evia7-rewards");

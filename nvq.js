@@ -90,7 +90,7 @@
   const on=()=>typeof course!=="undefined"&&course===ID;
   const profile=()=>readJson("evia7-profile",{});
   function optionalChosen(){const o=profile().nvqOptional;const list=(Array.isArray(o)?o:[]).filter(n=>BY[n]&&BY[n].opt);return list.length?list:DEFAULT_OPTIONAL.slice()}
-  function setOptional(list){const p=profile();p.nvqOptional=list.filter(n=>BY[n]&&BY[n].opt);if(!p.nvqOptional.length)p.nvqOptional=DEFAULT_OPTIONAL.slice();localStorage.setItem("evia7-profile",JSON.stringify(p))}
+  function setOptional(list){const p=profile();p.nvqOptional=list.filter(n=>BY[n]&&BY[n].opt);if(!p.nvqOptional.length)p.nvqOptional=DEFAULT_OPTIONAL.slice();window.eviaData.put("learner",{nvqOptional:p.nvqOptional})}
   const selected=()=>{const o=optionalChosen();return UNITS.filter(u=>!u.opt||o.includes(u.n))};
   const unitCodes=u=>u.o.flatMap(o=>o.c.map(c=>u.n+"."+c.n));
   function allK(){return selected().flatMap(u=>u.o.flatMap(o=>o.c.map(c=>[u.n+"."+c.n,c.t])))}

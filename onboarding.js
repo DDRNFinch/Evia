@@ -150,7 +150,7 @@
     document.body.appendChild(root);
     requestAnimationFrame(()=>root.classList.add("visible"));
     root.querySelectorAll("[data-onboard-course]").forEach(b=>b.onclick=()=>{
-      course=b.dataset.onboardCourse;persist();
+      window.eviaData.put("learner",{course:b.dataset.onboardCourse});
       const nvq=nvqOn();
       writeState(nvq?"optional":"unit");
       const next=()=>nvq?showOptionalPicker():pickersThen(showPpeUnit);

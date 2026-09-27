@@ -4,7 +4,8 @@
   const defaults={name:"",start:"",end:"",avatar:"",signature:"",mathsEnabled:false,englishEnabled:false};
   const readObject=(key,fallback={})=>{try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):fallback}catch(e){return fallback}};
   const get=()=>Object.assign({},defaults,readObject(KEY,{}));
-  const set=p=>localStorage.setItem(KEY,JSON.stringify(p));
+  /* Written through eviaData (data.js), like all learner data. */
+  const set=p=>window.eviaData.put("learner",p);
   const esc=s=>String(s??"").replace(/[&<>"]/g,x=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[x]));
   function avatarMarkup(p,large){
     return p.avatar
@@ -57,7 +58,7 @@
       const f=e.target.files[0];if(!f)return;
       const r=new FileReader();r.onload=async()=>{p.avatar=window.eviaShrinkAvatar?await window.eviaShrinkAvatar(r.result):r.result;set(p);refreshProfileButton();openProfile()};r.readAsDataURL(f);
     };
-    document.querySelectorAll("[data-profile-course]").forEach(b=>b.onclick=()=>{course=b.dataset.profileCourse;persist();openProfile();});
+    document.querySelectorAll("[data-profile-course]").forEach(b=>b.onclick=()=>{window.eviaData.put("learner",{course:b.dataset.profileCourse});openProfile();});
     document.querySelectorAll("#profile-nvq-opts input").forEach(i=>i.onchange=()=>{const list=window.eviaNvq.readOptional(document.getElementById("profile-nvq-opts"));if(!list.length){i.checked=true;return}window.eviaNvq.setOptional(list);if(typeof render==="function")render()});
     document.getElementById("open-settings").onclick=()=>{if(window.eviaAccessibility)window.eviaAccessibility.open()};
     const shapePickerBtn=document.getElementById("open-shape-picker");
@@ -180,8 +181,7 @@
     document.body.appendChild(root);
     requestAnimationFrame(()=>root.classList.add("visible"));
     root.querySelectorAll("[data-first-course]").forEach(b=>b.onclick=()=>{
-      course=b.dataset.firstCourse;
-      persist();
+      window.eviaData.put("learner",{course:b.dataset.firstCourse});
       root.classList.add("leaving");
       setTimeout(()=>{root.remove();welcome()},320);
     });

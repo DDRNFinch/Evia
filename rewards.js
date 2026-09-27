@@ -13,7 +13,7 @@
   /* Hazard spotter was swapped for the Crossword: anyone who had it gets the Crossword. */
   const migrate=r=>{const i=r.owned.indexOf("game-hazard");if(i>=0){r.owned.splice(i,1);if(!r.owned.includes("game-crossword"))r.owned.push("game-crossword")}return r};
   const read=()=>{try{return migrate(Object.assign(blank(),JSON.parse(localStorage.getItem(KEY)||"{}")||{}))}catch(_){return blank()}};
-  const write=r=>{try{localStorage.setItem(KEY,JSON.stringify(r))}catch(_){}};
+  const write=r=>{window.eviaData.put("rewards",{state:r})};
   const today=()=>{const d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()};
 
   /* ---------- The catalogue ---------- */

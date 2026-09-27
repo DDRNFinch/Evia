@@ -33,7 +33,7 @@
     m.xp+=n;m.days[today]=(m.days[today]||0)+n;
     if(extended){m.streak=m.last===dayBefore()?m.streak+1:1;m.last=today}
     Object.keys(m.days).sort().slice(0,-70).forEach(k=>delete m.days[k]);
-    writeStore(s);return {n:m.streak,extended,total:m.xp,days:m.days};
+    window.eviaData.put("rewards",{me:m});return {n:m.streak,extended,total:m.xp,days:m.days};
   }
   function stats(){const m=readStore()._me||blankMe(),live=m.last===ymd(new Date())||m.last===dayBefore();return {xp:m.xp,streak:live?m.streak:0,today:m.last===ymd(new Date()),days:m.days}}
   /* Pictures are in teach-pics.js; the screens and games in teach-play.js. */

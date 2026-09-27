@@ -320,7 +320,7 @@ function courses(){
  }).join("")+'<div class="card unit-card supporting-course-card" data-supporting-evidence><div class="unit-title">Supporting Evidence</div><small>Witness testimony, photos, videos and files</small><span class="supporting-course-arrow">›</span></div>';
  bindCourses();document.querySelectorAll("[data-u]").forEach(b=>b.onclick=()=>openUnit(+b.dataset.u));const supportingCard=document.querySelector("[data-supporting-evidence]");if(supportingCard)supportingCard.onclick=()=>openSupportingEvidence();
 }
-function bindCourses(){document.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{course=b.dataset.c;persist();render()})}
+function bindCourses(){document.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{window.eviaData.put("learner",{course:b.dataset.c});render()})}
 function allK(){if(window.eviaNvq&&window.eviaNvq.on())return window.eviaNvq.allK();let m=new Map();data().u.forEach(u=>u[1].forEach(k=>m.set(code(k),text(k))));return [...m].sort((a,b)=>a[0][0].localeCompare(b[0][0])||Number(a[0].slice(1))-Number(b[0].slice(1)))}
 function courseProgressMeta(){
  const metas={
