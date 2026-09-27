@@ -377,7 +377,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       const eq=JSON.parse(localStorage.getItem("evia7-rewards"));eq.owned.push("game-quest");localStorage.setItem("evia7-rewards",JSON.stringify(eq));
       G.open("quest");await w(300);document.querySelector('.eq-over [data-t="new"]').click();await w(300);
       const Q=document.querySelector(".gm-quest").eqState();
-      out.questStart=Q.mode==="world"&&!!Q.ents.find(e=>e.id==="sam")&&Q.S.moves.length===3;
+      out.questStart=Q.mode==="world"&&!!Q.ents.find(e=>e.id==="sam")&&Q.S.moves.length===0&&Q.queue.length===1;
       document.querySelector(".eq-x").click();await w(100);
       out.closed=!document.querySelector(".gm")&&!document.documentElement.classList.contains("gm-open");
       if(keep)localStorage.setItem("evia7-rewards",keep);else localStorage.removeItem("evia7-rewards");
