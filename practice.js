@@ -153,10 +153,7 @@
       if(save.disabled)return;
       const now=new Date().toISOString();
       const scores=list.map((s,i)=>picked.has(i)?{area:s.area,score:picked.get(i),question:s.question,answeredAt:now}:prev.has(s.area)?Object.assign({},prev.get(s.area),{carried:true}):null).filter(Boolean);
-      const all=readJson("evia7-confidence",[]);
-      all.push({id:"confidence-"+Date.now(),course,startedAt:now,savedAt:now,source:"self-assessment",scores});
-      localStorage.setItem("evia7-confidence",JSON.stringify(all));
-      try{localStorage.removeItem("evia7-confidence-cycle-"+course)}catch(_){}
+      window.eviaData.put("confidence",{course,startedAt:now,scores});
       showPlan(scores,prev);
     };
   }

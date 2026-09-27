@@ -9,7 +9,7 @@
    eviaData.files.get(fileId, kind)    eviaData.snapshot()
    Sync (for Nisia, nothing else):     eviaData.changesSince()  eviaData.markSynced(records)
    Collections: learner, evidence, supporting, nvqAnswers, hours, lessonResults, tests, confidence, scenarios,
-   reviews, targets, rewards. Writes: hours and evidence for now; the rest move over screen by screen. */
+   reviews, targets, rewards. Writes: everything but reviews, targets, rewards and the learner, which move next. */
 (function(){
   const V=1,ID_KEY="evia7-learner-id",SYNC_KEY="evia7-data-synced";
   const readJson=(k,f)=>{try{const v=JSON.parse(localStorage.getItem(k)||"null");return v??f}catch(_){return f}};
@@ -63,7 +63,7 @@
       const list=typeof supportingMeta==="function"?supportingMeta():readJson("evia7-supporting-evidence",[]);
       return (list||[]).filter(Boolean).map(x=>base(x.id,{course:x.course||"",title:x.title||x.filename||"",type:x.witness&&x.witness.name?"witness":x.type||"file",
         fileId:x.id,mime:x.mime||"",size:x.size||0,filename:x.filename||"",witness:x.witness&&x.witness.name?{name:x.witness.name,role:x.witness.role||""}:null,
-        nvqUnit:x.nvqUnit||null,criteria:(x.criteria||[]).slice(),createdAt:iso(x.addedAt),updatedAt:iso(x.updatedAt||x.addedAt),deletedAt:null,submission:submission("sup:"+x.id)}));
+        nvqUnit:x.nvqUnit||null,criteria:(x.ksbs||x.criteria||[]).slice(),createdAt:iso(x.addedAt),updatedAt:iso(x.updatedAt||x.addedAt),deletedAt:null,submission:submission("sup:"+x.id)}));
     },
     nvqAnswers(){
       const all=readJson("evia7-nvq-answers",{})||{},nvq=(window.EVIA_NVQ||{}).id||null;
@@ -87,7 +87,8 @@
     },
     tests(){
       return (readJson("evia7-test-results",[])||[]).filter(Boolean).map((t,i)=>base(t.id||("test-"+(ms(t.savedAt))+"-"+i),{course:t.course||"",type:t.type||"test",
-        score:t.score??null,total:t.total??null,pct:t.pct??(t.total?Math.round((t.score||0)/t.total*100):null),full:!!t.full,missed:(t.missed||[]).slice(),takenAt:iso(t.savedAt),updatedAt:iso(t.savedAt)}));
+        score:t.score??null,total:t.total??null,pct:t.pct??(t.total?Math.round((t.score||0)/t.total*100):null),full:!!t.full,missed:(t.missed||[]).slice(),
+        questions:Array.isArray(t.questions)?t.questions:null,takenAt:iso(t.savedAt),updatedAt:iso(t.savedAt)}));
     },
     confidence(){
       return (readJson("evia7-confidence",[])||[]).filter(Boolean).map((c,i)=>base(c.id||("confidence-"+i),{course:c.course||"",takenAt:iso(c.savedAt||c.startedAt),
@@ -144,15 +145,76 @@
       remove(id){const arr=G("hours");const i=arr?arr.findIndex(x=>x&&x.id===String(id)):-1;if(i<0)return false;arr.splice(i,1);save();return true}
     },
     evidence:{
-      /* Only fields a learner can change after saving: the write-up and the KSBs. New evidence is still made by the
-         save flow in polish.js (it moves photos into their own store first); it moves here with the capture screens. */
+      /* New evidence (no id, or an id not seen yet) or changes to the write-up and KSBs. The learner's name, dates and
+         signature are copied in here, so screens don't have to. Photos go into their store first (files), and the
+         record only points to them; inlinePhotos is the old fallback for phones without IndexedDB. */
       put(r){
-        const arr=G("evidence");const e=arr&&arr.find(x=>x&&String(x.id)===String(r.id));
-        if(!e)throw new Error("eviaData: evidence "+r.id+" not found");
-        if(r.text!=null)e.w=String(r.text);if(Array.isArray(r.ksbs))e.k=r.ksbs.slice();e.updatedAt=new Date().toISOString();
-        save();return e.id;
+        const arr=G("evidence");if(!arr)throw new Error("eviaData: evidence is not loaded");
+        const e=r.id!=null&&arr.find(x=>x&&String(x.id)===String(r.id));
+        if(e){if(r.text!=null)e.w=String(r.text);if(Array.isArray(r.ksbs))e.k=r.ksbs.slice();e.updatedAt=new Date().toISOString();save();return e.id}
+        const p=readJson("evia7-profile",{})||{},now=new Date(),photoIds=(r.photoIds||[]).slice(),inline=(r.inlinePhotos||[]).slice();
+        const legacy={id:String(r.id||(Date.now()+"-"+Math.random().toString(36).slice(2,8))),c:r.course||courseNow(),u:r.unit||"",d:now.toLocaleString("en-GB"),p:inline,
+          w:String(r.text||"").trim(),k:(r.ksbs||[]).slice(),learnerProfile:{name:p.name||"",start:p.start||"",end:p.end||""},signature:p.signature||"",
+          savedAt:now.toISOString(),photoCount:photoIds.length+inline.length};
+        if(photoIds.length)legacy.photoIds=photoIds;
+        if(r.photoTakenAt)legacy.photoTimes=r.photoTakenAt.slice();
+        if(r.guidedAreas)legacy.guidedAreas=r.guidedAreas.slice();
+        if(r.induction)legacy.induction=true;
+        arr.push(legacy);save();return legacy.id;
       },
       remove(id){const arr=G("evidence");const i=arr?arr.findIndex(x=>x&&String(x.id)===String(id)):-1;if(i<0)return false;arr.splice(i,1);save();return true}
+    },
+    /* Supporting evidence details. The file itself is stored first (eviaSupportingFilePut) under the same id. */
+    supporting:{
+      put(r){
+        const list=readJson("evia7-supporting-evidence",[])||[],x=list.find(v=>v&&v.id===String(r.id));
+        const rec=x||{id:String(r.id||("supporting-"+Date.now()+"-"+Math.random().toString(36).slice(2,8))),course:r.course||courseNow(),addedAt:new Date().toISOString()};
+        ["title","type","mime","filename","size"].forEach(k=>{if(r[k]!=null)rec[k]=r[k]});
+        if(r.witness!==undefined){if(r.witness&&r.witness.name)rec.witness={name:r.witness.name,role:r.witness.role||""};else delete rec.witness}
+        if(r.nvqUnit!==undefined){if(r.nvqUnit){rec.nvqUnit=r.nvqUnit;rec.ksbs=(r.criteria||[]).slice()}else{delete rec.nvqUnit;rec.ksbs=[]}}
+        if(x)rec.updatedAt=new Date().toISOString();else list.push(rec);
+        writeJson("evia7-supporting-evidence",list.slice(-500));return rec.id;
+      },
+      remove(id){const list=readJson("evia7-supporting-evidence",[])||[],i=list.findIndex(v=>v&&v.id===String(id));if(i<0)return false;list.splice(i,1);writeJson("evia7-supporting-evidence",list);return true}
+    },
+    /* An NVQ knowledge answer, by question id. Empty text removes it. */
+    nvqAnswers:{
+      put(r){
+        const all=readJson("evia7-nvq-answers",{})||{},q=String(r.questionId||r.id),t=String(r.text||"").trim(),now=new Date().toISOString();
+        if(t)all[q]={t,savedAt:all[q]&&all[q].savedAt||now,updatedAt:now};else delete all[q];
+        writeJson("evia7-nvq-answers",all);return q;
+      },
+      remove(id){const all=readJson("evia7-nvq-answers",{})||{};if(!(id in all))return false;delete all[id];writeJson("evia7-nvq-answers",all);return true}
+    },
+    /* A finished test, mock or discussion. Extra detail (questions and answers) is kept as it is. The phone keeps 50. */
+    tests:{
+      put(r){
+        const all=readJson("evia7-test-results",[])||[],rec=Object.assign({},r.detail||{},r);
+        delete rec.detail;delete rec.v;delete rec.learnerId;
+        rec.id=String(r.id||("test-"+Date.now()+"-"+Math.random().toString(36).slice(2,6)));rec.course=r.course||courseNow();rec.savedAt=r.takenAt||new Date().toISOString();delete rec.takenAt;
+        all.push(rec);writeJson("evia7-test-results",all.slice(-50));return rec.id;
+      }
+    },
+    /* A lesson finished: best score kept, last score and the number of goes updated. */
+    lessonResults:{
+      put(r){
+        const s=readJson("evia7-teach",{})||{},c=r.course||courseNow(),C=s[c]=s[c]||{lessons:{}};C.lessons=C.lessons||{};
+        const was=C.lessons[r.lessonId],score=Math.max(0,Math.min(1,Number(r.last)||0));
+        C.lessons[r.lessonId]={done:true,best:Math.max(score,was?Number(was.best)||0:0),last:score,at:Date.now(),attempts:((was&&was.attempts)||(was?1:0))+1};
+        writeJson("evia7-teach",s);return c+":"+r.lessonId;
+      }
+    },
+    confidence:{
+      put(r){
+        const all=readJson("evia7-confidence",[])||[],now=new Date().toISOString(),c=r.course||courseNow();
+        const rec={id:String(r.id||("confidence-"+Date.now())),course:c,startedAt:r.startedAt||now,savedAt:now,source:"self-assessment",scores:(r.scores||[]).map(x=>Object.assign({},x))};
+        all.push(rec);writeJson("evia7-confidence",all);
+        try{localStorage.removeItem("evia7-confidence-cycle-"+c)}catch(_){}
+        return rec.id;
+      }
+    },
+    scenarios:{
+      put(r){const d=readJson("evia7-scenarios",{})||{},id=String(r.scenarioId||r.id);d[id]={at:Date.now(),best:!!r.best};writeJson("evia7-scenarios",d);return id}
     }
   };
   function put(c,r){if(!W[c])throw new Error("eviaData: "+c+" can't be written through eviaData yet");const id=W[c].put(r||{});emit(c);return id}

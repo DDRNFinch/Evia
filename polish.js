@@ -230,7 +230,7 @@
 
   async function submitPack(pack){
     if(!(pack.photos||[]).length||!String(pack.write||"").trim())return false;
-    const u=data().u[unit],profile=JSON.parse(localStorage.getItem("evia7-profile")||"{}");
+    const u=data().u[unit];
     const id=Date.now()+"-"+Math.random().toString(36).slice(2,8);
     const photoIds=[];
     for(const p of (pack.photos||[])){
@@ -241,11 +241,10 @@
       await idbPut({id:permanentId,blob:rec.blob,addedAt:rec.addedAt||new Date().toISOString()});
       photoIds.push(permanentId);
     }
-    evidence.push({id,c:course,u:u[0],d:new Date().toLocaleString("en-GB"),p:[],photoIds,w:pack.write.trim(),k:u[1].map(code),learnerProfile:{name:profile.name||"",start:profile.start||"",end:profile.end||""},signature:profile.signature||"",savedAt:new Date().toISOString(),photoCount:photoIds.length,
-      photoTimes:(pack.photos||[]).filter(p=>p&&p.id).map(p=>p.takenAt||null),
+    window.eviaData.put("evidence",{id,course,unit:u[0],text:pack.write,ksbs:u[1].map(code),photoIds,
+      photoTakenAt:(pack.photos||[]).filter(p=>p&&p.id).map(p=>p.takenAt||null),
       /* Areas answered with guided Evia count in full towards the unit's strength (strength.js). */
       guidedAreas:window.eviaStrength?window.eviaStrength.guidedAreas(pack):[]});
-    persist();
     await removePack();
     /* Back to the same unit: the new pack shows as the first saved tile. */
     window.openUnit(unit);

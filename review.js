@@ -22,9 +22,7 @@
     return [];
   };
   const saveTest=(type,result)=>{
-    const all=read(TEST_KEY,[]);
-    all.push({...result,type,course,savedAt:new Date().toISOString()});
-    write(TEST_KEY,all.slice(-50));
+    window.eviaData.put("tests",{...result,type,course});
     try{window.dispatchEvent(new CustomEvent("evia:test-saved",{detail:{type,pct:result.pct,score:result.score,total:result.total,full:!!result.full,missed:result.missed||[]}}))}catch(_){}
   };
   const latestTest=type=>{

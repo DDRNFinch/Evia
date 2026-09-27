@@ -347,9 +347,28 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       D.remove("hours",id);const gone=D.changesSince();
       out.syncDelete=hours.length===before&&gone.length===1&&gone[0].record.id===id&&!!gone[0].record.deletedAt;
       D.markSynced(gone);localStorage.removeItem("evia7-data-synced");
+      /* Every other write: new evidence (signature and name copied in), an edit, supporting details, an NVQ answer,
+         a test with its questions, a lesson result, a confidence check and a scenario. Put back afterwards. */
+      const keys=["evia7-supporting-evidence","evia7-nvq-answers","evia7-test-results","evia7-teach","evia7-confidence","evia7-scenarios"],kept={};keys.forEach(k=>kept[k]=localStorage.getItem(k));
+      const p=JSON.parse(localStorage.getItem("evia7-profile")||"{}");
+      const eid=D.put("evidence",{course,unit:data().u[0][0],text:"  Data test write-up  ",ksbs:["S1"],photoIds:["photo-x"]});
+      const e=evidence.find(x=>x.id===eid);out.evNew=!!e&&e.w==="Data test write-up"&&e.u===data().u[0][0]&&e.photoCount===1&&e.signature===(p.signature||"")&&e.learnerProfile.name===(p.name||"");
+      D.put("evidence",{id:eid,text:"Edited",ksbs:["S1","K2"]});const g=D.get("evidence",eid);out.evEdit=g.text==="Edited"&&g.ksbs.length===2&&g.updatedAt>=g.createdAt;
+      D.remove("evidence",eid);out.evGone=!evidence.some(x=>x.id===eid);
+      const sid=D.put("supporting",{title:"Witness statement",type:"document",mime:"application/pdf",filename:"w.pdf",size:10});
+      D.put("supporting",{id:sid,witness:{name:"Sam Hill",role:"Supervisor"},nvqUnit:"641",criteria:["641.1.1"]});
+      const sp=D.get("supporting",sid);out.supporting=sp.type==="witness"&&sp.witness.name==="Sam Hill"&&sp.nvqUnit==="641"&&sp.criteria[0]==="641.1.1";
+      D.put("nvqAnswers",{questionId:"q-test",text:"Because the mortar needs time to cure"});out.nvq=D.get("nvqAnswers","q-test").text.startsWith("Because");
+      D.put("nvqAnswers",{questionId:"q-test",text:""});out.nvqGone=!D.get("nvqAnswers","q-test");
+      const tid=D.put("tests",{type:"discussion",score:2,total:3,pct:67,questions:[{prompt:"Why?"}]});const t=D.get("tests",tid);out.tests=t.pct===67&&t.questions.length===1&&!!t.takenAt;
+      D.put("lessonResults",{course,lessonId:"zz-data",last:.6});D.put("lessonResults",{course,lessonId:"zz-data",last:.9});D.put("lessonResults",{course,lessonId:"zz-data",last:.5});
+      const lr=D.get("lessonResults",course+":zz-data");out.lessons=lr.best===.9&&lr.last===.5&&lr.attempts===3;
+      const cid=D.put("confidence",{course,scores:[{area:"Mixing",score:3}]});out.confidence=D.get("confidence",cid).scores[0].score===3;
+      D.put("scenarios",{scenarioId:"sc-data",best:true});out.scenarios=D.get("scenarios","sc-data").best===true;
+      keys.forEach(k=>{if(kept[k]==null)localStorage.removeItem(k);else localStorage.setItem(k,kept[k])});
       return out;
     });
-    check("Learner data: every record in the new shape (ids, learner id, ISO dates, unit ids), hours written and removed through eviaData, and sync sees changes and deletions",Object.values(dm).every(Boolean),JSON.stringify(dm));
+    check("Learner data: every record in the new shape (ids, learner id, ISO dates, unit ids), hours, evidence, supporting evidence, NVQ answers, tests, lessons, confidence and scenarios written through eviaData, and sync sees changes and deletions",Object.values(dm).every(Boolean),JSON.stringify(dm));
     // Mini games: locked until unlocked in Rewards, played from Teach me, small coins with a daily cap.
     const gm=await page.evaluate(async()=>{
       const w=ms=>new Promise(r=>setTimeout(r,ms)),R=window.eviaRewards,G=window.eviaGames,out={},keep=localStorage.getItem("evia7-rewards");

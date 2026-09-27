@@ -282,10 +282,7 @@
           if(window.eviaStoreEvidencePhoto)photoIds.push(await window.eviaStoreEvidencePhoto(p.blob));
           else inline.push(await blobToDataUrl(p.blob));
         }
-        const profile=JSON.parse(localStorage.getItem("evia7-profile")||"{}");
-        const entry={id:Date.now()+"-"+Math.random().toString(36).slice(2,8),c:course,u:PPE_UNIT,d:new Date().toLocaleString("en-GB"),p:inline,w:write.value.trim(),k:ppeCodes(),learnerProfile:{name:profile.name||"",start:profile.start||"",end:profile.end||""},signature:profile.signature||"",savedAt:new Date().toISOString(),photoCount:photos.length,induction:true};
-        if(photoIds.length)entry.photoIds=photoIds;
-        evidence.push(entry);persist();
+        window.eviaData.put("evidence",{course,unit:PPE_UNIT,text:write.value,ksbs:ppeCodes(),photoIds,inlinePhotos:inline,induction:true});
         photos.forEach(p=>URL.revokeObjectURL(p.url));
         writeState("progress");
         showProgressStep();

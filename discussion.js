@@ -233,10 +233,9 @@
     intro();
   }
   function save(qs,answers,gs,pct){
-    let all=[];try{all=JSON.parse(localStorage.getItem("evia7-test-results")||"[]")||[]}catch(_){}
     const result={type:"discussion",course,savedAt:new Date().toISOString(),pct,score:gs.filter(g=>g.score>=50).length,total:gs.length,recorded:true,
       questions:qs.map((q,k)=>({prompt:q.prompt,answer:answers[k].main,follow:answers[k].follow,followQ:answers[k].followQ,pct:gs[k].score,covered:gs[k].pts.filter(p=>p.main||p.follow).map(p=>p.label),missing:gs[k].missing,correct:gs[k].score>=50}))};
-    all.push(result);localStorage.setItem("evia7-test-results",JSON.stringify(all.slice(-50)));
+    window.eviaData.put("tests",result);
     try{window.dispatchEvent(new CustomEvent("evia:test-saved",{detail:{type:"discussion",pct,score:result.score,total:result.total,full:gs.length>1,missed:[]}}))}catch(_){}
   }
   window.eviaDiscussion={open,grade,capture,supported:()=>!!SR};

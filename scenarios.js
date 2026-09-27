@@ -188,7 +188,7 @@
         x.classList.add(o.best?"best":"other");if(x===b)x.classList.add("picked");
         x.insertAdjacentHTML("beforeend",'<span class="sc-why"><strong>'+(o.best?"Best choice. ":x===b?"Your choice. ":"")+'</strong>'+escHtml(o.why)+'</span>');
       });
-      const d=done();d[sc.id]={at:Date.now(),best:!!picked.best};localStorage.setItem(KEY,JSON.stringify(d));
+      window.eviaData.put("scenarios",{scenarioId:sc.id,best:!!picked.best});
       if(picked.best&&window.eviaMood)window.eviaMood("happy");
       const last=index===topic.scenarios.length-1;
       el.querySelector("#sc-after").innerHTML='<div class="pr-banner'+(picked.best?" good":"")+'" role="status"><strong>'+(picked.best?"Spot on.":"Good to think about.")+'</strong> '+escHtml(sc.remember)+'</div>'+
@@ -216,6 +216,6 @@
 
   /* For Evia's chat: the next scenario to do, saving an answer, and who to talk to. */
   function nextInfo(){const n=nextScenario();if(!n)return null;const index=n.topic.scenarios.findIndex(s=>s.id===n.id);return {topic:n.topic,index,sc:n}}
-  function record(id,best){const d=done();d[id]={at:Date.now(),best:!!best};localStorage.setItem(KEY,JSON.stringify(d))}
+  function record(id,best){window.eviaData.put("scenarios",{scenarioId:id,best:!!best})}
   window.eviaScenarios={openTopics,openNext,progress,topics:TOPICS,nextInfo,record,contactsHtml,done};
 })();

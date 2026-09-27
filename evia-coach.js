@@ -123,10 +123,7 @@
       });
     };
     const finish=()=>{
-      const now=new Date().toISOString(),all=readJson("evia7-confidence",[]);
-      all.push({id:"confidence-"+Date.now(),course,startedAt:now,savedAt:now,source:"self-assessment",scores});
-      localStorage.setItem("evia7-confidence",JSON.stringify(all));
-      try{localStorage.removeItem("evia7-confidence-cycle-"+course)}catch(_){}
+      window.eviaData.put("confidence",{course,scores});
       if(window.eviaCheckTargets)window.eviaCheckTargets();
       const low=scores.filter(x=>x.score<=2).sort((a,b)=>a.score-b.score),high=scores.filter(x=>x.score>=3).sort((a,b)=>b.score-a.score);
       const up=scores.filter(x=>prev.has(x.area)&&x.score>prev.get(x.area));

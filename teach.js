@@ -22,7 +22,7 @@
   const readStore=()=>{try{return JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(_){return {}}};
   const writeStore=s=>{try{localStorage.setItem(KEY,JSON.stringify(s))}catch(_){}};
   const mine=()=>{const s=readStore();return (s[course]=s[course]||{lessons:{}}).lessons};
-  const saveResult=(id,score)=>{const s=readStore(),c=s[course]=s[course]||{lessons:{}},was=c.lessons[id];c.lessons[id]={done:true,best:Math.max(score,was?was.best:0),last:score,at:Date.now()};writeStore(s)};
+  const saveResult=(id,score)=>{window.eviaData.put("lessonResults",{course,lessonId:id,last:score})};
 
   /* XP, the daily streak and this week, kept with the lessons under "_me" (never a course name). */
   const ymd=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
@@ -339,7 +339,7 @@
     const finish=()=>{
       const now=new Date().toISOString();
       const scores=qs.map((q,k)=>picks.has(k)?{area:q.area,score:picks.get(k),question:q.question,answeredAt:now}:prev.has(q.area)?Object.assign({},prev.get(q.area),{carried:true}):null).filter(Boolean);
-      try{const all=JSON.parse(localStorage.getItem("evia7-confidence")||"[]");all.push({id:"confidence-"+Date.now(),course,startedAt:now,savedAt:now,source:"self-assessment",scores});localStorage.setItem("evia7-confidence",JSON.stringify(all));localStorage.removeItem("evia7-confidence-cycle-"+course)}catch(_){}
+      try{window.eviaData.put("confidence",{course,startedAt:now,scores})}catch(err){console.error("Confidence check not saved",err)}
       const before=pct([...prev.values()].map(x=>x.score)),after=pct(scores.map(x=>x.score));
       const up=scores.filter(x=>{const p=prev.get(x.area);return p&&!x.carried&&x.score>p.score}),low=scores.filter(x=>x.score<=2),high=scores.filter(x=>x.score>=3);
       const row=x=>{const p=prev.get(x.area),ch=p&&!x.carried&&p.score!==x.score?(x.score>p.score?'<em class="cf-up">↑ up</em>':'<em class="cf-down">↓ down</em>'):"";return '<li><span class="cf-bars" aria-hidden="true">'+[1,2,3,4].map(n=>'<i'+(n<=x.score?' class="on"':"")+'></i>').join("")+'</span><span><strong>'+esc(x.area)+'</strong><small>'+CHOICES[x.score-1][0]+'</small></span>'+ch+'</li>'};

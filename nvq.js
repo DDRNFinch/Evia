@@ -220,9 +220,9 @@
     ta.addEventListener("input",upd);upd();
     document.getElementById("nvq-back").onclick=()=>openTopic(t);
     save.onclick=()=>{
-      const all=answers(),txt=ta.value.trim();
-      if(txt)all[qid]={t:txt,savedAt:all[qid]&&all[qid].savedAt||new Date().toISOString(),updatedAt:new Date().toISOString()};else delete all[qid];
-      localStorage.setItem(ANSWERS_KEY,JSON.stringify(all));
+      const txt=ta.value.trim();
+      window.eviaData.put("nvqAnswers",{questionId:qid,text:txt});
+      const all=answers();
       if(typeof showEvidenceToast==="function")showEvidenceToast(words(txt)>=MIN_WORDS?"Answer saved":"Saved. Add a bit more detail so it counts");
       if(window.eviaCheckTargets)window.eviaCheckTargets();
       const next=order.slice(pos+1).concat(order.slice(0,pos)).find(x=>!answered(x,all));

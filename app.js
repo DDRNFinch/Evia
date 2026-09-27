@@ -125,7 +125,7 @@ function supportingMeta(){try{const all=JSON.parse(localStorage.getItem("evia7-s
 function supportingSlug(value){return String(value||"").trim().replace(/[^a-z0-9]+/gi,"-").replace(/^-+|-+$/g,"").slice(0,80)||"supporting-evidence"}
 function supportingTypeLabel(type){return ({photo:"Photo",video:"Video",audio:"Audio",document:"Files"}[type]||"File")}
 function supportingFilename(title,type,mime){const base=supportingSlug(title),ext=type==="photo"?"jpg":type==="video"?(mime&&mime.includes("mp4")?"mp4":"webm"):type==="audio"?(mime&&mime.includes("mp4")?"m4a":"webm"):"bin";return base+"."+ext}
-async function supportingSaveRecord(record,blob){if(!window.eviaSupportingFilePut)throw new Error("Supporting evidence storage is unavailable");await window.eviaSupportingFilePut({id:record.id,blob});const all=supportingMeta();all.push(record);localStorage.setItem("evia7-supporting-evidence",JSON.stringify(all.slice(-500)))}
+async function supportingSaveRecord(record,blob){if(!window.eviaSupportingFilePut)throw new Error("Supporting evidence storage is unavailable");await window.eviaSupportingFilePut({id:record.id,blob});window.eviaData.put("supporting",record)}
 function supportingCardIcon(type){const icons={photo:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="18" height="14" rx="3"></rect><path d="M8 6.5l1.4-2h5.2l1.4 2"></path><circle cx="12" cy="13.5" r="3.5"></circle></svg>',video:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="13" height="11" rx="2.5"></rect><path d="M16 10l5-3v10l-5-3z"></path></svg>',audio:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="8" height="12" rx="4"></rect><path d="M5 11.5a7 7 0 0 0 14 0M12 18.5V22M9 22h6"></path></svg>',document:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2.5h8l4 4v15H6z"></path><path d="M14 2.5v5h4M9 12h6M9 16h6"></path></svg>'};return '<span class="evidence-type-icon">'+(icons[type]||icons.document)+'</span>'}
 async function openSupportingEvidence(){
  const base={course};
@@ -276,7 +276,7 @@ function openSupportingDetails(id,fresh,after){
   const name=$("#sd-wname").value.trim();
   if($("#sd-witness").checked&&name)r.witness={name,role:$("#sd-wrole").value.trim()};else delete r.witness;
   if(nvq){r.nvqUnit=$("#sd-unit").value||"";r.ksbs=[...document.querySelectorAll("#sd-crits input:checked")].map(i=>i.value);if(!r.nvqUnit){delete r.nvqUnit;r.ksbs=[]}}
-  localStorage.setItem("evia7-supporting-evidence",JSON.stringify(list));
+  window.eviaData.put("supporting",{id,title:r.title,witness:r.witness||null,nvqUnit:nvq?(r.nvqUnit||""):undefined,criteria:r.ksbs||[]});
   showEvidenceToast(r.ksbs&&r.ksbs.length?"Linked to "+r.ksbs.length+" criteria":"Details saved");
   if(window.eviaCheckTargets)window.eviaCheckTargets();
   done();
