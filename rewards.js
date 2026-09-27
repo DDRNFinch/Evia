@@ -47,7 +47,7 @@
   /* Expressions: Evia's resting look. Her moods (happy when you save something, sleepy when idle) still take over
      for a moment. "classic" is the free default. */
   const EXPR={
-    wink:{label:"Wink",rarity:"common",about:"A cheeky wink."},
+    wink:{label:"Pill eyes",rarity:"common",about:"Two solid pills. Bold and friendly."}, /* key kept as "wink" so owned ones carry over */
     surprised:{label:"Surprised",rarity:"common",about:"Wide-eyed and amazed."},
     happy:{label:"Happy",rarity:"rare",about:"Always smiling."},
     sleepy:{label:"Sleepy",rarity:"rare",about:"Early start on site."},
