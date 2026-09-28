@@ -761,6 +761,8 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
         for(let i=0;i<6;i++){const g=await p6.$("text=Got it");if(!g)break;await g.click().catch(()=>{});await p6.waitForTimeout(300)}
         await p6.evaluate(()=>{const c=[...document.querySelectorAll("#screen [data-deep], #screen .pv-card, #screen button")].find(x=>/waiting/.test(x.textContent)&&x.offsetHeight<400);if(c)c.click()});await p6.waitForTimeout(900);
         await p6.screenshot({path:d+"/ksb-groups.png"});
+        await p6.evaluate(()=>{document.getElementById("modal-root").innerHTML="";document.querySelectorAll(".overlay,.pv-sheet").forEach(x=>x.remove());nav("teach")});await p6.waitForTimeout(900);
+        await p6.locator(".tg-grid").screenshot({path:d+"/teach-tiles.png"}).catch(e=>console.log(e.message));
         await p6.evaluate(()=>window.openUnit(0));await p6.waitForTimeout(900);
         await p6.screenshot({path:d+"/unit-more.png",fullPage:true});}
       lv.noErrors=!e6.length;
