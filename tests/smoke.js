@@ -714,6 +714,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
         if(u.pathname==="/rest/v1/evidence_files"&&q.method()==="GET"&&/OBS1/.test(u.search))return json([{storage_path:"O1/OBS1/observation.pdf",size_bytes:20}]);
         if(q.method()==="GET"&&/\/storage\/v1\/object\/.*observation\.pdf$/.test(u.pathname))return r.fulfill({status:200,contentType:"application/pdf",headers:{"access-control-allow-origin":"*"},body:"%PDF-1.4 observation"});
         if(u.pathname==="/rest/v1/targets"&&q.method()==="GET")return json([{id:"T1",review_id:"RV1",title:"Log 36 learning hours",description:"Log at least 36 hours in the next 6 weeks in Evia.",due_date:"2026-11-10",measure:{kind:"otj",target:36,baseline:0},created_at:"2026-09-28T10:00:00Z"}]);
+        if(u.pathname==="/rest/v1/rpc/nisia_my_feedback"){const ev=calls.filter(x=>x.p==="/rest/v1/evidence"&&x.m==="POST").map(x=>JSON.parse(x.body)).pop();return json(ev?[{client_reference:ev.client_reference,unit:ev.title,decision:"accepted",feedback:"Well done Jo. Next time: more photos.",ksbs:["S1","K2"],assessed_at:"2026-09-28T12:00:00Z",assessor:"Mark Ellis"}]:[])}
         if(u.pathname==="/rest/v1/rpc/nisia_my_details")return json({name:"Joanne Bloggs",college:"Walsall College",start:"2026-09-01",end:"2028-08-31",assessor:"Mark Ellis",reviewDue:"2026-11-24",lastReview:null,safeguarding:{name:"Sam Lead",phone:"01922 000000",email:""}});
         if(u.pathname.startsWith("/rest/v1/"))return r.fulfill({status:201,headers:{"access-control-allow-origin":"*"},body:""});
         return json({},404);
@@ -749,6 +750,9 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       lv.evidenceTable=calls.some(x=>x.p==="/rest/v1/evidence"&&/"course_id":"C1"/.test(x.body)&&/"evidence_type":"photo"/.test(x.body));
       lv.photoUploaded=calls.some(x=>x.p.startsWith("/storage/v1/object/evidence/O1/"))&&calls.some(x=>x.p==="/rest/v1/evidence_files");
       lv.upToDate=await p6.evaluate(()=>{const s=window.eviaNisia.status();return !s.changes&&!s.media&&!!s.lastSync});
+      await p6.evaluate(()=>window.eviaNisia.sync());await p6.waitForTimeout(400);
+      lv.feedbackBack=await p6.evaluate(()=>{const e=window.eviaData.list("evidence").pop(),f=e&&window.eviaFeedback.forEvidence(e.id);const n=window.eviaStats.nudges(window.eviaStats.compute());
+        return !!f&&f.decision==="accepted"&&f.by==="Mark Ellis"&&f.ksbs.length===2&&!f.seen&&window.eviaFeedback.unseen().length===1&&n.some(x=>/^fb-/.test(x.id)&&/Mark signed off/.test(x.text))});
       lv.noErrors=!e6.length;
       check("Live Nisia: the assessor's code signs Evia in, every record, learning hours, evidence and photos go to the college, and name, safeguarding lead and review date come back",Object.values(lv).every(Boolean),JSON.stringify(lv)+" "+e6.join(" | "));
 
