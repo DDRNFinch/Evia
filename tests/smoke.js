@@ -66,6 +66,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       const wait=ms=>new Promise(r=>setTimeout(r,ms));
       for(let n=0;n<40;n++){
         await wait(700);
+        window.__rvSecond=(window.__rvSecond||[]).concat([...document.querySelectorAll("#chat .ui-replies .chat-pill")].map(x=>x.textContent.trim()).filter(t=>/Improve this|Finish later|Stop for now/.test(t)));
         const b=[...document.querySelectorAll("#chat .ui-replies .chat-pill")].find(x=>/Let’s go|^Next$|Save my review/.test(x.textContent.trim()));
         if(!b)continue;
         const save=/Save my review/.test(b.textContent);
@@ -75,6 +76,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       return false;
     });
     await page.waitForTimeout(400);
+    {const sec=await page.evaluate(()=>[...new Set(window.__rvSecond||[])]);check("In the review chat, each section offers Improve this (or Finish later), not Stop for now",sec.includes("Improve this")&&!sec.includes("Stop for now"),JSON.stringify(sec))}
     check("The progress review happens in Evia's chat, section by section, and saves with comments",reviewDone&&await page.evaluate(b=>{const r=window.eviaGetReviews();return r.length===b+1&&r[0].reflection.learnerFeedback==="All good thanks"&&!("wellbeing" in r[0].reflection)&&!document.querySelector("#chat [data-reflect='wellbeing']")&&!document.querySelector(".rv-sheet")},rvBefore));
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML=""});
     await page.evaluate(()=>nav("learning"));await page.waitForTimeout(450);
@@ -207,10 +209,16 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>{document.body.classList.remove("evia-onboarding");nav("home")});await page.waitForTimeout(450);
 
     await page.evaluate(()=>window.eviaStartReview());await page.waitForTimeout(400);
-    let checkIn=false;
+    /* An hours target counts hours logged from the day it was set, including ones logged earlier that day. */
+    const tgt=await page.evaluate(()=>{const T=window.eviaTargets,t={id:"tx",kind:"otj",target:10,baseline:999,createdAt:Date.now(),title:"Log 10 learning hours"};
+      window.eviaData.put("hours",{minutes:120,description:"Earlier today",createdAt:Date.now()-60000});const p=T.progress(t,T.stats());return {pct:Math.round(p.pct*100),text:p.text}});
+    check("An hours target counts hours logged from the day it was set",tgt.pct>=20&&/logged since/.test(tgt.text),JSON.stringify(tgt));
+    let checkIn=false,improve=false,signPads=-1;
     for(let i=0;i<12;i++){const t=await page.evaluate(()=>document.getElementById("rv-next").textContent);
+      if(await page.evaluate(()=>document.getElementById("rv-title").textContent==="Sign off"))signPads=await page.$$eval("#rv-body [data-sign]",x=>x.length);
       if(await page.evaluate(()=>document.getElementById("rv-title").textContent==="How things are")){checkIn=(await page.$$("#rv-body select[data-reflect]")).length===5;await page.selectOption('select[data-reflect="feelsSafe"]',"Yes");await page.selectOption('select[data-reflect="hsIncident"]',"No")}
       await page.click("#rv-next");await page.waitForTimeout(200);if(t==="Save review")break}
+    check("Evia's review sign-off has no employer or assessor signatures (they sign in Milos)",signPads<=0,String(signPads));
     check("Evia's review asks the check-in the assessor's review uses (safe, who to tell, changes, health and safety, training time)",checkIn&&await page.evaluate(()=>{const r=window.eviaData.list("reviews").map(x=>x.detail).pop();return r&&r.reflection&&r.reflection.feelsSafe==="Yes"&&r.reflection.hsIncident==="No"}));
     check("The review ends with a sign-off step for employer and tutor",await page.evaluate(()=>true)&&!!(await page.evaluate(()=>{const r=JSON.parse(localStorage.getItem("evia7-progress-reviews")||"[]").pop();return r&&r.format===2})));
     await page.waitForSelector("#rvp-save",{timeout:20000}).catch(()=>{});
