@@ -49,10 +49,16 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";window.chat({quiet:true})});await page.waitForTimeout(300);
     await page.evaluate(()=>{window.eviaChatKit.userSays("Log my hours");window.eviaCoachFlows.hours()});
     await page.waitForSelector('#chat .chat-pill:has-text("Toolbox talk")',{timeout:8000});await page.click('#chat .chat-pill:has-text("Toolbox talk")');
+    await page.waitForSelector('#chat .chat-pill:has-text("Another day")',{timeout:8000});await page.click('#chat .chat-pill:has-text("Another day")');
+    await page.waitForSelector("#chat .hw-when .dw-field",{timeout:8000});
+    const threeAgo=await page.evaluate(()=>{const d=new Date(Date.now()-3*864e5);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")});
+    await page.evaluate(()=>{document.querySelector("#chat .hw-when input").value="2999-01-01"});await page.click("#chat .hw-when .hw-when-ok");
+    check("Hours can't be logged for a day that hasn't happened yet",/and today/.test(await page.textContent("#chat .hw-when-err")));
+    await page.evaluate(v=>{document.querySelector("#chat .hw-when input").value=v},threeAgo);await page.click("#chat .hw-when .hw-when-ok");
     await page.waitForSelector("#chat .hw-ok",{timeout:8000});await page.click('#chat [data-preset="1"]');await page.waitForTimeout(500);await page.click("#chat .hw-ok");
     await page.waitForSelector("#chat .hw-note textarea",{timeout:8000});await page.fill("#chat .hw-note textarea","manual handling");await page.click("#chat .hw-save");
     await page.waitForSelector("#chat .ui-widget:last-child .hw-note textarea:not([disabled])",{timeout:8000});await page.fill("#chat .ui-widget:last-child .hw-note textarea","lift with your legs, not your back");await page.click("#chat .ui-widget:last-child .hw-save");await page.waitForTimeout(300);
-    check("Evia logs hours from a chat: what it was, an hours-and-minutes wheel, what you did and what you learned",await page.evaluate(()=>hours.some(h=>h.n===1&&h.description==="Toolbox talk: manual handling. What I learned: lift with your legs, not your back"&&h.learned)));
+    check("Evia logs hours from a chat: what it was, when (backdated here), an hours-and-minutes wheel, what you did and what you learned",await page.evaluate(d=>hours.some(h=>h.n===1&&h.description==="Toolbox talk: manual handling. What I learned: lift with your legs, not your back"&&h.learned&&new Date(h.on).toDateString()===new Date(d+"T12:00:00").toDateString()&&h.createdAt>Date.now()-120000),threeAgo));
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML=""});
     const rvBefore=await page.evaluate(()=>window.eviaGetReviews().length);
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";window.chat({quiet:true});setTimeout(()=>window.eviaChatReview(),50)});
@@ -752,6 +758,34 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       check("A second device: connecting Evia on a computer brings the learner's work back from Nisia, photos included, without sending it all again",Object.values(rs).every(Boolean),JSON.stringify(rs)+" "+e7.join(" | "));
       await c7.close();
       await c6.close();
+    }
+
+    // Deleting and backdating: saved evidence (with its photos) and any learning log entry can be deleted, and hours can be
+    // logged for an earlier day, which counts on that day but still goes in the next learning hours PDF.
+    {
+      const c8=await browser.newContext({...devices["Pixel 7"],serviceWorkers:"block"}),p8=await c8.newPage(),e8=[];p8.on("pageerror",e=>e8.push(e.message));
+      p8.on("dialog",d=>d.accept());
+      await p8.goto(url+"manifest.json");
+      await p8.evaluate(()=>{localStorage.clear();sessionStorage.setItem("evia7-install-later","1");["evia7-theme-picked","evia7-shape-picked"].forEach(k=>localStorage.setItem(k,"1"));localStorage.setItem("evia7-onboarding",'{"stage":"done"}');localStorage.setItem("evia7-home-tip",JSON.stringify({day:new Date().toDateString(),id:"x"}));localStorage.setItem("evia7-profile",JSON.stringify({name:"Jo",start:"2025-01-01",end:"2027-12-01"}))});
+      await p8.goto(url);await p8.waitForTimeout(2500);
+      await p8.evaluate(()=>{document.getElementById("app").classList.remove("welcome-app-hidden");const w=document.getElementById("welcome-screen");if(w)w.remove()});
+      const dl={};
+      dl.backdated=await p8.evaluate(()=>{const ten=Date.now()-10*864e5,id=window.eviaData.put("hours",{minutes:120,description:"College day",source:"evia",createdAt:Date.now(),occurredAt:ten});
+        const r=window.eviaData.get("hours",id);return Math.abs(Date.parse(r.occurredAt)-ten)<1000&&Date.parse(r.createdAt)>Date.now()-60000});
+      dl.countsOnTheDay=await p8.evaluate(()=>{const S=window.eviaStats.compute();return S.otjWeek===0&&S.otjTotal>=2});
+      await p8.evaluate(()=>{window.eviaData.put("hours",{minutes:30,description:"Toolbox talk",source:"manual"});window.eviaOpenLearningLogs()});await p8.waitForTimeout(600);
+      dl.everyEntryDeletable=await p8.evaluate(()=>document.querySelectorAll("[data-rm-log]").length===2);
+      await p8.evaluate(()=>document.querySelector("[data-rm-log]").click());await p8.waitForTimeout(600);
+      dl.logDeleted=await p8.evaluate(()=>window.eviaData.list("hours").length===1&&document.querySelectorAll("[data-rm-log]").length===1);
+      dl.evidenceDeleted=await p8.evaluate(async()=>{
+        const c=document.createElement("canvas");c.width=20;c.height=20;const b=await new Promise(r=>c.toBlob(r,"image/jpeg"));const pid=await window.eviaStoreEvidencePhoto(b);
+        const id=window.eviaData.put("evidence",{course,unit:data().u[0][0],text:"A corner to gauge.",ksbs:[],photoIds:[pid]});
+        const before=window.eviaData.list("evidence").length,ok=window.eviaData.remove("evidence",id);await new Promise(r=>setTimeout(r,300));
+        return ok&&window.eviaData.list("evidence").length===before-1&&!(await window.eviaGetEvidencePhoto(pid));
+      });
+      dl.noErrors=!e8.length;
+      check("Deleting and backdating: evidence and its photos, and any learning log entry, can be deleted; hours can be logged for an earlier day",Object.values(dl).every(Boolean),JSON.stringify(dl)+" "+e8.join(" | "));
+      await c8.close();
     }
 
     // First-visit notes: once the tour is done, the first time a page or section opens Evia says what it's for; never again.
