@@ -63,13 +63,13 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
         const b=[...document.querySelectorAll("#chat .ui-replies .chat-pill")].find(x=>/Let’s go|^Next$|Save my review/.test(x.textContent.trim()));
         if(!b)continue;
         const save=/Save my review/.test(b.textContent);
-        const ta=document.querySelector("#chat .rvc textarea[data-reflect='wellbeing']:not([disabled])");if(ta)ta.value="All good thanks";
+        const ta=document.querySelector("#chat .rvc textarea[data-reflect='learnerFeedback']:not([disabled])");if(ta)ta.value="All good thanks";
         b.click();if(save)return true;
       }
       return false;
     });
     await page.waitForTimeout(400);
-    check("The progress review happens in Evia's chat, section by section, and saves with comments",reviewDone&&await page.evaluate(b=>{const r=window.eviaGetReviews();return r.length===b+1&&r[0].reflection.wellbeing==="All good thanks"&&!document.querySelector(".rv-sheet")},rvBefore));
+    check("The progress review happens in Evia's chat, section by section, and saves with comments",reviewDone&&await page.evaluate(b=>{const r=window.eviaGetReviews();return r.length===b+1&&r[0].reflection.learnerFeedback==="All good thanks"&&!("wellbeing" in r[0].reflection)&&!document.querySelector("#chat [data-reflect='wellbeing']")&&!document.querySelector(".rv-sheet")},rvBefore));
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML=""});
     await page.evaluate(()=>nav("learning"));await page.waitForTimeout(450);
     await page.evaluate(()=>nav("portfolio"));await page.waitForTimeout(450);
@@ -592,14 +592,14 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       await p2.evaluate(()=>{localStorage.clear();sessionStorage.setItem("evia7-install-later","1");["evia7-theme-picked","evia7-shape-picked"].forEach(k=>localStorage.setItem(k,"1"))});
       await p2.goto(url+"?demo");await p2.waitForTimeout(2500);
       const ob={},go=async(n,wait)=>{await p2.click('#ob-lesson [data-ob="'+(n||0)+'"]');await p2.waitForTimeout(wait||600)};
-      ob.join=await p2.evaluate(()=>/Join your college/.test((document.getElementById("ob-lesson")||{}).textContent||"")&&document.querySelector('#ob-lesson [data-ob="0"]').disabled);
-      await p2.fill("#ob-name","Callum Hughes");await p2.fill("#ob-code","abc1234");await go();
+      ob.join=await p2.evaluate(()=>/Connect to your college/.test((document.getElementById("ob-lesson")||{}).textContent||"")&&document.querySelector('#ob-lesson [data-ob="0"]').disabled&&!document.getElementById("ob-name"));
+      await p2.fill("#ob-code","abc1234");await go();
       ob.badCode=await p2.evaluate(()=>/didn’t work/.test(document.getElementById("ob-err").textContent));
       await p2.fill("#ob-code","brk 7q4m");ob.formatted=await p2.inputValue("#ob-code")==="BRK-7Q4M";await go(0,800);
-      ob.consent=await p2.evaluate(()=>{const t=document.getElementById("ob-lesson").textContent;return /Brookfield College/.test(t)&&/won’t see/.test(t)&&/photos, videos or write-ups/.test(t)});
+      ob.isThisYou=await p2.evaluate(()=>{const t=document.getElementById("ob-lesson").textContent;return /Is this you/.test(t)&&/Callum Hughes/.test(t)&&/Hughes & Sons Builders/.test(t)&&/Mark Ellis/.test(t)&&/Everything you add to Evia goes to Brookfield College/.test(t)&&!/won’t see/.test(t)});
       await go(1,1800);
-      ob.joined=await p2.evaluate(()=>{const e=window.eviaData.enrolment();return /You’re in, Callum/.test(document.getElementById("ob-lesson").textContent)&&e.course==="bricklayer"&&e.college==="Brookfield College"&&e.sharing&&course==="bricklayer"&&window.eviaData.learner().name==="Callum Hughes"});
-      await go();await go();await go();
+      ob.joined=await p2.evaluate(()=>{const e=window.eviaData.enrolment(),L=window.eviaData.learner();return e.course==="bricklayer"&&e.college==="Brookfield College"&&course==="bricklayer"&&L.name==="Callum Hughes"&&L.start==="2025-09-01"&&L.safeguarding.name==="Sarah Mitchell"&&window.eviaData.learnerId()==="nisia-demo-callum"&&/Hi Callum/.test(document.getElementById("ob-lesson").textContent)});
+      await go();await go();
       await p2.click('.tm-opt[data-k="0"]');await go(0,400);
       ob.quiz=await p2.evaluate(()=>/Spot on/.test(document.querySelector("#ob-lesson .tm-fb").textContent));
       await go();
@@ -629,15 +629,16 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       // The profile a part at a time, with nothing else usable (the close button can't be tapped). The name came from joining.
       ob.locked=await p2.evaluate(()=>{const el=document.getElementById("profile-close"),r=el.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return !(hit&&(hit===el||el.contains(hit)))});
       let parts=0;for(let k=0;k<5;k++){const more=await p2.evaluate(()=>{const n=document.querySelector(".ob-card.ob-over .ob-next");if(n){n.click();return true}return false});if(!more)break;parts++;await p2.waitForTimeout(500)}
-      ob.profileSteps=parts===2&&await p2.evaluate(()=>document.querySelector(".evia-guide-target").id==="save-profile");
+      ob.profileSteps=parts===1&&await p2.evaluate(()=>document.querySelector(".evia-guide-target").id==="save-profile");
       await p2.evaluate(()=>document.querySelector(".evia-guide-target").click());await p2.waitForTimeout(1200);
       ob.done=await p2.evaluate(()=>/"done"/.test(localStorage.getItem("evia7-onboarding"))&&!localStorage.getItem("evia7-induction"));
       ob.ticked=await p2.evaluate(()=>{try{return window.eviaStats.compute().a.met>=2}catch(_){return false}});
-      ob.sharedOnly=await p2.evaluate(()=>{const s=window.eviaNisia.summary();return s.code==="BRK7Q4M"&&s.supporting===1&&!JSON.stringify(s).includes("hard hat")});
+      // Nisia gets everything: after a sync nothing is left waiting, the PPE PDF included.
+      ob.synced=await p2.evaluate(async()=>{await window.eviaNisia.sync();const s=window.eviaNisia.status();return s.joined&&!s.changes&&!s.media&&!!s.lastSync});
       await p2.waitForTimeout(800);
       ob.tourCountsAsSeen=await p2.evaluate(()=>{const s=JSON.parse(localStorage.getItem("evia7-tips-seen")||"[]");return ["course","supporting","unit","learning","teach","rewards","evia","profile"].every(k=>s.includes(k))&&!document.querySelector(".ev-tip")});
       ob.noErrors=!e2.length&&await p2.evaluate(()=>!window.eviaErrors.list().filter(x=>x.kind!=="reported").length);
-      check("First run: join the college by code, a Teach me style welcome, the PPE induction in the real guided mode saved to Supporting evidence (ticking K2 and S2), then a short tap-through tour",Object.values(ob).every(Boolean),JSON.stringify(ob)+" "+e2.join(" | "));
+      check("First run: connect to the college with the assessor's code, confirm the details Nisia sends, a Teach me style welcome, the PPE induction in the real guided mode saved to Supporting evidence (ticking K2 and S2), then a short tap-through tour",Object.values(ob).every(Boolean),JSON.stringify(ob)+" "+e2.join(" | "));
       await c2.close();
     }
 
@@ -648,18 +649,27 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       await p5.evaluate(()=>{localStorage.clear();sessionStorage.setItem("evia7-install-later","1");["evia7-theme-picked","evia7-shape-picked"].forEach(k=>localStorage.setItem(k,"1"))});
       await p5.goto(url+"?demo");await p5.waitForTimeout(2500);
       const jl={};
-      await p5.fill("#ob-name","Amira Khan");await p5.click("#ob-nocode");await p5.waitForTimeout(600);
+      await p5.click("#ob-nocode");await p5.waitForTimeout(600);
       await p5.click('[data-onboard-course="site"]');await p5.waitForTimeout(1500);
-      jl.picked=await p5.evaluate(()=>course==="site"&&!window.eviaNisia.joined()&&/Amira/.test(document.getElementById("ob-lesson").textContent));
+      jl.picked=await p5.evaluate(()=>course==="site"&&!window.eviaNisia.joined()&&!!document.getElementById("ob-lesson"));
       await p5.evaluate(()=>{document.querySelector("#ob-skip").click()});await p5.waitForTimeout(800);
       await p5.evaluate(()=>window.eviaOpenProfile());await p5.waitForTimeout(600);
+      jl.canEditBefore=await p5.evaluate(()=>!document.getElementById("profile-name").readOnly&&!!document.querySelector(".pf-change"));
       await p5.click("#join-college");await p5.waitForTimeout(600);
-      jl.noSkipBack=await p5.evaluate(()=>!document.getElementById("ob-nocode")&&/Amira Khan/.test(document.getElementById("ob-name").value));
+      jl.noSkipBack=await p5.evaluate(()=>!document.getElementById("ob-nocode"));
       await p5.fill("#ob-code","CJ4H8KP");await p5.click('#ob-lesson [data-ob="1"]');await p5.waitForTimeout(700);
-      await p5.click('#ob-lesson [data-ob="1"]');await p5.waitForTimeout(1500);await p5.click('#ob-lesson [data-ob="0"]');await p5.waitForTimeout(800);
-      jl.joined=await p5.evaluate(()=>{const e=window.eviaNisia.joined();return !!e&&e.group==="Site Carpentry 2025"&&!document.getElementById("ob-lesson")&&/"done"/.test(localStorage.getItem("evia7-onboarding"))});
+      await p5.click('#ob-lesson [data-ob="1"]');await p5.waitForTimeout(1800);
+      jl.joined=await p5.evaluate(()=>{const e=window.eviaNisia.joined();return !!e&&e.name==="Amira Khan"&&window.eviaData.learner().name==="Amira Khan"&&!document.getElementById("ob-lesson")&&/"done"/.test(localStorage.getItem("evia7-onboarding"))});
+      await p5.evaluate(()=>window.eviaOpenProfile());await p5.waitForTimeout(600);
+      jl.lockedAfter=await p5.evaluate(()=>document.getElementById("profile-name").readOnly&&!document.querySelector(".pf-change")&&/Kestrel Homes/.test(document.querySelector(".pf-college").textContent)&&!!document.getElementById("pf-sync").textContent);
+      // No signal: work waits on the phone, and a dot on the profile button says so until it's sent.
+      await p5.evaluate(()=>{document.getElementById("modal-root").innerHTML=""});await c5.setOffline(true);
+      await p5.evaluate(()=>{window.eviaData.put("hours",{minutes:30,description:"Toolbox talk"});dispatchEvent(new Event("offline"))});await p5.waitForTimeout(300);
+      jl.waitingDot=await p5.evaluate(()=>document.getElementById("profile-btn").classList.contains("nisia-waiting"));
+      await c5.setOffline(false);await p5.evaluate(async()=>{dispatchEvent(new Event("online"));await window.eviaNisia.sync()});await p5.waitForTimeout(300);
+      jl.sentWhenBack=await p5.evaluate(()=>!document.getElementById("profile-btn").classList.contains("nisia-waiting")&&!window.eviaNisia.status().changes);
       jl.noErrors=!e5.length;
-      check("No code yet: pick the course, then join the college later from the profile",Object.values(jl).every(Boolean),JSON.stringify(jl)+" "+e5.join(" | "));
+      check("No code yet: pick the course, then connect to the college later from the profile, which then shows the college's details",Object.values(jl).every(Boolean),JSON.stringify(jl)+" "+e5.join(" | "));
       await c5.close();
     }
 

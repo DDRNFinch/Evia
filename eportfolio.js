@@ -569,7 +569,7 @@
      T("Safeguarding lead saved in Evia: "+(s.dsl?"Yes":"Not yet")+"   ·   Latest skills self-rating: "+(s.confPct!=null?s.confPct+"%":"not done"),M,y+3,7.8,"normal",muted);y+=7}
     // Apprentice comments
     const c=r.reflection||{};
-    const comments=[["Wellbeing and support",c.wellbeing],["How the apprenticeship is going",c.learnerFeedback],["Extra help with learning",c.support],["Next steps and career plans",c.nextSteps]].filter((x,i)=>i<2||x[1]);
+    const comments=[["How the apprenticeship is going",c.learnerFeedback],["Extra help with learning",c.support],["Next steps and career plans",c.nextSteps]].filter((x,i)=>i<1||x[1]);
     section("Apprentice's comments",30);
     comments.forEach(([q,a])=>{doc.setFont("helvetica","normal");doc.setFontSize(8.2);const ls=doc.splitTextToSize(pdfText(a||"No comment."),CW-8);const h=6.5+ls.length*3.6;if(y+h>BOTTOM){doc.addPage();y=M}
       box(M,y,CW,h,[255,255,255],line,2.5);T(q,M+4,y+4.3,7.4,"bold",muted);ls.forEach((l,n)=>T(l,M+4,y+8.3+n*3.6,8.2,"normal",a?ink:faint));y+=h+2});

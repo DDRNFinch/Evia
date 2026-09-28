@@ -48,6 +48,8 @@
   function openProfile(){
     const p=get();
     const nvqOn=!!(window.eviaNvq&&window.eviaNvq.on()),dsl=p.safeguarding||{};
+    /* Connected to a college: the name, dates and course are Nisia's, so they're shown but not changed here. */
+    const nis=window.eviaNisia&&window.eviaNisia.joined(),ro=nis?" readonly":"";
     const row=(id,icon,title,sub)=>'<button type="button" class="pf-row" id="'+id+'"><span class="pf-row-icon" aria-hidden="true">'+icon+'</span><span class="pf-row-copy"><strong>'+title+'</strong>'+(sub?'<small>'+sub+'</small>':"")+'</span><span class="pf-chev" aria-hidden="true">›</span></button>';
     const sw=(id,title,sub)=>'<label class="pf-row pf-switch"><span class="pf-row-copy"><strong>'+title+'</strong>'+(sub?'<small>'+sub+'</small>':"")+'</span><input id="'+id+'" type="checkbox" role="switch"><i aria-hidden="true"></i></label>';
     const group=(title,body,cls)=>'<section class="pf-group'+(cls?" "+cls:"")+'">'+(title?'<h3>'+title+'</h3>':"")+'<div class="pf-card">'+body+'</div></section>';
@@ -55,15 +57,16 @@
       '<div class="profile-overlay"><section class="profile-sheet pf-sheet" role="dialog" aria-modal="true" aria-label="Your profile">'+
       '<button class="profile-close pf-close" id="profile-close" aria-label="Close">×</button>'+
       '<header class="pf-head"><label class="pf-avatar" title="Change photo">'+avatarMarkup(p,false)+'<span class="pf-avatar-edit" aria-hidden="true">✎</span><input id="avatar-file" type="file" accept="image/*" hidden></label>'+
-        '<input class="pf-name" id="profile-name" value="'+esc(p.name)+'" placeholder="Your name" aria-label="Your name" autocomplete="name">'+
+        '<input class="pf-name" id="profile-name" value="'+esc(p.name)+'" placeholder="Your name" aria-label="Your name" autocomplete="name"'+ro+'>'+
         '<span class="pf-course">'+esc(C[course].name)+' · '+esc(C[course].std)+'</span></header>'+
       group("Apprenticeship",
-        '<div class="pf-dates"><label>Started<input id="profile-start" type="date" value="'+esc(p.start)+'"></label><label>Finishes<input id="profile-end" type="date" value="'+esc(p.end)+'"></label></div>'+
-        (window.eviaNisia&&window.eviaNisia.joined()?'<p class="pf-note pf-college">'+esc(window.eviaNisia.joined().college)+' · '+esc(window.eviaNisia.joined().group||"")+'</p>':window.eviaJoinCollege?row("join-college",'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10 12 5l9 5-9 5z"/><path d="M7 12.5V17c3 2 7 2 10 0v-4.5"/></svg>',"Join your college","Type the code from your tutor"):"")+
+        '<div class="pf-dates"><label>Started<input id="profile-start" type="date" value="'+esc(p.start)+'"'+ro+'></label><label>Finishes<input id="profile-end" type="date" value="'+esc(p.end)+'"'+ro+'></label></div>'+
+        (nis?'<div class="pf-college"><strong>'+esc(nis.college)+'</strong>'+[nis.employer&&"Employer: "+nis.employer,nis.assessor&&"Assessor: "+nis.assessor,nis.tutor&&"Tutor: "+nis.tutor].filter(Boolean).map(t=>'<small>'+esc(t)+'</small>').join("")+'<small class="pf-sync" id="pf-sync">'+esc(window.eviaNisia.statusText())+'</small></div>'
+          :window.eviaJoinCollege?row("join-college",'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10 12 5l9 5-9 5z"/><path d="M7 12.5V17c3 2 7 2 10 0v-4.5"/></svg>',"Connect to your college","Scan your assessor’s QR code"):"")+
         (nvqOn?'<details class="pf-more"><summary>Optional units<span>'+esc(window.eviaNvq.optionalChosen().join(", "))+'</span></summary><div class="nvq-opts" id="profile-nvq-opts">'+window.eviaNvq.optionalHtml()+'</div></details>':"")+
         sw("profile-maths","Maths","Include maths in tests and reviews")+
         sw("profile-english","English","Include English in tests and reviews")+
-        '<details class="pf-more pf-change"><summary>Change course<span>Only if you’ve moved course</span></summary><div class="course-options">'+window.eviaPacks.catalogue().map(c=>'<button type="button" class="course-option '+(c.id===course?"selected":"")+'" data-profile-course="'+c.id+'">'+esc(c.name)+'<span>'+(c.id===course?"Current":"›")+'</span></button>').join("")+'</div></details>')+
+        (nis?"":'<details class="pf-more pf-change"><summary>Change course<span>Only if you’ve moved course</span></summary><div class="course-options">'+window.eviaPacks.catalogue().map(c=>'<button type="button" class="course-option '+(c.id===course?"selected":"")+'" data-profile-course="'+c.id+'">'+esc(c.name)+'<span>'+(c.id===course?"Current":"›")+'</span></button>').join("")+'</div></details>'))+
       group("Evia",
         row("open-shape-picker",'<span class="evia-mini"><span class="evia-face"><i></i><i></i></span></span>',"Evia’s shape")+
         row("open-theme-picker",'<i class="pf-dot"></i>',"Evia’s colour")+

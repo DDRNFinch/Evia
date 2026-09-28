@@ -234,7 +234,6 @@
       ""});
     const c=r.reflection||{},q=r.ksbFollowUp;
     out.push({title:"Your comments",body:
-      '<label class="rv-q"><span>Is anything affecting your wellbeing, learning or work that you’d like your tutor to know? <small>Optional</small></span>'+(readOnly?'<p class="rv-a">'+escHtml(c.wellbeing||"No comment.")+'</p>':'<textarea data-reflect="wellbeing" rows="3">'+escHtml(c.wellbeing||"")+'</textarea>')+'</label>'+
       '<label class="rv-q"><span>How are you finding your apprenticeship? <small>Optional</small></span>'+(readOnly?'<p class="rv-a">'+escHtml(c.learnerFeedback||"No comment.")+'</p>':'<textarea data-reflect="learnerFeedback" rows="3">'+escHtml(c.learnerFeedback||"")+'</textarea>')+'</label>'+
       '<label class="rv-q"><span>Is there anything that would help you learn? For example extra help with reading, writing or maths, or support for dyslexia, a disability or anything else. <small>Optional</small></span>'+(readOnly?'<p class="rv-a">'+escHtml(c.support||"No comment.")+'</p>':'<textarea data-reflect="support" rows="2">'+escHtml(c.support||"")+'</textarea>')+'</label>'+
       '<label class="rv-q"><span>What would you like to do after your apprenticeship? <small>Optional</small></span>'+(readOnly?'<p class="rv-a">'+escHtml(c.nextSteps||"No comment.")+'</p>':'<textarea data-reflect="nextSteps" rows="2" placeholder="e.g. stay on as a bricklayer, go on to Level 3, become a site supervisor…">'+escHtml(c.nextSteps||"")+'</textarea>')+'</label>'+

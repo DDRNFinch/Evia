@@ -730,6 +730,8 @@
       input.type="hidden";
       const btn=document.createElement("button");btn.type="button";btn.className="dw-field";btn.setAttribute("aria-label",label);
       paintField(btn,input);input.insertAdjacentElement("afterend",btn);
+      /* Dates set by the college (Nisia) can't be changed here. */
+      if(input.readOnly){btn.disabled=true;btn.classList.add("dw-locked");return}
       btn.onclick=e=>{e.preventDefault();openDateWheel(input,label)};
     });
   }

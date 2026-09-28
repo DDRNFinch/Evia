@@ -1,6 +1,6 @@
 /* Evia7 first run, guided like a Teach me lesson, on the real screens.
-   1. Join your college: name and the code from the tutor (or its QR code), agree what's shared, and the group's course
-      unlocks (nisia.js). No code yet: pick the course, and join later.
+   1. Connect to your college: scan the assessor's pairing QR (or type its code, or open the invite link). Nisia sends
+      the learner's details and course; they check it's them (nisia.js). No code yet: pick the course, connect later.
    2. A short welcome lesson from Evia, with one quick question.
    3. The PPE induction, on a real evidence page with the real "Let Evia guide you": photos, two questions, a statement.
       It's saved to Supporting evidence as a PDF, linked to the KSBs it shows, and Evia shows where it went.
@@ -121,6 +121,11 @@
       .ob-yes svg,.ob-no svg{flex:0 0 20px;width:20px;height:20px;margin-top:1px;fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
       .ob-yes svg{stroke:#079455}.ob-no svg{stroke:#d92d20}
       .ob-small{margin:0 2px;font-size:13px;color:var(--ui-muted,#667085)}
+      .ob-me{gap:0;padding:6px 16px}
+      .ob-me-name{padding:12px 0 8px;font-size:19px;letter-spacing:-.01em;color:var(--ui-ink,#172033)}
+      .ob-me-row{display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-top:1px solid var(--pm-hair,rgba(16,24,40,.08));font-size:14.5px}
+      .ob-me-row span{color:var(--ui-muted,#667085)}
+      .ob-me-row b{text-align:right;color:var(--ui-ink,#172033);font-weight:700}
       #ob-lesson .tm-foot .tm-fb{margin:0 -18px 10px}
       #ob-lesson .tm-fb-ic svg{fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round}
       #ob-scan-view{position:fixed;inset:0;z-index:10120;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:14px;padding:0 20px max(24px,env(safe-area-inset-bottom));color:#fff;text-align:center}
@@ -173,38 +178,39 @@
   const closeLesson=()=>{const r=document.getElementById("ob-lesson");if(r)r.remove()};
   const tick='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',cross='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>';
 
-  /* ---------- 1. Join your college ---------- */
-  /* later: joining from the profile after the first run (no code at the start). */
-  let later=false;
+  /* ---------- 1. Connect to your college ----------
+     The learner's assessor shows a pairing QR (or sends an invite link); the code under the QR can be typed instead.
+     Nisia sends back who they are and their course, so they only check it's them. Everything they then add to Evia
+     goes to their college (nisia.js). No code yet: pick the course, and connect later from the profile. */
+  let later=false;   /* connecting from the profile, after the first run */
+  const canScan=()=>"BarcodeDetector" in window&&!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia);
   function showJoin(code,err){
     if(!later)writeState("join");
-    const L=window.eviaData.learner(),canScan="BarcodeDetector" in window&&!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia);
-    const el=lessonScreen({title:"Join your college",noSkip:true,
-      body:'<div class="tm-says">'+EVIA_SM+'<p>Hi, I’m Evia. Let’s get you set up. Type the code your tutor gave you'+(canScan?", or scan their QR code":"")+'.</p></div>'+
-        '<label class="ob-field"><span>Your full name</span><input id="ob-name" type="text" autocomplete="name" autocapitalize="words" value="'+escHtml(L.name||"")+'" placeholder="First name and surname"></label>'+
-        '<label class="ob-field"><span>Your college code</span><input id="ob-code" class="ob-code" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12" value="'+escHtml(code||"")+'" placeholder="ABC-1234"></label>'+
+    const scan=canScan();
+    const el=lessonScreen({title:"Connect to your college",noSkip:true,
+      body:'<div class="tm-says">'+EVIA_SM+'<p>Hi, I’m Evia. Your assessor will show you a <strong>QR code</strong>. '+(scan?"Scan it, or type":"Type")+' the code underneath it.</p></div>'+
+        (scan?'<button type="button" class="primary ob-scan-btn" id="ob-scan">Scan the QR code</button>':'')+
+        '<label class="ob-field"><span>'+(scan?"Or type the code":"The code under the QR")+'</span><input id="ob-code" class="ob-code" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12" value="'+escHtml(code||"")+'" placeholder="ABC-1234"></label>'+
         '<p class="ob-err" id="ob-err" role="alert">'+escHtml(err||"")+'</p>'+
-        (canScan?'<button type="button" class="secondary ob-scan-btn" id="ob-scan">Scan a QR code</button>':'')+
         (later?'':'<button type="button" class="ob-link" id="ob-nocode">No code yet? Pick your course</button>'),
       buttons:(later?[{label:"Cancel",run:endLater}]:[]).concat([{label:"Continue",primary:true,run:go}])});
-    const name=el.querySelector("#ob-name"),box=el.querySelector("#ob-code"),btn=el.querySelector('[data-ob="'+(later?1:0)+'"]');
+    const box=el.querySelector("#ob-code"),btn=el.querySelector('[data-ob="'+(later?1:0)+'"]');
     const fmt=()=>{const k=window.eviaNisia.clean(box.value);const v=k.length>3?k.slice(0,3)+"-"+k.slice(3):k;if(box.value!==v)box.value=v};
-    const upd=()=>{btn.disabled=!name.value.trim()||window.eviaNisia.clean(box.value).length<6};
-    box.oninput=()=>{fmt();upd();el.querySelector("#ob-err").textContent=""};name.oninput=upd;fmt();upd();
+    const upd=()=>{btn.disabled=window.eviaNisia.clean(box.value).length<6};
+    box.oninput=()=>{fmt();upd();el.querySelector("#ob-err").textContent=""};fmt();upd();
     box.onkeydown=e=>{if(e.key==="Enter"&&!btn.disabled)go()};
-    const nc=el.querySelector("#ob-nocode");if(nc)nc.onclick=()=>{saveName();closeLesson();showCoursePicker()};
+    const nc=el.querySelector("#ob-nocode");if(nc)nc.onclick=()=>{closeLesson();showCoursePicker()};
     const sc=el.querySelector("#ob-scan");if(sc)sc.onclick=()=>scanQr(v=>{box.value=v;fmt();upd();if(!btn.disabled)go()});
-    function saveName(){const n=name.value.trim().replace(/\s+/g," ");if(n)window.eviaData.put("learner",{name:n})}
     async function go(){
-      saveName();btn.disabled=true;btn.textContent="Checking…";
-      try{const g=await window.eviaNisia.join(box.value);showConsent(g)}
+      btn.disabled=true;btn.textContent="Checking…";
+      try{showMe(await window.eviaNisia.pair(box.value))}
       catch(e){showJoin(box.value,e.message)}
     }
   }
-  /* The QR code on the tutor's card holds the join code (or a link with ?code=). */
+  /* The pairing QR holds NISI:PAIR:2:<code> (or an invite link with ?pair=). */
   function scanQr(onCode){
-    const ov=document.createElement("div");ov.id="ob-scan-view";ov.setAttribute("role","dialog");ov.setAttribute("aria-label","Scan a QR code");
-    ov.innerHTML='<video playsinline muted></video><div class="ob-scan-frame" aria-hidden="true"></div><p>Point your camera at the QR code</p><button type="button" class="secondary" id="ob-scan-x">Cancel</button>';
+    const ov=document.createElement("div");ov.id="ob-scan-view";ov.setAttribute("role","dialog");ov.setAttribute("aria-label","Scan the QR code");
+    ov.innerHTML='<video playsinline muted></video><div class="ob-scan-frame" aria-hidden="true"></div><p>Point your camera at your assessor’s QR code</p><button type="button" class="secondary" id="ob-scan-x">Cancel</button>';
     document.body.appendChild(ov);
     let stream=null,alive=true;
     const stop=()=>{alive=false;if(stream)stream.getTracks().forEach(t=>t.stop());ov.remove()};
@@ -219,25 +225,23 @@
       }catch(_){stop();if(typeof showEvidenceToast==="function")showEvidenceToast("The camera didn’t open. Type the code instead.",true)}
     })();
   }
-  function showConsent(g){
-    lessonScreen({title:"Share your progress",noSkip:true,
-      body:'<div class="tm-says">'+EVIA_SM+'<p>Share your progress with <strong>'+escHtml(g.college)+'</strong>?</p></div>'+
-        '<div class="ob-share"><h3>Your tutor will see</h3>'+window.eviaNisia.SHARED.map(t=>'<div class="ob-yes">'+tick+'<span>'+escHtml(t)+'</span></div>').join("")+'</div>'+
-        '<div class="ob-share"><h3>They won’t see</h3>'+window.eviaNisia.NOT_SHARED.map(t=>'<div class="ob-no">'+cross+'<span>'+escHtml(t)+'</span></div>').join("")+'</div>'+
-        '<p class="ob-small">'+escHtml(g.group)+' · Tutor: '+escHtml(g.tutor)+'</p>',
-      buttons:[{label:"Back",run:()=>showJoin(g.code)},{label:"Agree and join",primary:true,run:async()=>{
-        const b=document.querySelector('#ob-lesson [data-ob="1"]');if(b){b.disabled=true;b.textContent="Joining…"}
-        try{await window.eviaPacks.ensure(g.course)}catch(err){showJoin(g.code,err.message);return}
-        const en=window.eviaNisia.accept(g);await applyEnrolment(en);showJoined(g);
+  const ukDate=d=>{const t=Date.parse(d);return isNaN(t)?"":new Date(t).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})};
+  /* "Is this you?": what Nisia has for them. */
+  function showMe(en){
+    const name=String(en.name||"").split(/\s+/)[0];
+    const course=(window.eviaPacks.catalogue().find(c=>c.id===en.course)||{}).name||en.course;
+    const rows=[["Course",course],["College",en.college],["Employer",en.employer],["Assessor",en.assessor],["Tutor",en.tutor],["Dates",[ukDate(en.start),ukDate(en.end)].filter(Boolean).join(" to ")]].filter(r=>r[1]);
+    lessonScreen({title:"Is this you?",noSkip:true,
+      body:'<div class="tm-says">'+EVIA_SM+'<p>Hi <strong>'+escHtml(name)+'</strong>! Your college has sent me your details. Is this you?</p></div>'+
+        '<div class="ob-share ob-me"><strong class="ob-me-name">'+escHtml(en.name)+'</strong>'+rows.map(r=>'<div class="ob-me-row"><span>'+escHtml(r[0])+'</span><b>'+escHtml(r[1])+'</b></div>').join("")+'</div>'+
+        '<p class="ob-small">Everything you add to Evia goes to '+escHtml(en.college)+', so your assessor can check it and sign it off.</p>',
+      buttons:[{label:"Not me",run:()=>showJoin("","Not you? Ask your assessor for your own code.")},{label:"That’s me",primary:true,run:async()=>{
+        const b=document.querySelector('#ob-lesson [data-ob="1"]');if(b){b.disabled=true;b.textContent="Connecting…"}
+        try{await window.eviaPacks.ensure(en.course)}catch(err){showJoin(en.code,err.message);return}
+        window.eviaNisia.accept(en);await applyEnrolment(en);
+        if(later){endLater();if(typeof showEvidenceToast==="function")showEvidenceToast("Connected to "+en.college);return}
+        closeLesson();afterJoin();
       }}]});
-  }
-  function showJoined(g){
-    if(!later)writeState("joined");
-    const name=firstName();
-    lessonScreen({title:"You’re in",noSkip:true,
-      body:'<div class="tm-hero">'+EVIA_BIG+'<p class="tm-say">You’re in'+(name?", "+escHtml(name):"")+'! <strong>'+escHtml(courseName())+'</strong> is unlocked.</p></div>'+
-        '<div class="ob-share">'+["Your units and what they need","Teach me lessons for your course","Progress reviews","EPA guide and practice tests"].map(t=>'<div class="ob-yes">'+tick+'<span>'+escHtml(t)+'</span></div>').join("")+'</div>',
-      buttons:[{label:later?"Done":"Next",primary:true,run:()=>{closeLesson();if(later)endLater();else afterJoin()}}]});
   }
   function endLater(){later=false;closeLesson();document.body.classList.remove("evia-onboarding");nav("course")}
   window.eviaJoinCollege=()=>{const m=document.getElementById("modal-root");if(m)m.innerHTML="";later=true;showJoin()};
@@ -602,7 +606,11 @@
     if(stage==="join"||stage==="course"){
       const en=window.eviaData.enrolment&&window.eviaData.enrolment();
       if(en)applyEnrolment(en).then(afterJoin).catch(err=>{console.error(err);showJoin()});
-      else{let code="";try{code=new URLSearchParams(location.search).get("code")||""}catch(_){}showJoin(code)}
+      else{
+        /* An invite link (?pair=) goes straight to "Is this you?". */
+        let code="";try{const q=new URLSearchParams(location.search);code=q.get("pair")||q.get("code")||""}catch(_){}
+        if(code)window.eviaNisia.pair(code).then(showMe).catch(e=>showJoin(code,e.message));else showJoin();
+      }
       return;
     }
     if(stage==="joined")return afterJoin();
