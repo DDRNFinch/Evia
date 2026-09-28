@@ -81,6 +81,7 @@
       .profile-sheet.ob-profile .evia-guide-target{scroll-margin-top:24px}
       /* Save sits at the end of the profile during the tour, so it isn't under Evia; she scrolls to it last. */
       .profile-sheet.ob-profile .pf-save{position:static;margin-top:16px}
+      .profile-sheet.ob-profile{padding-bottom:45vh}
       #ob-spot i,#ob-spot b{position:fixed;z-index:10010;display:block}
       #ob-spot i{background:rgba(15,23,42,.22);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
       #ob-spot b{background:transparent}
@@ -102,15 +103,11 @@
       .ob-photo-actions{margin-top:4px}
       .ob-text{width:100%;min-height:150px;box-sizing:border-box;padding:14px 15px;border:1px solid #dfe4ea;border-radius:16px;background:#fff;font:inherit;font-size:15px;line-height:1.5;resize:vertical}
 
-      /* The tour card: one line at a time, above the menu */
-      .ob-card{position:fixed;z-index:10030;left:14px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 96px);width:min(420px,calc(100% - 28px));transform:translateY(12px);opacity:0;
-        display:flex;flex-direction:column;gap:10px;padding:12px 14px 14px;border-radius:22px;background:#fff;border:1px solid var(--pm-hair,rgba(16,24,40,.08));box-shadow:0 16px 40px rgba(16,24,40,.16);transition:opacity .22s ease,transform .22s ease}
-      .ob-card.show{opacity:1;transform:none}
-      .ob-card::after{content:"";position:absolute;bottom:-8px;left:var(--tail,50%);width:16px;height:16px;margin-left:-8px;background:#fff;border-right:1px solid var(--pm-hair,rgba(16,24,40,.08));border-bottom:1px solid var(--pm-hair,rgba(16,24,40,.08));transform:rotate(45deg)}
-      .ob-card-top{display:flex;align-items:center;gap:10px}
+      /* The tour speaks through Evia's normal bubble; it sits above the blur, with the tour's progress along the top. */
+      html body .ui-evia-bubble.ob-card{z-index:10030}
+      .ob-card-top{display:flex;align-items:center;gap:10px;margin:-2px 0 10px}
       .ob-card-top .tm-prog{height:8px}
-      .ob-card .tm-says p{font-size:15px}
-      .ob-card .ob-next{width:100%}
+      .ob-card-top .ob-skip{min-height:30px;padding:2px 0}
       body.evia-keyboard-editing .ob-card{opacity:0;pointer-events:none}
       @media(prefers-reduced-motion:reduce){.evia-guide-target{animation:none}.ob-card{transition:none}}
     `;
@@ -333,33 +330,23 @@
         l.style.cssText="left:0;top:"+y1+"px;width:"+x1+"px;height:"+(y2-y1)+"px";r.style.cssText="left:"+x2+"px;top:"+y1+"px;right:0;height:"+(y2-y1)+"px";
         cover.style.cssText=spotLook?"left:"+x1+"px;top:"+y1+"px;width:"+(x2-x1)+"px;height:"+(y2-y1)+"px":"display:none";
       }
-      placeBubble();   /* Evia's button may still be sliding in */
       spotRaf=requestAnimationFrame(frame);
     };
     frame();
   }
   function spotOff(){cancelAnimationFrame(spotRaf);spotEl=null;if(spot){spot.remove();spot=null}}
-  /* Evia's words come from her button in the menu, as a speech bubble pointing at her. */
-  function placeBubble(){
-    if(!card)return;const fab=document.getElementById("evia-fab");if(!fab)return;
-    const R=fab.getBoundingClientRect(),cw=card.offsetWidth;
-    card.style.bottom=Math.max(12,innerHeight-R.top+12)+"px";
-    const left=Math.max(14,Math.min(innerWidth-cw-14,R.left+R.width/2-cw/2));
-    card.style.left=left+"px";card.style.setProperty("--tail",(R.left+R.width/2-left)+"px");
-  }
-  addEventListener("resize",placeBubble);
   const stopWatch=()=>{if(tapWatch)document.removeEventListener("click",tapWatch,true);tapWatch=null};
   const clearTargets=()=>document.querySelectorAll(".evia-guide-target").forEach(el=>el.classList.remove("evia-guide-target","ob-look"));
   function hideCard(){stopWatch();clearTargets();spotOff();if(card){const c=card;card=null;c.classList.remove("show");setTimeout(()=>c.remove(),220)}}
   function showCard(i,s){renderCard(Math.round((i+1)/TOUR.length*100),s.text,s.tap,()=>tour(i+1))}
   function renderCard(pct,text,tap,onNext){
-    if(!card){card=document.createElement("div");card.className="ob-card";card.setAttribute("role","status");card.setAttribute("aria-live","polite");document.body.appendChild(card);requestAnimationFrame(()=>requestAnimationFrame(()=>card&&card.classList.add("show")))}
+    /* Evia's normal speech bubble (the one she uses everywhere, above her button), with the tour's progress and Skip. */
+    if(!card){card=document.createElement("div");card.className="ui-evia-bubble ob-card";card.setAttribute("role","status");card.setAttribute("aria-live","polite");document.body.appendChild(card);requestAnimationFrame(()=>requestAnimationFrame(()=>card&&card.classList.add("show")))}
     card.innerHTML='<div class="ob-card-top"><span class="tm-prog" aria-hidden="true"><i style="width:'+pct+'%"></i></span><button type="button" class="ob-skip">Skip</button></div>'+
-      '<div class="tm-says">'+EVIA_SM+'<p>'+text+'</p></div>'+
-      (tap?'':'<button type="button" class="primary tm-go ob-next">Next</button>');
+      '<p>'+text+'</p>'+
+      (tap?'':'<div class="ui-evia-bubble-actions"><button type="button" class="primary ob-next">Next</button></div>');
     card.querySelector(".ob-skip").onclick=skipDemo;
     const n=card.querySelector(".ob-next");if(n)n.onclick=onNext;
-    placeBubble();requestAnimationFrame(placeBubble);
   }
   function tour(i){
     stopWatch();clearTargets();
