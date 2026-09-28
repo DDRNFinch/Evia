@@ -24,7 +24,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
   try{
     // A learner part-way through the course, with the first-run screens already done.
     await page.goto(url+"manifest.json");
-    await page.evaluate(()=>{localStorage.clear();["evia7-theme-picked","evia7-shape-picked"].forEach(k=>localStorage.setItem(k,"1"));
+    await page.evaluate(()=>{localStorage.clear();sessionStorage.setItem("evia7-install-later","1");["evia7-theme-picked","evia7-shape-picked"].forEach(k=>localStorage.setItem(k,"1"));
       localStorage.setItem("evia7-onboarding",'{"stage":"done"}');localStorage.setItem("evia7-tips-seen",'["*"]');localStorage.setItem("evia7-home-tip",JSON.stringify({day:new Date().toDateString(),id:"x"}));
       localStorage.setItem("evia7-profile",JSON.stringify({name:"Sam Taylor",start:"2024-11-01",end:"2026-12-01",mathsEnabled:true}))});
     await page.goto(url);await page.waitForTimeout(2000);
@@ -588,7 +588,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     {
       const c2=await browser.newContext({...devices["Pixel 7"],serviceWorkers:"block"}),p2=await c2.newPage(),e2=[];p2.on("pageerror",e=>e2.push(e.message));
       await p2.goto(url+"manifest.json");
-      await p2.evaluate(()=>{localStorage.clear();["evia7-theme-picked","evia7-shape-picked"].forEach(k=>localStorage.setItem(k,"1"))});
+      await p2.evaluate(()=>{localStorage.clear();sessionStorage.setItem("evia7-install-later","1");["evia7-theme-picked","evia7-shape-picked"].forEach(k=>localStorage.setItem(k,"1"))});
       await p2.goto(url+"?course=site&demo");await p2.waitForTimeout(2500);
       const ob={};
       ob.welcome=await p2.evaluate(()=>/You’re on Site Carpenter/.test((document.getElementById("ob-lesson")||{}).textContent||"")&&!document.getElementById("evia-onboard-course"));
@@ -626,7 +626,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     {
       const c3=await browser.newContext({...devices["Pixel 7"],serviceWorkers:"block"}),p3=await c3.newPage(),e3=[];p3.on("pageerror",e=>e3.push(e.message));
       await p3.goto(url+"manifest.json");
-      await p3.evaluate(()=>{localStorage.clear();["evia7-theme-picked","evia7-shape-picked"].forEach(k=>localStorage.setItem(k,"1"));localStorage.setItem("evia7-onboarding",'{"stage":"done"}');localStorage.setItem("evia7-home-tip",JSON.stringify({day:new Date().toDateString(),id:"x"}));localStorage.setItem("evia7-profile",JSON.stringify({name:"Jo",start:"2025-01-01",end:"2026-12-01"}))});
+      await p3.evaluate(()=>{localStorage.clear();sessionStorage.setItem("evia7-install-later","1");["evia7-theme-picked","evia7-shape-picked"].forEach(k=>localStorage.setItem(k,"1"));localStorage.setItem("evia7-onboarding",'{"stage":"done"}');localStorage.setItem("evia7-home-tip",JSON.stringify({day:new Date().toDateString(),id:"x"}));localStorage.setItem("evia7-profile",JSON.stringify({name:"Jo",start:"2025-01-01",end:"2026-12-01"}))});
       await p3.goto(url);await p3.waitForTimeout(2500);
       await p3.evaluate(()=>{document.getElementById("app").classList.remove("welcome-app-hidden");const w=document.getElementById("welcome-screen");if(w)w.remove()});
       const tipText=()=>p3.evaluate(()=>{const t=document.querySelector(".ev-tip");return t?t.querySelector("strong").textContent:""});
@@ -642,6 +642,18 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       tp.noErrors=!e3.length;
       check("First-visit notes: Evia explains each page and section the first time it opens, and never again",Object.values(tp).every(Boolean),JSON.stringify(tp)+" "+e3.join(" | "));
       await c3.close();
+    }
+
+    // Get the app first: in a phone's browser Evia asks for the app before anything else, with one button.
+    {
+      const c4=await browser.newContext({...devices["iPhone 13"],serviceWorkers:"block"}),p4=await c4.newPage();
+      await p4.goto(url);await p4.waitForTimeout(2000);
+      const gi={shown:await p4.evaluate(()=>{const g=document.getElementById("get-app");return !!g&&/Get the Evia app/.test(g.textContent)&&g.querySelectorAll(".gi-go").length===1})};
+      await p4.click("#gi-go");await p4.waitForTimeout(300);gi.iphoneSteps=await p4.evaluate(()=>/Add to Home Screen/.test(document.getElementById("get-app").textContent));
+      await p4.click("#gi-later");await p4.waitForTimeout(200);gi.later=await p4.evaluate(()=>!document.getElementById("get-app"));
+      await p4.reload();await p4.waitForTimeout(1500);gi.notAgainThisTime=await p4.evaluate(()=>!document.getElementById("get-app"));
+      check("Get the app first: one button in a phone's browser (the Home Screen steps on iPhone), and not inside the app",Object.values(gi).every(Boolean),JSON.stringify(gi));
+      await c4.close();
     }
 
     check("No script errors",!errors.length,errors.join(" | "));
