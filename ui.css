@@ -2140,3 +2140,20 @@ html body .eg-actions.eg-compact .eg-back{margin-right:auto;padding:0 4px}
 .tm-medal-won small{display:block;margin-top:2px;font-size:12.5px;line-height:1.4;color:var(--ui-muted)}
 @keyframes tmMedalIn{from{transform:scale(.6);opacity:0}}
 @media (prefers-reduced-motion:reduce){.tm-medal-won{animation:none}}
+
+/* ---------- Phone fit (Android and iPhone) ----------
+   Installed as an app, Evia runs edge to edge (viewport-fit=cover), so the top of each page and the profile button sit
+   below the notch or status bar, and full-height things use the visible height (dvh), not 100vh, which on iPhone
+   includes the browser bars. */
+html body .profile-btn{top:calc(12px + env(safe-area-inset-top))!important;right:calc(12px + env(safe-area-inset-right))!important}
+html body #screen{padding-top:max(16px,calc(env(safe-area-inset-top) + 10px))}
+html body #screen.ui-top{padding-top:calc(68px + env(safe-area-inset-top))}
+html body .profile-sheet{max-height:92vh;max-height:calc(100dvh - env(safe-area-inset-top) - 12px)}
+.cam-stage{width:min(100vw,calc(100dvh - 330px),640px)}
+/* The coins toast goes at the top, so it never lands on Evia's bubble above the menu. */
+html body .rw-toast{bottom:auto;top:calc(max(12px,env(safe-area-inset-top)) + 8px)}
+/* Narrow phones (small Androids, iPhone SE): the menu labels fit without touching. */
+@media (max-width:360px){
+  html body .bottom-nav button{font-size:10px;letter-spacing:-.02em}
+  html body .bottom-nav{left:10px;right:10px}
+}
