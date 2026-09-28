@@ -583,43 +583,84 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     const tb=await page.evaluate(()=>({course,nvq:!!window.eviaNvq,groups:document.querySelectorAll(".nvq-group").length,problems:window.eviaErrors.list().filter(x=>x.kind!=="reported").map(x=>x.message)}));
     check("A Trowel L3 learner opens straight onto the NVQ course, with nothing going wrong",tb.course==="trowel3"&&tb.nvq&&tb.groups>=4&&!tb.problems.length,JSON.stringify(tb));
 
-    // First run: the course comes from Nisia's enrolment (?course= stands in), then a Teach me style welcome and PPE
-    // unit (saved to Supporting evidence, linked to its KSBs), then a short tap-through tour ending in the profile.
+    // First run: join the college with the tutor's code (and agree what's shared), a Teach me style welcome with a
+    // quick question, the PPE induction on a real evidence page with the real guided mode (saved to Supporting evidence,
+    // linked to its KSBs), then a short tap-through tour ending in the profile.
     {
       const c2=await browser.newContext({...devices["Pixel 7"],serviceWorkers:"block"}),p2=await c2.newPage(),e2=[];p2.on("pageerror",e=>e2.push(e.message));
       await p2.goto(url+"manifest.json");
       await p2.evaluate(()=>{localStorage.clear();sessionStorage.setItem("evia7-install-later","1");["evia7-theme-picked","evia7-shape-picked"].forEach(k=>localStorage.setItem(k,"1"))});
-      await p2.goto(url+"?course=site&demo");await p2.waitForTimeout(2500);
-      const ob={};
-      ob.welcome=await p2.evaluate(()=>/You’re on Site Carpenter/.test((document.getElementById("ob-lesson")||{}).textContent||"")&&!document.getElementById("evia-onboard-course"));
-      await p2.click('#ob-lesson [data-ob="0"]');await p2.waitForTimeout(500);
-      const jpg=await p2.evaluate(()=>{const c=document.createElement("canvas");c.width=60;c.height=80;const x=c.getContext("2d");x.fillStyle="#c77";x.fillRect(0,0,60,80);return c.toDataURL("image/jpeg").split(",")[1]});
-      await p2.setInputFiles("#ob-gallery",{name:"ppe.jpg",mimeType:"image/jpeg",buffer:Buffer.from(jpg,"base64")});await p2.waitForTimeout(700);
-      ob.photo=await p2.evaluate(()=>!!document.querySelector(".ob-photo img")&&!document.querySelector('#ob-lesson [data-ob="1"]').disabled);
-      await p2.click('#ob-lesson [data-ob="1"]');await p2.waitForTimeout(400);
-      await p2.fill("#write","My hard hat protects my head from falling objects.");
-      await p2.click('#ob-lesson [data-ob="1"]');await p2.waitForTimeout(2500);
-      Object.assign(ob,await p2.evaluate(()=>{const s=window.eviaData.list("supporting");return {saved:/Supporting evidence/.test(document.getElementById("ob-lesson").textContent),
-        supporting:s.length===1&&s[0].title==="PPE induction"&&s[0].mime==="application/pdf"&&s[0].induction&&s[0].criteria.join()==="K2,S2",notUnitEvidence:!evidence.length}}));
-      await p2.click('#ob-lesson [data-ob="0"]');await p2.waitForTimeout(1000);
+      await p2.goto(url+"?demo");await p2.waitForTimeout(2500);
+      const ob={},go=async(n,wait)=>{await p2.click('#ob-lesson [data-ob="'+(n||0)+'"]');await p2.waitForTimeout(wait||600)};
+      ob.join=await p2.evaluate(()=>/Join your college/.test((document.getElementById("ob-lesson")||{}).textContent||"")&&document.querySelector('#ob-lesson [data-ob="0"]').disabled);
+      await p2.fill("#ob-name","Callum Hughes");await p2.fill("#ob-code","abc1234");await go();
+      ob.badCode=await p2.evaluate(()=>/didn’t work/.test(document.getElementById("ob-err").textContent));
+      await p2.fill("#ob-code","brk 7q4m");ob.formatted=await p2.inputValue("#ob-code")==="BRK-7Q4M";await go(0,800);
+      ob.consent=await p2.evaluate(()=>{const t=document.getElementById("ob-lesson").textContent;return /Brookfield College/.test(t)&&/won’t see/.test(t)&&/photos, videos or write-ups/.test(t)});
+      await go(1,1800);
+      ob.joined=await p2.evaluate(()=>{const e=window.eviaData.enrolment();return /You’re in, Callum/.test(document.getElementById("ob-lesson").textContent)&&e.course==="bricklayer"&&e.college==="Brookfield College"&&e.sharing&&course==="bricklayer"&&window.eviaData.learner().name==="Callum Hughes"});
+      await go();await go();await go();
+      await p2.click('.tm-opt[data-k="0"]');await go(0,400);
+      ob.quiz=await p2.evaluate(()=>/Spot on/.test(document.querySelector("#ob-lesson .tm-fb").textContent));
+      await go();
+      // The camera, standing in: one photo for each thing Evia asks for.
+      await p2.evaluate(()=>{const c=document.createElement("canvas");c.width=60;c.height=80;const x=c.getContext("2d");x.fillStyle="#c77";x.fillRect(0,0,60,80);
+        window.eviaCamera.supported=()=>true;window.eviaCamera.open=o=>{c.toBlob(bl=>{const f=new File([bl],"p.jpg",{type:"image/jpeg"});(o.guide||[]).forEach(()=>o.onShot&&o.onShot(f));o.onDone([],{finished:true})},"image/jpeg")}});
+      await go(0,900);
+      ob.realPage=await p2.evaluate(()=>!!document.querySelector("#screen .evidence-pack-page .ev-modes #eg-start")&&document.querySelector(".evia-guide-target").id==="eg-start"&&!!document.querySelector(".ob-card"));
+      const eg=async(sel,wait)=>{await p2.click("#modal-root "+sel);await p2.waitForTimeout(wait||600)};
+      await p2.click("#eg-start");await p2.waitForTimeout(700);
+      ob.realGuide=await p2.evaluate(()=>/GUIDED EVIDENCE/.test(document.querySelector("#modal-root .eg-sheet").textContent)&&!document.body.classList.contains("ob-lock"));
+      await eg('[data-eg="0"]',1000);await eg('[data-eg="0"]');
+      await eg('[data-topic="0"]');await p2.fill("#eg-text","My hard hat protects my head from falling objects.");await eg('[data-eg="0"]');await eg('[data-eg="0"]');
+      await eg('[data-topic="1"]');await p2.fill("#eg-text","I check it for cracks every morning.");await eg('[data-eg="0"]');await eg('[data-eg="0"]');
+      await eg('[data-eg="0"]',1200);
+      ob.inProgress=await p2.evaluate(()=>document.querySelectorAll("#evidence-photos img").length===3&&document.querySelector(".evia-guide-target").id==="ob-ppe-save");
+      await p2.click("#ob-ppe-save");await p2.waitForTimeout(3000);
+      Object.assign(ob,await p2.evaluate(()=>{const s=window.eviaData.list("supporting");return {
+        supporting:s.length===1&&s[0].title==="PPE induction"&&s[0].mime==="application/pdf"&&s[0].induction&&s[0].criteria.join()==="K2,S2",notUnitEvidence:!evidence.length,
+        shownWhere:!!document.querySelector("[data-supporting-evidence].evia-guide-target")}}));
       let steps=0;
-      for(let i=0;i<14;i++){
+      for(let i=0;i<16;i++){
         const st=await p2.evaluate(()=>{const c=document.querySelector(".ob-card");if(document.querySelector(".profile-sheet.ob-profile"))return "profile";if(!c)return "none";const n=c.querySelector(".ob-next");if(n){n.click();return "next"}const t=document.querySelector(".evia-guide-target");if(t){t.click();return "tap"}return "stuck"});
-        if(st==="profile"||st==="none"||st==="stuck")break;steps++;await p2.waitForTimeout(1100);
+        if(st==="profile"||st==="none"||st==="stuck")break;steps++;await p2.waitForTimeout(1200);
       }
-      ob.tour=steps>=9&&await p2.evaluate(()=>!!document.querySelector(".profile-sheet.ob-profile"));
-      // The profile a part at a time, with nothing else usable (the close button can't be tapped).
+      ob.tour=steps>=11&&await p2.evaluate(()=>!!document.querySelector(".profile-sheet.ob-profile"));
+      // The profile a part at a time, with nothing else usable (the close button can't be tapped). The name came from joining.
       ob.locked=await p2.evaluate(()=>{const el=document.getElementById("profile-close"),r=el.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return !(hit&&(hit===el||el.contains(hit)))});
       let parts=0;for(let k=0;k<5;k++){const more=await p2.evaluate(()=>{const n=document.querySelector(".ob-card.ob-over .ob-next");if(n){n.click();return true}return false});if(!more)break;parts++;await p2.waitForTimeout(500)}
-      ob.profileSteps=parts===3&&await p2.evaluate(()=>document.querySelector(".evia-guide-target").id==="save-profile");
+      ob.profileSteps=parts===2&&await p2.evaluate(()=>document.querySelector(".evia-guide-target").id==="save-profile");
       await p2.evaluate(()=>document.querySelector(".evia-guide-target").click());await p2.waitForTimeout(1200);
-      ob.done=await p2.evaluate(()=>/"done"/.test(localStorage.getItem("evia7-onboarding")));
+      ob.done=await p2.evaluate(()=>/"done"/.test(localStorage.getItem("evia7-onboarding"))&&!localStorage.getItem("evia7-induction"));
       ob.ticked=await p2.evaluate(()=>{try{return window.eviaStats.compute().a.met>=2}catch(_){return false}});
+      ob.sharedOnly=await p2.evaluate(()=>{const s=window.eviaNisia.summary();return s.code==="BRK7Q4M"&&s.supporting===1&&!JSON.stringify(s).includes("hard hat")});
       await p2.waitForTimeout(800);
-      ob.tourCountsAsSeen=await p2.evaluate(()=>{const s=JSON.parse(localStorage.getItem("evia7-tips-seen")||"[]");return ["course","unit","learning","teach","rewards","evia","profile"].every(k=>s.includes(k))&&!document.querySelector(".ev-tip")});
+      ob.tourCountsAsSeen=await p2.evaluate(()=>{const s=JSON.parse(localStorage.getItem("evia7-tips-seen")||"[]");return ["course","supporting","unit","learning","teach","rewards","evia","profile"].every(k=>s.includes(k))&&!document.querySelector(".ev-tip")});
       ob.noErrors=!e2.length&&await p2.evaluate(()=>!window.eviaErrors.list().filter(x=>x.kind!=="reported").length);
-      check("First run: course from Nisia, a Teach me style welcome and PPE unit saved to Supporting evidence (ticking K2 and S2), then a short tap-through tour",Object.values(ob).every(Boolean),JSON.stringify(ob)+" "+e2.join(" | "));
+      check("First run: join the college by code, a Teach me style welcome, the PPE induction in the real guided mode saved to Supporting evidence (ticking K2 and S2), then a short tap-through tour",Object.values(ob).every(Boolean),JSON.stringify(ob)+" "+e2.join(" | "));
       await c2.close();
+    }
+
+    // No code yet: pick the course, and join the college later from the profile.
+    {
+      const c5=await browser.newContext({...devices["Pixel 7"],serviceWorkers:"block"}),p5=await c5.newPage(),e5=[];p5.on("pageerror",e=>e5.push(e.message));
+      await p5.goto(url+"manifest.json");
+      await p5.evaluate(()=>{localStorage.clear();sessionStorage.setItem("evia7-install-later","1");["evia7-theme-picked","evia7-shape-picked"].forEach(k=>localStorage.setItem(k,"1"))});
+      await p5.goto(url+"?demo");await p5.waitForTimeout(2500);
+      const jl={};
+      await p5.fill("#ob-name","Amira Khan");await p5.click("#ob-nocode");await p5.waitForTimeout(600);
+      await p5.click('[data-onboard-course="site"]');await p5.waitForTimeout(1500);
+      jl.picked=await p5.evaluate(()=>course==="site"&&!window.eviaNisia.joined()&&/Amira/.test(document.getElementById("ob-lesson").textContent));
+      await p5.evaluate(()=>{document.querySelector("#ob-skip").click()});await p5.waitForTimeout(800);
+      await p5.evaluate(()=>window.eviaOpenProfile());await p5.waitForTimeout(600);
+      await p5.click("#join-college");await p5.waitForTimeout(600);
+      jl.noSkipBack=await p5.evaluate(()=>!document.getElementById("ob-nocode")&&/Amira Khan/.test(document.getElementById("ob-name").value));
+      await p5.fill("#ob-code","CJ4H8KP");await p5.click('#ob-lesson [data-ob="1"]');await p5.waitForTimeout(700);
+      await p5.click('#ob-lesson [data-ob="1"]');await p5.waitForTimeout(1500);await p5.click('#ob-lesson [data-ob="0"]');await p5.waitForTimeout(800);
+      jl.joined=await p5.evaluate(()=>{const e=window.eviaNisia.joined();return !!e&&e.group==="Site Carpentry 2025"&&!document.getElementById("ob-lesson")&&/"done"/.test(localStorage.getItem("evia7-onboarding"))});
+      jl.noErrors=!e5.length;
+      check("No code yet: pick the course, then join the college later from the profile",Object.values(jl).every(Boolean),JSON.stringify(jl)+" "+e5.join(" | "));
+      await c5.close();
     }
 
     // First-visit notes: once the tour is done, the first time a page or section opens Evia says what it's for; never again.
@@ -650,9 +691,10 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       await p4.goto(url);await p4.waitForTimeout(2000);
       const gi={shown:await p4.evaluate(()=>{const g=document.getElementById("get-app");return !!g&&/Get the Evia app/.test(g.textContent)&&g.querySelectorAll(".gi-go").length===1})};
       await p4.click("#gi-go");await p4.waitForTimeout(300);gi.iphoneSteps=await p4.evaluate(()=>/Add to Home Screen/.test(document.getElementById("get-app").textContent));
-      await p4.click("#gi-later");await p4.waitForTimeout(200);gi.later=await p4.evaluate(()=>!document.getElementById("get-app"));
-      await p4.reload();await p4.waitForTimeout(1500);gi.notAgainThisTime=await p4.evaluate(()=>!document.getElementById("get-app"));
-      check("Get the app first: one button in a phone's browser (the Home Screen steps on iPhone), and not inside the app",Object.values(gi).every(Boolean),JSON.stringify(gi));
+      gi.noBrowserWayOut=await p4.evaluate(()=>!document.getElementById("gi-later")&&![...document.querySelectorAll("#get-app button")].some(b=>/browser/i.test(b.textContent)));
+      await p4.reload();await p4.waitForTimeout(1500);gi.stillAsks=await p4.evaluate(()=>!!document.getElementById("get-app"));
+      await p4.goto(url+"?browser");await p4.waitForTimeout(1500);gi.testSwitch=await p4.evaluate(()=>!document.getElementById("get-app"));
+      check("Get the app first: one button in a phone's browser (the Home Screen steps on iPhone), no carrying on in the browser, and not inside the app",Object.values(gi).every(Boolean),JSON.stringify(gi));
       await c4.close();
     }
 

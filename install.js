@@ -1,8 +1,9 @@
 /* Evia7: get the app first. Opened in a phone's browser, Evia asks the learner to install the app before anything else,
    so their profile and evidence are kept in the app from the start. One button: the App Store or Google Play once the
    listings are live (STORE below); until then it installs Evia from the browser (Android), or shows the two taps to add
-   it to the Home Screen (iPhone). Not shown inside the installed app. "Use in the browser for now" hides it until Evia
-   is next opened. Loaded before everything else, so it can catch Android's install prompt. */
+   it to the Home Screen (iPhone). Not shown inside the installed app. There's no carrying on in the browser: what's
+   saved there can be lost, so the learner's profile and evidence would be too. For testing only, ?browser in the
+   address skips it until the tab is closed. Loaded before everything else, so it can catch Android's install prompt. */
 (function(){
   const STORE={ios:"",android:""};   /* App Store and Google Play links, once the listings are live */
   const ua=navigator.userAgent||"";
@@ -11,7 +12,7 @@
   let prompt=null;
   addEventListener("beforeinstallprompt",e=>{e.preventDefault();prompt=e;const b=document.getElementById("gi-go");if(b)b.disabled=false});
   addEventListener("appinstalled",()=>done("Evia is installed. Open it from your Home Screen."));
-  const skipped=()=>{try{return sessionStorage.getItem("evia7-install-later")==="1"}catch(_){return false}};
+  const skipped=()=>{try{if(/[?&]browser\b/.test(location.search))sessionStorage.setItem("evia7-install-later","1");return sessionStorage.getItem("evia7-install-later")==="1"}catch(_){return false}};
   if(installed()||skipped()||!(ios||android))return;
 
   const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -31,17 +32,14 @@
       #get-app .gi-steps{display:grid;gap:10px;width:min(340px,100%);text-align:left}
       #get-app .gi-step{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:16px;background:#fff;border:1px solid rgba(16,24,40,.08);font-size:15px;color:#172033}
       #get-app .gi-step b{flex:0 0 28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--soft,#fff7d6);color:var(--yellow-ink,#6e5c00)}
-      #get-app .gi-step svg{width:20px;height:20px;vertical-align:-4px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
-      #get-app .gi-later{border:0;background:none;padding:10px;font:inherit;font-size:13.5px;color:#98a2b3;text-decoration:underline;text-underline-offset:3px}`;
+      #get-app .gi-step svg{width:20px;height:20px;vertical-align:-4px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}`;
     document.head.appendChild(s);
     const el=document.createElement("div");el.id="get-app";el.setAttribute("role","dialog");el.setAttribute("aria-modal","true");el.setAttribute("aria-labelledby","gi-title");
     el.innerHTML='<span class="evia-mini gi-evia" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span>'+
       '<h1 id="gi-title">Get the Evia app</h1><p>Install Evia first, so your profile and evidence are saved safely on your phone.</p>'+
-      '<div class="gi-body"><button type="button" class="primary gi-go" id="gi-go">'+esc(label)+'</button></div>'+
-      '<button type="button" class="gi-later" id="gi-later">Use in the browser for now</button>';
+      '<div class="gi-body"><button type="button" class="primary gi-go" id="gi-go">'+esc(label)+'</button></div>';
     document.body.appendChild(el);
     el.querySelector("#gi-go").onclick=go;
-    el.querySelector("#gi-later").onclick=()=>{try{sessionStorage.setItem("evia7-install-later","1")}catch(_){}el.remove()};
   }
   const SHARE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3.5"/><path d="m7.5 8 4.5-4.5L16.5 8"/><path d="M5 12.5V19a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19v-6.5"/></svg>';
   const PLUS='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8.5v7M8.5 12h7"/></svg>';

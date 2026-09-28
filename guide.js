@@ -110,7 +110,8 @@
     return review(ctx,P);
   }
   function start(ctx){
-    const P=plan(ctx),g=load(ctx.pack),answered=answeredIn(g,P.asks);
+    /* ctx.plan: a pack with its own photos and questions (the PPE induction), instead of the unit's. */
+    const P=ctx.plan||plan(ctx),g=load(ctx.pack),answered=answeredIn(g,P.asks);
     const canCam=window.eviaCamera&&window.eviaCamera.supported();
     const at=!g.used&&g.at?g.at:null;
     if(at){
@@ -122,7 +123,7 @@
       return;
     }
     sheet('<p class="eg-say">'+(answered?"Welcome back. You’ve answered "+answered+" of my "+P.asks.length+" questions.":"I’ll guide you through this job from start to finish: one photo at a time, then a few questions about how it went. I’ll put your answers together into your statement.")+'</p>'+
-      (answered?"":'<ol class="eg-stages">'+[...new Set(P.photos.map(p=>(STAGES.find(s=>s.key===p.key)||{}).title))].map(t=>'<li>'+esc(t)+'</li>').join("")+'</ol>')+
+      (answered?"":'<ol class="eg-stages">'+(P.stages||[...new Set(P.photos.map(p=>(STAGES.find(s=>s.key===p.key)||{}).title))]).map(t=>'<li>'+esc(t)+'</li>').join("")+'</ol>')+
       '<p class="eg-small">Skip anything you like. Everything saves as you go, so you can stop and carry on later, even hours later.</p>',
       /* First time: one button. Back part-way through: carry on, or more photos. */
       answered?[{label:"Carry on with the questions",primary:true,run:()=>ask(ctx,P,firstGap(P,g))},
