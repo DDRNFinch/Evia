@@ -98,7 +98,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     fr.write=await page.evaluate(()=>{const sh=document.querySelector(".eg-sheet");return !!sh&&!!sh.querySelector("#write")&&/THINGS TO MENTION/.test(sh.querySelector(".fr-mention").textContent)&&!sh.querySelector(".eg-pill")&&sh.querySelector(".eg-actions .primary").disabled});
     await page.fill("#write","Mixed a batch of mortar at 1 to 5.");await page.waitForTimeout(300);
     await page.click("#eg-close");await page.waitForTimeout(700);
-    fr.progress=await page.evaluate(()=>/IN PROGRESS/.test(document.getElementById("screen").textContent)&&/Mixed a batch/.test(document.querySelector(".fr-progress-text").textContent)&&document.getElementById("submit-evidence").disabled);
+    fr.progress=await page.evaluate(()=>/IN PROGRESS/.test(document.getElementById("screen").textContent)&&/Mixed a batch/.test(document.querySelector(".fr-progress-text").textContent)&&!document.getElementById("submit-evidence").disabled);
     await page.evaluate(()=>openUnit(data().u.findIndex(u=>u[0]==="Mixing mortar"),"write"));await page.waitForTimeout(900);
     fr.openAt=await page.evaluate(()=>document.getElementById("write").value==="Mixed a batch of mortar at 1 to 5.");
     await page.evaluate(()=>{const w=document.getElementById("write");w.value="";w.dispatchEvent(new Event("input"));document.getElementById("eg-close").click()});await page.waitForTimeout(600);
@@ -655,7 +655,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       ob.profileSteps=parts===1&&await p2.evaluate(()=>document.querySelector(".evia-guide-target").id==="save-profile");
       await p2.evaluate(()=>document.querySelector(".evia-guide-target").click());await p2.waitForTimeout(1200);
       ob.done=await p2.evaluate(()=>/"done"/.test(localStorage.getItem("evia7-onboarding"))&&!localStorage.getItem("evia7-induction"));
-      ob.ticked=await p2.evaluate(()=>{try{return window.eviaStats.compute().a.met>=2}catch(_){return false}});
+      ob.ticked=await p2.evaluate(()=>{try{const a=window.eviaStats.compute().a;return a.signoff?a.met===0&&a.possible.has("K2")&&a.possible.has("S2"):a.met>=2}catch(_){return false}});
       // Nisia gets everything: after a sync nothing is left waiting, the PPE PDF included.
       ob.synced=await p2.evaluate(async()=>{await window.eviaNisia.sync();const s=window.eviaNisia.status();return s.joined&&!s.changes&&!s.media&&!!s.lastSync});
       await p2.waitForTimeout(800);
@@ -753,6 +753,16 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       await p6.evaluate(()=>window.eviaNisia.sync());await p6.waitForTimeout(400);
       lv.feedbackBack=await p6.evaluate(()=>{const e=window.eviaData.list("evidence").pop(),f=e&&window.eviaFeedback.forEvidence(e.id);const n=window.eviaStats.nudges(window.eviaStats.compute());
         return !!f&&f.decision==="accepted"&&f.by==="Mark Ellis"&&f.ksbs.length===2&&!f.seen&&window.eviaFeedback.unseen().length===1&&n.some(x=>/^fb-/.test(x.id)&&/Mark signed off/.test(x.text))});
+      lv.onlySignedCounts=await p6.evaluate(()=>{const a=window.eviaStats.compute().a,m=window.eviaMoreRequired();return a.signoff&&a.evidenced.has("K2")&&a.evidenced.has("S1")&&a.met===a.evidenced.size&&m.length>0&&!m.some(x=>x.code==="K2")&&window.eviaKsbAims.list().includes(m[0].code)});
+      lv.moreRequiredShown=await p6.evaluate(()=>{const e=window.eviaData.list("evidence").pop();return /More required/.test(window.eviaFeedbackHtml(window.eviaFeedback.forEvidence(e.id),{k:e.ksbs}))});
+      if(process.env.EVIA_SHOTS){const d=process.env.EVIA_SHOTS;
+        await p6.evaluate(()=>{window.eviaKsbAims.set("B3",true);nav("progress")});await p6.waitForTimeout(900);
+        await p6.evaluate(()=>{document.querySelectorAll("[data-group]").forEach(b=>{if(b.getAttribute("aria-expanded")!=="true")b.click()})});await p6.waitForTimeout(500);
+        for(let i=0;i<6;i++){const g=await p6.$("text=Got it");if(!g)break;await g.click().catch(()=>{});await p6.waitForTimeout(300)}
+        await p6.evaluate(()=>{const c=[...document.querySelectorAll("#screen [data-deep], #screen .pv-card, #screen button")].find(x=>/waiting/.test(x.textContent)&&x.offsetHeight<400);if(c)c.click()});await p6.waitForTimeout(900);
+        await p6.screenshot({path:d+"/ksb-groups.png"});
+        await p6.evaluate(()=>window.openUnit(0));await p6.waitForTimeout(900);
+        await p6.screenshot({path:d+"/unit-more.png",fullPage:true});}
       lv.noErrors=!e6.length;
       check("Live Nisia: the assessor's code signs Evia in, every record, learning hours, evidence and photos go to the college, and name, safeguarding lead and review date come back",Object.values(lv).every(Boolean),JSON.stringify(lv)+" "+e6.join(" | "));
 
