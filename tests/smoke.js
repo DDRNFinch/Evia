@@ -116,16 +116,21 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>window.chat());
     await page.waitForFunction(()=>{const c=document.getElementById("chat");return c&&!c.querySelector(".evia-thinking")},null,{timeout:15000});
     await page.waitForSelector("#chat .ui-action",{timeout:15000});
-    check("Evia opens with a catch-up and her four actions",await page.evaluate(()=>{const t=[...document.querySelectorAll("#chat .ui-action")].map(b=>b.innerText.trim());return t.join()==="Evidence check,Quick review,Show targets,EPA mocks"&&/learning hours|of learning/i.test(document.getElementById("chat").innerText)&&!document.querySelector(".chat-sheet .ui-ask")}));
+    check("Evia opens with a catch-up and her four actions",await page.evaluate(()=>{const t=[...document.querySelectorAll("#chat .ui-action")].map(b=>b.innerText.trim());return t.join().replace(/\d+$/,"").replace(/review\d+,/,"review,")==="Evidence check,Get ready for review,Show targets,EPA mocks"&&/learning hours|of learning/i.test(document.getElementById("chat").innerText)&&!document.querySelector(".chat-sheet .ui-ask")}));
     await page.click('#chat .ui-action[data-action="evidence"]');
     await page.waitForFunction(()=>[...document.querySelectorAll("#chat .ui-replies button")].length>=2,null,{timeout:15000});
     await page.evaluate(()=>document.querySelector("#chat .ui-replies button").click());
     await page.waitForFunction(()=>!!document.querySelector("#chat .ev-check")&&[...document.querySelectorAll("#chat .ui-replies button")].some(b=>/Add photos/.test(b.textContent)),null,{timeout:15000});
     check("Evidence check rates a piece of evidence, lists what's still to mention and offers ways to fix it",await page.evaluate(()=>{const t=[...document.querySelectorAll("#chat .ui-replies button")].map(b=>b.textContent);return /Weak|Good|Strong/.test(document.querySelector("#chat .ev-check").textContent)&&["Add photos","Improve my write-up","Let Evia guide me","Check another"].every(x=>t.includes(x))}));
     await page.evaluate(()=>[...document.querySelectorAll("#chat .ui-replies button")].find(b=>b.textContent==="Something else").click());
-    await page.waitForSelector('#chat .ui-actions .ui-action[data-action="quick"]',{timeout:15000});await page.click('#chat .ui-actions .ui-action[data-action="quick"]');
-    await page.waitForSelector("#chat .qr",{timeout:15000});
-    check("Quick review shows every area at a glance and offers the ones needing work",await page.evaluate(()=>document.querySelectorAll("#chat .qr-row").length>=7&&[...document.querySelectorAll("#chat .ui-replies button")].filter(b=>/^Open /.test(b.textContent)).length>=1));
+    await page.waitForSelector('#chat .ui-actions .ui-action[data-action="prep"]',{timeout:15000});await page.click('#chat .ui-actions .ui-action[data-action="prep"]');
+    await page.waitForSelector("#chat .qr.prep",{timeout:15000});await page.waitForFunction(()=>[...document.querySelectorAll("#chat .ui-replies button")].some(b=>b.textContent==="Skip for now"),null,{timeout:15000});
+    const prep1=await page.evaluate(()=>({rows:document.querySelectorAll("#chat .qr.prep .qr-row").length,btns:[...document.querySelectorAll("#chat .ui-replies button")].map(b=>b.textContent),text:document.getElementById("chat").innerText}));
+    check("Get ready for my review lists every area and their comments, then offers one thing at a time",prep1.rows>=7&&prep1.btns.includes("Skip for now")&&/One at a time/.test(prep1.text),JSON.stringify(prep1.btns));
+    for(let i=0;i<8;i++){const b=await page.evaluate(()=>[...document.querySelectorAll("#chat .ui-replies button")].map(x=>x.textContent));if(!b.includes("Skip for now"))break;const n0=await page.evaluate(()=>document.querySelectorAll("#chat .ui-replies").length);await page.evaluate(()=>[...document.querySelectorAll("#chat .ui-replies button")].find(x=>x.textContent==="Skip for now").click());await page.waitForFunction(n=>document.querySelectorAll("#chat .ui-replies button").length&&[...document.querySelectorAll("#chat .ui-replies button")].every(b=>!b.disabled)&&document.querySelectorAll("#chat .ui-replies").length>=1,n0,{timeout:15000});await page.waitForTimeout(1500)}
+    const endBtns=await page.evaluate(()=>[...document.querySelectorAll("#chat .ui-replies button")].map(b=>b.textContent));
+    await page.waitForTimeout(2500);const endTxt=await page.evaluate(()=>document.getElementById("chat").innerText);
+    check("…skipping moves on to the end: their comments for the assessor, or ready if they're in",(await page.evaluate(()=>[...document.querySelectorAll("#chat .ui-replies button")].some(b=>b.textContent==="Add my comments")))||/You’re ready for your review/.test(endTxt),JSON.stringify(endBtns)+" "+(await page.evaluate(()=>document.getElementById("chat").innerText.slice(-400))));
     await page.evaluate(()=>[...document.querySelectorAll("#chat .ui-replies button")].find(b=>b.textContent==="Something else").click());
     await page.waitForSelector('#chat .ui-actions .ui-action[data-action="epa"]',{timeout:15000});await page.click('#chat .ui-actions .ui-action[data-action="epa"]');
     await page.waitForFunction(()=>[...document.querySelectorAll("#chat .ui-replies button")].some(b=>/Discussion guide/.test(b.textContent)),null,{timeout:15000});
@@ -845,11 +850,11 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       const first=()=>{const n=window.eviaStats.nudges(window.eviaStats.compute());return n.find(x=>x.id==="review-comments")?n[0].id==="review-comments"||n[0].celebrate:false};
       const before=first();
       window.eviaData.put("reviews",{date:new Date().toISOString(),course,reflection:{learnerFeedback:"Going well"}});
-      const after=window.eviaStats.nudges(window.eviaStats.compute()).some(x=>x.id==="review-comments");
+      const a2=window.eviaStats.nudges(window.eviaStats.compute()).find(x=>x.id==="review-comments"),after=!!a2&&/comments/.test(a2.text);
       if(had)localStorage.setItem("evia7-enrolment",had);else localStorage.removeItem("evia7-enrolment");
       return {before,after};
     }).catch(e=>({err:e.message}));
-    check("Connected to a college, Evia asks for review comments first thing each day from 7 days before, until they're in",rc.before===true&&rc.after===false,JSON.stringify(rc));
+    check("Connected to a college, Evia's first message each day before the review is getting ready, and stops asking for comments once they're in",rc.before===true&&rc.after===false,JSON.stringify(rc));
     check("No script errors",!errors.length,errors.join(" | "));
   }catch(e){check("Test run finished",false,e.message)}
   await browser.close();server.close();
