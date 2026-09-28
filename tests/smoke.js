@@ -202,7 +202,11 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>{document.body.classList.remove("evia-onboarding");nav("home")});await page.waitForTimeout(450);
 
     await page.evaluate(()=>window.eviaStartReview());await page.waitForTimeout(400);
-    for(let i=0;i<12;i++){const t=await page.evaluate(()=>document.getElementById("rv-next").textContent);await page.click("#rv-next");await page.waitForTimeout(200);if(t==="Save review")break}
+    let checkIn=false;
+    for(let i=0;i<12;i++){const t=await page.evaluate(()=>document.getElementById("rv-next").textContent);
+      if(await page.evaluate(()=>document.getElementById("rv-title").textContent==="How things are")){checkIn=(await page.$$("#rv-body select[data-reflect]")).length===5;await page.selectOption('select[data-reflect="feelsSafe"]',"Yes");await page.selectOption('select[data-reflect="hsIncident"]',"No")}
+      await page.click("#rv-next");await page.waitForTimeout(200);if(t==="Save review")break}
+    check("Evia's review asks the check-in the assessor's review uses (safe, who to tell, changes, health and safety, training time)",checkIn&&await page.evaluate(()=>{const r=window.eviaData.list("reviews").map(x=>x.detail).pop();return r&&r.reflection&&r.reflection.feelsSafe==="Yes"&&r.reflection.hsIncident==="No"}));
     check("The review ends with a sign-off step for employer and tutor",await page.evaluate(()=>true)&&!!(await page.evaluate(()=>{const r=JSON.parse(localStorage.getItem("evia7-progress-reviews")||"[]").pop();return r&&r.format===2})));
     await page.waitForSelector("#rvp-save",{timeout:20000}).catch(()=>{});
     check("Saving a review offers the two-page review PDF to share and sign",await page.evaluate(()=>!!document.getElementById("rvp-save")&&/2 pages/.test(document.querySelector(".eport-status").textContent)));
@@ -696,6 +700,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
         if(u.pathname==="/rest/v1/evidence"&&q.method()==="GET"&&/source_metadata-%3E%3Ecollection|source_metadata->>collection/.test(u.search))return json([{id:"OBS1",title:"Mixing mortar",created_at:"2026-09-20T10:00:00Z",source_metadata:{collection:"observation",unit:"Mixing mortar",observedBy:"Mark Ellis",observedOn:"2026-09-20",ksbs:["S14","K20"]}}]);
         if(u.pathname==="/rest/v1/evidence_files"&&q.method()==="GET"&&/OBS1/.test(u.search))return json([{storage_path:"O1/OBS1/observation.pdf",size_bytes:20}]);
         if(q.method()==="GET"&&/\/storage\/v1\/object\/.*observation\.pdf$/.test(u.pathname))return r.fulfill({status:200,contentType:"application/pdf",headers:{"access-control-allow-origin":"*"},body:"%PDF-1.4 observation"});
+        if(u.pathname==="/rest/v1/targets"&&q.method()==="GET")return json([{id:"T1",review_id:"RV1",title:"Log 36 learning hours",description:"Log at least 36 hours in the next 6 weeks in Evia.",due_date:"2026-11-10",measure:{kind:"otj",target:36,baseline:0},created_at:"2026-09-28T10:00:00Z"}]);
         if(u.pathname==="/rest/v1/rpc/nisia_my_details")return json({name:"Joanne Bloggs",college:"Walsall College",start:"2026-09-01",end:"2028-08-31",assessor:"Mark Ellis",reviewDue:"2026-11-24",lastReview:null,safeguarding:{name:"Sam Lead",phone:"01922 000000",email:""}});
         if(u.pathname.startsWith("/rest/v1/"))return r.fulfill({status:201,headers:{"access-control-allow-origin":"*"},body:""});
         return json({},404);
@@ -721,6 +726,8 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       lv.allRecords=["learner","evidence","hours"].every(col=>recs.some(r=>r.collection===col&&r.enrolment_id==="E1"&&r.learner_member_id==="M1"));
       const snapRow=calls.filter(x=>x.p==="/rest/v1/evia_records"&&x.m==="POST").map(x=>JSON.parse(x.body)).flat().filter(r=>r.collection==="snapshot").pop();
       lv.snapshot=!!snapRow&&snapRow.data.ksb.total>0&&snapRow.data.ksb.met>=1&&Array.isArray(snapRow.data.units)&&snapRow.data.otj.total>=1.5&&!!snapRow.data.teach;
+      lv.reviewTargets=await p6.evaluate(()=>{const t=window.eviaTargets.mine();return t.length===1&&t[0].id==="nt-T1"&&t[0].kind==="otj"&&t[0].reviewDate==="2026-09-28"});
+      lv.targetsReported=!!snapRow&&Array.isArray(snapRow.data.targets)&&snapRow.data.targets.some(t=>t.title==="Log 36 learning hours"&&t.reviewId==="RV1"&&t.pct>0);
       lv.unitStrength=!!snapRow&&snapRow.data.units.some(u=>u.strength);
       lv.detailsFromCollege=await p6.evaluate(()=>{const L=window.eviaData.learner(),e=window.eviaData.enrolment();return L.name==="Joanne Bloggs"&&L.safeguarding&&L.safeguarding.name==="Sam Lead"&&e.reviewDue==="2026-11-24"&&e.assessor==="Mark Ellis"});
       lv.observationArrived=await p6.evaluate(async()=>{const x=window.eviaData.list("supporting").find(r=>r.id==="obs-OBS1");const b=x&&await window.eviaData.files.get(x.id,"supporting");return !!x&&x.title==="Observation: Mixing mortar"&&x.observation.by==="Mark Ellis"&&x.criteria.join()==="S14,K20"&&!!b&&b.size>0});
