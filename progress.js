@@ -139,7 +139,7 @@
     conf:[["Confidence check",coach("confidence"),1],["Find a college task",kit("taskFromMenu")]],
     quality:[["Check my evidence",coach("evidenceCheck"),1]],
     targets:[["Show my targets",coach("targets"),1]],
-    scen:[["Next scenario",coach("scenario"),1]]
+    teach:[["Open Teach me",()=>nav("teach"),1]]
   };
   /* The ways in sit at the bottom of the section's deep dive; the sheet closes before each one runs. */
   function addActs(id){
@@ -151,6 +151,8 @@
   const card=(id,title,big,sub,chart,extra)=>cardBtn(id,title,big,sub,chart,extra);
   const cardBtn=(id,title,big,sub,chart,extra)=>'<button type="button" class="pv-card'+(extra||"")+'" data-pv="'+id+'" id="pv-'+id+'"><span class="pv-head"><span class="pv-title">'+title+'</span><span class="pv-chev">'+CHEV+'</span></span><span class="pv-big">'+big+'</span>'+(sub?'<span class="pv-sub">'+sub+'</span>':"")+(chart?'<span class="pv-chart">'+chart+'</span>':"")+'</button>';
   const empty=text=>'<span class="pv-empty">'+esc(text)+'</span>';
+  /* Medals from Teach me, each popping in after the last: bronze, then silver, then gold. */
+  const medalRow=m=>'<span class="pv-medals">'+["bronze","silver","gold"].map((k,i)=>'<span class="tg-medal medal-'+k+' pv-medal pv-pop" style="--d:'+(i*350)+'ms" aria-label="'+m[k]+' '+k+'"><i aria-hidden="true"></i>'+num(m[k])+'</span>').join("")+'</span>';
 
   function cards(D){
     const {S,a,verdict}=D,T=term(),out=[];
@@ -195,9 +197,9 @@
       const done=tg.filter(t=>t.done).length;
       out.push(card("targets","Targets",num(done)+'<small> / '+tg.length+'</small>',"done",'<span class="pv-rows">'+tg.slice(0,3).map((t,i)=>{const p=T2.progress(t,S);return '<span class="pv-row"><span class="pv-row-top"><span>'+esc(t.title)+'</span><strong>'+Math.round(p.pct*100)+'%</strong></span>'+bar(p.pct*100,p.pct>=1?"good":"",i*80)+'</span>'}).join("")+'</span>'));
     }else out.push(card("targets","Targets","–","Set at your next progress review",""));
-    // Scenarios
-    const sp=S.scenarios;
-    if(sp&&sp.topics&&sp.topics.length)out.push(card("scen","Real-life scenarios",num(sp.done)+'<small> / '+sp.total+'</small>',"worked through",'<span class="pv-seg">'+sp.topics.map((t,i)=>'<span><i class="pv-grow-x" style="width:'+(t.total?Math.round(t.done/t.total*100):0)+'%;--d:'+(i*80)+'ms"></i></span>').join("")+'</span><span class="pv-seg-labels">'+sp.topics.map(t=>'<span>'+esc(t.title.split(/[ ,]/)[0])+'</span>').join("")+'</span>'));
+    // Teach me: average score, areas completed, and the medals popping in bronze, then silver, then gold.
+    const TR=window.eviaTeach&&window.eviaTeach.report?window.eviaTeach.report():null;
+    if(TR&&TR.total)out.push(card("teach","Teach me",TR.avg==null?"–":num(TR.avg,"%"),TR.avg==null?"Finish a lesson to get a score":"average score · "+TR.areasDone+" of "+TR.areasTotal+" areas completed",medalRow(TR.medals)));
     // Achievements
     const ach=window.eviaStats.achievements(S),earned=ach.list.filter(x=>x.earned);
     out.push(card("ach","Achievements",num(ach.count)+'<small> / '+ach.list.length+'</small>',ach.fresh.length?"New one earned":"earned",earned.length?'<span class="pv-badges">'+earned.slice(0,6).map((x,i)=>'<span class="pv-badge pv-pop" style="--d:'+(i*70)+'ms" title="'+esc(x.label)+'">'+BADGE+'</span>').join("")+(earned.length>6?'<span class="pv-badge more">+'+(earned.length-6)+'</span>':"")+'</span>':empty("Your first one isn’t far away")));
@@ -308,11 +310,15 @@
         (tg.length?'<div class="pv-rows">'+tg.map((t,i)=>{const p=T2.progress(t,S);return '<span class="pv-row"><span class="pv-row-top"><span>'+esc(t.title)+'</span><strong>'+(t.done?"Done":Math.round(p.pct*100)+"%")+'</strong></span>'+bar(p.pct*100,p.pct>=1?"good":"",i*60)+'<small class="pv-row-note">'+esc(p.text||"")+(t.due&&!t.done?(p.text?" · ":"")+"by "+esc(shortDate(t.due)):"")+'</small></span>'}).join("")+'</div>':'<p class="pv-empty">No targets yet.</p>')+
         note("Targets are set at your progress review and tick off on their own as you go."));
     }
-    else if(id==="scen"){
-      const sp=S.scenarios;
-      sheet("MY PROGRESS","Real-life scenarios",
-        '<div class="pv-rows">'+sp.topics.map((t,i)=>'<span class="pv-row"><span class="pv-row-top"><span>'+esc(t.title)+'</span><strong>'+t.done+' of '+t.total+'</strong></span>'+bar(t.total?t.done/t.total*100:0,t.done===t.total?"good":"",i*60)+'</span>').join("")+'</div>'+
-        note("These cover safeguarding, Prevent, British values and equality."));
+    else if(id==="teach"){
+      const TR=window.eviaTeach.report();
+      sheet("MY PROGRESS","Teach me",
+        '<div class="pv-deep-hero">'+num(TR.medalCount)+'<span>medal'+(TR.medalCount===1?"":"s")+' won'+(TR.avg!=null?' · '+TR.avg+'% average':'')+'</span></div>'+medalRow(TR.medals)+
+        TR.subjects.map(sj=>'<h3 class="pv-teach-h"><span>'+esc(sj.name)+'</span><strong>'+(sj.avg==null?"No score yet":sj.avg+"%")+'</strong></h3>'+
+          '<p class="pv-teach-sub">'+sj.areasDone+' of '+sj.areas.length+' areas completed · '+(sj.medals.gold+sj.medals.silver+sj.medals.bronze)+' medals</p>'+
+          '<div class="pv-rows">'+sj.areas.map((ar,i)=>'<span class="pv-row"><span class="pv-row-top"><span>'+esc(ar.name)+'</span><strong>'+(ar.avg==null?ar.done+" of "+ar.total:ar.avg+"%")+'</strong></span>'+
+            bar(ar.total?ar.done/ar.total*100:0,ar.complete?"good":"",i*50)+'<small class="pv-row-note">'+ar.done+' of '+ar.total+' lessons'+(ar.medals.gold+ar.medals.silver+ar.medals.bronze?' · '+["gold","silver","bronze"].filter(k=>ar.medals[k]).map(k=>ar.medals[k]+" "+k).join(", "):"")+'</small></span>').join("")+'</div>').join("")+
+        note("Your score is your best go at each lesson. Gold is 90% or more, silver 70% or more."));
     }
     else if(id==="ach"){
       sheet("MY PROGRESS","Achievements",window.eviaStats.badgesHtml(S));

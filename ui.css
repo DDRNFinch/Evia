@@ -819,6 +819,19 @@ html body .bottom-nav{grid-template-columns:1fr 104px 1fr}
 .pv-seg>span{display:block;height:10px;border-radius:999px;background:#eef1f5;overflow:hidden}
 .pv-seg>span i{display:block;height:100%;background:var(--yellow);border-radius:999px}
 .pv-seg-labels{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;margin-top:6px;font-size:11px;color:var(--ui-muted)}
+/* Teach me in My progress: the medals pop in bronze, then silver, then gold (with the count going up). */
+.pv-medals{display:flex;gap:16px;align-items:center;margin-top:4px}
+.pv-medal{display:inline-flex;align-items:center;gap:6px;font-size:15px}
+.pv-medal i{width:24px;height:24px}
+.pv-medal .pv-num{font-weight:800;color:var(--ui-ink)}
+.pv-anim .pv-medal.pv-pop{transform:scale(0);transition:transform .5s cubic-bezier(.34,1.56,.64,1) calc(var(--d,0ms) + .4s)}
+.pv-anim.pv-in .pv-medal.pv-pop{transform:scale(1)}
+.pv-sheet .pv-medals{margin:6px 0 14px}
+.pv-teach-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:18px 0 2px;font-size:15px}
+.pv-teach-h strong{font-size:15px}
+.pv-teach-sub{margin:0 0 8px;font-size:12.5px;color:var(--ui-muted)}
+.tm-contacts{margin:22px 0 8px}
+.tm-contacts h3{margin:0 0 4px;font-size:15px}
 .pv-badges{display:flex;gap:8px;flex-wrap:wrap}
 .pv-badge{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--soft,#fff7d6);color:var(--yellow-ink);font-size:12px;font-weight:800}
 .pv-badge svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}

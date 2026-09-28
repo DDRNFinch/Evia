@@ -468,7 +468,9 @@
     const expUnits=tp!=null&&s.unitsTotal?Math.min(s.unitsTotal,Math.ceil(tp/100*s.unitsTotal)):null;
     const tests=s.tests||[],findT=re=>tests.find(t=>re.test(t.name));
     const knowledge=findT(/EPA|Knowledge/),maths=findT(/Maths/),english=findT(/English/);
-    const scDone=(s.scen||[]).reduce((n,t)=>n+t.done,0),scTotal=(s.scen||[]).reduce((n,t)=>n+t.total,0);
+    /* Staying safe: the EDI and safeguarding lessons in Teach me (reviews saved before that used real-life scenarios). */
+    const edi=(s.teach||[]).find(t=>/EDI/.test(t.name));
+    const scDone=s.teach?(edi?edi.areasDone:0):(s.scen||[]).reduce((n,t)=>n+t.done,0),scTotal=s.teach?(edi?edi.areas:0):(s.scen||[]).reduce((n,t)=>n+t.total,0);
     const tiles=[
       [(nvq?"Criteria":"KSBs")+" evidenced",s.met+"/"+s.total,tp!=null?"Expected about "+tp+"%":"Add course dates to compare",s.ksbPct,tp==null?null:s.ksbPct>=tp-10,false],
       [nvq?"Site jobs started":"Units started",s.unitsStarted+"/"+s.unitsTotal,expUnits!=null?"Expected about "+expUnits:"",s.unitsTotal?s.unitsStarted/s.unitsTotal*100:0,expUnits==null?null:s.unitsStarted>=expUnits,false],
@@ -511,13 +513,13 @@
         ["Knowledge questions answered",s.nvqQ?s.nvqQ.done>=s.nvqQ.total:false],
         ["Learning hours on plan",s.otjExpected!=null&&s.otjTotal>=s.otjExpected*.9],
         ["Witness testimony added","na"],
-        ["Staying safe scenarios done",scTotal>0&&scDone===scTotal]
+        [s.teach?"EDI and safeguarding lessons done":"Staying safe scenarios done",scTotal>0&&scDone===scTotal]
       ]:[
         ["All KSBs evidenced",s.met>=s.total],
         ["Practice test 70%+",!!knowledge&&knowledge.latest>=70],
         ["Learning hours on plan",s.otjExpected!=null&&s.otjTotal>=s.otjExpected*.9],
         ["English and maths",(!s.maths||!!maths&&maths.latest>=70)&&(!s.english||!!english&&english.latest>=70)],
-        ["Staying safe scenarios done",scTotal>0&&scDone===scTotal]
+        [s.teach?"EDI and safeguarding lessons done":"Staying safe scenarios done",scTotal>0&&scDone===scTotal]
       ];
      if(y+26<BOTTOM){
        label(nvq?"Ready to complete?":"Ready for gateway?",M,y+2);T(checks.filter(c=>c[1]===true).length+" of "+checks.filter(c=>c[1]!=="na").length+" in place",W-M,y+2,7.4,"bold",muted,{align:"right"});y+=5;
@@ -561,7 +563,7 @@
      T(plan,M+4,y+11.8,8.2,"normal",short>0?[181,71,8]:muted);y+=20}
     // Personal development
     section("Personal development and staying safe",24);
-    {const topics=s.scen||[],cw=(CW-gap*3)/4;
+    {const topics=s.teach?s.teach.map(t=>({title:t.name,done:t.areasDone,total:t.areas})):s.scen||[],cw=(CW-gap*3)/4;
      topics.slice(0,4).forEach((t,i)=>{const x=M+i*(cw+gap),done=t.done===t.total;box(x,y,cw,11,done?[236,253,243]:[250,251,252],line,2.5);T(t.title,x+3,y+4.6,7.4,"bold",ink);T(t.done+" of "+t.total+(done?" ✓":""),x+3,y+8.8,7.4,"normal",done?[5,96,58]:muted)});
      y+=13;
      T("Safeguarding lead saved in Evia: "+(s.dsl?"Yes":"Not yet")+"   ·   Latest skills self-rating: "+(s.confPct!=null?s.confPct+"%":"not done"),M,y+3,7.8,"normal",muted);y+=7}

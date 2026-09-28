@@ -57,7 +57,7 @@
       confidence:{last:lastConf?Date.parse(lastConf.takenAt||0)||null:null,practise,confident,sessions:sessions.length,scores:[...latestByArea].map(([area,score])=>({area,score}))},
       maths:!!p.mathsEnabled,english:!!p.englishEnabled,
       ppeDone:entries.some(e=>e.u===PPE_UNIT),
-      scenarios:window.eviaScenarios?window.eviaScenarios.progress():{done:0,total:0,last:null,topicsDone:0}
+      teach:window.eviaTeach&&window.eviaTeach.report?window.eviaTeach.report():{subjects:[],avg:null,done:0,total:0,areasDone:0,areasTotal:0,medals:{gold:0,silver:0,bronze:0},medalCount:0}
     };
   }
 
@@ -80,8 +80,8 @@
     {id:"test-80",label:"Top marks",desc:"Scored 80% or more in a test",test:s=>s.bestTest>=80},
     {id:"confidence",label:"Know yourself",desc:"Completed a confidence check",test:s=>s.confidence.sessions>=1},
     {id:"writeup",label:"Full marks write-up",desc:"A write-up covering every key point",test:s=>s.checks.some(c=>c.covered.length===c.terms.length)},
-    {id:"scenario",label:"Looking out",desc:"Completed your first real-life scenario",test:s=>s.scenarios.done>=1},
-    {id:"scenarios-all",label:"Safe and respected",desc:"Completed every real-life scenario",test:s=>s.scenarios.total>0&&s.scenarios.done>=s.scenarios.total}
+    {id:"medal",label:"First medal",desc:"Won your first medal in Teach me",test:s=>s.teach.medalCount>=1},
+    {id:"gold-5",label:"Gold standard",desc:"Won five gold medals in Teach me",test:s=>s.teach.medals.gold>=5}
   ];
   /* Records when each achievement was first earned; newly earned ones are returned so Evia can celebrate them. */
   function achievements(s){
@@ -133,7 +133,6 @@
     if(s.maths&&daysAgo(s.lastTestAt("maths"))>14)list.push({id:"maths",text:"It’s been a while since your last maths practice. A quick test keeps it fresh.",action:{label:"Take a maths test",kind:"test"}});
     if(s.english&&daysAgo(s.lastTestAt("english"))>14)list.push({id:"english",text:"Fancy a quick English practice test? It only takes a few minutes.",action:{label:"Take an English test",kind:"test"}});
     if(daysAgo(s.confidence.last)>30)list.push({id:"confidence",text:s.confidence.sessions?"It’s been a month since your last confidence check. Rate yourself again so your tutor knows what to focus on.":"Rate how confident you feel on each practical skill. It shows you and your tutor what to practise.",action:{label:"Do a confidence check",kind:"confidence"}});
-    if(s.scenarios.total&&s.scenarios.done<s.scenarios.total&&daysAgo(s.scenarios.last)>7)list.push({id:"scenario",text:"Got two minutes? Here’s a real-life situation from site. What would you do?",action:{label:"Try a scenario",kind:"scenario"}});
     return list;
   }
 
@@ -179,7 +178,7 @@
 
   /* Learning tab: one number per thing, the detail one tap away. */
   function tilesHtml(s){
-    const nvq=window.eviaNvq&&window.eviaNvq.on(),ach=achievements(s),sp=s.scenarios;
+    const nvq=window.eviaNvq&&window.eviaNvq.on(),ach=achievements(s),tr=s.teach;
     const last=s.tests.map(t=>t.latest).filter(Boolean).sort((x,y)=>Date.parse(y.takenAt||0)-Date.parse(x.takenAt||0))[0];
     const lastPct=last?(typeof last.pct==="number"?last.pct:Math.round((last.score||0)/(last.total||1)*100)):null;
     const low=s.confidence.scores.filter(x=>x.score<=2).length;
@@ -194,7 +193,7 @@
       nvq&&window.eviaNvq.myQuestions?(()=>{const qs=window.eviaNvq.myQuestions(),ans=window.eviaNvq.answers(),d=qs.filter(q=>ans[q]&&String(ans[q].t).trim().split(/\s+/).length>=12).length;return tile("knowledge","quality",d+'<small> / '+qs.length+'</small>',"Knowledge questions","Answered")})():"",
       tile("skills","skills",s.confidence.last?String(low):"–","Skills to practise",s.confidence.last?"Rated "+escHtml(ago(s.confidence.last).toLowerCase()):"Rate your skills",s.confidence.last&&Date.now()-s.confidence.last>30*DAY?"Due":""),
       tasks?tile("tasks","camera",String(tasks),"College tasks",picks.length?"1 picked for you":"For the workshop"):"",
-      sp&&sp.total?tile("scenarios","scen",sp.done+'<small> / '+sp.total+'</small>',"Real-life scenarios","Done"):"",
+      tr&&tr.total?tile("teach","award",tr.avg==null?"–":tr.avg+"%","Teach me",tr.medalCount+" medal"+(tr.medalCount===1?"":"s")+" · "+tr.areasDone+" of "+tr.areasTotal+" areas"):"",
       tile("badges","award",ach.count+'<small> / '+ach.list.length+'</small>',"Achievements",ach.fresh.length?"New one earned":"Earned",ach.fresh.length?"New":""),
       tile("reviews","pace",String(reviews),"Progress reviews",reviews?"Saved":"None yet")
     ];

@@ -54,10 +54,6 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.waitForSelector("#chat .ui-widget:last-child .hw-note textarea:not([disabled])",{timeout:8000});await page.fill("#chat .ui-widget:last-child .hw-note textarea","lift with your legs, not your back");await page.click("#chat .ui-widget:last-child .hw-save");await page.waitForTimeout(300);
     check("Evia logs hours from a chat: what it was, an hours-and-minutes wheel, what you did and what you learned",await page.evaluate(()=>hours.some(h=>h.n===1&&h.description==="Toolbox talk: manual handling. What I learned: lift with your legs, not your back"&&h.learned)));
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML=""});
-    const scBefore=await page.evaluate(()=>window.eviaScenarios.progress().done);
-    await page.evaluate(()=>{window.chat({quiet:true});setTimeout(()=>window.eviaCoachFlows.scenario(),50)});
-    await page.waitForSelector("#chat .scc-opt",{timeout:12000});await page.click("#chat .scc-opt");await page.waitForTimeout(300);
-    check("A real-life scenario plays in Evia's chat and is saved",await page.evaluate(b=>window.eviaScenarios.progress().done===b+1&&!!document.querySelector("#chat .scc-why")&&!document.querySelector(".sc-sheet"),scBefore));
     const rvBefore=await page.evaluate(()=>window.eviaGetReviews().length);
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";window.chat({quiet:true});setTimeout(()=>window.eviaChatReview(),50)});
     const reviewDone=await page.evaluate(async()=>{
@@ -181,10 +177,16 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
 
     await page.evaluate(()=>document.getElementById("profile-btn").click());await page.waitForTimeout(300);
     await page.evaluate(()=>document.getElementById("profile-dsl-name").closest("details").open=true);await page.fill("#profile-dsl-name","Jo Smith");await page.fill("#profile-dsl-phone","01234 567890");await page.click("#save-profile");await page.waitForTimeout(200);
-    await page.evaluate(()=>window.eviaScenarios.openTopics());await page.waitForTimeout(300);
-    check("A safeguarding lead saved in Profile shows on the Who to talk to card",await page.evaluate(()=>/Jo Smith/.test(document.querySelector(".sc-contacts").innerText)&&!!document.querySelector('.sc-contacts a[href="tel:01234567890"]')));
-    await page.click('[data-topic="values"]');await page.waitForTimeout(300);await page.click('[data-opt="0"]');await page.waitForTimeout(200);
-    check("A real-life scenario explains every choice",await page.evaluate(()=>document.querySelectorAll(".sc-why").length===3));
+    await page.evaluate(()=>window.eviaTeach.open("edi"));await page.waitForTimeout(400);
+    check("A safeguarding lead saved in Profile shows on the Who to talk to card, under the EDI and safeguarding lessons",await page.evaluate(()=>/Jo Smith/.test(document.querySelector(".tm .sc-contacts").innerText)&&!!document.querySelector('.tm .sc-contacts a[href="tel:01234567890"]')));
+    await page.evaluate(()=>{const x=document.querySelector(".tm .tm-x");if(x)x.click()});await page.waitForTimeout(300);
+    // My progress: the Teach me tile (average score, areas completed, medals) and its deep dive; no real-life scenarios.
+    await page.evaluate(()=>nav("learning"));await page.waitForTimeout(700);
+    const tt=await page.evaluate(()=>{const c=document.getElementById("pv-teach");return {tile:!!c&&c.querySelectorAll(".pv-medal").length===3&&/areas completed|Finish a lesson/.test(c.textContent),noScenarios:!document.getElementById("pv-scen")&&!window.eviaScenarios}});
+    await page.evaluate(()=>document.getElementById("pv-teach").click());await page.waitForTimeout(700);
+    tt.deep=await page.evaluate(()=>{const t=document.querySelector(".pv-sheet");return !!t&&/medal/.test(t.textContent)&&/EDI and safeguarding/.test(t.textContent)&&document.querySelectorAll(".pv-sheet .pv-teach-h").length>=2});
+    await page.evaluate(()=>{document.getElementById("modal-root").innerHTML=""});
+    check("My progress: Teach me tile with average score, areas and medals, a deep dive by subject, and no old scenarios",Object.values(tt).every(Boolean),JSON.stringify(tt));
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML=""});
 
     await page.evaluate(()=>{document.body.classList.add("evia-onboarding");nav("progress")});await page.waitForTimeout(200);

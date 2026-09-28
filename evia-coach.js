@@ -1,6 +1,6 @@
 /* Evia7 coach: the things Evia does with the learner in the chat, spoken like a coach rather than filled in like a
    form. Her menu: Evidence check, Quick review, Show targets and EPA mocks. The other flows here (log hours with an
-   hours-and-minutes wheel, a confidence check one skill at a time, college tasks, scenarios) are opened from the
+   hours-and-minutes wheel, a confidence check one skill at a time, college tasks, Teach me lessons) are opened from the
    matching section of My progress. Uses the chat helpers in ui.js. */
 (function(){
   const K=()=>window.eviaChatKit;
@@ -142,10 +142,9 @@
 
   /* ---------- Upskill me ---------- */
   function upskill(){
-    const k=K(),sp=window.eviaScenarios?window.eviaScenarios.progress():null;
+    const k=K();
     k.say(k.pick(["Love it. What do you fancy?","Let’s get you better at something. Pick one:"]));
     const list=[{label:"A college task",primary:true,run:upskillTask}];
-    if(sp&&sp.total)list.push({label:"A real-life scenario",run:scenario});
     list.push({label:"Something else",run:k.somethingElse});
     k.replies(list);
   }
@@ -159,27 +158,6 @@
       const m=el.querySelector(".ut-more");if(m)m.onclick=()=>{k.closeChat();setTimeout(()=>picks.length?P.openTask(0):P.openAllTasks(),80)};
     });
     k.replies([{label:"Another idea",run:upskillTask},{label:"All college tasks",run:()=>{k.closeChat();setTimeout(P.openAllTasks,80)}},{label:"Something else",run:k.somethingElse}]);
-  }
-
-  /* ---------- Real-life scenarios, told by Evia ---------- */
-  function scenario(){
-    const k=K(),S=window.eviaScenarios,n=S&&S.nextInfo();
-    if(!n){k.say("You’ve done every real-life scenario. Brilliant. Remember: spot it, listen, pass it on.");k.widget(S?S.contactsHtml():"");k.replies([{label:"Something else",run:k.somethingElse}]);return}
-    const {topic,index,sc}=n,order=sc.options.map((_,i)=>i).sort(()=>Math.random()-.5);
-    if(index===0)k.say("This one’s about <strong>"+esc(topic.title.toLowerCase())+"</strong>. There’s no pass or fail. Just think about what you’d really do.");
-    k.say("<strong>"+esc(sc.title)+"</strong><br>"+esc(sc.story));
-    k.widget('<div class="scc"><span class="scc-kicker">What would you do?</span>'+order.map((i,pos)=>'<button type="button" class="scc-opt" data-opt="'+i+'"><span class="scc-letter">'+"ABC"[pos]+'</span><span class="scc-text">'+esc(sc.options[i].t)+'</span></button>').join("")+'</div>',el=>{
-      el.querySelectorAll("[data-opt]").forEach(b=>b.onclick=()=>{
-        const picked=sc.options[+b.dataset.opt];
-        el.querySelectorAll("[data-opt]").forEach(x=>{const o=sc.options[+x.dataset.opt];x.disabled=true;x.classList.add(o.best?"best":"other");if(x===b)x.classList.add("picked");x.insertAdjacentHTML("beforeend",'<span class="scc-why">'+(o.best?"<strong>Best choice.</strong> ":x===b?"<strong>Your choice.</strong> ":"")+esc(o.why)+'</span>')});
-        S.record(sc.id,picked.best);
-        if(window.eviaMood)window.eviaMood(picked.best?"happy":"oops");
-        k.say((picked.best?k.pick(["Spot on.","That’s exactly right.","Good call."]):"Good to think about.")+" "+esc(sc.remember));
-        const last=index===topic.scenarios.length-1;
-        if(last){k.say("That’s <strong>"+esc(topic.title)+"</strong> done. If anything like this ever happens for real, here’s who to talk to.");k.widget(S.contactsHtml(topic.id))}
-        k.replies([{label:last?"Next topic":"Next one",primary:true,run:scenario},{label:"Something else",run:k.somethingElse}]);
-      });
-    });
   }
 
   /* ---------- Check my evidence: unit by unit, plainly ---------- */
@@ -344,7 +322,7 @@
       maths:()=>window.eviaTestMe&&window.eviaTestMe({type:"maths"}),
       english:()=>window.eviaTestMe&&window.eviaTestMe({type:"english"}),
       quality:()=>evidenceCheck(),
-      scenarios:()=>C.scenario()
+      lessons:()=>{k.closeChat();setTimeout(()=>nav("teach"),80)}
     }[t.kind];
     return go||(()=>openProgress("targets"));
   }
@@ -440,5 +418,5 @@
   /* EPA mode ends when the chat closes. */
   const mr=document.getElementById("modal-root");
   if(mr)new MutationObserver(()=>{if(!mr.querySelector(".chat-sheet"))epaMode(false)}).observe(mr,{childList:true});
-  window.eviaCoachFlows={hours:logHours,confidence,upskill,evidence,input,scenario,evidenceCheck,quickReview,targets,epa,epaMode};
+  window.eviaCoachFlows={hours:logHours,confidence,upskill,evidence,input,evidenceCheck,quickReview,targets,epa,epaMode};
 })();

@@ -64,6 +64,23 @@
     const next=all.find(l=>!isDone(L,l)),t=trade()[0];
     return {done,total:all.length,next:next?next.title:null,unit:t?t.unit:"maths and English"};
   }
+  /* For My progress: each subject (the course, maths, English, EDI and safeguarding) with its areas, their average best
+     score, how many are complete, and medals (gold 90%+, silver 70%+, bronze below, as on the lessons). */
+  function report(){
+    const L=mine(),courseName=(()=>{try{return data().name}catch(_){return "Your course"}})();
+    const medalsOf=ls=>{const m={gold:0,silver:0,bronze:0};ls.forEach(l=>{const r=L[l.id];if(r&&r.done)m[medal(Number(r.best)||0)]++});return m};
+    const avgOf=ls=>{const b=ls.filter(l=>isDone(L,l)).map(l=>Number(L[l.id].best)||0);return b.length?Math.round(b.reduce((n,x)=>n+x,0)/b.length*100):null};
+    const subjects=[["course",courseName,trade()],["maths","Maths",FS.filter(u=>u.fs==="maths")],["english","English",FS.filter(u=>u.fs==="english")],["edi","EDI and safeguarding",FS.filter(u=>u.fs==="edi")]]
+      .filter(s=>s[2].length).map(([id,name,us])=>{
+        const areas=us.map(u=>{const ls=u.lessons,d=ls.filter(l=>isDone(L,l)).length;return {name:u.unit,done:d,total:ls.length,complete:ls.length>0&&d===ls.length,avg:avgOf(ls),medals:medalsOf(ls)}});
+        const ls=[].concat(...us.map(u=>u.lessons));
+        return {id,name,areas,done:ls.filter(l=>isDone(L,l)).length,total:ls.length,areasDone:areas.filter(a=>a.complete).length,avg:avgOf(ls),medals:medalsOf(ls)};
+      });
+    const all=[].concat(...subjects.map(s=>[].concat(...(s.id==="course"?trade():FS.filter(u=>u.fs===s.id)).map(u=>u.lessons))));
+    const m=medalsOf(all);
+    return {subjects,avg:avgOf(all),done:all.filter(l=>isDone(L,l)).length,total:all.length,
+      areasDone:subjects.reduce((n,s)=>n+s.areasDone,0),areasTotal:subjects.reduce((n,s)=>n+s.areas.length,0),medals:m,medalCount:m.gold+m.silver+m.bronze};
+  }
   /* Evia's view of a confidence skill, from how the lessons went (first-try answers). Needs half the lessons done. */
   function viewFor(area){
     /* Every unit that informs this skill counts (a unit's skill can be one area or a list). */
@@ -117,6 +134,24 @@
   /* Teach me opens on one section, chosen in Evia's chat: the course, maths or English. */
   let section="course";
   const sectionUnits=()=>section==="course"?trade():FS.filter(u=>u.fs===section);
+  /* Who to talk to, under the EDI and safeguarding lessons: the college's safeguarding lead (provider.js) or the one the
+     learner added in Profile, then helplines. */
+  function contactsHtml(){
+    const P=window.EVIA_PROVIDER||{},dep=P.deputy||{},mine=profile().safeguarding||{};
+    const dsl=P.safeguarding&&P.safeguarding.name?P.safeguarding:mine;
+    const tel=n=>'<a href="tel:'+esc(String(n).replace(/[^\d+]/g,""))+'">'+esc(n)+'</a>';
+    const person=(role,x)=>x&&x.name?'<li><strong>'+esc(role)+': '+esc(x.name)+'</strong>'+(x.phone?'<span>'+tel(x.phone)+'</span>':"")+(x.email?'<span><a href="mailto:'+esc(x.email)+'">'+esc(x.email)+'</a></span>':"")+(x.hours?'<span>'+esc(x.hours)+'</span>':"")+'</li>':"";
+    const lead=person((P.name?P.name+" s":"S")+"afeguarding lead",dsl)+person("Deputy safeguarding lead",dep);
+    return '<section class="sc-contacts tm-contacts"><h3>Who to talk to</h3><ul>'+
+      (lead||'<li><strong>Your safeguarding lead</strong><span>Every college and training provider has one. Ask your tutor who yours is, then add them in Profile so they show here.</span></li>')+
+      '<li><strong>Your tutor or supervisor</strong><span>They’ll know what to do next.</span></li>'+
+      '<li><strong>In an emergency</strong><span>Call '+tel("999")+'</span></li>'+
+      '<li><strong>Anti-Terrorist Hotline</strong><span>'+tel("0800 789 321")+' (confidential)</span></li>'+
+      '<li><strong>Childline (under 19)</strong><span>'+tel("0800 1111")+'</span></li>'+
+      '<li><strong>Samaritans (any time)</strong><span>'+tel("116 123")+'</span></li>'+
+      '<li><strong>Shout</strong><span>Text SHOUT to 85258</span></li>'+
+    '</ul></section>';
+  }
   function path(){
     const L=mine(),us=sectionUnits(),all=[].concat(...us.map(u=>u.lessons)),p=profile();
     const done=all.filter(l=>isDone(L,l)).length,next=all.find(l=>!isDone(L,l)),name=String(p.name||"").split(/\s+/)[0];
@@ -134,6 +169,7 @@
         '<section class="tm-hero">'+EVIA+'<p class="tm-say">'+say+'</p></section>'+
         (section!=="course"?'<p class="tm-fs-note">Maths and English lessons don’t count towards your learning hours.</p>':"")+
         us.map(u=>unitHtml(u,L,counter)).join("")+
+        (section==="edi"?contactsHtml():"")+
         (others.length?'<section class="tm-soon"><h3>'+(us.length?"Coming next":"Lessons for your units are coming")+'</h3>'+others.map(o=>'<div class="tm-soon-row"><span class="tm-dot sm">'+LOCK+'</span>'+esc(o)+'</div>').join("")+'</section>':"")+
       '</div>';
     root.querySelector(".tm-x").onclick=close;
@@ -370,5 +406,5 @@
     const u=units().find(x=>x.lessons.some(l=>l.id===id));if(!u)return;const l=u.lessons.find(x=>x.id===id);
     section=u.fs||"course";shell("Teach me");path();lesson(l);
   }
-  window.eviaTeach={open,play,nextUp,available,hasCourse,summary,viewFor,confidence,stats,COURSES,FS,current:()=>current};
+  window.eviaTeach={open,play,nextUp,available,hasCourse,summary,report,viewFor,confidence,stats,COURSES,FS,current:()=>current};
 })();

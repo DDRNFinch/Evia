@@ -106,7 +106,6 @@
       const run=kind==="targets"?targetsFromMenu:reviewFromMenu;
       if(inChat)queue=queue.then(run);else{window.chat({quiet:true});setTimeout(run,50)}
     }
-    else if(kind==="scenario"){const run=()=>window.eviaCoachFlows&&window.eviaCoachFlows.scenario?window.eviaCoachFlows.scenario():window.eviaScenarios.openNext();if(inChat)queue=queue.then(run);else{window.chat({quiet:true});setTimeout(run,50)}}
     else if(kind==="confidence"){const run=()=>window.eviaCoachFlows&&window.eviaCoachFlows.confidence?window.eviaCoachFlows.confidence():window.eviaPractice.openConfidence();if(inChat)queue=queue.then(run);else{window.chat({quiet:true});setTimeout(run,50)}}
     else if(kind==="test"){
       const t={epa:["epa",20],maths:["maths",5],english:["english",5]}[n.id]||["epa",5];
@@ -143,7 +142,7 @@
     else if(id==="tests"&&P)P.openHub();
     else if(id==="skills"&&P)P.openConfidence();
     else if(id==="tasks"&&P)P.openAllTasks();
-    else if(id==="scenarios"&&window.eviaScenarios)window.eviaScenarios.openTopics();
+    else if(id==="teach")nav("teach");
     else if(id==="knowledge"&&window.eviaNvq)window.eviaNvq.openKnowledge();
     else if(id==="reviews")openSavedReviews();
     else if(id==="badges"&&st){

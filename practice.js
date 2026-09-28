@@ -13,7 +13,6 @@
     maths:'<rect x="5" y="3.5" width="14" height="17" rx="2.5"/><path d="M8.5 7.5h7M8.5 12h1M12 12h1M15 12h.5M8.5 16h1M12 16h1M15 16h.5"/>',
     english:'<path d="M5 19.5V6a2.5 2.5 0 0 1 2.5-2.5H19v13H7.5A2.5 2.5 0 0 0 5 19Zm0 0A2.5 2.5 0 0 0 7.5 22H19"/>',
     task:'<path d="M14.5 5.5 18.5 9.5M4 20l4.2-1 10.3-10.3a2.1 2.1 0 0 0-3-3L5.2 16 4 20Z"/>',
-    scenarios:'<path d="M12 3.5 5 6v5.5c0 4.4 3 7.9 7 9 4-1.1 7-4.6 7-9V6l-7-2.5Z"/>',
     confidence:'<path d="M4 20h16"/><rect x="5.5" y="12" width="3" height="6" rx="1"/><rect x="10.5" y="8" width="3" height="10" rx="1"/><rect x="15.5" y="4" width="3" height="14" rx="1"/>'
   };
   const pctOf=t=>typeof t.pct==="number"?t.pct:(t.total?Math.round((t.score||0)/t.total*100):0);
@@ -61,15 +60,12 @@
       (!p.mathsEnabled&&!p.englishEnabled?'<p class="pr-note">Maths and English practice can be switched on in your Profile.</p>':"")+
       '<h3 class="pr-h">Your skills</h3><div class="pr-list"><button type="button" class="pr-row" data-pr="confidence"><span class="pr-icon">'+icon(ICONS.confidence)+'</span><span class="pr-copy"><strong>Confidence check'+(daysAgo(conf.last)>30?' <em class="pr-due">Due</em>':"")+'</strong><small>Rate yourself on each practical skill</small><small class="pr-sum">'+escHtml(conf.last?conf.practise.length+" need more training · rated "+ago(conf.last):"Not done yet")+'</small></span></button>'+
       (allTasks().length?'<button type="button" class="pr-row" data-pr="task"><span class="pr-icon">'+icon(ICONS.task)+'</span><span class="pr-copy"><strong>College tasks</strong><small>'+(tasks.length?"Evia’s pick: "+escHtml(tasks[0].task.title):allTasks().length+" workshop tasks for your course")+'</small><small class="pr-sum">'+escHtml(tasks.length?"Practises "+listText(tasks[0].covers):conf.last?"All your skills are rated OK. Pick any task.":"Do a confidence check and Evia will pick one for you")+'</small></span></button>':"")+'</div>';
-    const sp=window.eviaScenarios?window.eviaScenarios.progress():null;
-    const scen=sp?'<h3 class="pr-h">Real-life scenarios</h3><div class="pr-list"><button type="button" class="pr-row" data-pr="scenarios"><span class="pr-icon">'+icon(ICONS.scenarios)+'</span><span class="pr-copy"><strong>What would you do?</strong><small>Safeguarding, Prevent, British values and equality</small><small class="pr-sum">'+sp.done+' of '+sp.total+' done</small></span></button></div>':"";
-    const el=sheet("PRACTICE","Tests and checks",body+scen);
+    const el=sheet("PRACTICE","Tests and checks",body);
     const kb=el.querySelector("#pr-knowledge");if(kb)kb.onclick=()=>window.eviaNvq.openKnowledge();
     el.querySelectorAll("[data-pr]").forEach(b=>b.onclick=()=>{
       const id=b.dataset.pr;closeSheet();
       if(id==="confidence"){openConfidence();return}
       if(id==="task"){openAllTasks();return}
-      if(id==="scenarios"){window.eviaScenarios.openTopics();return}
       const label=b.querySelector("strong").childNodes[0].textContent.trim();
       startTest(id==="epa-full"?"epa":id,id==="epa-full"?20:5,label);
     });

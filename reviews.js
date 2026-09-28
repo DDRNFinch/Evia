@@ -27,7 +27,10 @@
     english:{measure:t=>bestTestSince(["english"],t.createdAt),pct:true,action:["English test","english"]},
     skill:{measure:t=>skillMap().get(t.param)||t.baseline,action:["Rate my skills","confidence"]},
     quality:{measure:(t,S)=>S.coverage||0,pct:true,action:["Go to My course","course"]},
-    scenarios:{measure:t=>{const p=window.eviaScenarios&&window.eviaScenarios.progress().topics.find(x=>x.id===t.param);return p?p.done:0},action:["Open scenarios","scenarios"]},
+    /* Lessons done in one Teach me subject (param: course, maths, english or edi). */
+    lessons:{measure:t=>{const R=window.eviaTeach&&window.eviaTeach.report&&window.eviaTeach.report(),s=R&&R.subjects.find(x=>x.id===t.param);return s?s.done:0},action:["Open Teach me","teach"]},
+    /* Targets set before the real-life scenarios moved into Teach me: they stay until the next review replaces them. */
+    scenarios:{measure:t=>t.baseline||0,action:["Open Teach me","teach"]},
     streak:{measure:(t,S)=>S.streak,unit:"weeks",action:["Add evidence","course"]},
     rate:{measure:(t,S)=>S.confidence.sessions?1:0,action:["Rate my skills","confidence"]}
   };
@@ -66,8 +69,8 @@
     if(S.maths){const m=bestTestSince(["maths"],0);if(m<70)add("maths","Score 70% or more in a maths test",m>=0?"Your best so far is "+m+"%.":"No maths test taken yet.",70,0,6)}
     if(S.english){const e=bestTestSince(["english"],0);if(e<70)add("english","Score 70% or more in an English test",e>=0?"Your best so far is "+e+"%.":"No English test taken yet.",70,0,6)}
     if(S.coverage!=null&&S.coverage<70)add("quality","Get your write-ups covering 70% of key points","They cover "+S.coverage+"% now. Use the “Things to mention” list on each unit.",70,0,6);
-    const topic=window.eviaScenarios&&window.eviaScenarios.progress().topics.find(t=>t.done<t.total);
-    if(topic)add("scenarios","Complete the "+topic.title+" scenarios","Short real-life situations about what you’d do. About 5 minutes.",topic.total,0,4,topic.id);
+    const R=window.eviaTeach&&window.eviaTeach.report&&window.eviaTeach.report(),edi=R&&R.subjects.find(x=>x.id==="edi");
+    if(edi&&edi.done<edi.total)add("lessons","Finish the EDI and safeguarding lessons","Short lessons on staying safe, Prevent, British values and equality, in Teach me.",edi.total,edi.done,4,"edi");
     if(S.streak<4)add("streak","Stay active 4 weeks in a row","Add evidence or log learning each week. You’re on "+plural(S.streak,"week")+".",4,0,5);
     return out.slice(0,5);
   }
@@ -124,7 +127,7 @@
     setTimeout(()=>{
       if(a==="learning"||a==="course")nav(a==="learning"?"hours":a);
       else if(a==="confidence")window.eviaPractice&&window.eviaPractice.openConfidence();
-      else if(a==="scenarios")window.eviaScenarios&&window.eviaScenarios.openTopics();
+      else if(a==="teach")nav("teach");
       else if(window.eviaStartTest)window.eviaStartTest(a==="epa-full"?"epa":a,a==="epa-full"?20:5,KINDS[t.kind].action[0]);
     },80);
   }
@@ -155,7 +158,7 @@
       otjTotal:Math.round(S.otjTotal*10)/10,otjMonth:Math.round(S.otjMonth*10)/10,streak:S.streak,longest:S.longest,lastUpload:S.lastUpload,
       tests:S.tests.map(t=>({name:t.name,latest:t.latest?(typeof t.latest.pct==="number"?t.latest.pct:Math.round((t.latest.score||0)/(t.latest.total||1)*100)):0,best:t.best})),missed:lastFull&&Array.isArray(lastFull.missed)?lastFull.missed.slice(0,8):[],
       confPct,confPrevPct,lowSkills:conf.filter(x=>x.score<=2).map(x=>x.area),highSkills:conf.filter(x=>x.score>=3).map(x=>x.area),task:task?task.task.title:null,
-      scen:window.eviaScenarios?window.eviaScenarios.progress().topics:[],
+      teach:(()=>{const R=window.eviaTeach&&window.eviaTeach.report&&window.eviaTeach.report();return R?R.subjects.map(x=>({name:x.name,avg:x.avg,areasDone:x.areasDone,areas:x.areas.length,medals:x.medals})):[]})(),
       prevTargetList:prevTargets.map(t=>({title:t.title,done:!!t.done,due:t.due})),
       periodFrom:prevReview?prevReview.date:(prof.start||null),otjExpected:isNaN(startMs)?null:Math.round(Math.max(0,(Date.now()-startMs)/(7*864e5))*6),
       dsl:!!((prof.safeguarding||{}).name),nvq:!!(window.eviaNvq&&window.eviaNvq.on()),
@@ -217,12 +220,18 @@
       (s.lowSkills.length?'<p class="rv-label">Needs more training</p>'+chips(s.lowSkills,"low"):"")+
       say(s.task?"A good college task for this: <strong>"+escHtml(s.task)+"</strong>. Ask your tutor to set it up.":s.lowSkills.length?"Tell your tutor you’d like more practice on these.":"Rate your skills regularly so your tutor knows where to focus.")+
       quick(readOnly,[["skills","Rate my skills"]])});
+    /* Teach me: each subject's average score and areas completed. */
+    if(s.teach&&s.teach.length)out.push({title:"Teach me",body:
+      s.teach.map((t,i)=>row(escHtml(t.name),(t.avg==null?"No score yet":t.avg+"%")+" · "+t.areasDone+" of "+t.areas+" areas",bar(t.areas?t.areasDone/t.areas*100:0,t.areas&&t.areasDone===t.areas?"good":"",i*90))).join("")+
+      say("Your score is your best go at each lesson. EDI and safeguarding lessons cover staying safe, Prevent, British values and equality.")+
+      quick(readOnly,[["teach","Open Teach me"]])});
+    /* Reviews saved before scenarios moved into Teach me keep their section as it was. */
     const scDone=s.scen?s.scen.reduce((n,t)=>n+t.done,0):0,scTotal=s.scen?s.scen.reduce((n,t)=>n+t.total,0):0;
-    if(s.scen&&s.scen.length)out.push({title:"Staying safe and respected",body:
+    if(!s.teach&&s.scen&&s.scen.length)out.push({title:"Staying safe and respected",body:
       goals([["Scenarios done",scDone+" of "+scTotal,tp!=null&&tp<25?"All by 6 months in":"All "+scTotal,scDone===scTotal||(tp!=null&&tp<25)]])+
       s.scen.map((t,i)=>row(escHtml(t.title),t.done+" of "+t.total,bar(t.total?t.done/t.total*100:0,t.done===t.total?"good":"",i*90))).join("")+
       say(s.scen.every(t=>t.done===t.total)?"You’ve completed every real-life scenario. Brilliant.":"These cover safeguarding, Prevent, British values and equality. Each takes about 5 minutes.")+
-      quick(readOnly,[scDone<scTotal&&["scenario","Try a scenario"]])});
+      ""});
     const c=r.reflection||{},q=r.ksbFollowUp;
     out.push({title:"Your comments",body:
       '<label class="rv-q"><span>Is anything affecting your wellbeing, learning or work that you’d like your tutor to know? <small>Optional</small></span>'+(readOnly?'<p class="rv-a">'+escHtml(c.wellbeing||"No comment.")+'</p>':'<textarea data-reflect="wellbeing" rows="3">'+escHtml(c.wellbeing||"")+'</textarea>')+'</label>'+
@@ -305,7 +314,7 @@
       maths:()=>window.eviaStartTest&&window.eviaStartTest("maths",5,"Maths"),
       english:()=>window.eviaStartTest&&window.eviaStartTest("english",5,"English"),
       skills:()=>window.eviaPractice&&window.eviaPractice.openConfidence(),
-      scenario:()=>window.eviaScenarios&&window.eviaScenarios.openNext()
+      teach:()=>nav("teach")
     };
     body.addEventListener("click",e=>{
       const b=e.target.closest("[data-rv-quick]");if(!b||!QUICK[b.dataset.rvQuick])return;
