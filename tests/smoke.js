@@ -848,12 +848,18 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       const had=localStorage.getItem("evia7-enrolment");
       const e=Object.assign({},JSON.parse(had||"{}"),{course:course,college:"Test College",reviewDue:iso(3),lastReview:null});localStorage.setItem("evia7-enrolment",JSON.stringify(e));
       const first=()=>{const n=window.eviaStats.nudges(window.eviaStats.compute());return n.find(x=>x.id==="review-comments")?n[0].id==="review-comments"||n[0].celebrate:false};
+      const pulse=()=>{window.eviaDrawFabBadge();return !!document.querySelector("#evia-fab .fab-pulse")};
+      const p5=pulse();
+      localStorage.setItem("evia7-enrolment",JSON.stringify(Object.assign({},e,{reviewDue:iso(10)})));const p10=pulse();
+      localStorage.setItem("evia7-enrolment",JSON.stringify(e));const real=window.eviaReviewPrepCount;window.eviaReviewPrepCount=()=>0;const pNone=pulse();window.eviaReviewPrepCount=real;pulse();
+      window.__pulse={p5,p10,pNone};
       const before=first();
       window.eviaData.put("reviews",{date:new Date().toISOString(),course,reflection:{learnerFeedback:"Going well"}});
       const a2=window.eviaStats.nudges(window.eviaStats.compute()).find(x=>x.id==="review-comments"),after=!!a2&&/comments/.test(a2.text);
       if(had)localStorage.setItem("evia7-enrolment",had);else localStorage.removeItem("evia7-enrolment");
-      return {before,after};
+      return {before,after,pulse:window.__pulse};
     }).catch(e=>({err:e.message}));
+    check("Evia pulses from 7 days before the review while there's something to get ready, and not otherwise",rc.pulse&&rc.pulse.p5&&!rc.pulse.p10&&!rc.pulse.pNone,JSON.stringify(rc.pulse));
     check("Connected to a college, Evia's first message each day before the review is getting ready, and stops asking for comments once they're in",rc.before===true&&rc.after===false,JSON.stringify(rc));
     check("No script errors",!errors.length,errors.join(" | "));
   }catch(e){check("Test run finished",false,e.message)}
