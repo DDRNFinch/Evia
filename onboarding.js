@@ -238,7 +238,8 @@
       buttons:[{label:"Not me",run:()=>showJoin("","Not you? Ask your assessor for your own code.")},{label:"That’s me",primary:true,run:async()=>{
         const b=document.querySelector('#ob-lesson [data-ob="1"]');if(b){b.disabled=true;b.textContent="Connecting…"}
         try{await window.eviaPacks.ensure(en.course)}catch(err){showJoin(en.code,err.message);return}
-        window.eviaNisia.accept(en);await applyEnrolment(en);
+        try{await window.eviaNisia.accept(en)}catch(err){showJoin("",err.message);return}
+        await applyEnrolment(en);
         if(later){endLater();if(typeof showEvidenceToast==="function")showEvidenceToast("Connected to "+en.college);return}
         closeLesson();afterJoin();
       }}]});

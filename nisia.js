@@ -4,12 +4,23 @@
    college, employer, assessor, tutor and safeguarding lead, so the learner doesn't type any of it.
    Sync: Nisia sees everything the learner does in Evia. Records (evidence, hours, lessons, tests, reviews, targets…)
    go on any connection, from eviaData.changesSince(); photos, videos and files go only on WiFi, and wait until then.
-   Until Nisia's backend is live, pair() knows the example learners below and the demo "sync" keeps everything on the
-   phone and marks it sent. Only ENDPOINT, pair() and send() change when the backend is ready.
+   Live: Nisia's Supabase (London). Pairing signs the learner in (no password); every record goes to evia_records
+   (and evidence and learning hours to their own tables, for the college's counts); photos and files go to the
+   private evidence store. The example codes below are a demo that never leaves the phone (the shared test app).
    window.eviaNisia: pair(code)  accept(enrolment)  joined()  sync()  status()  clean(code)  onStatus(fn) */
 (function(){
-  const ENDPOINT="";   /* Nisia's sync address, once the backend is live */
-  const MEDIA_KEY="evia7-nisia-media",STATUS_KEY="evia7-nisia-status";
+  const NISIA_URL="https://ffgfigkeeeauzkifopei.supabase.co",NISIA_KEY="sb_publishable_w_R4Kqq3UqNKQuv6erQzAQ_bXBkw8Bc";
+  const MEDIA_KEY="evia7-nisia-media",STATUS_KEY="evia7-nisia-status",IDS_KEY="evia7-nisia-ids";
+  /* supabase-js is only loaded once the learner connects (vendor/, about 110 KB). */
+  let client=null;
+  function sb(){
+    if(client)return Promise.resolve(client);
+    return new Promise((res,rej)=>{
+      const go=()=>{client=window.supabase.createClient(NISIA_URL,NISIA_KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:"evia7-nisia-auth",detectSessionInUrl:false}});res(client)};
+      if(window.supabase&&window.supabase.createClient)return go();
+      const el=document.createElement("script");el.src="vendor/supabase-2.45.4.js";el.onload=go;el.onerror=()=>rej(new Error("Evia couldn’t reach Nisia. Check your signal and try again."));document.head.appendChild(el);
+    });
+  }
   /* Example learners (from the Nisia portal mock-up), one per course. */
   const COLLEGE={college:"Brookfield College",safeguarding:{name:"Sarah Mitchell",phone:"01922 555 010",email:"safeguarding@brookfield.example"}};
   const LEARNERS={
@@ -24,14 +35,26 @@
   async function pair(code){
     const k=clean(code);
     if(k.length<6)throw new Error("That code looks too short. It’s under your assessor’s QR code.");
-    const L=LEARNERS[k];
-    if(!L)throw new Error("That code didn’t work. Codes only last a few minutes, so ask your assessor for a new one.");
-    return Object.assign({code:k,demo:!ENDPOINT},COLLEGE,L);
+    if(LEARNERS[k])return Object.assign({code:k,demo:true},COLLEGE,LEARNERS[k]);
+    if(!navigator.onLine)throw new Error("You need signal to connect. Try again when you’re online.");
+    let r,d={};
+    try{r=await fetch(NISIA_URL+"/functions/v1/nisia-setup",{method:"POST",headers:{"Content-Type":"application/json",apikey:NISIA_KEY},body:JSON.stringify({action:"pair",code:k})});d=await r.json()}
+    catch(_){throw new Error("Evia couldn’t reach your college. Check your signal and try again.")}
+    if(!r.ok||d.error)throw new Error(d.error||"That code didn’t work. Ask your assessor for a new one.");
+    return {code:k,live:true,token_hash:d.token_hash,learnerId:d.learnerId,organisationId:d.organisationId,enrolmentId:d.enrolmentId,courseId:d.courseId,memberId:d.memberId,
+      name:d.name,course:d.course,start:d.start,end:d.end,college:d.college,employer:d.employer,employerContact:d.employerContact,assessor:d.assessor,tutor:d.tutor,
+      plannedOtjHours:d.plannedOtjHours,nvqOptional:d.nvqOptional&&d.nvqOptional.length?d.nvqOptional:undefined};
   }
-  /* The learner confirmed it's them: the enrolment and their details come from Nisia from now on. */
-  function accept(en){
+  /* The learner confirmed it's them: sign in with the one-time token, then the enrolment and their details come
+     from Nisia from now on. */
+  async function accept(en){
+    if(en.live){
+      const c=await sb();
+      const {error}=await c.auth.verifyOtp({token_hash:en.token_hash,type:"magiclink"});
+      if(error)throw new Error("That code has already been used. Ask your assessor for a new one.");
+    }
     try{if(en.learnerId)localStorage.setItem("evia7-learner-id",en.learnerId)}catch(_){}
-    const e=Object.assign({},en,{joinedAt:new Date().toISOString()});
+    const e=Object.assign({},en,{joinedAt:new Date().toISOString()});delete e.token_hash;
     window.eviaData.enrol(e);
     window.eviaData.put("learner",{name:en.name,start:en.start,end:en.end,safeguarding:en.safeguarding,...(en.nvqOptional?{nvqOptional:en.nvqOptional}:{})});
     setTimeout(()=>sync().catch(()=>{}),500);
@@ -47,17 +70,50 @@
   /* Every photo and file the records point at. */
   function mediaIds(){
     const D=window.eviaData,out=[];
-    D.list("evidence").forEach(e=>(e.photoIds||[]).forEach(id=>out.push({id,kind:"photo"})));
+    D.list("evidence").forEach(e=>(e.photoIds||[]).forEach(id=>out.push({id,kind:"photo",evidence:e.id})));
     D.list("supporting").forEach(s=>out.push({id:s.id,kind:"supporting"}));
     return out;
   }
   const listeners=[];
   const note=s=>{const st=Object.assign(readJson(STATUS_KEY,{})||{},s);writeJson(STATUS_KEY,st);listeners.slice().forEach(fn=>{try{fn(st)}catch(_){}});return st};
-  async function send(kind,body){
-    if(!ENDPOINT)return true;   /* demo: nothing leaves the phone */
-    const r=await fetch(ENDPOINT+"/"+kind,{method:"POST",headers:body instanceof Blob?{"Content-Type":body.type||"application/octet-stream"}:{"Content-Type":"application/json"},body:body instanceof Blob?body:JSON.stringify(body)});
-    if(!r.ok)throw new Error("Nisia "+kind+" failed ("+r.status+")");
-    return true;
+  /* A stable Nisia id for each Evia record that has its own Nisia table. */
+  const uuidFor=key=>{const m=readJson(IDS_KEY,{})||{};if(!m[key]){m[key]=crypto.randomUUID?crypto.randomUUID():"10000000-1000-4000-8000-100000000000".replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16));writeJson(IDS_KEY,m)}return m[key]};
+  const EVIDENCE_TYPES=["photo","video","written","audio","document"];
+  /* Records: everything into evia_records; evidence, supporting evidence and learning hours also into their own tables. */
+  async function sendRecords(c,e,batch){
+    const base={organisation_id:e.organisationId,enrolment_id:e.enrolmentId};
+    const rows=batch.map(ch=>Object.assign({},base,{learner_member_id:e.memberId,collection:ch.collection,record_id:String(ch.record.id),data:ch.record,deleted_at:ch.fingerprint?null:new Date().toISOString()}));
+    const {error}=await c.from("evia_records").upsert(rows,{onConflict:"enrolment_id,collection,record_id"});
+    if(error)throw error;
+    for(const ch of batch){
+      const r=ch.record,gone=!ch.fingerprint;
+      if(ch.collection==="hours"){
+        const id=uuidFor("hours:"+r.id),hours=Math.round((Number(r.minutes)||0)/60*100)/100;
+        if(gone||!(hours>0&&hours<=24)){await c.from("otj_entries").delete().eq("id",id);continue}
+        const {error:oe}=await c.from("otj_entries").upsert(Object.assign({},base,{id,created_by_member_id:e.memberId,activity_date:String(r.occurredAt||r.createdAt||new Date().toISOString()).slice(0,10),
+          activity_type:r.source||"evia",description:String(r.description||r.did||"Learning").slice(0,2000),hours}));
+        if(oe)console.warn("Evia: Nisia hours",oe.message);
+      }
+      if(ch.collection==="evidence"||ch.collection==="supporting"){
+        const id=uuidFor(ch.collection+":"+r.id);
+        if(gone){await c.from("evidence").delete().eq("id",id);continue}
+        const type=ch.collection==="evidence"?((r.photoIds||[]).length?"photo":"written"):(EVIDENCE_TYPES.includes(r.type)?r.type:"document");
+        const {error:ee}=await c.from("evidence").upsert(Object.assign({},base,{id,course_id:e.courseId,created_by_member_id:e.memberId,evidence_type:type,
+          title:String(r.unit||r.title||"Evidence").slice(0,300),client_reference:ch.collection+":"+r.id,
+          source_metadata:{collection:ch.collection,unit:r.unit||null,text:r.text||null,ksbs:r.ksbs||r.criteria||[],photoIds:r.photoIds||[]}}));
+        if(ee)console.warn("Evia: Nisia evidence",ee.message);
+      }
+    }
+  }
+  /* A photo or file into the college's private evidence store, recorded against its evidence. */
+  async function sendMedia(c,e,m){
+    const D=window.eviaData,blob=await D.files.get(m.id,m.kind);if(!blob)return "missing";
+    const owner=m.kind==="supporting"?"supporting:"+m.id:"evidence:"+m.evidence,evId=uuidFor(owner);
+    const ext=(blob.type.split("/")[1]||"bin").replace(/[^a-z0-9]/g,"").slice(0,5),path=e.organisationId+"/"+evId+"/"+m.id.replace(/[^A-Za-z0-9_-]/g,"")+"."+ext;
+    const {error}=await c.storage.from("evidence").upload(path,blob,{contentType:blob.type||"application/octet-stream",upsert:false});
+    if(error&&!/exists|Duplicate/i.test(error.message))throw error;
+    if(!error){const {error:fe}=await c.from("evidence_files").insert({organisation_id:e.organisationId,evidence_id:evId,uploaded_by_member_id:e.memberId,storage_path:path,mime_type:blob.type||"application/octet-stream",size_bytes:blob.size});if(fe)console.warn("Evia: Nisia file",fe.message)}
+    return new Date().toISOString();
   }
   let running=null;
   function sync(){
@@ -65,18 +121,20 @@
     running=(async()=>{
       if(!joined())return status();
       if(!navigator.onLine)return note({offline:true});
-      const D=window.eviaData,changes=D.changesSince();
-      /* Records: small, on any connection, in batches. */
-      for(let i=0;i<changes.length;i+=50){const batch=changes.slice(i,i+50);await send("records",{learnerId:D.learnerId(),changes:batch.map(c=>({collection:c.collection,record:c.record}))});D.markSynced(batch)}
+      const D=window.eviaData,e=joined(),changes=D.changesSince();
+      const c=e.live?await sb():null;
+      if(c){const {data}=await c.auth.getSession();if(!data.session)return note({error:"signed-out"})}
+      /* Records: small, on any connection, in batches. (The demo keeps them on the phone.) */
+      for(let i=0;i<changes.length;i+=50){const batch=changes.slice(i,i+50);if(c)await sendRecords(c,e,batch);D.markSynced(batch)}
       /* Media: only on WiFi. */
       const sent=readJson(MEDIA_KEY,{})||{};
       if(onWifi()){
         for(const m of mediaIds().filter(m=>!sent[m.id])){
-          try{const blob=await D.files.get(m.id,m.kind);if(!blob){sent[m.id]="missing";continue}await send("media/"+encodeURIComponent(m.id),blob);sent[m.id]=new Date().toISOString();writeJson(MEDIA_KEY,sent)}
-          catch(err){console.warn("Evia: Nisia media",m.id,err);break}
+          try{sent[m.id]=c?await sendMedia(c,e,m):new Date().toISOString();writeJson(MEDIA_KEY,sent)}
+          catch(err){console.warn("Evia: Nisia media",m.id,err&&err.message);break}
         }
       }
-      return note({offline:false,lastSync:new Date().toISOString()});
+      return note({offline:false,error:null,lastSync:new Date().toISOString()});
     })().catch(err=>{note({error:String(err&&err.message||err)});throw err}).finally(()=>{running=null});
     return running;
   }
@@ -90,6 +148,7 @@
   /* In words, for the profile. */
   function statusText(){
     const s=status(),e=joined();if(!e)return "";
+    if(s.error==="signed-out")return "Not connected. Ask your assessor for a new code to connect Evia again.";
     if(!s.online)return "Offline. Everything is saved on your phone and goes to "+e.college+" when you’re back online.";
     if(s.media&&!s.wifi)return s.media+" photo"+(s.media===1?"":"s")+" and file"+(s.media===1?"":"s")+" waiting for WiFi.";
     if(s.changes||s.media)return "Sending to "+e.college+"…";

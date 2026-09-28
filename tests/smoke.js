@@ -594,7 +594,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       const ob={},go=async(n,wait)=>{await p2.click('#ob-lesson [data-ob="'+(n||0)+'"]');await p2.waitForTimeout(wait||600)};
       ob.join=await p2.evaluate(()=>/Connect to your college/.test((document.getElementById("ob-lesson")||{}).textContent||"")&&document.querySelector('#ob-lesson [data-ob="0"]').disabled&&!document.getElementById("ob-name"));
       await p2.fill("#ob-code","abc1234");await go();
-      ob.badCode=await p2.evaluate(()=>/didn’t work/.test(document.getElementById("ob-err").textContent));
+      ob.badCode=await p2.evaluate(()=>/didn’t work|couldn’t reach/.test(document.getElementById("ob-err").textContent));
       await p2.fill("#ob-code","brk 7q4m");ob.formatted=await p2.inputValue("#ob-code")==="BRK-7Q4M";await go(0,800);
       ob.isThisYou=await p2.evaluate(()=>{const t=document.getElementById("ob-lesson").textContent;return /Is this you/.test(t)&&/Callum Hughes/.test(t)&&/Hughes & Sons Builders/.test(t)&&/Mark Ellis/.test(t)&&/Everything you add to Evia goes to Brookfield College/.test(t)&&!/won’t see/.test(t)});
       await go(1,1800);
@@ -671,6 +671,51 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       jl.noErrors=!e5.length;
       check("No code yet: pick the course, then connect to the college later from the profile, which then shows the college's details",Object.values(jl).every(Boolean),JSON.stringify(jl)+" "+e5.join(" | "));
       await c5.close();
+    }
+
+    // Live Nisia (with a stand-in Supabase): the assessor's code signs Evia in, then every record goes to Nisia,
+    // with learning hours and evidence also in their own tables, and photos uploaded to the evidence store.
+    {
+      const c6=await browser.newContext({...devices["Pixel 7"],serviceWorkers:"block"}),p6=await c6.newPage(),e6=[];p6.on("pageerror",e=>e6.push(e.message));
+      const calls=[],b64=o=>Buffer.from(JSON.stringify(o)).toString("base64url");
+      const tok=b64({alg:"HS256"})+"."+b64({sub:"u-learner",role:"authenticated",aal:"aal1",exp:Math.floor(Date.now()/1000)+3600})+".s";
+      await p6.route(/supabase\.co/,async r=>{
+        const q=r.request(),u=new URL(q.url()),body=q.postData()||"";calls.push({m:q.method(),p:u.pathname,body:/storage/.test(u.pathname)?"<file>":body});
+        const json=(d,st)=>r.fulfill({status:st||200,contentType:"application/json",headers:{"access-control-allow-origin":"*"},body:JSON.stringify(d)});
+        if(q.method()==="OPTIONS")return r.fulfill({status:200,headers:{"access-control-allow-origin":"*","access-control-allow-headers":"*","access-control-allow-methods":"*"}});
+        if(u.pathname==="/functions/v1/nisia-setup")return JSON.parse(body).code==="LIVE234"?json({email:"x@learners.nisia.invalid",token_hash:"th",learnerId:"L1",organisationId:"O1",enrolmentId:"E1",courseId:"C1",memberId:"M1",name:"Jo Bloggs",college:"Walsall College",course:"bricklayer",start:"2026-09-01",end:"2028-08-31",employer:"Bloggs Build",assessor:"Mark Ellis",tutor:"Priya Shah",plannedOtjHours:400,nvqOptional:[]}):json({error:"That code didn’t work."},400);
+        if(u.pathname==="/auth/v1/verify")return json({access_token:tok,token_type:"bearer",expires_in:3600,expires_at:Math.floor(Date.now()/1000)+3600,refresh_token:"r",user:{id:"u-learner",aud:"authenticated",role:"authenticated",email:"x@learners.nisia.invalid"}});
+        if(u.pathname==="/auth/v1/user")return json({id:"u-learner",aud:"authenticated",role:"authenticated"});
+        if(u.pathname.startsWith("/storage/v1/object/"))return json({Key:"k"});
+        if(u.pathname.startsWith("/rest/v1/"))return r.fulfill({status:201,headers:{"access-control-allow-origin":"*"},body:""});
+        return json({},404);
+      });
+      await p6.goto(url+"manifest.json");
+      await p6.evaluate(()=>{localStorage.clear();sessionStorage.setItem("evia7-install-later","1");["evia7-theme-picked","evia7-shape-picked"].forEach(k=>localStorage.setItem(k,"1"))});
+      await p6.goto(url+"?demo");await p6.waitForTimeout(2500);
+      const lv={};
+      await p6.fill("#ob-code","LIV-E234");await p6.click('#ob-lesson [data-ob="0"]');await p6.waitForTimeout(1200);
+      lv.isThisYou=await p6.evaluate(()=>/Jo Bloggs/.test(document.getElementById("ob-lesson").textContent)&&/Walsall College/.test(document.getElementById("ob-lesson").textContent));
+      await p6.click('#ob-lesson [data-ob="1"]');await p6.waitForTimeout(2500);
+      lv.signedIn=calls.some(x=>x.p==="/auth/v1/verify")&&await p6.evaluate(()=>{const e=window.eviaData.enrolment();return e.live&&e.enrolmentId==="E1"&&!e.token_hash&&window.eviaData.learnerId()==="L1"&&course==="bricklayer"});
+      await p6.evaluate(()=>document.querySelector("#ob-skip")&&document.querySelector("#ob-skip").click());await p6.waitForTimeout(600);
+      await p6.evaluate(async()=>{
+        const c=document.createElement("canvas");c.width=40;c.height=40;const b=await new Promise(r=>c.toBlob(r,"image/jpeg"));
+        const pid=await window.eviaStoreEvidencePhoto(b);
+        window.eviaData.put("evidence",{course,unit:data().u[0][0],text:"I built a corner to gauge.",ksbs:data().u[0][1].map(code),photoIds:[pid]});
+        window.eviaData.put("hours",{minutes:90,description:"College day"});
+        await window.eviaNisia.sync();
+      });
+      await p6.waitForTimeout(500);
+      const recs=calls.filter(x=>x.p==="/rest/v1/evia_records"&&x.m==="POST").flatMap(x=>JSON.parse(x.body));
+      lv.allRecords=["learner","evidence","hours"].every(col=>recs.some(r=>r.collection===col&&r.enrolment_id==="E1"&&r.learner_member_id==="M1"));
+      lv.hoursTable=calls.some(x=>x.p==="/rest/v1/otj_entries"&&/"hours":1.5/.test(x.body));
+      lv.evidenceTable=calls.some(x=>x.p==="/rest/v1/evidence"&&/"course_id":"C1"/.test(x.body)&&/"evidence_type":"photo"/.test(x.body));
+      lv.photoUploaded=calls.some(x=>x.p.startsWith("/storage/v1/object/evidence/O1/"))&&calls.some(x=>x.p==="/rest/v1/evidence_files");
+      lv.upToDate=await p6.evaluate(()=>{const s=window.eviaNisia.status();return !s.changes&&!s.media&&!!s.lastSync});
+      lv.noErrors=!e6.length;
+      check("Live Nisia: the assessor's code signs Evia in, and every record, learning hours, evidence and photos go to the college",Object.values(lv).every(Boolean),JSON.stringify(lv)+" "+e6.join(" | "));
+      await c6.close();
     }
 
     // First-visit notes: once the tour is done, the first time a page or section opens Evia says what it's for; never again.
