@@ -105,6 +105,28 @@
       }
     }
   }
+  /* Evia's own summary of where the learner is (the same numbers they see), for Milos's reviews: KSB coverage and
+     what's missing per unit, time through the course, learning hours, tests, confidence, Teach me and write-up quality. */
+  function snapshot(){
+    try{
+      const S=window.eviaStats.compute(),a=S.a;
+      return {at:new Date().toISOString(),course:typeof course==="string"?course:"",
+        ksb:{met:a.met,total:a.total,pct:a.ksbPct,timePct:a.timePct,evidenced:[...(a.evidenced||[])]},
+        units:(a.units||[]).map(u=>({name:u.name,total:(u.codes||[]).length,missing:(u.missing||[]).slice(),started:!!u.started,packs:(u.entries||[]).length})),
+        packs:S.packs,daysSince:S.daysSince,lastUpload:S.lastUpload?new Date(S.lastUpload).toISOString():null,
+        otj:{total:S.otjTotal,month:S.otjMonth,week:S.otjWeek},streak:S.streak,writeupCoverage:S.coverage,
+        tests:(S.tests||[]).map(t=>({type:t.type,name:t.name,count:t.count,best:t.best,latest:t.latest?{pct:t.latest.pct,takenAt:t.latest.takenAt}:null})),
+        confidence:S.confidence,teach:S.teach,maths:S.maths,english:S.english,ppeDone:S.ppeDone};
+    }catch(err){console.warn("Evia: snapshot",err&&err.message);return null}
+  }
+  async function sendSnapshot(c,e){
+    const snap=snapshot();if(!snap)return;
+    const key=JSON.stringify(Object.assign({},snap,{at:0}));let last="";try{last=localStorage.getItem("evia7-nisia-snap")||""}catch(_){}
+    if(key===last)return;
+    const {error}=await c.from("evia_records").upsert({organisation_id:e.organisationId,enrolment_id:e.enrolmentId,learner_member_id:e.memberId,collection:"snapshot",record_id:"current",data:snap},{onConflict:"enrolment_id,collection,record_id"});
+    if(error)throw error;
+    try{localStorage.setItem("evia7-nisia-snap",key)}catch(_){}
+  }
   /* A photo or file into the college's private evidence store, recorded against its evidence. */
   async function sendMedia(c,e,m){
     const D=window.eviaData,blob=await D.files.get(m.id,m.kind);if(!blob)return "missing";
@@ -126,6 +148,7 @@
       if(c){const {data}=await c.auth.getSession();if(!data.session)return note({error:"signed-out"})}
       /* Records: small, on any connection, in batches. (The demo keeps them on the phone.) */
       for(let i=0;i<changes.length;i+=50){const batch=changes.slice(i,i+50);if(c)await sendRecords(c,e,batch);D.markSynced(batch)}
+      if(c)await sendSnapshot(c,e);
       /* Media: only on WiFi. */
       const sent=readJson(MEDIA_KEY,{})||{};
       if(onWifi()){
