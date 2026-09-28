@@ -693,6 +693,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
         if(u.pathname==="/auth/v1/verify")return json({access_token:tok,token_type:"bearer",expires_in:3600,expires_at:Math.floor(Date.now()/1000)+3600,refresh_token:"r",user:{id:"u-learner",aud:"authenticated",role:"authenticated",email:"x@learners.nisia.invalid"}});
         if(u.pathname==="/auth/v1/user")return json({id:"u-learner",aud:"authenticated",role:"authenticated"});
         if(u.pathname.startsWith("/storage/v1/object/"))return json({Key:"k"});
+        if(u.pathname==="/rest/v1/rpc/nisia_my_details")return json({name:"Joanne Bloggs",college:"Walsall College",start:"2026-09-01",end:"2028-08-31",assessor:"Mark Ellis",reviewDue:"2026-11-24",lastReview:null,safeguarding:{name:"Sam Lead",phone:"01922 000000",email:""}});
         if(u.pathname.startsWith("/rest/v1/"))return r.fulfill({status:201,headers:{"access-control-allow-origin":"*"},body:""});
         return json({},404);
       });
@@ -717,12 +718,14 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       lv.allRecords=["learner","evidence","hours"].every(col=>recs.some(r=>r.collection===col&&r.enrolment_id==="E1"&&r.learner_member_id==="M1"));
       const snapRow=calls.filter(x=>x.p==="/rest/v1/evia_records"&&x.m==="POST").map(x=>JSON.parse(x.body)).flat().filter(r=>r.collection==="snapshot").pop();
       lv.snapshot=!!snapRow&&snapRow.data.ksb.total>0&&snapRow.data.ksb.met>=1&&Array.isArray(snapRow.data.units)&&snapRow.data.otj.total>=1.5&&!!snapRow.data.teach;
+      lv.unitStrength=!!snapRow&&snapRow.data.units.some(u=>u.strength);
+      lv.detailsFromCollege=await p6.evaluate(()=>{const L=window.eviaData.learner(),e=window.eviaData.enrolment();return L.name==="Joanne Bloggs"&&L.safeguarding&&L.safeguarding.name==="Sam Lead"&&e.reviewDue==="2026-11-24"&&e.assessor==="Mark Ellis"});
       lv.hoursTable=calls.some(x=>x.p==="/rest/v1/otj_entries"&&/"hours":1.5/.test(x.body));
       lv.evidenceTable=calls.some(x=>x.p==="/rest/v1/evidence"&&/"course_id":"C1"/.test(x.body)&&/"evidence_type":"photo"/.test(x.body));
       lv.photoUploaded=calls.some(x=>x.p.startsWith("/storage/v1/object/evidence/O1/"))&&calls.some(x=>x.p==="/rest/v1/evidence_files");
       lv.upToDate=await p6.evaluate(()=>{const s=window.eviaNisia.status();return !s.changes&&!s.media&&!!s.lastSync});
       lv.noErrors=!e6.length;
-      check("Live Nisia: the assessor's code signs Evia in, and every record, learning hours, evidence and photos go to the college",Object.values(lv).every(Boolean),JSON.stringify(lv)+" "+e6.join(" | "));
+      check("Live Nisia: the assessor's code signs Evia in, every record, learning hours, evidence and photos go to the college, and name, safeguarding lead and review date come back",Object.values(lv).every(Boolean),JSON.stringify(lv)+" "+e6.join(" | "));
 
       // A second device (a computer) connects to the same learner: their saved work comes back, then the photos on WiFi.
       const store={};calls.filter(x=>x.p==="/rest/v1/evia_records"&&x.m==="POST").flatMap(x=>JSON.parse(x.body)).filter(r=>r.collection==="store").forEach(r=>{store[r.record_id]=r});
@@ -823,6 +826,18 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       await c4.close();
     }
 
+    const rc=await page.evaluate(()=>{
+      const iso=d=>{const x=new Date(Date.now()+d*864e5);return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0")};
+      const had=localStorage.getItem("evia7-enrolment");
+      const e=Object.assign({},JSON.parse(had||"{}"),{course:course,college:"Test College",reviewDue:iso(3),lastReview:null});localStorage.setItem("evia7-enrolment",JSON.stringify(e));
+      const first=()=>{const n=window.eviaStats.nudges(window.eviaStats.compute());return n.find(x=>x.id==="review-comments")?n[0].id==="review-comments"||n[0].celebrate:false};
+      const before=first();
+      window.eviaData.put("reviews",{date:new Date().toISOString(),course,reflection:{learnerFeedback:"Going well"}});
+      const after=window.eviaStats.nudges(window.eviaStats.compute()).some(x=>x.id==="review-comments");
+      if(had)localStorage.setItem("evia7-enrolment",had);else localStorage.removeItem("evia7-enrolment");
+      return {before,after};
+    }).catch(e=>({err:e.message}));
+    check("Connected to a college, Evia asks for review comments first thing each day from 7 days before, until they're in",rc.before===true&&rc.after===false,JSON.stringify(rc));
     check("No script errors",!errors.length,errors.join(" | "));
   }catch(e){check("Test run finished",false,e.message)}
   await browser.close();server.close();
