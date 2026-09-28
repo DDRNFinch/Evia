@@ -709,7 +709,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       await p6.waitForTimeout(500);
       const recs=calls.filter(x=>x.p==="/rest/v1/evia_records"&&x.m==="POST").flatMap(x=>JSON.parse(x.body));
       lv.allRecords=["learner","evidence","hours"].every(col=>recs.some(r=>r.collection===col&&r.enrolment_id==="E1"&&r.learner_member_id==="M1"));
-      const snapRow=calls.filter(x=>x.p==="/rest/v1/evia_records").map(x=>JSON.parse(x.body)).flat().filter(r=>r.collection==="snapshot").pop();
+      const snapRow=calls.filter(x=>x.p==="/rest/v1/evia_records"&&x.m==="POST").map(x=>JSON.parse(x.body)).flat().filter(r=>r.collection==="snapshot").pop();
       lv.snapshot=!!snapRow&&snapRow.data.ksb.total>0&&snapRow.data.ksb.met>=1&&Array.isArray(snapRow.data.units)&&snapRow.data.otj.total>=1.5&&!!snapRow.data.teach;
       lv.hoursTable=calls.some(x=>x.p==="/rest/v1/otj_entries"&&/"hours":1.5/.test(x.body));
       lv.evidenceTable=calls.some(x=>x.p==="/rest/v1/evidence"&&/"course_id":"C1"/.test(x.body)&&/"evidence_type":"photo"/.test(x.body));
@@ -717,6 +717,40 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       lv.upToDate=await p6.evaluate(()=>{const s=window.eviaNisia.status();return !s.changes&&!s.media&&!!s.lastSync});
       lv.noErrors=!e6.length;
       check("Live Nisia: the assessor's code signs Evia in, and every record, learning hours, evidence and photos go to the college",Object.values(lv).every(Boolean),JSON.stringify(lv)+" "+e6.join(" | "));
+
+      // A second device (a computer) connects to the same learner: their saved work comes back, then the photos on WiFi.
+      const store={};calls.filter(x=>x.p==="/rest/v1/evia_records"&&x.m==="POST").flatMap(x=>JSON.parse(x.body)).filter(r=>r.collection==="store").forEach(r=>{store[r.record_id]=r});
+      const evRow=calls.filter(x=>x.p==="/rest/v1/evidence"&&x.m==="POST").map(x=>JSON.parse(x.body)).pop(),fileRow=calls.filter(x=>x.p==="/rest/v1/evidence_files"&&x.m==="POST").map(x=>JSON.parse(x.body)).pop();
+      const photoPath=fileRow&&fileRow.storage_path,photoId=photoPath&&photoPath.split("/").pop().replace(/\.[^.]*$/,"");
+      const c7=await browser.newContext({viewport:{width:1280,height:800},serviceWorkers:"block"}),p7=await c7.newPage(),e7=[],calls7=[];p7.on("pageerror",e=>e7.push(e.message));
+      await p7.route(/supabase\.co/,async r=>{
+        const q=r.request(),u=new URL(q.url()),body=q.postData()||"";calls7.push({m:q.method(),p:u.pathname,s:u.search,body:/storage/.test(u.pathname)?"<file>":body});
+        const json=(d,st)=>r.fulfill({status:st||200,contentType:"application/json",headers:{"access-control-allow-origin":"*"},body:JSON.stringify(d)});
+        if(q.method()==="OPTIONS")return r.fulfill({status:200,headers:{"access-control-allow-origin":"*","access-control-allow-headers":"*","access-control-allow-methods":"*"}});
+        if(u.pathname==="/functions/v1/nisia-setup")return json({email:"x@learners.nisia.invalid",token_hash:"th2",learnerId:"L1",organisationId:"O1",enrolmentId:"E1",courseId:"C1",memberId:"M1",name:"Jo Bloggs",college:"Walsall College",course:"bricklayer",start:"2026-09-01",end:"2028-08-31",employer:"Bloggs Build",assessor:"Mark Ellis",tutor:"Priya Shah",plannedOtjHours:400,nvqOptional:[]});
+        if(u.pathname==="/auth/v1/verify")return json({access_token:tok,token_type:"bearer",expires_in:3600,expires_at:Math.floor(Date.now()/1000)+3600,refresh_token:"r",user:{id:"u-learner",aud:"authenticated",role:"authenticated",email:"x@learners.nisia.invalid"}});
+        if(u.pathname==="/auth/v1/user")return json({id:"u-learner",aud:"authenticated",role:"authenticated"});
+        if(u.pathname==="/rest/v1/evia_records"&&q.method()==="GET")return json(/collection=eq\.store/.test(u.search)?Object.values(store).map(r=>({record_id:r.record_id,data:r.data})):[]);
+        if(u.pathname==="/rest/v1/evidence"&&q.method()==="GET")return json(evRow?[{id:evRow.id,client_reference:evRow.client_reference}]:[]);
+        if(u.pathname==="/rest/v1/evidence_files"&&q.method()==="GET")return json(fileRow?[{evidence_id:fileRow.evidence_id,storage_path:fileRow.storage_path}]:[]);
+        if(q.method()==="GET"&&/^\/storage\/v1\/object\/(authenticated\/)?evidence\//.test(u.pathname))return r.fulfill({status:200,contentType:"image/jpeg",headers:{"access-control-allow-origin":"*"},body:Buffer.from("/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==","base64")});
+        if(u.pathname.startsWith("/rest/v1/"))return r.fulfill({status:201,headers:{"access-control-allow-origin":"*"},body:""});
+        return json({},404);
+      });
+      await p7.goto(url+"manifest.json");
+      await p7.evaluate(()=>{localStorage.clear()});
+      await p7.goto(url+"?pair=LIV-E234");await p7.waitForSelector('#ob-lesson [data-ob="1"]',{timeout:20000}).catch(()=>{});
+      const rs={};
+      rs.isThisYou=await p7.evaluate(()=>/Jo Bloggs/.test((document.getElementById("ob-lesson")||{}).textContent||""));
+      await p7.click('#ob-lesson [data-ob="1"]');await p7.waitForTimeout(4000);
+      rs.sentBackup=Object.keys(store).includes("evia7-evidence")&&Object.keys(store).includes("evia7-hours")&&!Object.keys(store).some(k=>/nisia-auth|data-synced|enrolment/.test(k));
+      rs.workBack=await p7.evaluate(()=>{const ev=window.eviaData.list("evidence"),h=window.eviaData.list("hours");return ev.length===1&&/corner to gauge/.test(ev[0].text)&&h.some(x=>x.minutes===90)&&!document.getElementById("ob-lesson")&&window.eviaData.enrolment().enrolmentId==="E1"});
+      await p7.evaluate(async()=>{await window.eviaNisia.sync()});await p7.waitForTimeout(500);
+      rs.photoDown=!!photoId&&await p7.evaluate(async id=>{const b=await window.eviaGetEvidencePhoto(id);return !!b&&b.size>0},photoId);
+      rs.notSentAgain=!calls7.some(x=>x.m==="POST"&&(x.p==="/rest/v1/evidence"||x.p==="/rest/v1/otj_entries"||x.p.startsWith("/storage/v1/object/evidence/")))&&await p7.evaluate(()=>{const s=window.eviaNisia.status();return !s.changes&&!s.media});
+      rs.noErrors=!e7.length;
+      check("A second device: connecting Evia on a computer brings the learner's work back from Nisia, photos included, without sending it all again",Object.values(rs).every(Boolean),JSON.stringify(rs)+" "+e7.join(" | "));
+      await c7.close();
       await c6.close();
     }
 
