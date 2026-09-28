@@ -693,6 +693,9 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
         if(u.pathname==="/auth/v1/verify")return json({access_token:tok,token_type:"bearer",expires_in:3600,expires_at:Math.floor(Date.now()/1000)+3600,refresh_token:"r",user:{id:"u-learner",aud:"authenticated",role:"authenticated",email:"x@learners.nisia.invalid"}});
         if(u.pathname==="/auth/v1/user")return json({id:"u-learner",aud:"authenticated",role:"authenticated"});
         if(u.pathname.startsWith("/storage/v1/object/"))return json({Key:"k"});
+        if(u.pathname==="/rest/v1/evidence"&&q.method()==="GET"&&/source_metadata-%3E%3Ecollection|source_metadata->>collection/.test(u.search))return json([{id:"OBS1",title:"Mixing mortar",created_at:"2026-09-20T10:00:00Z",source_metadata:{collection:"observation",unit:"Mixing mortar",observedBy:"Mark Ellis",observedOn:"2026-09-20",ksbs:["S14","K20"]}}]);
+        if(u.pathname==="/rest/v1/evidence_files"&&q.method()==="GET"&&/OBS1/.test(u.search))return json([{storage_path:"O1/OBS1/observation.pdf",size_bytes:20}]);
+        if(q.method()==="GET"&&/\/storage\/v1\/object\/.*observation\.pdf$/.test(u.pathname))return r.fulfill({status:200,contentType:"application/pdf",headers:{"access-control-allow-origin":"*"},body:"%PDF-1.4 observation"});
         if(u.pathname==="/rest/v1/rpc/nisia_my_details")return json({name:"Joanne Bloggs",college:"Walsall College",start:"2026-09-01",end:"2028-08-31",assessor:"Mark Ellis",reviewDue:"2026-11-24",lastReview:null,safeguarding:{name:"Sam Lead",phone:"01922 000000",email:""}});
         if(u.pathname.startsWith("/rest/v1/"))return r.fulfill({status:201,headers:{"access-control-allow-origin":"*"},body:""});
         return json({},404);
@@ -720,6 +723,8 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       lv.snapshot=!!snapRow&&snapRow.data.ksb.total>0&&snapRow.data.ksb.met>=1&&Array.isArray(snapRow.data.units)&&snapRow.data.otj.total>=1.5&&!!snapRow.data.teach;
       lv.unitStrength=!!snapRow&&snapRow.data.units.some(u=>u.strength);
       lv.detailsFromCollege=await p6.evaluate(()=>{const L=window.eviaData.learner(),e=window.eviaData.enrolment();return L.name==="Joanne Bloggs"&&L.safeguarding&&L.safeguarding.name==="Sam Lead"&&e.reviewDue==="2026-11-24"&&e.assessor==="Mark Ellis"});
+      lv.observationArrived=await p6.evaluate(async()=>{const x=window.eviaData.list("supporting").find(r=>r.id==="obs-OBS1");const b=x&&await window.eviaData.files.get(x.id,"supporting");return !!x&&x.title==="Observation: Mixing mortar"&&x.observation.by==="Mark Ellis"&&x.criteria.join()==="S14,K20"&&!!b&&b.size>0});
+      lv.observationNotSentBack=!calls.some(x=>x.p==="/rest/v1/evidence"&&x.m==="POST"&&/obs-OBS1|Observation: Mixing/.test(x.body));
       lv.hoursTable=calls.some(x=>x.p==="/rest/v1/otj_entries"&&/"hours":1.5/.test(x.body));
       lv.evidenceTable=calls.some(x=>x.p==="/rest/v1/evidence"&&/"course_id":"C1"/.test(x.body)&&/"evidence_type":"photo"/.test(x.body));
       lv.photoUploaded=calls.some(x=>x.p.startsWith("/storage/v1/object/evidence/O1/"))&&calls.some(x=>x.p==="/rest/v1/evidence_files");
