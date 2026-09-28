@@ -91,7 +91,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     const fr={choice:await page.evaluate(()=>!!document.getElementById("eg-start")&&!!document.getElementById("fr-start")&&!document.getElementById("write")&&!document.getElementById("evidence-camera"))};
     const egBtn=async re=>{await page.evaluate(src=>{const b=[...document.querySelectorAll(".eg-sheet button")].find(b=>new RegExp(src).test(b.textContent.trim()));if(b)b.click()},re);await page.waitForTimeout(350)};
     await page.click("#fr-start");await page.waitForTimeout(400);
-    fr.intro=await page.evaluate(()=>{const sh=document.querySelector(".eg-sheet");return !!sh&&/^FREE RANGE$/.test(sh.querySelector(".chat-kicker").textContent)&&!!sh.querySelector(".fr-no .fr-strike")&&/Photos/.test(sh.textContent)});
+    fr.intro=await page.evaluate(()=>{const sh=document.querySelector(".eg-sheet");return !!sh&&/^FREE RANGE$/.test(sh.querySelector(".chat-kicker").textContent)&&!!sh.querySelector(".ra-free .evia-mini")&&/Photos/.test(sh.textContent)});
     fr.oneButton=await page.evaluate(()=>[...document.querySelectorAll(".eg-sheet .eg-actions button")].map(b=>b.textContent.trim()).join()==="Get started");
     await page.evaluate(()=>document.getElementById("eg-close").click());await page.waitForTimeout(500);
     await page.evaluate(()=>openUnit(data().u.findIndex(u=>u[0]==="Mixing mortar"),"write"));await page.waitForTimeout(900);
@@ -755,6 +755,21 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
         return !!f&&f.decision==="accepted"&&f.by==="Mark Ellis"&&f.ksbs.length===2&&!f.seen&&window.eviaFeedback.unseen().length===1&&n.some(x=>/^fb-/.test(x.id)&&/Mark signed off/.test(x.text))});
       lv.onlySignedCounts=await p6.evaluate(()=>{const a=window.eviaStats.compute().a,m=window.eviaMoreRequired();return a.signoff&&a.evidenced.has("K2")&&a.evidenced.has("S1")&&a.met===a.evidenced.size&&m.length>0&&!m.some(x=>x.code==="K2")&&window.eviaKsbAims.list().includes(m[0].code)});
       lv.moreRequiredShown=await p6.evaluate(()=>{const e=window.eviaData.list("evidence").pop();return /More required/.test(window.eviaFeedbackHtml(window.eviaFeedback.forEvidence(e.id),{k:e.ksbs}))});
+      /* The four ways in: catch up shows once the assessor wants more; a voice note is kept with what Evia wrote down, and goes to Nisia. */
+      await p6.evaluate(()=>{document.getElementById("modal-root").innerHTML="";window.openUnit(0)});await p6.waitForTimeout(700);
+      lv.fourRoutes=await p6.evaluate(()=>["cu-start","eg-start","fr-start","rec-start"].every(id=>document.getElementById(id))&&!!document.querySelector("#cu-start .ra-catch")&&!!document.querySelector("#eg-start .ra-guide")&&!!document.querySelector("#fr-start .ra-free")&&!!document.querySelector("#rec-start .ra-record")&&
+        new Set(["cu-start","eg-start","fr-start","rec-start"].map(id=>Math.round(document.getElementById(id).getBoundingClientRect().height))).size===1);
+      await p6.evaluate(()=>document.getElementById("cu-start").click());await p6.waitForTimeout(400);
+      lv.catchUp=await p6.evaluate(()=>{const t=document.querySelector(".eg-sheet").textContent;return /CATCH UP/.test(t)&&/a bit more/.test(t)&&window.eviaMoreRequired().filter(x=>x.unit===data().u[0][0]).every(x=>t.includes(x.code))&&!!document.querySelector(".eg-sheet .ra-catch")});
+      await p6.evaluate(()=>{document.getElementById("modal-root").innerHTML="";window.openUnit(0)});await p6.waitForTimeout(500);
+      await p6.evaluate(()=>{window.eviaRecorder={supported:()=>true,open:o=>{window.__recOpts=o;setTimeout(()=>o.onDone(new Blob(["voice"],{type:"audio/webm"}),"audio/webm",{secs:42,transcript:"I mixed the mortar to the right ratio with a gauging box and put the safety signage out."}),50)}}});
+      await p6.evaluate(()=>document.getElementById("rec-start").click());await p6.waitForTimeout(300);await p6.evaluate(()=>document.querySelector('[data-rec="audio"]').click());await p6.waitForTimeout(700);
+      lv.recorded=await p6.evaluate(()=>window.__recOpts.type==="audio"&&window.__recOpts.limit===300&&window.__recOpts.transcribe&&window.__recOpts.prompts.length>0&&/Saved: your voice note \(0:42\)/.test(document.querySelector(".eg-sheet").textContent)&&/You mentioned [1-9]/.test(document.querySelector(".eg-sheet").textContent));
+      const before=calls.length;
+      await p6.evaluate(()=>{[...document.querySelectorAll(".eg-sheet button")].find(b=>/Submit to Portfolio/.test(b.textContent)).click()});await p6.waitForTimeout(900);
+      lv.recordingSaved=await p6.evaluate(()=>{const e=window.eviaData.list("evidence").pop();return e.media.length===1&&e.media[0].kind==="audio"&&/gauging box/.test(e.transcript)&&!e.text});
+      await p6.evaluate(()=>window.eviaNisia.sync());await p6.waitForTimeout(700);
+      lv.recordingSynced=calls.slice(before).some(x=>x.p==="/rest/v1/evidence"&&/"evidence_type":"audio"/.test(x.body)&&/gauging box/.test(x.body))&&calls.slice(before).some(x=>x.p.startsWith("/storage/v1/object/evidence/O1/")&&/media/.test(x.p));
       if(process.env.EVIA_SHOTS){const d=process.env.EVIA_SHOTS;
         await p6.evaluate(()=>{window.eviaKsbAims.set("B3",true);nav("progress")});await p6.waitForTimeout(900);
         await p6.evaluate(()=>{document.querySelectorAll("[data-group]").forEach(b=>{if(b.getAttribute("aria-expanded")!=="true")b.click()})});await p6.waitForTimeout(500);
@@ -764,7 +779,8 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
         await p6.evaluate(()=>{document.getElementById("modal-root").innerHTML="";document.querySelectorAll(".overlay,.pv-sheet").forEach(x=>x.remove());nav("teach")});await p6.waitForTimeout(900);
         await p6.locator(".tg-grid").screenshot({path:d+"/teach-tiles.png"}).catch(e=>console.log(e.message));
         await p6.evaluate(()=>window.openUnit(0));await p6.waitForTimeout(900);
-        await p6.screenshot({path:d+"/unit-more.png",fullPage:true});}
+        await p6.screenshot({path:d+"/unit-more.png",fullPage:true});
+        for(const t of [0,1,2,3]){await p6.locator(".ev-modes").screenshot({path:d+"/modes-"+t+".png"}).catch(()=>{});await p6.waitForTimeout(650)}}
       lv.noErrors=!e6.length;
       check("Live Nisia: the assessor's code signs Evia in, every record, learning hours, evidence and photos go to the college, and name, safeguarding lead and review date come back",Object.values(lv).every(Boolean),JSON.stringify(lv)+" "+e6.join(" | "));
 
@@ -794,7 +810,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       rs.isThisYou=await p7.evaluate(()=>/Jo Bloggs/.test((document.getElementById("ob-lesson")||{}).textContent||""));
       await p7.click('#ob-lesson [data-ob="1"]');await p7.waitForTimeout(4000);
       rs.sentBackup=Object.keys(store).includes("evia7-evidence")&&Object.keys(store).includes("evia7-hours")&&!Object.keys(store).some(k=>/nisia-auth|data-synced|enrolment/.test(k));
-      rs.workBack=await p7.evaluate(()=>{const ev=window.eviaData.list("evidence"),h=window.eviaData.list("hours");return ev.length===1&&/corner to gauge/.test(ev[0].text)&&h.some(x=>x.minutes===90)&&!document.getElementById("ob-lesson")&&window.eviaData.enrolment().enrolmentId==="E1"});
+      rs.workBack=await p7.evaluate(()=>{const ev=window.eviaData.list("evidence"),h=window.eviaData.list("hours");return ev.length===2&&ev.some(e=>/corner to gauge/.test(e.text))&&ev.some(e=>e.media.length===1&&/gauging box/.test(e.transcript))&&h.some(x=>x.minutes===90)&&!document.getElementById("ob-lesson")&&window.eviaData.enrolment().enrolmentId==="E1"});
       await p7.evaluate(async()=>{await window.eviaNisia.sync()});await p7.waitForTimeout(500);
       rs.photoDown=!!photoId&&await p7.evaluate(async id=>{const b=await window.eviaGetEvidencePhoto(id);return !!b&&b.size>0},photoId);
       rs.notSentAgain=!calls7.some(x=>x.m==="POST"&&(x.p==="/rest/v1/evidence"||x.p==="/rest/v1/otj_entries"||x.p.startsWith("/storage/v1/object/evidence/")))&&await p7.evaluate(()=>{const s=window.eviaNisia.status();return !s.changes&&!s.media});
