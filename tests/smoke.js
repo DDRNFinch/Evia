@@ -484,7 +484,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       const w=ms=>new Promise(r=>setTimeout(r,ms)),R=window.eviaRewards,G=window.eviaGames,out={},keep=localStorage.getItem("evia7-rewards");
       localStorage.setItem("evia7-rewards",JSON.stringify({bank:500,spent:0,owned:[],hat:"",pity:0,seenAch:[],lastXp:1e9,day:"",workV:1,paid:{}}));
       nav("teach");await w(500);
-      out.locked=document.querySelectorAll(".tt-game.locked").length===3;
+      out.locked=document.querySelectorAll(".tt-game.locked").length===4;
       /* The Teach me card shows medals, the streak and coins: no XP or levels. */
       out.medals=!!document.querySelector(".tg-player .tg-medals")&&!/\bXP\b|Level \d/.test(document.querySelector(".tg-player").textContent);
       /* The camera always carries the photo-consent line (opened without a real camera, then closed). */
@@ -517,6 +517,55 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       return out;
     });
     check("Teach me card shows medals (no XP or levels); the camera reminds learners not to photograph people. Mini games: locked until bought in Rewards, then Brickle, the crossword and Flappy Evia play from Teach me (Site Run and Site Quest are parked) and pay capped coins",Object.values(gm).every(Boolean),JSON.stringify(gm));
+    /* Site Showdown: right moves beat enemies, wrong ones cost a heart and stay crossed out, a boss every 5 wins with
+       1 step, then 2, and three wrong moves end the run with the best score kept. */
+    const sd=await page.evaluate(async()=>{
+      const w=ms=>new Promise(r=>setTimeout(r,ms)),out={};
+      const r=JSON.parse(localStorage.getItem("evia7-rewards")||'{"owned":[]}');r.owned=r.owned||[];r.owned.push("game-showdown");localStorage.setItem("evia7-rewards",JSON.stringify(r));
+      localStorage.removeItem("evia7-showdown-best");
+      window.eviaGames.open("showdown");await w(300);
+      out.title=/Site Showdown/.test(document.querySelector(".sd-title").textContent)&&!!document.querySelector(".sd-title .evia-mini");
+      document.querySelector(".sd-go").click();
+      const ready=async()=>{for(let i=0;i<200;i++){if(document.querySelector(".sd-next")||document.querySelector(".gm-end")||[...document.querySelectorAll(".sd-move")].some(b=>!b.disabled)&&!document.querySelector(".sd-moves.busy"))return;await w(40)}};
+      const S=()=>window.eviaShowdown.state();
+      const right=()=>{const f=S().foe;return f.boss?f.steps[f.at][1][0]:f.opts[0][0]};
+      const tap=async label=>{await ready();const b=[...document.querySelectorAll(".sd-move")].find(x=>x.textContent===label);b.click();await w(80);await ready()};
+      const wrongOne=()=>[...document.querySelectorAll(".sd-move")].find(x=>!x.disabled&&x.textContent!==right());
+      const nextOn=async()=>{await ready();const n=document.querySelector(".sd-next");if(n){n.click();await w(80)}await ready()};
+      try{
+      await ready();
+      out.firstFoe=!!document.querySelector(".sd-foe-art svg")&&document.querySelectorAll(".sd-move").length===4&&!!document.querySelector(".sd-me .evia-mini");
+      /* A wrong move: a heart goes, the move is crossed out, the enemy stays. */
+      const wl=wrongOne().textContent;await tap(wl);
+      out.wrong=S().hp===2&&document.querySelectorAll(".sd-hearts svg.lost").length===1&&[...document.querySelectorAll(".sd-move.wrong")].some(b=>b.textContent===wl)&&/not very effective/.test(document.querySelector(".sd-msg").textContent);
+      await tap(right());out.superEffective=/super effective/.test(document.querySelector(".sd-msg").textContent)&&S().wins===1;
+      await nextOn();
+      while(S().wins<5){await tap(right());await nextOn()}
+      out.boss1=S().foe.boss&&S().foe.steps.length===1&&document.querySelector(".sd-type").textContent==="BOSS";
+      await tap(right());await nextOn();
+      while(S().wins<10){await tap(right());await nextOn()}
+      out.boss2=S().foe.boss&&S().foe.steps.length===2&&document.querySelectorAll(".sd-steps i").length===2;
+      const bw=wrongOne().textContent;await tap(bw);out.bossWrongStays=S().foe.at===0&&S().hp===1;
+      await tap(right());out.bossStep=/Good call/.test(document.querySelector(".sd-msg").textContent)&&S().foe.at===1;
+      await nextOn();await tap(right());out.bossBeaten=S().bosses===2&&S().wins===11;
+      await nextOn();
+      await tap(wrongOne().textContent);await w(900);
+      const end=document.querySelector(".gm-end");out.over=!!end&&/11 enemies/.test(end.textContent)&&localStorage.getItem("evia7-showdown-best")==="11";
+      document.querySelector('.gm-end [data-a="done"]').click();await w(100);
+      }catch(e){out.err=false;out.why=e.message+" "+JSON.stringify({s:S()&&{wins:S().wins,hp:S().hp,foe:S().foe&&S().foe.name,at:S().foe&&S().foe.at},moves:[...document.querySelectorAll(".sd-move")].map(b=>b.textContent+(b.disabled?"(x)":"")),next:!!document.querySelector(".sd-next"),msg:(document.querySelector(".sd-msg")||{}).textContent})}
+      return out;
+    });
+    if(process.env.EVIA_SHOTS){const d=process.env.EVIA_SHOTS;
+      await page.evaluate(()=>{const A=window.eviaShowdown.art,L=[["fire","wood"],["fire","elec"],["fire","liquid"],["fire","oil"],["fire","gas"],["fire","metal"],["ppe","dust"],["ppe","noise"],["ppe","drop"],["ppe","splash"],["ppe","nail"],["ppe","plant"],["ppe","sun"],["coshh","drum"],["sign","hardhat"],["sign","smoke"],["sign","bolt"],["sign","cross"],["sign","ext"],["sign","ears"],["sign","goggles"],["sign","must"],["plan","plan"],["mix","tub"],["brick","wall"],["wood","plank"],["site","hazard"],["maths","calc"],["english","book"],["edi","cloud"]];
+        const g=document.createElement("div");g.id="sd-gallery";g.style.cssText="position:fixed;inset:0;z-index:9999;background:#eef6ff;display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:6px;overflow:auto";
+        g.innerHTML=L.map(([t,v])=>'<div style="text-align:center;font:10px sans-serif">'+A(t,v)+'<br>'+t+"/"+v+'</div>').join("")+["elec","dust"].map(v=>'<div style="text-align:center;font:10px sans-serif">'+A("",v,true)+'<br>boss/'+v+'</div>').join("");document.body.appendChild(g)});
+      await page.waitForTimeout(400);await page.screenshot({path:d+"/sd-gallery.png",fullPage:false});
+      await page.evaluate(()=>document.getElementById("sd-gallery").remove());
+      await page.evaluate(()=>{window.eviaGames.open("showdown")});await page.waitForTimeout(500);await page.screenshot({path:d+"/sd-title.png"});
+      await page.evaluate(()=>document.querySelector(".sd-go").click());await page.waitForTimeout(2600);await page.screenshot({path:d+"/sd-battle.png"});
+      await page.evaluate(()=>{const S=window.eviaShowdown.state(),r=S.foe.opts[0][0];const b=[...document.querySelectorAll(".sd-move")].find(x=>x.textContent!==r);b.click()});await page.waitForTimeout(2200);await page.screenshot({path:d+"/sd-wrong.png"});
+      await page.evaluate(()=>document.querySelector(".gm-x").click());}
+    check("Site Showdown: the right move is super effective, a wrong one costs a heart and stays crossed out, bosses every 5 wins get a step longer, and running out of hearts ends the run with the best kept",Object.values(sd).every(Boolean),JSON.stringify(sd));
     check("Expressions: twelve faces, all bought directly; using one shows it on Evia, and tapping again goes back to classic",rw.faces&&rw.expr&&rw.exprOff,JSON.stringify(rw));
     await page.evaluate(()=>nav("teach"));await page.waitForTimeout(600);
     await page.evaluate(()=>document.querySelector('[data-go="course"]').click());await page.waitForTimeout(600);
