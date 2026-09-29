@@ -281,7 +281,16 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("The evidence pack shows no score, just a link to how to build a strong portfolio",stHow&&await page.evaluate(()=>!document.getElementById("st-meter")&&document.querySelectorAll(".eg-sheet .fr-mention .compact-prompts").length===1));
     await page.evaluate(()=>{const w=document.getElementById("write");w.value="";w.dispatchEvent(new Event("input"));nav("learning")});await page.waitForTimeout(600);
     await page.evaluate(()=>{window._camSupported=window.eviaCamera.supported;window.eviaCamera.supported=()=>false;document.getElementById("pv-guide").click()});await page.waitForTimeout(400);
-    check("My progress explains how to build a strong portfolio",await page.evaluate(()=>/strong portfolio/.test(document.getElementById("st-title").textContent)&&document.querySelectorAll(".st-tip").length===8));
+    const sg=await page.evaluate(async()=>{const out={five:document.querySelectorAll("[data-dot]").length===5,first:/assessor looks for/.test(document.getElementById("st-title").textContent)&&!!document.querySelector(".sg-say .evia-mini")};
+      const titles=[];for(let i=0;i<4;i++){document.getElementById("sg-next").click();await new Promise(r=>setTimeout(r,60));titles.push(document.getElementById("st-title").textContent)}
+      out.bars=/strength bars/i.test(titles[2])&&document.querySelectorAll(".sg-level .unit-strength-bars").length===0;
+      out.last=document.getElementById("sg-next").textContent==="Got it";return {out,titles}});
+    const sgBars=await page.evaluate(()=>{document.getElementById("sg-back").click();return new Promise(r=>setTimeout(()=>r(document.querySelectorAll(".sg-level .unit-strength-bars").length===3),60))});
+    if(process.env.EVIA_SHOTS){const d=process.env.EVIA_SHOTS;await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";window.eviaStrength.guide()});
+      for(let i=0;i<5;i++){await page.waitForTimeout(450);await page.screenshot({path:d+"/sg-"+(i+1)+".png"});await page.evaluate(()=>document.getElementById("sg-next").click())}await page.waitForTimeout(300)}
+    else{await page.evaluate(()=>{document.getElementById("sg-next").click();document.getElementById("sg-next").click()});await page.waitForTimeout(300)}
+    const sgClosed=await page.evaluate(()=>!document.querySelector(".sg"));
+    check("My progress explains how to build a strong portfolio: five slides with Evia, ending in Got it, which closes them",sg.out.five&&sg.out.first&&sg.out.last&&sgBars&&sg.titles.length===4&&sgClosed,JSON.stringify({sg,sgBars,sgClosed}));
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML=""});
 
     // Guided evidence: Evia asks a question for each thing to mention and puts the answers together as the statement.
