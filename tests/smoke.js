@@ -118,7 +118,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>window.chat());
     await page.waitForFunction(()=>{const c=document.getElementById("chat");return c&&!c.querySelector(".evia-thinking")},null,{timeout:15000});
     await page.waitForSelector("#chat .ui-action",{timeout:15000});
-    check("Evia opens with a catch-up and her four actions",await page.evaluate(()=>{const t=[...document.querySelectorAll("#chat .ui-action")].map(b=>b.innerText.trim());return t.join().replace(/\d+$/,"").replace(/review\d+,/,"review,")==="Evidence check,Get ready for review,Show targets,EPA mocks"&&/learning hours|of learning/i.test(document.getElementById("chat").innerText)&&!document.querySelector(".chat-sheet .ui-ask")}));
+    check("Evia opens with a catch-up and her three actions (EPA practice is in Teach me)",await page.evaluate(()=>{const t=[...document.querySelectorAll("#chat .ui-action")].map(b=>b.innerText.trim());return t.join().replace(/\d+$/,"").replace(/review\d+,/,"review,")==="Evidence check,Get ready for review,Show targets"&&/learning hours|of learning/i.test(document.getElementById("chat").innerText)&&!document.querySelector(".chat-sheet .ui-ask")}));
     await page.click('#chat .ui-action[data-action="evidence"]');
     await page.waitForFunction(()=>[...document.querySelectorAll("#chat .ui-replies button")].length>=2,null,{timeout:15000});
     await page.evaluate(()=>document.querySelector("#chat .ui-replies button").click());
@@ -134,7 +134,9 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.waitForTimeout(2500);const endTxt=await page.evaluate(()=>document.getElementById("chat").innerText);
     check("…skipping moves on to the end: their comments for the assessor, or ready if they're in",(await page.evaluate(()=>[...document.querySelectorAll("#chat .ui-replies button")].some(b=>b.textContent==="Add my comments")))||/You’re ready for your review/.test(endTxt),JSON.stringify(endBtns)+" "+(await page.evaluate(()=>document.getElementById("chat").innerText.slice(-400))));
     await page.evaluate(()=>[...document.querySelectorAll("#chat .ui-replies button")].find(b=>b.textContent==="Something else").click());
-    await page.waitForSelector('#chat .ui-actions .ui-action[data-action="epa"]',{timeout:15000});await page.click('#chat .ui-actions .ui-action[data-action="epa"]');
+    await page.click('#x');await page.waitForTimeout(400);await page.evaluate(()=>nav("teach"));await page.waitForSelector("#tg-epa",{timeout:10000});
+    if(process.env.EVIA_SHOTS)await page.screenshot({path:process.env.EVIA_SHOTS+"/teach-epa.png",fullPage:true});
+    await page.click("#tg-epa");
     await page.waitForFunction(()=>[...document.querySelectorAll("#chat .ui-replies button")].some(b=>/Discussion guide/.test(b.textContent)),null,{timeout:15000});
     check("EPA mocks darkens the chat and offers quick practice, a full mock, a full discussion and the guide",await page.evaluate(()=>{const t=[...document.querySelectorAll("#chat .ui-replies button")].map(b=>b.textContent);return document.body.classList.contains("evia-epa")&&["Quick practice","Full mock","Full discussion","Discussion guide"].every(x=>t.includes(x))}));
     await page.evaluate(()=>[...document.querySelectorAll("#chat .ui-replies button")].find(b=>b.textContent==="Discussion guide").click());
@@ -165,12 +167,19 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("Test me opens the test as an exam on its own screen",await page.evaluate(()=>/EPA quick quiz/.test(document.querySelector(".ex").textContent)&&!document.querySelector(".chat-sheet")));
     const exam=await page.evaluate(async()=>{
       const w=ms=>new Promise(r=>setTimeout(r,ms));document.querySelector("#ex-start").click();await w(60);
+      document.querySelector("#ex-flag").click();await w(30);const flagged=!!document.querySelector('.ex-n.flag[data-go="0"]');window.__exFlag=flagged;window.confirm=()=>true;
       let hint=false;
       for(let k=0;k<5;k++){document.querySelector(".ex-opt").click();await w(20);if(document.querySelector(".ex .correct,.ex .wrong,.ex-ex"))hint=true;document.querySelector("#ex-next").click();await w(40)}
       const before=JSON.parse(localStorage.getItem("evia7-test-results")||"[]").length;
       return {hint,results:!!document.querySelector(".ex-score")&&document.querySelectorAll(".ex-review li").length===5,saved:before>0};
     });
-    check("The exam gives no hints while answering, then shows the score and every answer",!exam.hint&&exam.results);
+    check("The exam gives no hints while answering, can flag questions, then shows the score and every answer",!exam.hint&&exam.results&&await page.evaluate(()=>window.__exFlag));
+    if(process.env.EVIA_SHOTS){const d=process.env.EVIA_SHOTS;await page.screenshot({path:d+"/exam-results.png"});
+      await page.evaluate(()=>{document.querySelector("#ex-done").click();window.eviaStartTest("epa",5,"EPA quick quiz")});await page.waitForSelector("#ex-start");await page.screenshot({path:d+"/exam-intro.png"});
+      await page.evaluate(()=>{document.querySelector("#ex-start").click()});await page.waitForTimeout(100);await page.evaluate(()=>{document.querySelectorAll(".ex-opt")[1].click();document.querySelector("#ex-next").click()});await page.waitForTimeout(100);
+      await page.evaluate(()=>document.querySelector("#ex-flag").click());await page.waitForTimeout(100);await page.screenshot({path:d+"/exam-question.png"});
+      await page.evaluate(()=>{window.confirm=()=>true;document.querySelector(".ex-x").click()});await page.waitForTimeout(300);await page.evaluate(()=>window.eviaStartTest("epa",5,"EPA quick quiz"));await page.waitForSelector("#ex-start");
+      await page.evaluate(async()=>{document.querySelector("#ex-start").click();await new Promise(r=>setTimeout(r,60));for(let k=0;k<5;k++){document.querySelector(".ex-opt").click();document.querySelector("#ex-next").click();await new Promise(r=>setTimeout(r,40))}})}
     check("The exam result is saved for the progress review",exam.saved);
     await page.evaluate(()=>document.querySelector("#ex-done").click());await page.waitForTimeout(300);
 

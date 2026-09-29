@@ -2493,3 +2493,65 @@ html body .sd-evia{transform:scale(3.3);animation-name:sdBreathe3}
 #modal-root .eg-sheet.eg-swap{animation:eg-swap .18s ease both!important}
 @keyframes eg-swap{from{opacity:.35}}
 @media(prefers-reduced-motion:reduce){#modal-root .eg-sheet.eg-swap{animation:none!important}}
+
+/* Tests: a serious exam paper, polished. Dark header with the time, a progress bar, numbered question squares
+   (flagged ones marked), the question on a white card, and a results ring (exam.js). */
+.ex{background:#f3f4f6;color:#0f172a}
+.ex-bar{background:#0f172a;color:#fff;border-bottom:0;padding:max(12px,env(safe-area-inset-top)) 16px 12px}
+.ex-x{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);color:#e2e8f0;border-radius:10px}
+.ex-title{display:flex;flex-direction:column;gap:2px;font-size:15px;font-weight:750;letter-spacing:-.01em;color:#fff;min-width:0}
+.ex-title small{font-size:12px;font-weight:600;color:#94a3b8}
+.ex-time{padding:6px 10px;border-radius:8px;background:rgba(255,255,255,.08);color:#e2e8f0;font-size:14px;font-weight:700;letter-spacing:.02em}
+.ex-prog{flex:none;height:4px;background:#1e293b}.ex-prog i{display:block;height:100%;background:var(--yellow,#e7b900);transition:width .25s ease}
+.ex-nav{background:#fff;border-bottom:1px solid #e5e7eb;padding:10px 16px;gap:6px}
+.ex-n{position:relative;width:36px;height:36px;border-radius:8px;border:1px solid #d1d5db;background:#fff;color:#475569;font-weight:700;font-variant-numeric:tabular-nums}
+.ex-n.done{background:#0f172a;border-color:#0f172a;color:#fff}
+.ex-n.now{border:2px solid #0f172a;color:#0f172a;box-shadow:0 0 0 3px rgba(15,23,42,.1)}
+.ex-n.done.now{color:#fff}
+.ex-n.flag::after{content:"";position:absolute;top:-4px;right:-4px;width:10px;height:10px;border-radius:50%;background:#f59e0b;box-shadow:0 0 0 2px #fff}
+.ex-body{padding:18px 16px 24px}
+.ex-card,.ex-paper{max-width:720px;margin:0 auto;background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:20px 18px;box-shadow:0 1px 2px rgba(15,23,42,.04),0 8px 24px rgba(15,23,42,.05)}
+.ex-qhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.ex-qn{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#64748b}
+.ex-flag{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;font-size:12.5px;font-weight:700;color:#475569;cursor:pointer}
+.ex-flag svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ex-flag.on{background:#fffbeb;border-color:#fcd34d;color:#92400e}.ex-flag.on svg{fill:#f59e0b;stroke:#b45309}
+.ex-q{font-size:19px;line-height:1.45;font-weight:700;letter-spacing:-.01em;color:#0f172a;margin:0 0 18px}
+.ex-opt{border-radius:12px;border:1.5px solid #e2e8f0;padding:14px;transition:border-color .12s ease,background .12s ease}
+.ex-opt:hover{border-color:#94a3b8}
+.ex-l{border-radius:8px;border:1.5px solid #cbd5e1;background:#f8fafc;color:#334155;font-weight:800}
+.ex-opt.on{border:1.5px solid #0f172a;padding:14px;background:#f8fafc;box-shadow:0 0 0 3px rgba(15,23,42,.08)}
+.ex-opt.on .ex-l{background:#0f172a;border-color:#0f172a;color:#fff}
+.ex-foot{background:#fff;border-top:1px solid #e5e7eb}
+.ex-btn{border-radius:12px;border:1.5px solid #d1d5db;font-weight:750}
+.ex-primary{background:#0f172a;border-color:#0f172a;color:#fff;box-shadow:0 6px 16px rgba(15,23,42,.18)}
+.ex-intro h1{margin:6px 0 16px;font-size:28px;letter-spacing:-.03em;font-weight:800}
+.ex-facts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 18px}
+.ex-facts span{display:flex;flex-direction:column;gap:2px;padding:12px;border-radius:10px;background:#f8fafc;border:1px solid #e5e7eb;font-size:12px;color:#64748b}
+.ex-facts b{font-size:18px;color:#0f172a;letter-spacing:-.02em}
+.ex-rules{padding-left:18px}
+.ex-score{max-width:720px;margin:0 auto;padding:24px 18px;border-radius:14px;background:#0f172a;border:0;color:#fff;align-items:center;gap:10px}
+.ex-score .ex-kicker{color:#94a3b8}
+.ex-ring{--p:0;width:132px;height:132px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--yellow,#e7b900) calc(var(--p)*1%),#1e293b 0);position:relative}
+.ex-ring::before{content:"";position:absolute;inset:11px;border-radius:50%;background:#0f172a}
+.ex-ring b{position:relative;font-size:34px;letter-spacing:-.03em;color:#fff}
+.ex-score-sub{font-size:14px;color:#cbd5e1}.ex-score-sub strong{color:#fff}
+.ex-revise,.ex-h,.ex-review{max-width:720px;margin-left:auto;margin-right:auto}
+.ex-revise{margin-top:14px;border-radius:12px}
+.ex-review li{background:#fff;border-radius:12px;border:1px solid #e5e7eb}
+.ex-review li.ok{border-left:4px solid #16a34a}.ex-review li.ok .ex-mark{color:#16a34a}
+@media(min-width:720px){.ex-body{padding:28px 24px}.ex-card,.ex-paper{padding:28px}}
+
+/* Teach me: EPA practice, a full-width dark tile under the subjects (tabs.js). */
+.tg-epa{display:flex;align-items:center;gap:14px;width:100%;margin-top:12px;padding:16px;border:0;border-radius:var(--pm-radius,22px);background:linear-gradient(135deg,#1f242c,#2f353f);color:#eef0f3;text-align:left;box-shadow:0 10px 26px rgba(16,24,40,.18);cursor:pointer;transition:transform .12s ease}
+.tg-epa:active{transform:scale(.98)}
+.tg-epa-ic{flex:0 0 auto;width:48px;height:48px;border-radius:14px;display:grid;place-items:center;background:rgba(255,255,255,.08);color:var(--yellow)}
+.tg-epa-ic svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tg-epa-copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.tg-epa-copy small{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#aab1bd}
+.tg-epa-copy strong{font-size:18px;letter-spacing:-.02em;color:#fff}
+.tg-epa-copy span{font-size:12.5px;line-height:1.35;color:#c9ced6}
+.tg-epa-score{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-end;gap:1px}
+.tg-epa-score b{font-size:20px;color:var(--yellow);letter-spacing:-.02em}.tg-epa-score small{font-size:11px;color:#aab1bd;white-space:nowrap}
+/* Evia's three actions: the third spans the row. */
+#chat .ui-actions .ui-action:nth-child(3):last-child{grid-column:1/-1}
