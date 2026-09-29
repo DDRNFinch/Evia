@@ -1023,6 +1023,68 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     }).catch(e=>({err:e.message}));
     check("Evia pulses from 7 days before the review while there's something to get ready, and not otherwise",rc.pulse&&rc.pulse.p5&&!rc.pulse.p10&&!rc.pulse.pNone,JSON.stringify(rc.pulse));
     check("Connected to a college, Evia's first message each day before the review is getting ready, and stops asking for comments once they're in",rc.before===true&&rc.after===false,JSON.stringify(rc));
+    // Course notifications (Web Push): a learner connected to their college turns them on from Evia's Today card; the
+    // phone's subscription goes to Nisia; a push from Nisia shows a notification; tapping one opens the right place.
+    {
+      const d8=process.env.EVIA_SHOTS||"",c8=await browser.newContext({...devices["Pixel 7"]}),p8=await c8.newPage(),e8=[],calls8=[];p8.on("pageerror",e=>e8.push(e.message));
+      await c8.grantPermissions(["notifications"],{origin:url.replace(/\/$/,"")});
+      const b64=o=>Buffer.from(JSON.stringify(o)).toString("base64url"),now=Math.floor(Date.now()/1000);
+      const tok=b64({alg:"HS256"})+"."+b64({sub:"u-learner",role:"authenticated",aal:"aal1",exp:now+3600})+".s";
+      await p8.route(/supabase\.co/,async r=>{
+        const q=r.request(),u=new URL(q.url());calls8.push({m:q.method(),p:u.pathname,s:u.search,body:q.postData()||""});
+        if(q.method()==="OPTIONS")return r.fulfill({status:200,headers:{"access-control-allow-origin":"*","access-control-allow-headers":"*","access-control-allow-methods":"*"}});
+        return r.fulfill({status:u.pathname.startsWith("/rest/v1/rpc/")?200:201,contentType:"application/json",headers:{"access-control-allow-origin":"*"},body:u.pathname.startsWith("/rest/v1/rpc/")?"[]":""});
+      });
+      await p8.goto(url+"manifest.json");
+      await p8.evaluate(([tok,now])=>{localStorage.clear();sessionStorage.setItem("evia7-install-later","1");["evia7-theme-picked","evia7-shape-picked"].forEach(k=>localStorage.setItem(k,"1"));
+        localStorage.setItem("evia7-onboarding",'{"stage":"done"}');localStorage.setItem("evia7-tips-seen",'["*"]');localStorage.setItem("evia7-home-tip",JSON.stringify({day:new Date().toDateString(),id:"x"}));
+        localStorage.setItem("evia7-profile",JSON.stringify({name:"Jo Bloggs",start:"2026-01-05",end:"2027-12-01"}));
+        localStorage.setItem("evia7-enrolment",JSON.stringify({course:"bricklayer",live:true,college:"Walsall College",learnerId:"L1",organisationId:"O1",enrolmentId:"E1",courseId:"C1",memberId:"M1",name:"Jo Bloggs",start:"2026-01-05",end:"2027-12-01",joinedAt:new Date().toISOString()}));
+        localStorage.setItem("evia7-nisia-auth",JSON.stringify({access_token:tok,token_type:"bearer",expires_in:3600,expires_at:now+3600,refresh_token:"r",user:{id:"u-learner",aud:"authenticated",role:"authenticated"}}));
+      },[tok,now]);
+      /* Headless Chromium has no push service and won't ask for permission: stand-ins, as a phone would give. */
+      await p8.addInitScript(()=>{
+        const fake={endpoint:"https://fcm.googleapis.com/fcm/send/test-endpoint",keys:{p256dh:"BPk",auth:"au"}};
+        const ls=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(_){}};
+        const mk=()=>({endpoint:fake.endpoint,toJSON:()=>fake,unsubscribe:async()=>{ls("__sub",null);return true}});
+        try{Object.defineProperty(Notification,"permission",{get:()=>ls("__perm")||"default",configurable:true});Notification.requestPermission=async()=>{ls("__perm","granted");return "granted"}}catch(_){}
+        if(window.PushManager){PushManager.prototype.getSubscription=async function(){return ls("__sub")?mk():null};PushManager.prototype.subscribe=async function(o){window.__pushKey=o&&o.applicationServerKey&&o.applicationServerKey.length;ls("__sub","1");return mk()}}
+      });
+      await p8.goto(url);await p8.waitForTimeout(2500);
+      await p8.evaluate(()=>{document.getElementById("app").classList.remove("welcome-app-hidden");const w=document.getElementById("welcome-screen");if(w)w.remove()});
+      const pv={};
+      pv.offFirst=await p8.evaluate(()=>window.eviaPush&&window.eviaPush.state());
+      await p8.evaluate(()=>window.chat());await p8.waitForTimeout(4500);
+      pv.todayAsks=await p8.evaluate(()=>!!document.querySelector("#chat #br-push"));
+      if(d8)await p8.locator("#chat .br-today").screenshot({path:d8+"/push-today.png"}).catch(()=>{});
+      await p8.click("#chat #br-push");await p8.waitForTimeout(3500);
+      const up=calls8.filter(x=>x.p==="/rest/v1/device_tokens"&&x.m==="POST").map(x=>JSON.parse(x.body)).pop();
+      pv.saved=!!up&&up.app==="evia"&&up.user_id==="u-learner"&&up.token===up.subscription.endpoint&&up.subscription.keys.auth==="au"&&await p8.evaluate(()=>window.__pushKey===65);
+      pv.on=await p8.evaluate(()=>window.eviaPush.state()==="on"&&!document.querySelector("#chat #br-push")&&/never between 9pm/.test(document.getElementById("chat").innerText));
+      /* A push from Nisia, delivered to the service worker the way Chrome's push service would. */
+      const cdp=await c8.newCDPSession(p8);const regs=[];cdp.on("ServiceWorker.workerRegistrationUpdated",e=>regs.push(...e.registrations));
+      await cdp.send("ServiceWorker.enable");await p8.waitForTimeout(800);
+      const reg=regs.find(r=>!r.isDeleted),worker=c8.serviceWorkers()[0];
+      /* (Headless Chromium can't display notifications, so the service worker's own call is caught instead.) */
+      if(worker)await worker.evaluate(()=>{self.__shown=[];self.registration.showNotification=async(title,o)=>{self.__shown.push(Object.assign({title},o))}});
+      if(reg)await cdp.send("ServiceWorker.deliverPushMessage",{origin:url.replace(/\/$/,""),registrationId:reg.registrationId,data:JSON.stringify({title:"Signed off: Mixing mortar",body:"Your assessor accepted it. Nice work.",tag:"signed-off",open:"feedback"})}).catch(e=>e8.push("cdp: "+e.message));
+      await p8.waitForTimeout(1500);
+      pv.shown=!!worker&&await worker.evaluate(()=>self.__shown.some(x=>x.title==="Signed off: Mixing mortar"&&x.body==="Your assessor accepted it. Nice work."&&x.tag==="signed-off"&&x.data&&x.data.open==="feedback"));
+      /* Tapped: Evia opens where it said (here, targets). */
+      await p8.evaluate(()=>{const c=document.querySelector(".chat-sheet .ui-close,#chat-close");if(window.eviaChatKit&&window.eviaChatKit.closeChat)window.eviaChatKit.closeChat()});await p8.waitForTimeout(600);
+      await p8.goto(url+"?open=targets");await p8.waitForTimeout(9000);
+      pv.opens=await p8.evaluate(()=>!!document.getElementById("chat")&&/target/i.test(document.getElementById("chat").innerText)&&!/open=/.test(location.search));
+      /* Profile: the switch, on; turning it off forgets the phone. */
+      await p8.evaluate(()=>{if(window.eviaChatKit)window.eviaChatKit.closeChat()});await p8.waitForTimeout(500);
+      await p8.evaluate(()=>{document.getElementById("app").classList.remove("welcome-app-hidden");const w=document.getElementById("welcome-screen");if(w)w.remove();window.eviaOpenProfile()});await p8.waitForTimeout(700);
+      pv.profile=await p8.evaluate(()=>{const b=document.getElementById("pf-push");return !!b&&b.checked});
+      if(d8)await p8.locator(".pf-group:has(#pf-push)").screenshot({path:d8+"/push-profile.png"}).catch(()=>{});
+      await p8.locator("#pf-push").evaluate(el=>{el.checked=false;el.dispatchEvent(new Event("change"))});await p8.waitForTimeout(1500);
+      pv.off=calls8.some(x=>x.p==="/rest/v1/device_tokens"&&x.m==="DELETE"&&/test-endpoint/.test(decodeURIComponent(x.s)))&&await p8.evaluate(()=>window.eviaPush.state()==="off");
+      pv.noErrors=!e8.length;
+      check("Course notifications: Evia offers them once, saves the phone to Nisia, shows Nisia's push, opens the right place when tapped, and turns off from the profile",Object.values(pv).every(Boolean)&&pv.offFirst==="off",JSON.stringify(pv)+" "+e8.join(" | "));
+      await c8.close();
+    }
     check("No script errors",!errors.length,errors.join(" | "));
   }catch(e){check("Test run finished",false,e.message)}
   await browser.close();server.close();
