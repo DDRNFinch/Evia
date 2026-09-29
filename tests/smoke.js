@@ -118,7 +118,8 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>window.chat());
     await page.waitForFunction(()=>{const c=document.getElementById("chat");return c&&!c.querySelector(".evia-thinking")},null,{timeout:15000});
     await page.waitForSelector("#chat .ui-action",{timeout:15000});
-    check("Evia opens with a catch-up and her three actions (EPA practice is in Teach me)",await page.evaluate(()=>{const t=[...document.querySelectorAll("#chat .ui-action")].map(b=>b.innerText.trim());return t.join().replace(/\d+$/,"").replace(/review\d+,/,"review,")==="Evidence check,Get ready for review,Show targets"&&/learning hours|of learning/i.test(document.getElementById("chat").innerText)&&!document.querySelector(".chat-sheet .ui-ask")}));
+    await page.waitForSelector("#chat .br-today",{timeout:15000});
+    check("Evia opens with Today (her picks for the day), four actions and the Ask Evia box (EPA practice is in Teach me)",await page.evaluate(()=>{const t=[...document.querySelectorAll("#chat .ui-action")].map(b=>b.innerText.trim());return t.join().replace(/\d+$/,"").replace(/review\d+,/,"review,")==="Evidence check,Get ready for review,Show targets,Calculators"&&/of learning this week/i.test(document.querySelector("#chat .br-today").innerText)&&!!document.querySelector("#chat .br-today .br-todo")&&!!document.querySelector(".chat-sheet .ui-ask input")}));
     await page.click('#chat .ui-action[data-action="evidence"]');
     await page.waitForFunction(()=>[...document.querySelectorAll("#chat .ui-replies button")].length>=2,null,{timeout:15000});
     await page.evaluate(()=>document.querySelector("#chat .ui-replies button").click());
@@ -158,6 +159,29 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("EPA mode ends when the chat closes",await page.evaluate(()=>!document.body.classList.contains("evia-epa")));
     await page.evaluate(()=>window.chat());await page.waitForSelector("#chat .ui-action",{timeout:15000});
     check("Targets are set from Evia's stats",await page.evaluate(()=>{window.eviaTargets.ensure();return window.eviaTargets.mine().length>=3}));
+    // Ask Evia: her calculators, glossary and lessons, worked out on the phone.
+    const calcs=await page.evaluate(()=>{const B=window.eviaBrain,C=B.calc;return {bricks:C.bricks({length:4,height:1.2}).big,cavity:C.bricks({length:4,height:1.2,type:"cavity"}).big,stairs:C.stairs({rise:2600}).big,
+      fall:C.fall({length:6,ratio:40}).big,sq:C.square({a:3,b:4}).big,sum:C.sum("4.5 x 3.2").big,mortar:C.mortar({bricks:500,ratio:4}).big,
+      bolster:(B.findTerm("what's a bolster for?")||[])[0],perp:(B.findTerm("what does perp mean")||[])[0],coshh:(B.findTerm("what is coshh")||[])[0],len:B.lengths("wall 4m by 1200mm").join()}});
+    check("Evia's calculators and glossary: bricks, cavity walls, stairs (Approved Document K), falls, 3-4-5, sums and mortar, and she knows her tools and terms",
+      calcs.bricks==="303 bricks"&&calcs.cavity==="303 bricks + 51 blocks"&&/^14 risers of 185\.7/.test(calcs.stairs)&&calcs.fall==="150 mm"&&calcs.sq==="5,000 mm"&&calcs.sum==="14.4"&&/bags of cement/.test(calcs.mortar)&&
+      calcs.bolster==="Bolster"&&calcs.perp==="Perpend"&&calcs.coshh==="COSHH"&&calcs.len==="4,1.2",JSON.stringify(calcs));
+    const ask=async(q,sel,n)=>{await page.fill(".chat-sheet .ui-ask input",q);await page.press(".chat-sheet .ui-ask input","Enter");await page.waitForFunction(([s,k])=>document.querySelectorAll("#chat "+s).length>=k,[sel,n],{timeout:15000})};
+    await ask("How many bricks for a wall 4m by 1.2m?",".br-calc",1);
+    const firstCalc=await page.evaluate(()=>document.querySelectorAll("#chat .br-calc")[0].innerText);
+    await ask("what about 6m?",".br-calc",2);
+    const followUp=await page.evaluate(()=>document.querySelectorAll("#chat .br-calc")[1].innerText);
+    await page.evaluate(()=>{const i=document.querySelectorAll("#chat .br-calc")[1].querySelector('[data-k="height"]');i.value="2";i.dispatchEvent(new Event("input"))});
+    const live=await page.evaluate(()=>document.querySelectorAll("#chat .br-calc")[1].querySelector(".br-big").textContent);
+    if(process.env.EVIA_SHOTS)await page.screenshot({path:process.env.EVIA_SHOTS+"/brain-calc.png"});
+    await ask("What's a bolster for?",".br-term",1);
+    const term=await page.evaluate(()=>document.querySelector("#chat .br-term").innerText);
+    if(process.env.EVIA_SHOTS)await page.screenshot({path:process.env.EVIA_SHOTS+"/brain-term.png"});
+    const code=await page.evaluate(()=>String(data().u[0][1][0]).split("|")[0]);
+    await ask("what's "+code,".br-card .br-pill",1);
+    const ksbTxt=await page.evaluate(()=>document.getElementById("chat").innerText);
+    check("Ask Evia answers typed questions: a brick count, a follow-up (what about 6 m?), live recalculation, a tool with its picture, and a KSB with where the learner is",
+      /303 bricks/.test(firstCalc)&&/454 bricks/.test(followUp)&&live==="756 bricks"&&/club hammer/i.test(term)&&new RegExp(code+" · ").test(ksbTxt)&&/(Signed off|In your evidence|No evidence yet)/.test(ksbTxt),JSON.stringify({firstCalc:firstCalc.slice(0,80),followUp:followUp.slice(0,80),live,term:term.slice(0,80),code,course:await page.evaluate(()=>course)}));
     await page.click('#x');await page.waitForTimeout(300);
     check("Profile button comes back after closing the chat",await page.evaluate(()=>getComputedStyle(document.getElementById("profile-btn")).display!=="none"));
 
