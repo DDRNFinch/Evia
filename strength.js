@@ -47,11 +47,6 @@
     why:'<svg viewBox="0 0 24 24"><path d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5h-7l-4.5 3.5v-3.5H5A1.5 1.5 0 0 1 3.5 15V7A1.5 1.5 0 0 1 5 5.5z"/><path d="M8 10h8M8 13h5"/></svg>',
     cam:'<svg viewBox="0 0 24 24"><path d="M4 8.5h3l1.6-2.5h6.8L17 8.5h3a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 20 19.5H4A1.5 1.5 0 0 1 2.5 18v-8A1.5 1.5 0 0 1 4 8.5z"/><circle cx="12" cy="13.8" r="3.3"/></svg>'
   };
-  /* Three little pictures of one job, start to finish: a wall going up course by course. */
-  const stage=n=>{let s='<svg viewBox="0 0 90 64" aria-hidden="true"><rect x="0" y="0" width="90" height="64" rx="8" class="sg-sky"/><rect x="0" y="52" width="90" height="12" class="sg-ground"/>';
-    for(let r=0;r<n;r++)for(let k=-1;k<5;k++){const x=12+k*14+(r%2?7:0),y=46-r*6;if(x<10||x+12>80)continue;s+='<rect x="'+x+'" y="'+y+'" width="12" height="5" rx="1" class="sg-brick"/>'}
-    if(n<6)s+='<path d="M10 '+(40-n*6)+'H80" class="sg-line"/><rect x="7" y="'+(37-n*6)+'" width="3" height="6" class="sg-pin"/><rect x="80" y="'+(37-n*6)+'" width="3" height="6" class="sg-pin"/>';
-    return s+'</svg>'};
   /* A worked example for the learner's trade. */
   const EXAMPLES={
     bricklayer:{job:"a cavity wall",weak:"I built a cavity wall today. It went well.",strong:"I set out the first course dry and used a gauge rod to keep the courses at 75 mm. I fitted wall ties every 450 mm and kept the cavity clean with a board. I checked it for level and plumb every few courses and wore my PPE throughout.",terms:["set out","gauge rod","wall ties","cavity","level","plumb","PPE"]},
@@ -64,21 +59,28 @@
   function guide(){
     const root=document.getElementById("modal-root"),ex=EXAMPLES[typeof course!=="undefined"?course:""]||EXAMPLES.bricklayer;
     const MINI='<span class="evia-mini"><span class="evia-face"><i></i><i></i></span></span>';
+    /* The course, a week at a time: whatever job comes up goes towards its unit, and units come round again. */
+    const WEEKS={
+      bricklayer:[["Cavity walling","Construct Cavity Walling"],["Mixing mortar","Mixing mortar"],["A repair","Repair brick walling"],["Back to cavity walling","Construct Cavity Walling"],["An opening","Cavity opening"],["Pointing","Jointing Styles"]],
+      site:[["Hanging doors","Internal and external doors"],["Skirting","Skirting boards and architrave"],["A stud wall","Timber/metal partition walls"],["More doors","Internal and external doors"],["Floor joists","Floor joists (and coverings)"],["Kitchen units","Wall and floor units"]],
+      joiner:[["A door frame","Door frames and linings"],["Joints","Basic woodworking joints"],["Mouldings","Timber mouldings"],["Another frame","Door frames and linings"],["A timber door","Timber doors"],["Ironmongery","Ironmongery"]]
+    };
+    const weeks=WEEKS[typeof course!=="undefined"?course:""]||WEEKS.bricklayer;
+    const PPE=["Hard hat","Hi-vis","Safety glasses","Gloves","Safety boots"];
     const slides=[
-      {title:"What your assessor looks for",say:"Every piece of evidence needs to show three things. Keep them in mind and the rest gets easy.",
-        body:'<div class="sg-three">'+[["you","You did it","Photos of you and your work, on your jobs."],["level","Done properly","The right steps, tools and standards."],["why","You know why","Your write-up explains how and why."]].map(([i,t,s])=>'<div class="sg-card"><span class="sg-ic">'+ICO[i]+'</span><b>'+t+'</b><span>'+s+'</span></div>').join("")+'</div>'},
-      {title:"Photos tell the story",say:"Take photos as you go, not just at the end. The start, the middle and the finished job, close up and further back.",
-        body:'<div class="sg-story">'+[[1,"Start"],[3,"Middle"],[6,"Finished"]].map(([n,t])=>'<figure>'+stage(n)+'<figcaption>'+t+'</figcaption></figure>').join('<i class="sg-arrow" aria-hidden="true"></i>')+'</div>'+
-          '<div class="sg-scale">'+[["weak","1 to 4 photos"],["good","5 to 9 photos"],["strong","10+ photos"]].map(([l,t])=>'<span>'+bars(l)+'<em>'+t+'</em></span>').join("")+'</div>'},
-      {title:"Write it like you’re explaining it",say:"Use the things to mention on each unit. Say what you did, in order, how, and why. Real details make it strong.",
+      {title:"Every job can count",say:"Whatever you’re doing at work, it can count towards one of your units. Gather any evidence you can, and explain it properly.",
+        body:'<div class="sg-three">'+[["cam","Photos of the job","From setting out to the finished job."],["why","Your explanation","What you did, how and why, in your own words."],["level","Your KSBs","I show you which ones the job covers, and help you write about each."]].map(([i,t,x])=>'<div class="sg-card"><span class="sg-ic">'+ICO[i]+'</span><b>'+t+'</b><span>'+x+'</span></div>').join("")+'</div>'},
+      {title:"Start, middle and end",say:"Take photos as the job goes: setting out, half way through, and the finished job. Wear your full PPE in every photo.",
+        body:'<div class="sg-photos">'+[["build-1","Setting out"],["build-2","Half way through"],["build-3","Finished"]].map(([f,t],i)=>'<figure><img src="guide-pics/'+f+'.jpg" alt="'+t+'" loading="lazy"><figcaption><b>'+(i+1)+'</b>'+t+'</figcaption></figure>').join("")+'</div>'+
+          '<div class="sg-ppe"><span class="sg-ppe-h">Full PPE, every photo</span>'+PPE.map(p=>'<span>'+p+'</span>').join("")+'</div>'},
+      {title:"Explain it properly",say:"Say what you did, in order, how you did it and why. Use the things to mention. If you want, I’ll take you through it KSB by KSB.",
         body:'<div class="sg-ex weak"><div class="sg-ex-h"><b>Not enough</b>'+bars("weak")+'</div><p>'+esc(ex.weak)+'</p></div>'+
           '<div class="sg-ex strong"><div class="sg-ex-h"><b>Much better</b>'+bars("strong")+'</div><p>'+marked(ex.strong,ex.terms)+'</p><small>The highlighted words are things to mention for '+esc(ex.job)+'.</small></div>'},
-      {title:"The strength bars",say:"Each unit has bars. They’re my rough guide to how your evidence is coming along, from your photos and your write-up together.",
-        body:'<div class="sg-levels">'+[["weak","Getting started","Only a few photos, or the write-up misses most of the things to mention."],["good","Good","5 or more photos, and the write-up covers some of the things to mention."],["strong","Strong","10 or more photos, and the write-up covers most of the things to mention."]].map(([l,t,s])=>'<div class="sg-level">'+bars(l)+'<span><b>'+t+'</b><span>'+s+'</span></span></div>').join("")+'</div>'+
-          '<p class="sg-note">Both need to be strong for three bars. Your assessor always makes the final decision.</p>'},
-      {title:"A little every week",say:"Add evidence while the job is fresh. Short, regular packs beat a rush before your review. Not sure where to start? Tap Let Evia guide you and I’ll ask the questions.",
-        body:'<div class="sg-weeks">'+["Wk 1","Wk 2","Wk 3","Wk 4","Wk 5","Wk 6"].map((w,i)=>'<span class="'+(i!==2?"on":"")+'"><i>'+(i!==2?ICO.cam:"")+'</i><em>'+w+'</em></span>').join("")+'</div>'+
-          '<div class="sg-tips"><span>Clear, close and well lit</span><span>Sizes, tools and PPE</span><span>What went well, and what you’d change</span></div>'}
+      {title:"The strength bars",say:"Each unit has bars. They’re my rough guide to how your evidence is coming along, from your photos and your explanation together.",
+        body:'<div class="sg-levels">'+[["weak","Getting started","A few photos, or the explanation misses most of the things to mention."],["good","Good","5 or more photos, and the explanation covers some of the things to mention."],["strong","Strong","10 or more photos, and the explanation covers most of the things to mention."]].map(([l,t,x])=>'<div class="sg-level">'+bars(l)+'<span><b>'+t+'</b><span>'+x+'</span></span></div>').join("")+'</div>'+
+          '<p class="sg-note">Your assessor always makes the final decision.</p>'},
+      {title:"Keep collecting as you go",say:"Across your course, gather evidence from the jobs you do each week. One week it’s one job, the next week something else, and units come round again. It all adds up.",
+        body:'<ol class="sg-course">'+weeks.map(([job,unit],i)=>'<li><span class="sg-wk">Week '+(i+1)+'</span><span class="sg-job"><b>'+esc(job)+'</b><em>'+esc(unit)+'</em></span>'+(weeks.findIndex(w=>w[1]===unit)<i?'<span class="sg-again">Again</span>':"")+'</li>').join("")+'</ol>'}
     ];
     let at=0;
     root.innerHTML='<div class="overlay sg-overlay"><section class="sg" role="dialog" aria-modal="true" aria-labelledby="st-title">'+

@@ -281,7 +281,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("The evidence pack shows no score, just a link to how to build a strong portfolio",stHow&&await page.evaluate(()=>!document.getElementById("st-meter")&&document.querySelectorAll(".eg-sheet .fr-mention .compact-prompts").length===1));
     await page.evaluate(()=>{const w=document.getElementById("write");w.value="";w.dispatchEvent(new Event("input"));nav("learning")});await page.waitForTimeout(600);
     await page.evaluate(()=>{window._camSupported=window.eviaCamera.supported;window.eviaCamera.supported=()=>false;document.getElementById("pv-guide").click()});await page.waitForTimeout(400);
-    const sg=await page.evaluate(async()=>{const out={five:document.querySelectorAll("[data-dot]").length===5,first:/assessor looks for/.test(document.getElementById("st-title").textContent)&&!!document.querySelector(".sg-say .evia-mini")};
+    const sg=await page.evaluate(async()=>{const out={five:document.querySelectorAll("[data-dot]").length===5,first:/Every job can count/.test(document.getElementById("st-title").textContent)&&!!document.querySelector(".sg-say .evia-mini")};
       const titles=[];for(let i=0;i<4;i++){document.getElementById("sg-next").click();await new Promise(r=>setTimeout(r,60));titles.push(document.getElementById("st-title").textContent)}
       out.bars=/strength bars/i.test(titles[2])&&document.querySelectorAll(".sg-level .unit-strength-bars").length===0;
       out.last=document.getElementById("sg-next").textContent==="Got it";return {out,titles}});
@@ -299,23 +299,25 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     // The first sheet has one full-width Get started; with no camera it goes straight to the questions.
     const oneStart=await page.evaluate(()=>{const b=[...document.querySelectorAll(".eg-sheet .eg-actions button")];return b.length===1&&b[0].textContent.trim()==="Get started"&&!!b[0].closest(".eg-wide")});
     await page.evaluate(()=>document.querySelector(".eg-sheet .eg-actions button").click());await page.waitForTimeout(300);
-    const q1=await page.evaluate(()=>document.querySelector(".eg-q").textContent+" "+[...document.querySelectorAll(".eg-pill")].map(b=>b.textContent).join(" · "));
-    const pick=async(k,text)=>{await page.evaluate(k=>document.querySelectorAll(".eg-pill")[k].click(),k);await page.waitForTimeout(250);
-      await page.evaluate(t=>{document.getElementById("eg-text").value=t;[...document.querySelectorAll(".eg-sheet button")].find(b=>/^Done$/.test(b.textContent)).click()},text);await page.waitForTimeout(250)};
+    const q1=await page.evaluate(()=>[...document.querySelectorAll(".eg-codes span")].map(x=>x.textContent).join("+")+" "+document.querySelector(".eg-q").textContent+" "+[...document.querySelectorAll(".eg-chip")].map(b=>b.textContent).join(" · "));
+    const oneBox=await page.evaluate(()=>!document.querySelector(".eg-pill")&&!!document.getElementById("eg-text"));
+    if(process.env.EVIA_SHOTS){await page.evaluate(()=>{const b=document.getElementById("eg-text");b.value="I set out the opening with the gauge rod and fitted the cavity closer, checking it was plumb.";b.dispatchEvent(new Event("input"))});await page.waitForTimeout(300);await page.screenshot({path:process.env.EVIA_SHOTS+"/eg-ask.png"});await page.evaluate(()=>{const b=document.getElementById("eg-text");b.value="";b.dispatchEvent(new Event("input"))})}
+    const pick=async(k,text)=>{await page.evaluate(t=>{const b=document.getElementById("eg-text");b.value=t;b.dispatchEvent(new Event("input"))},text);await page.waitForTimeout(150)};
     const btn=async re=>{await page.evaluate(src=>{const re=new RegExp(src);const b=[...document.querySelectorAll(".eg-sheet button")].find(b=>re.test(b.textContent.trim()));if(b)b.click()},re);await page.waitForTimeout(250)};
     await pick(0,"I fitted the cavity closer at the reveal.");
-    const ticked=await page.evaluate(()=>document.querySelectorAll(".eg-pill")[0].classList.contains("done"));
+    const sameSheet=await page.evaluate(()=>{window.__sheet=document.querySelector("#modal-root .eg-overlay");return !!window.__sheet});
     await btn("^(Next|Finish)$");
+    const ticked=sameSheet&&await page.evaluate(()=>document.querySelector("#modal-root .eg-overlay")===window.__sheet&&/2 OF/.test(document.querySelector(".eg-sheet .chat-kicker").textContent));
     await pick(0,"The ties go in at 450 centres.");
     // Stop half-way, come back: Evia picks up at the same question.
     await page.evaluate(()=>document.getElementById("eg-close").click());await page.waitForTimeout(400);
     await page.evaluate(()=>document.getElementById("eg-start").click());await page.waitForTimeout(300);
     const back=await page.evaluate(()=>/Welcome back/.test(document.querySelector(".eg-say").textContent));
     await btn("Carry on from there");
-    const at2=await page.evaluate(()=>/QUESTION 2 OF/.test(document.querySelector(".eg-sheet .chat-kicker").textContent)&&document.querySelectorAll(".eg-pill.done").length===1);
+    const at2=await page.evaluate(()=>/2 OF/.test(document.querySelector(".eg-sheet .chat-kicker").textContent)&&document.getElementById("eg-text").value==="The ties go in at 450 centres.");
     for(let i=0;i<12;i++){const more=await page.evaluate(()=>{const b=[...document.querySelectorAll(".eg-sheet button")].find(b=>/^(Next|Finish)$/.test(b.textContent.trim()));if(b){b.click();return true}return false});if(!more)break;await page.waitForTimeout(200)}
     await btn("Use this statement");await page.evaluate(()=>{window.eviaCamera.supported=window._camSupported});await page.waitForTimeout(500);
-    check("Evia guides a pack through the stages of the job with topic pills, then the answers become the statement",/step by step/i.test(q1)&&/cavity closure/i.test(q1)&&ticked&&await page.evaluate(()=>document.getElementById("write").value==="I fitted the cavity closer at the reveal.\n\nThe ties go in at 450 centres."));
+    check("Evia guides the write-up KSB by KSB (codes, her question, things to mention, one box each; the sheet stays put between them), then the answers become the statement",oneBox&&/^S\d/.test(q1)&&/How did you/.test(q1)&&ticked&&await page.evaluate(()=>document.getElementById("write").value==="I fitted the cavity closer at the reveal.\n\nThe ties go in at 450 centres."));
     check("Guided evidence carries on where the learner left off, and starts with one Get started button",back&&at2&&oneStart);
     await page.evaluate(()=>{const w=document.getElementById("write");w.value="";w.dispatchEvent(new Event("input"))});
 
@@ -693,8 +695,8 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       await p2.click("#eg-start");await p2.waitForTimeout(700);
       ob.realGuide=await p2.evaluate(()=>/GUIDED EVIDENCE/.test(document.querySelector("#modal-root .eg-sheet").textContent)&&!document.body.classList.contains("ob-lock"));
       await eg('[data-eg="0"]',1000);await eg('[data-eg="0"]');
-      await eg('[data-topic="0"]');await p2.fill("#eg-text","My hard hat protects my head from falling objects.");await eg('[data-eg="0"]');await eg('[data-eg="0"]');
-      await eg('[data-topic="1"]');await p2.fill("#eg-text","I check it for cracks every morning.");await eg('[data-eg="0"]');await eg('[data-eg="0"]');
+      await p2.fill("#eg-text","My hard hat protects my head from falling objects.");await eg('[data-eg="0"]');
+      await p2.fill("#eg-text","I check it for cracks every morning.");await eg('[data-eg="0"]');
       await eg('[data-eg="0"]',1200);
       ob.inProgress=await p2.evaluate(()=>document.querySelectorAll("#evidence-photos img").length===3&&document.querySelector(".evia-guide-target").id==="ob-ppe-save");
       await p2.click("#ob-ppe-save");await p2.waitForTimeout(3000);
