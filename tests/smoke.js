@@ -764,6 +764,10 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
         if(q.method()==="GET"&&/\/storage\/v1\/object\/.*observation\.pdf$/.test(u.pathname))return r.fulfill({status:200,contentType:"application/pdf",headers:{"access-control-allow-origin":"*"},body:"%PDF-1.4 observation"});
         if(u.pathname==="/rest/v1/targets"&&q.method()==="GET")return json([{id:"T1",review_id:"RV1",title:"Log 36 learning hours",description:"Log at least 36 hours in the next 6 weeks in Evia.",due_date:"2026-11-10",measure:{kind:"otj",target:36,baseline:0},created_at:"2026-09-28T10:00:00Z"}]);
         if(u.pathname==="/rest/v1/rpc/nisia_my_feedback"){const ev=calls.filter(x=>x.p==="/rest/v1/evidence"&&x.m==="POST").map(x=>JSON.parse(x.body)).pop();return json(ev?[{client_reference:ev.client_reference,unit:ev.title,decision:"accepted",feedback:"Well done Jo. Next time: more photos.",ksbs:["S1","K2"],assessed_at:"2026-09-28T12:00:00Z",assessor:"Mark Ellis"}]:[])}
+        if(u.pathname==="/rest/v1/rpc/nisia_game_score")return json(7);
+        if(u.pathname==="/rest/v1/rpc/nisia_leaderboard")return json({month:"2026-09-01",players:3,top:[{place:1,name:"Kai P",score:14,me:false},{place:2,name:"Joanne B",score:7,me:true},{place:3,name:"Ali R",score:5,me:false}],me:{place:2,score:7}});
+        if(u.pathname==="/rest/v1/rpc/nisia_claim_prizes"){calls.prizeAsks=(calls.prizeAsks||0)+1;return json(calls.prizeAsks===1?[{game:"showdown",month:"2026-08-01",place:1,coins:100}]:[])}
+        if(u.pathname==="/rest/v1/rpc/nisia_game_leave")return json(null);
         if(u.pathname==="/rest/v1/rpc/nisia_my_details")return json({name:"Joanne Bloggs",college:"Walsall College",start:"2026-09-01",end:"2028-08-31",assessor:"Mark Ellis",reviewDue:"2026-11-24",lastReview:null,safeguarding:{name:"Sam Lead",phone:"01922 000000",email:""}});
         if(u.pathname.startsWith("/rest/v1/"))return r.fulfill({status:201,headers:{"access-control-allow-origin":"*"},body:""});
         return json({},404);
@@ -804,6 +808,19 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
         return !!f&&f.decision==="accepted"&&f.by==="Mark Ellis"&&f.ksbs.length===2&&!f.seen&&window.eviaFeedback.unseen().length===1&&n.some(x=>/^fb-/.test(x.id)&&/Mark signed off/.test(x.text))});
       lv.onlySignedCounts=await p6.evaluate(()=>{const a=window.eviaStats.compute().a,m=window.eviaMoreRequired();return a.signoff&&a.evidenced.has("K2")&&a.evidenced.has("S1")&&a.met===a.evidenced.size&&m.length>0&&!m.some(x=>x.code==="K2")&&window.eviaKsbAims.list().includes(m[0].code)});
       lv.moreRequiredShown=await p6.evaluate(()=>{const e=window.eviaData.list("evidence").pop();return /More required/.test(window.eviaFeedbackHtml(window.eviaFeedback.forEvidence(e.id),{k:e.ksbs}))});
+      /* Leaderboards: join with a name, scores go to Nisia with it, the board shows where they are, and last month's
+         prize is paid once and celebrated. */
+      await p6.evaluate(()=>{document.getElementById("modal-root").innerHTML="";window.eviaLeaderboard.open("showdown")});await p6.waitForTimeout(700);
+      lv.lbJoinOffered=await p6.evaluate(()=>!!document.querySelector("#lb-join")&&document.getElementById("lb-name").value==="Joanne B"&&/Only the name you choose/.test(document.querySelector(".lb-join").textContent));
+      await p6.evaluate(()=>document.getElementById("lb-join").click());await p6.waitForTimeout(700);
+      lv.lbBoard=await p6.evaluate(()=>document.querySelectorAll(".lb-list li").length===3&&/Joanne B/.test(document.querySelector(".lb-list li.me").textContent)&&!!document.querySelector(".lb-medal.m1")&&/as Joanne B/.test(document.querySelector(".lb-joined").textContent));
+      const lbBefore=calls.length;
+      await p6.evaluate(()=>{window.eviaLeaderboard.submit("showdown",7);window.eviaLeaderboard.submit("brickle",1);window.eviaLeaderboard.submit("brickle",1)});await p6.waitForTimeout(900);
+      const lbCalls=calls.slice(lbBefore).filter(x=>x.p==="/rest/v1/rpc/nisia_game_score").map(x=>JSON.parse(x.body));
+      lv.lbScores=lbCalls.some(b=>b.p_game==="showdown"&&b.p_score===7&&b.p_mode==="max"&&b.p_name==="Joanne B"&&b.p_enrolment==="E1")&&lbCalls.filter(b=>b.p_game==="brickle").length===1;
+      const coinsBefore=await p6.evaluate(()=>window.eviaRewards.balance());
+      await p6.evaluate(async()=>{document.getElementById("modal-root").innerHTML="";await window.eviaNisia.sync();await window.eviaNisia.sync()});await p6.waitForTimeout(500);
+      lv.lbPrize=await p6.evaluate(b=>window.eviaRewards.balance()===b+100&&window.eviaLeaderboard.unseenWins().length===1&&window.eviaStats.nudges(window.eviaStats.compute()).some(n=>/^lb-/.test(n.id)&&/1st/.test(n.text)&&/\+100 coins/.test(n.text)),coinsBefore);
       /* The four ways in: catch up shows once the assessor wants more; a voice note is kept with what Evia wrote down, and goes to Nisia. */
       await p6.evaluate(()=>{document.getElementById("modal-root").innerHTML="";window.openUnit(0)});await p6.waitForTimeout(700);
       lv.fourRoutes=await p6.evaluate(()=>["cu-start","eg-start","fr-start","rec-start"].every(id=>document.getElementById(id))&&!!document.querySelector("#cu-start .ra-catch")&&!!document.querySelector("#eg-start .ra-guide")&&!!document.querySelector("#fr-start .ra-free")&&!!document.querySelector("#rec-start .ra-record")&&
@@ -828,6 +845,8 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
         await p6.evaluate(()=>{document.getElementById("modal-root").innerHTML="";document.querySelectorAll(".overlay,.pv-sheet").forEach(x=>x.remove());nav("teach")});await p6.waitForTimeout(900);
         await p6.locator(".tg-grid").screenshot({path:d+"/teach-tiles.png"}).catch(e=>console.log(e.message));
         await p6.evaluate(()=>window.openUnit(0));await p6.waitForTimeout(900);
+        await p6.evaluate(()=>window.eviaLeaderboard.open("showdown"));await p6.waitForTimeout(900);await p6.screenshot({path:d+"/lb-sheet.png"});
+        await p6.evaluate(()=>{document.getElementById("modal-root").innerHTML="";window.openUnit(0)});await p6.waitForTimeout(700);
         await p6.screenshot({path:d+"/unit-more.png",fullPage:true});
         for(const t of [0,1,2,3]){await p6.locator(".ev-modes").screenshot({path:d+"/modes-"+t+".png"}).catch(()=>{});await p6.waitForTimeout(650)}}
       lv.noErrors=!e6.length;
