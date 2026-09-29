@@ -112,7 +112,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("Check my writing fixes spelling, capitals and punctuation",await page.inputValue("#write")==="I laid the mortar on the DPC and checked it was plumb.");
 
     await page.evaluate(()=>window.eviaOpenSendToPortfolio(data().u[2][0]));await page.waitForTimeout(3500);
-    check("Send to e-portfolio shows a PDF preview, Save PDF and the zip",await page.evaluate(()=>!!document.getElementById("eport-preview")&&!!document.getElementById("eport-save")&&/1 photo, just in case/.test(document.getElementById("eport-zip").innerText)));
+    check("Send to e-portfolio shows a preview, everything as a zip (the PDF and photos), and just the PDF",await page.evaluate(()=>!!document.getElementById("eport-preview")&&!!document.getElementById("eport-zip")&&!!document.getElementById("eport-pdf-only")&&/the PDF and 1 photo/.test(document.querySelector(".eport-status").innerText)));
 
     await page.evaluate(()=>nav("home"));await page.waitForTimeout(450);
     await page.evaluate(()=>window.chat());
@@ -836,6 +836,13 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       lv.recordingSaved=await p6.evaluate(()=>{const e=window.eviaData.list("evidence").pop();return e.media.length===1&&e.media[0].kind==="audio"&&/gauging box/.test(e.transcript)&&!e.text});
       await p6.evaluate(()=>window.eviaNisia.sync());await p6.waitForTimeout(700);
       lv.recordingSynced=calls.slice(before).some(x=>x.p==="/rest/v1/evidence"&&/"evidence_type":"audio"/.test(x.body)&&/gauging box/.test(x.body))&&calls.slice(before).some(x=>x.p.startsWith("/storage/v1/object/evidence/O1/")&&/media/.test(x.p));
+      /* Signed-off evidence turns green in its tile (no big assessor box), and the download takes the recording. */
+      await p6.evaluate(()=>{document.getElementById("modal-root").innerHTML="";window.openUnit(0)});await p6.waitForTimeout(700);
+      lv.tilesColoured=await p6.evaluate(()=>!document.querySelector(".ev-unit-fb")&&!!document.querySelector(".ev-tile.ev-signed"));
+      await p6.evaluate(()=>{const e=window.eviaData.list("evidence").find(x=>x.media&&x.media.length);window.eviaOpenSendToPortfolio(e.unit,e.id)});
+      await p6.waitForFunction(()=>{const x=document.querySelector(".eport-status");return x&&/Everything|couldn/.test(x.innerText)||document.querySelector("#eport-files .card p")&&!document.querySelector(".eport-sheet.is-loading")},null,{timeout:20000}).catch(()=>{});
+      if(process.env.EVIA_SHOTS)await p6.screenshot({path:process.env.EVIA_SHOTS+"/eport.png",fullPage:true});
+      lv.zipHasRecording=await p6.evaluate(()=>!!document.querySelector(".eport-status")&&/1 recording/.test(document.querySelector(".eport-status").innerText)&&/what was said/.test(document.querySelector(".eport-status").innerText)&&!!document.getElementById("eport-zip"));
       if(process.env.EVIA_SHOTS){const d=process.env.EVIA_SHOTS;
         await p6.evaluate(()=>{window.eviaKsbAims.set("B3",true);nav("progress")});await p6.waitForTimeout(900);
         await p6.evaluate(()=>{document.querySelectorAll("[data-group]").forEach(b=>{if(b.getAttribute("aria-expanded")!=="true")b.click()})});await p6.waitForTimeout(500);
