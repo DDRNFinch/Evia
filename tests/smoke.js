@@ -516,7 +516,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       if(keep)localStorage.setItem("evia7-rewards",keep);else localStorage.removeItem("evia7-rewards");
       return out;
     });
-    check("Teach me card shows medals (no XP or levels); the camera reminds learners not to photograph people. Mini games: locked until bought in Rewards, then Brickle, the crossword and Flappy Evia play from Teach me (Site Run and Site Quest are parked) and pay capped coins",Object.values(gm).every(Boolean),JSON.stringify(gm));
+    check("Teach me card shows medals (no XP or levels); the camera reminds learners not to photograph people. Mini games: locked until bought in Rewards, then T.R.A.D.E, the crossword and Flappy Evia play from Teach me (Site Run and Site Quest are parked) and pay capped coins",Object.values(gm).every(Boolean),JSON.stringify(gm));
     /* Site Showdown: right moves beat enemies, wrong ones cost a heart and stay crossed out, a boss every 5 wins with
        1 step, then 2, and three wrong moves end the run with the best score kept. */
     const sd=await page.evaluate(async()=>{
