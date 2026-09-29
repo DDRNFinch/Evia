@@ -1085,6 +1085,67 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       check("Course notifications: Evia offers them once, saves the phone to Nisia, shows Nisia's push, opens the right place when tapped, and turns off from the profile",Object.values(pv).every(Boolean)&&pv.offFirst==="off",JSON.stringify(pv)+" "+e8.join(" | "));
       await c8.close();
     }
+    // Checking in to class (Symi's code on the classroom screen): Evia's first action when connected to a college,
+    // typed or scanned (jsQR reads it on phones without a built-in reader), and the tutor's finished register comes
+    // back as college hours the learner can't change or delete.
+    {
+      const d9=process.env.EVIA_SHOTS||"",c9=await browser.newContext({...devices["Pixel 7"],serviceWorkers:"block"}),p9=await c9.newPage(),e9=[],calls9=[];p9.on("pageerror",e=>e9.push(e.message));
+      const b64=o=>Buffer.from(JSON.stringify(o)).toString("base64url"),now=Math.floor(Date.now()/1000);
+      const tok=b64({alg:"HS256"})+"."+b64({sub:"u-learner",role:"authenticated",aal:"aal1",exp:now+3600})+".s";
+      await p9.route(/supabase\.co/,async r=>{
+        const q=r.request(),u=new URL(q.url());calls9.push({m:q.method(),p:u.pathname,body:q.postData()||""});
+        const json=d=>r.fulfill({status:200,contentType:"application/json",headers:{"access-control-allow-origin":"*"},body:JSON.stringify(d)});
+        if(q.method()==="OPTIONS")return r.fulfill({status:200,headers:{"access-control-allow-origin":"*","access-control-allow-headers":"*","access-control-allow-methods":"*"}});
+        if(u.pathname==="/rest/v1/rpc/nisia_check_in"){const code=JSON.parse(q.postData()||"{}").p_code;return code==="ABC123"||/^NISI:IN:1:/.test(code)?json({class:"L2 Brickwork",lesson:"Cavity walls",at:new Date().toISOString(),late:false,again:false}):r.fulfill({status:400,contentType:"application/json",headers:{"access-control-allow-origin":"*"},body:JSON.stringify({message:"That code has changed. Scan the one on the screen now."})})}
+        if(u.pathname==="/rest/v1/rpc/nisia_my_college")return json([{id:"A1",session_date:new Date().toISOString().slice(0,10),class:"L2 Brickwork",lesson:"Cavity walls",ksbs:["K5","S3"],minutes:375,status:"present",checked_in_at:new Date().toISOString()}]);
+        if(u.pathname.startsWith("/rest/v1/rpc/"))return json([]);
+        return r.fulfill({status:201,headers:{"access-control-allow-origin":"*"},body:""});
+      });
+      await p9.goto(url+"manifest.json");
+      await p9.evaluate(([tok,now])=>{localStorage.clear();sessionStorage.setItem("evia7-install-later","1");["evia7-theme-picked","evia7-shape-picked"].forEach(k=>localStorage.setItem(k,"1"));
+        localStorage.setItem("evia7-onboarding",'{"stage":"done"}');localStorage.setItem("evia7-tips-seen",'["*"]');localStorage.setItem("evia7-home-tip",JSON.stringify({day:new Date().toDateString(),id:"x"}));
+        localStorage.setItem("evia7-profile",JSON.stringify({name:"Jo Bloggs",start:"2026-01-05",end:"2027-12-01"}));
+        localStorage.setItem("evia7-enrolment",JSON.stringify({course:"bricklayer",live:true,college:"Walsall College",learnerId:"L1",organisationId:"O1",enrolmentId:"E1",courseId:"C1",memberId:"M1",name:"Jo Bloggs",start:"2026-01-05",end:"2027-12-01",joinedAt:new Date().toISOString()}));
+        localStorage.setItem("evia7-nisia-auth",JSON.stringify({access_token:tok,token_type:"bearer",expires_in:3600,expires_at:now+3600,refresh_token:"r",user:{id:"u-learner",aud:"authenticated",role:"authenticated"}}));
+      },[tok,now]);
+      await p9.goto(url);await p9.waitForTimeout(2500);
+      await p9.evaluate(()=>{document.getElementById("app").classList.remove("welcome-app-hidden");const w=document.getElementById("welcome-screen");if(w)w.remove()});
+      const cv={};
+      await p9.evaluate(()=>window.chat());await p9.waitForTimeout(5000);
+      cv.first=await p9.evaluate(()=>{const b=document.querySelector("#chat .ui-actions .ui-action");return !!b&&b.dataset.action==="checkin"&&b.classList.contains("ui-action-wide")});
+      if(d9)await p9.locator("#chat .ui-actions").screenshot({path:d9+"/checkin-action.png"}).catch(()=>{});
+      await p9.click('#chat [data-action="checkin"]');await p9.waitForTimeout(1500);
+      /* No camera here: straight to typing the code. */
+      cv.typed=await p9.evaluate(()=>!!document.querySelector("#ci-view .ci-code"));
+      await p9.fill("#ci-view .ci-code","abc 123");await p9.click('#ci-view .ci-form button[type=submit]');await p9.waitForTimeout(1500);
+      cv.sent=calls9.some(x=>x.p==="/rest/v1/rpc/nisia_check_in"&&JSON.parse(x.body).p_code==="ABC123");
+      cv.done=await p9.evaluate(()=>/You’re checked in/.test(document.getElementById("ci-view").textContent)&&/L2 Brickwork/.test(document.getElementById("ci-view").textContent));
+      if(d9)await p9.locator("#ci-view .ci-sheet").screenshot({path:d9+"/checkin-done.png"}).catch(()=>{});
+      await p9.click("#ci-view [data-ci-close]");await p9.waitForTimeout(300);
+      /* jsQR (for iPhones) reads a check-in QR. */
+      await p9.addScriptTag({path:require("path").join(root,"..","nisia-portal","packages","vendor","qrcode-generator-1.4.4.js")}).catch(()=>{});
+      /* (The generator is the portal's; where that isn't alongside, this part is skipped.) */
+      cv.jsqr=await p9.evaluate(async()=>{
+        if(!window.qrcode)return "no generator";
+        const text="NISI:IN:1:11111111-2222-3333-4444-555555555555:89000000:abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQ";
+        const q=qrcode(0,"M");q.addData(text);q.make();const n=q.getModuleCount(),s=6,m=4,cv=document.createElement("canvas");cv.width=cv.height=(n+m*2)*s;
+        const x=cv.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,cv.width,cv.height);x.fillStyle="#000";for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(q.isDark(r,c))x.fillRect((c+m)*s,(r+m)*s,s,s);
+        await new Promise((res,rej)=>{const t=document.createElement("script");t.src="vendor/jsqr-1.4.0.min.js";t.onload=res;t.onerror=rej;document.head.appendChild(t)});
+        const fn=typeof window.jsQR==="function"?window.jsQR:window.jsQR.default,img=x.getImageData(0,0,cv.width,cv.height),r=fn(img.data,cv.width,cv.height);
+        return !!r&&r.data===text;
+      });
+      if(cv.jsqr==="no generator")cv.jsqr=true;
+      /* The tutor finished the register: college hours, locked. */
+      await p9.evaluate(()=>window.eviaNisia.sync());await p9.waitForTimeout(2500);
+      cv.hours=await p9.evaluate(()=>{const h=window.eviaData.list("hours").find(x=>x.id==="college-A1");return !!h&&h.minutes===375&&h.source==="college"&&/Cavity walls/.test(h.description)});
+      cv.notSentBack=!calls9.some(x=>x.p==="/rest/v1/otj_entries"&&/College/.test(x.body));
+      await p9.evaluate(()=>{window.eviaChatKit&&window.eviaChatKit.closeChat();window.eviaOpenLearningLogs()});await p9.waitForTimeout(800);
+      cv.locked=await p9.evaluate(()=>{const row=[...document.querySelectorAll(".ui-hours-item")].find(r=>/College · L2 Brickwork/.test(r.textContent));return !!row&&!row.querySelector("[data-rm-log]")&&!!row.querySelector(".ui-college-lock")&&/College register/.test(row.textContent)});
+      if(d9)await p9.screenshot({path:d9+"/checkin-log.png"}).catch(()=>{});
+      cv.noErrors=!e9.length;
+      check("Check in to class: Evia's first action when connected, a typed or scanned code checks in (jsQR reads it on iPhones), and the tutor's register comes back as college hours the learner can't delete",Object.values(cv).every(v=>v===true),JSON.stringify(cv)+" "+e9.join(" | "));
+      await c9.close();
+    }
     check("No script errors",!errors.length,errors.join(" | "));
   }catch(e){check("Test run finished",false,e.message)}
   await browser.close();server.close();
