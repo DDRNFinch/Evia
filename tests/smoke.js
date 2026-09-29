@@ -823,6 +823,9 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       lv.lbPrize=await p6.evaluate(b=>window.eviaRewards.balance()===b+100&&window.eviaLeaderboard.unseenWins().length===1&&window.eviaStats.nudges(window.eviaStats.compute()).some(n=>/^lb-/.test(n.id)&&/1st/.test(n.text)&&/\+100 coins/.test(n.text)),coinsBefore);
       /* The four ways in: catch up shows once the assessor wants more; a voice note is kept with what Evia wrote down, and goes to Nisia. */
       await p6.evaluate(()=>{document.getElementById("modal-root").innerHTML="";window.openUnit(0)});await p6.waitForTimeout(700);
+      lv.noRecordings=await p6.evaluate(()=>!document.getElementById("rec-start")&&!!document.getElementById("cu-start")&&!!document.getElementById("eg-start")&&!!document.getElementById("fr-start"));
+      /* Recordings are switched off for now (storage); the rest of this switches them on to keep the code working for later. */
+      await p6.evaluate(()=>{window.eviaRecordings=true;document.getElementById("modal-root").innerHTML="";window.openUnit(0)});await p6.waitForTimeout(700);
       lv.fourRoutes=await p6.evaluate(()=>["cu-start","eg-start","fr-start","rec-start"].every(id=>document.getElementById(id))&&!!document.querySelector("#cu-start .ra-catch")&&!!document.querySelector("#eg-start .ra-guide")&&!!document.querySelector("#fr-start .ra-free")&&!!document.querySelector("#rec-start .ra-record")&&
         new Set(["cu-start","eg-start","fr-start","rec-start"].map(id=>Math.round(document.getElementById(id).getBoundingClientRect().height))).size===1);
       await p6.evaluate(()=>document.getElementById("cu-start").click());await p6.waitForTimeout(400);
