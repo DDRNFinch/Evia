@@ -757,6 +757,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
         shownWhere:!!document.querySelector("[data-supporting-evidence].evia-guide-target")}}));
       let steps=0;
       for(let i=0;i<16;i++){
+        if(process.env.EVIA_SHOTS&&[0,2,5].includes(i))await p2.screenshot({path:process.env.EVIA_SHOTS+"/tour-"+i+".png"}).catch(()=>{});
         const st=await p2.evaluate(()=>{const c=document.querySelector(".ob-card");if(document.querySelector(".profile-sheet.ob-profile"))return "profile";if(!c)return "none";const n=c.querySelector(".ob-next");if(n){n.click();return "next"}const t=document.querySelector(".evia-guide-target");if(t){t.click();return "tap"}return "stuck"});
         if(st==="profile"||st==="none"||st==="stuck")break;steps++;await p2.waitForTimeout(1200);
       }
