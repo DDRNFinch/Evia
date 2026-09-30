@@ -1208,6 +1208,33 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       check("…no script errors",!eR.length,eR.join(" | "));
       await cR.close();
     }
+    // Anonymous usage counts: features are counted, the profile switch turns them off (and clears them), and a copy on localhost never sends.
+    {
+      const cU=await browser.newContext({...devices["Pixel 7"]}),pU=await cU.newPage(),eU=[],sent=[];pU.on("pageerror",e=>eU.push(e.message));
+      await pU.route(/supabase\.co/,r=>{sent.push(r.request().url());r.fulfill({status:204,body:""})});
+      await pU.goto(url+"manifest.json");
+      await pU.evaluate(()=>{localStorage.clear();sessionStorage.setItem("evia7-install-later","1");["evia7-theme-picked","evia7-shape-picked"].forEach(k=>localStorage.setItem(k,"1"));
+        localStorage.setItem("evia7-onboarding",'{"stage":"done"}');localStorage.setItem("evia7-tips-seen",'["*"]');
+        localStorage.setItem("evia7-profile",JSON.stringify({name:"Sam Taylor",start:"2024-11-01",end:"2026-12-01"}));
+        localStorage.setItem("evia7-usage",JSON.stringify({days:{"2020-01-01":{"chat.open":2}}}))});
+      await pU.goto(url+"?course=bricklayer");await pU.waitForTimeout(4500);
+      await pU.evaluate(()=>{document.getElementById("app").classList.remove("welcome-app-hidden");const w=document.getElementById("welcome-screen");if(w)w.remove();
+        window.nav("course");window.nav("progress");window.eviaOpenProfile()});
+      await pU.waitForSelector("#usage-share");await pU.waitForTimeout(1200);
+      const u={};
+      const st=()=>pU.evaluate(()=>JSON.parse(localStorage.getItem("evia7-usage")||"{}"));
+      let s1=await st();const today=Object.keys(s1.days||{}).find(d=>d>"2020-01-01")||"",c=(s1.days||{})[today]||{};
+      u.counted=c["screen.course"]>=1&&c["screen.progress"]>=1&&c["profile.open"]>=1;
+      u.switchOn=await pU.evaluate(()=>document.getElementById("usage-share").checked);
+      await pU.evaluate(()=>window.eviaUsage.send());await pU.waitForTimeout(500);
+      u.notFromLocalhost=!sent.some(x=>/nisia_usage_ping/.test(x));
+      await pU.evaluate(()=>{const b=document.getElementById("usage-share");b.checked=false;b.dispatchEvent(new Event("change"))});
+      await pU.evaluate(()=>{window.eviaUsage.hit("chat.open")});await pU.waitForTimeout(1200);
+      u.off=await pU.evaluate(()=>window.eviaUsage.off()&&!localStorage.getItem("evia7-usage"));
+      u.noErrors=!eU.length;
+      check("Anonymous usage: features are counted by day, the profile switch turns it off and clears the counts, and a copy on this computer never sends",Object.values(u).every(v=>v===true),JSON.stringify(u)+" "+JSON.stringify(s1)+" "+eU.join(" | "));
+      await cU.close();
+    }
     check("No script errors",!errors.length,errors.join(" | "));
   }catch(e){check("Test run finished",false,e.message)}
   await browser.close();server.close();
