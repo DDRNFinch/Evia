@@ -1165,6 +1165,33 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       check("Check in to class: Evia's first action when connected, a typed or scanned code checks in (jsQR reads it on iPhones), and the tutor's register comes back as college hours the learner can't delete",Object.values(cv).every(v=>v===true),JSON.stringify(cv)+" "+e9.join(" | "));
       await c9.close();
     }
+    // Remove all data from this phone: Evia's data goes, the other Nisia apps' (same website) stays, Evia starts again.
+    {
+      const cR=await browser.newContext({...devices["Pixel 7"]}),pR=await cR.newPage(),eR=[];pR.on("pageerror",e=>eR.push(e.message));
+      await pR.goto(url+"manifest.json");
+      await pR.evaluate(()=>{localStorage.clear();sessionStorage.setItem("evia7-install-later","1");["evia7-theme-picked","evia7-shape-picked"].forEach(k=>localStorage.setItem(k,"1"));
+        localStorage.setItem("evia7-onboarding",'{"stage":"done"}');localStorage.setItem("evia7-tips-seen",'["*"]');localStorage.setItem("milos-auth","keep-me");
+        localStorage.setItem("evia7-profile",JSON.stringify({name:"Sam Taylor",start:"2024-11-01",end:"2026-12-01"}))});
+      await pR.goto(url+"?course=bricklayer");await pR.waitForTimeout(3000);
+      await pR.evaluate(()=>{document.getElementById("app").classList.remove("welcome-app-hidden");const w=document.getElementById("welcome-screen");if(w)w.remove();
+        window.eviaData.put("hours",{minutes:90,description:"Practice wall"})});
+      await pR.waitForTimeout(500);
+      const before=await pR.evaluate(()=>window.eviaData.list("hours").length);
+      await pR.evaluate(()=>window.eviaOpenProfile());await pR.waitForSelector("#remove-all");await pR.click("#remove-all");await pR.waitForSelector("#rm-word");
+      const off=await pR.evaluate(()=>document.getElementById("rm-go").disabled);
+      await pR.fill("#rm-word","delete");const on=await pR.evaluate(()=>!document.getElementById("rm-go").disabled);
+      await Promise.all([pR.waitForNavigation({timeout:15000}).catch(()=>{}),pR.click("#rm-go")]);await pR.waitForTimeout(3000);
+      const after=await pR.evaluate(async()=>{
+        const keys=[];for(let i=0;i<localStorage.length;i++)keys.push(localStorage.key(i));
+        const dbs=indexedDB.databases?(await indexedDB.databases()).map(d=>d.name):[];
+        let hours=-1;try{hours=window.eviaData?window.eviaData.list("hours").length:0}catch(_){hours=0}
+        return {milos:localStorage.getItem("milos-auth"),name:(JSON.parse(localStorage.getItem("evia7-profile")||"{}")||{}).name||"",onboarding:localStorage.getItem("evia7-onboarding"),hours,dbs};
+      });
+      check("Remove all data from this phone: typing DELETE unlocks it, Evia's data goes and it starts again, other Nisia apps' data stays",
+        before>=1&&off&&on&&after.milos==="keep-me"&&!after.name&&!/"done"/.test(after.onboarding||"")&&after.hours<=0,JSON.stringify({before,off,on,after}));
+      check("…no script errors",!eR.length,eR.join(" | "));
+      await cR.close();
+    }
     check("No script errors",!errors.length,errors.join(" | "));
   }catch(e){check("Test run finished",false,e.message)}
   await browser.close();server.close();
