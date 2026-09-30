@@ -42,7 +42,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     const deepActs=await page.evaluate(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms)),out={};
       for(const id of ["review","otj","conf"]){document.getElementById("pv-"+id).click();await w(250);out[id]=[...document.querySelectorAll("#modal-root .pv-deep-acts .pv-act")].map(b=>b.textContent);document.getElementById("modal-root").innerHTML="";await w(50)}
       return out});
-    check("Each section's buttons are inside its deep dive",deepActs.review.includes("Start my review")&&deepActs.otj.includes("Log hours")&&deepActs.conf.includes("Find a college task"),JSON.stringify(deepActs));
+    check("Each section's buttons are inside its deep dive",deepActs.review.includes("My review")&&deepActs.otj.includes("Log hours")&&deepActs.conf.includes("Find a college task"),JSON.stringify(deepActs));
     check("My progress shows a chart card for each area, with no action buttons",await page.evaluate(()=>screen==="learning"&&["where","ksb","otj","tests","conf","act","quality","targets","ach"].every(id=>document.getElementById("pv-"+id))&&!document.querySelector("#screen .primary,#screen .pg-action")));
     await page.click("#pv-otj");await page.waitForTimeout(500);
     check("Tapping a card opens its deep dive with a how-to note",await page.evaluate(()=>/Learning hours/.test(document.getElementById("pv-sheet-title").textContent)&&!!document.querySelector(".pv-sheet .pv-note")&&!!document.querySelector(".pv-sheet .pv-cols")));
@@ -60,6 +60,9 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.waitForSelector("#chat .ui-widget:last-child .hw-note textarea:not([disabled])",{timeout:8000});await page.fill("#chat .ui-widget:last-child .hw-note textarea","lift with your legs, not your back");await page.click("#chat .ui-widget:last-child .hw-save");await page.waitForTimeout(300);
     check("Evia logs hours from a chat: what it was, when (backdated here), an hours-and-minutes wheel, what you did and what you learned",await page.evaluate(d=>hours.some(h=>h.n===1&&h.description==="Toolbox talk: manual handling. What I learned: lift with your legs, not your back"&&h.learned&&new Date(h.on).toDateString()===new Date(d+"T12:00:00").toDateString()&&h.createdAt>Date.now()-120000),threeAgo));
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML=""});
+    /* The review is only done in Evia when connected to a college (the learner's comments for the assessor); on their
+       own, Evia reminds them (tested further down). Connected, for these review checks. */
+    await page.evaluate(()=>{window.__joined=window.eviaNisia.joined;window.eviaNisia.joined=()=>({college:"Brookfield College"})});
     const rvBefore=await page.evaluate(()=>window.eviaGetReviews().length);
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";window.chat({quiet:true});setTimeout(()=>window.eviaChatReview(),50)});
     const reviewDone=await page.evaluate(async()=>{
@@ -78,7 +81,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.waitForTimeout(400);
     {const sec=await page.evaluate(()=>[...new Set(window.__rvSecond||[])]);check("In the review chat, each section offers Improve this (or Finish later), not Stop for now",sec.includes("Improve this")&&!sec.includes("Stop for now"),JSON.stringify(sec))}
     check("The progress review happens in Evia's chat, section by section, and saves with comments",reviewDone&&await page.evaluate(b=>{const r=window.eviaGetReviews();return r.length===b+1&&r[0].reflection.learnerFeedback==="All good thanks"&&!("wellbeing" in r[0].reflection)&&!document.querySelector("#chat [data-reflect='wellbeing']")&&!document.querySelector(".rv-sheet")},rvBefore));
-    await page.evaluate(()=>{document.getElementById("modal-root").innerHTML=""});
+    await page.evaluate(()=>{document.getElementById("modal-root").innerHTML="";window.eviaNisia.joined=window.__joined});
     await page.evaluate(()=>nav("learning"));await page.waitForTimeout(450);
     await page.evaluate(()=>nav("portfolio"));await page.waitForTimeout(450);
     await page.evaluate(()=>openUnit(data().u.findIndex(u=>evidence.some(e=>e.c===course&&e.u===u[0]))));await page.waitForTimeout(1200);
@@ -260,7 +263,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("My course has Learning logs under the units, for the demo to point at (reviews moved to My progress)",await page.evaluate(()=>{const g=document.getElementById("ui-logs-grid");return !!g&&g.querySelectorAll(".ui-log-tile").length===1&&!document.getElementById("ui-open-reviews")&&!!g.previousElementSibling}));
     await page.evaluate(()=>{document.body.classList.remove("evia-onboarding");nav("home")});await page.waitForTimeout(450);
 
-    await page.evaluate(()=>window.eviaStartReview());await page.waitForTimeout(400);
+    await page.evaluate(()=>{window.__joined=window.eviaNisia.joined;window.eviaNisia.joined=()=>({college:"Brookfield College"});window.eviaStartReview()});await page.waitForTimeout(400);
     /* An hours target counts hours logged from the day it was set, including ones logged earlier that day. */
     const tgt=await page.evaluate(()=>{const T=window.eviaTargets,t={id:"tx",kind:"otj",target:10,baseline:999,createdAt:Date.now(),title:"Log 10 learning hours"};
       window.eviaData.put("hours",{minutes:120,description:"Earlier today",createdAt:Date.now()-60000});const p=T.progress(t,T.stats());return {pct:Math.round(p.pct*100),text:p.text}});
@@ -276,7 +279,19 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.waitForSelector("#rvp-save",{timeout:20000}).catch(()=>{});
     check("Saving a review offers the two-page review PDF to share and sign",await page.evaluate(()=>!!document.getElementById("rvp-save")&&/2 pages/.test(document.querySelector(".eport-status").textContent)));
     await page.evaluate(()=>{document.getElementById("modal-root").innerHTML=""});
-    check("A full review clicks through and replaces the targets",await page.evaluate(()=>{const r=JSON.parse(localStorage.getItem("evia7-progress-reviews")||"[]").pop();return r&&r.format===2&&window.eviaTargets.mine().every(t=>t.reviewId===r.id)}));
+    check("Connected, a full review clicks through and keeps the targets the assessor sets",await page.evaluate(()=>{const r=JSON.parse(localStorage.getItem("evia7-progress-reviews")||"[]").pop();return r&&r.format===2&&!window.eviaTargets.mine().some(t=>t.reviewId===r.id)}));
+    /* Not connected: no review in Evia (the assessor has no access), just the reminder, and "I've had my review" moves the next one on. */
+    await page.evaluate(()=>{window.eviaNisia.joined=window.__joined;localStorage.removeItem("evia7-reviews-held")});
+    const rvCount=await page.evaluate(()=>window.eviaGetReviews().length);
+    await page.evaluate(()=>window.eviaStartReview());
+    await page.waitForFunction(()=>[...document.querySelectorAll("#chat .ui-replies button")].some(b=>/I’ve had my review/.test(b.textContent)),null,{timeout:10000}).catch(()=>{});
+    const remind=await page.evaluate(()=>({text:/isn’t connected to your college, so book it with them/.test((document.getElementById("chat")||{}).innerText||""),
+      btns:[...document.querySelectorAll("#chat .ui-replies button")].map(b=>b.textContent),noSheet:!document.getElementById("rv-next")}));
+    await page.evaluate(()=>[...document.querySelectorAll("#chat .ui-replies button")].find(b=>/I’ve had my review/.test(b.textContent)).click());await page.waitForTimeout(400);
+    const moved=await page.evaluate(n=>{const rd=window.eviaReviewDue();return window.eviaGetReviews().length===n&&rd.days>80&&rd.days<95},rvCount);
+    check("Not connected to a college: a review reminder instead of a review, with getting ready, and I've had my review sets the next one 3 months on",
+      remind.text&&remind.noSheet&&remind.btns.includes("Get ready for my review")&&moved,JSON.stringify(remind)+" "+moved);
+    await page.evaluate(()=>{window.eviaChatKit&&window.eviaChatKit.closeChat()});await page.waitForTimeout(300);
     await page.evaluate(()=>window.eviaSetShape("gear"));
     check("Outline Evia shapes draw on the Evia button",await page.$("#evia-fab .evia-outline"));
     await page.evaluate(()=>window.eviaSetShape("circle"));
