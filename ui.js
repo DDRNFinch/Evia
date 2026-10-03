@@ -402,7 +402,7 @@
     queue=queue.then(()=>{
       const c=chatBox();if(!c||gen!==chatGen)return;
       if(opt&&opt.turns!=null&&opt.turns!==userTurns)return;
-      /* At most three at a time; "Something else" is the category bar, which is always there. */
+      /* At most four at a time. "Something else" is left out: the message box is always there. */
       const shown=list.filter(r=>r&&r.label!=="Something else");if(!shown.length)return;
       const box=document.createElement("div");box.className="chat-options ui-replies";
       shown.forEach((r,i)=>{const b=document.createElement("button");b.type="button";b.className="chat-pill"+(r.primary?" ui-pill-primary":"")+(i>=3&&shown.length>4?" ui-pill-extra":"");b.innerHTML="<strong>"+escHtml(r.label)+"</strong>";b.onclick=()=>{box.remove();userSays(r.label);r.run()};box.appendChild(b)});
@@ -598,11 +598,11 @@
     replies([...(task?[{label:"Show me the task",primary:true,run:()=>{closeChat();setTimeout(()=>window.eviaPractice.openTask(0),60)}}]:[]),{label:"See all my stats",primary:!task,run:()=>{closeChat();setTimeout(showStats,60)}},{label:"Check my write-ups",run:writeups},{label:"Which KSBs am I missing?",run:ksbGaps},{label:"Something else",run:somethingElse}]);
   }
   const hrsText=n=>window.eviaHM(n);
-  /* The category bar is always there, so "Something else" just points at it. */
+  /* "Something else" is whatever they type next, so it just points at the message box. */
   function somethingElse(){
     document.body.classList.remove("evia-epa");
     const gen=chatGen;
-    queue=queue.then(()=>{if(gen!==chatGen)return;const d=document.querySelector(".chat-sheet .ui-cats");if(!d)return;d.classList.remove("ui-cats-hint");void d.offsetWidth;d.classList.add("ui-cats-hint")});
+    queue=queue.then(()=>{if(gen!==chatGen)return;const f=document.querySelector(".chat-sheet .ui-ask");if(!f)return;f.classList.remove("ui-ask-hint");void f.offsetWidth;f.classList.add("ui-ask-hint")});
   }
   function statsFromMenu(){userSays("My stats");myStats()}
   /* My targets: the targets from the latest review, or a new set from Evia if there aren't any. */
@@ -661,90 +661,28 @@
     });
     return queue;
   }
-  /* ---------- Evia's menu: four categories in a bar above the message box ----------
-     Each opens a small panel of three or four things, so the conversation only ever holds what was picked. */
+  /* ---------- Above the message box: only what the chat alone does ----------
+     Everything else has its own place in the app (My progress, Teach me, the unit pages) and can be typed here. */
   const SVG=p=>'<svg viewBox="0 0 24 24" aria-hidden="true">'+p+'</svg>';
-  const CAT_ICONS={
-    evidence:'<path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.7l1.3-2h5l1.3 2h1.7A2.5 2.5 0 0 1 20 8.5v9A2.5 2.5 0 0 1 17.5 20h-11A2.5 2.5 0 0 1 4 17.5Z"/><circle cx="12" cy="13" r="3.5"/>',
-    review:'<path d="M9 4.5h6a1 1 0 0 1 1 1V7H8V5.5a1 1 0 0 1 1-1Z"/><path d="M8 5.5H6.5A1.5 1.5 0 0 0 5 7v12.5A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V7a1.5 1.5 0 0 0-1.5-1.5H16"/><path d="m8.5 13.5 2.3 2.3 4.7-4.8"/>',
-    learn:'<path d="M3 9.5 12 5l9 4.5-9 4.5Z"/><path d="M7 11.5V16c1.5 1.5 3 2 5 2s3.5-.5 5-2v-4.5"/>',
-    tools:'<rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8M8.5 11h.01M12 11h.01M15.5 11h.01M8.5 14.5h.01M12 14.5h.01M15.5 14.5h.01M8.5 18h.01M12 18h3.5"/>'
+  const QUICK={
+    calc:["Calculators",'<rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8M8.5 11h.01M12 11h.01M15.5 11h.01M8.5 14.5h.01M12 14.5h.01M15.5 14.5h.01M8.5 18h.01M12 18h3.5"/>'],
+    checkin:["Check in to class",'<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2.5v2.5H14zM17.5 17.5H20V20h-2.5zM14 19v1M19 14h1"/>']
   };
-  const nvq=()=>!!(window.eviaNvq&&window.eviaNvq.on());
   const connectedLive=()=>{const e=window.eviaNisia&&window.eviaNisia.joined();return !!(e&&e.live&&window.eviaCheckIn)};
-  function categories(){
-    return [
-      {id:"evidence",label:"Evidence",items:[
-        ["evidence","Check my evidence","How strong a piece is, and what to add"],
-        ["ksbs","Which KSBs am I missing?","The units that tick off the most"],
-        ["guide","Build a strong portfolio","Five quick slides"]]},
-      {id:"review",label:"Review",items:[
-        ["prep","Get ready for my review","One thing at a time"],
-        ["targets","My targets","What’s done and the most urgent"],
-        ["quick","Quick review","Every area at a glance"]]},
-      {id:"learn",label:"Learning",items:[
-        ["hours","Log learning hours","Training, toolbox talks, research"],
-        ["conf","Rate my skills","A two-minute confidence check"],
-        ["task","Find a college task","Aimed at what you’re least sure of"],
-        ["epa",nvq()?"Knowledge tests":"EPA practice","Quick practice or a full mock"]]},
-      {id:"tools",label:"Tools",items:[
-        ...(connectedLive()?[["checkin","Check in to class","Scan the code on the classroom screen"]]:[]),
-        ["calc","Site calculators","Bricks, mortar, concrete, stairs"],
-        ["today","What should I do today?","My top picks for you"],
-        ["ask","Ask a trade question","Tools, materials, KSBs, sums"]]}
-    ];
-  }
   window.eviaOpenEpa=()=>{window.chat({quiet:true});setTimeout(()=>{const C=window.eviaCoachFlows;if(C&&C.epa)C.epa()},60)};
-  /* Runs one menu item. Items that leave the chat don't say anything in it first. */
-  function runItem(id,label){
-    const C=window.eviaCoachFlows||{},B=window.eviaBrain,leave=f=>{closeChat();setTimeout(f,80)};
-    if(id==="checkin")return leave(()=>window.eviaCheckIn&&window.eviaCheckIn.open());
-    if(id==="guide")return leave(()=>window.eviaStrength&&window.eviaStrength.guide());
-    if(id==="task"&&!C.task)return taskFromMenu();
-    userSays(label);
-    ({
-      evidence:()=>C.evidenceCheck?C.evidenceCheck():writeups(),
-      ksbs:()=>B?B.answer("which ksbs am i missing"):ksbGaps(),
-      prep:()=>C.prepare&&C.prepare(),
-      targets:()=>C.targets?C.targets():targetsFromMenu(),
-      quick:()=>C.quickReview&&C.quickReview(),
-      hours:()=>C.hours&&C.hours(),
-      conf:()=>C.confidence&&C.confidence(),
-      task:()=>C.task(),
-      epa:()=>C.epa&&C.epa(),
-      calc:()=>{say("Which one do you need?");B&&B.calculators()},
-      today:()=>{say(pick(["Here’s what I’d do today.","This is where I’d start."]));B&&B.todayCard()},
-      ask:()=>{say("Ask me in the box below, or try one of these.");B&&B.suggest(true)}
-    }[id]||(()=>{}))();
+  function runQuick(id){
+    document.body.classList.remove("evia-epa");
+    document.querySelectorAll("#chat .ui-replies").forEach(x=>x.remove());
+    if(id==="checkin"){closeChat();setTimeout(()=>window.eviaCheckIn&&window.eviaCheckIn.open(),80);return}
+    userSays("Calculators");say("Which one do you need?");if(window.eviaBrain)window.eviaBrain.calculators();
   }
   function buildDock(sheet){
     const form=sheet.querySelector(".ui-ask");if(!form||sheet.querySelector(".ui-dock"))return;
+    const ids=(connectedLive()?["checkin"]:[]).concat(["calc"]);
     const dock=document.createElement("div");dock.className="ui-dock";
-    dock.innerHTML='<div class="ui-cat-panel" role="menu" hidden></div><div class="ui-cats" role="toolbar" aria-label="What Evia can help with">'+
-      categories().map(c=>'<button type="button" class="ui-cat" data-cat="'+c.id+'" aria-expanded="false">'+SVG(CAT_ICONS[c.id])+'<span>'+escHtml(c.label)+'</span></button>').join("")+'</div>';
+    dock.innerHTML='<div class="ui-cats" role="toolbar" aria-label="Quick tools">'+ids.map(id=>'<button type="button" class="ui-cat" data-quick="'+id+'">'+SVG(QUICK[id][1])+'<span>'+escHtml(QUICK[id][0])+'</span></button>').join("")+'</div>';
     form.before(dock);
-    const panel=dock.querySelector(".ui-cat-panel");
-    const close=()=>{panel.hidden=true;panel.innerHTML="";dock.classList.remove("open");dock.querySelectorAll(".ui-cat").forEach(b=>{b.classList.remove("on");b.setAttribute("aria-expanded","false")})};
-    const open=id=>{
-      const c=categories().find(x=>x.id===id);if(!c)return;
-      close();document.body.classList.remove("evia-epa");
-      const btn=dock.querySelector('[data-cat="'+id+'"]');btn.classList.add("on");btn.setAttribute("aria-expanded","true");
-      const n=id==="review"?prepBadge():0;
-      panel.innerHTML=c.items.map(([iid,label,sub])=>'<button type="button" role="menuitem" class="ui-cat-item'+(iid==="prep"&&n?" due":"")+'" data-item="'+iid+'"><span><strong>'+escHtml(label)+'</strong><small>'+escHtml(iid==="prep"&&n?n+" thing"+(n===1?"":"s")+" to get ready":sub)+'</small></span>'+SVG('<path d="m9 6 6 6-6 6"/>')+'</button>').join("");
-      panel.hidden=false;dock.classList.add("open");
-      panel.querySelectorAll("[data-item]").forEach(b=>b.onclick=()=>{
-        const label=b.querySelector("strong").textContent;close();
-        document.querySelectorAll("#chat .ui-replies").forEach(x=>x.remove());
-        runItem(b.dataset.item,label);
-      });
-      const first=panel.querySelector("button");if(first&&!matchMedia("(hover: none)").matches)first.focus({preventScroll:true});
-    };
-    dock.querySelectorAll(".ui-cat").forEach(b=>b.onclick=()=>b.classList.contains("on")?close():open(b.dataset.cat));
-    dock.addEventListener("keydown",e=>{if(e.key==="Escape"&&!panel.hidden){e.stopPropagation();close()}});
-    form.querySelector("input").addEventListener("focus",close);
-    form.addEventListener("submit",close);
-    /* A due review shows as a dot on Review. */
-    if(prepBadge())dock.querySelector('[data-cat="review"]').classList.add("due");
+    dock.querySelectorAll("[data-quick]").forEach(b=>b.onclick=()=>runQuick(b.dataset.quick));
   }
   /* The opening: Evia, a hello, where they are, and the one thing she'd do next. */
   function welcome(name){
@@ -758,7 +696,7 @@
       (n?'<button type="button" class="ui-next"><small>'+(n.celebrate?"Nice one":"Up next")+'</small><span>'+n.text+'</span><b>'+escHtml(n.action.label)+SVG('<path d="m9 6 6 6-6 6"/>')+'</b></button>'
         :'<div class="ui-next done"><small>All good</small><span>You’re on track. Nothing urgent today.</span></div>')+
       (askPush?'<button type="button" class="ui-push" id="br-push">'+SVG('<path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15Z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>')+'<span>Get told when your assessor signs something off</span><b>Turn on</b></button>':"")+
-      '<p class="ui-hello-hint">Pick a topic below, or ask me anything.</p></div>',el=>{
+      '<p class="ui-hello-hint">Ask me anything: your course, the trade, or a sum.</p></div>',el=>{
       const b=el.querySelector("button.ui-next");
       if(b)b.onclick=()=>{if(n.achievements&&S.markSeen)S.markSeen(n.achievements);b.disabled=true;el.querySelector(".ui-hello").classList.add("used");userSays(n.action.label);runNudge(n)};
       const pb=el.querySelector("#br-push");

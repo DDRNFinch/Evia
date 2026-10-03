@@ -121,17 +121,16 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>window.chat());
     await page.waitForFunction(()=>{const c=document.getElementById("chat");return c&&!c.querySelector(".evia-thinking")},null,{timeout:15000});
     await page.waitForSelector("#chat .ui-hello",{timeout:15000});
-    check("Evia opens with a hello, one thing to do next, four topics above the Ask Evia box, and nothing else",await page.evaluate(()=>{const t=[...document.querySelectorAll(".chat-sheet .ui-cat")].map(b=>b.innerText.trim());return t.join()==="Evidence,Review,Learning,Tools"&&/learning this week/i.test(document.querySelector("#chat .ui-hello").innerText)&&!!document.querySelector("#chat .ui-hello .ui-next")&&!document.querySelector("#chat .ui-replies,#chat .ui-actions,#chat .br-today")&&!!document.querySelector(".chat-sheet .ui-ask input")}));
-    await page.click('.ui-cat[data-cat="review"]');
-    check("A topic opens a small panel of three or four things",await page.evaluate(()=>{const p=document.querySelector(".ui-cat-panel");const n=p.querySelectorAll(".ui-cat-item").length;return !p.hidden&&n>=3&&n<=4}));
-    await page.click('.ui-cat[data-cat="evidence"]');await page.click('.ui-cat-item[data-item="evidence"]');
-    check("Picking one closes the panel and the welcome makes way",await page.evaluate(()=>document.querySelector(".ui-cat-panel").hidden&&!document.querySelector("#chat .ui-hello")));
+    check("Evia opens with a hello, one thing to do next, and only Calculators above the Ask Evia box",await page.evaluate(()=>{const t=[...document.querySelectorAll(".chat-sheet .ui-cat")].map(b=>b.innerText.trim());return t.join()==="Calculators"&&/learning this week/i.test(document.querySelector("#chat .ui-hello").innerText)&&!!document.querySelector("#chat .ui-hello .ui-next")&&!document.querySelector("#chat .ui-replies,#chat .ui-actions,#chat .br-today")&&!!document.querySelector(".chat-sheet .ui-ask input")}));
+    const typeToEvia=async q=>{await page.fill(".chat-sheet .ui-ask input",q);await page.click(".chat-sheet .ui-ask button")};
+    await typeToEvia("chek my evidence");
+    check("Typing (even misspelt) starts a flow, and the welcome makes way",await page.evaluate(()=>!document.querySelector("#chat .ui-hello")&&[...document.querySelectorAll("#chat .bubble.user")].some(b=>b.textContent==="chek my evidence")));
     await page.waitForFunction(()=>[...document.querySelectorAll("#chat .ui-replies button")].length>=1,null,{timeout:15000});
     await page.evaluate(()=>document.querySelector("#chat .ui-replies button").click());
     await page.waitForFunction(()=>!!document.querySelector("#chat .ev-check")&&[...document.querySelectorAll("#chat .ui-replies button")].some(b=>/Add photos/.test(b.textContent)),null,{timeout:15000});
     check("Evidence check rates a piece of evidence, lists what's still to mention and offers ways to fix it",await page.evaluate(()=>{const t=[...document.querySelectorAll("#chat .ui-replies button")].map(b=>b.textContent);return /Weak|Good|Strong/.test(document.querySelector("#chat .ev-check").textContent)&&["Add photos","Improve my write-up","Let Evia guide me","Check another"].every(x=>t.includes(x))}));
     check("Replies never offer Something else: the topics are always there",await page.evaluate(()=>![...document.querySelectorAll("#chat .ui-replies button")].some(b=>b.textContent==="Something else")));
-    await page.click('.ui-cat[data-cat="review"]');await page.click('.ui-cat-item[data-item="prep"]');
+    await typeToEvia("get me ready for my review");
     await page.waitForSelector("#chat .qr.prep",{timeout:15000});await page.waitForFunction(()=>[...document.querySelectorAll("#chat .ui-replies button")].some(b=>b.textContent==="Skip for now"),null,{timeout:15000});
     const prep1=await page.evaluate(()=>({rows:document.querySelectorAll("#chat .qr.prep .qr-row").length,btns:[...document.querySelectorAll("#chat .ui-replies button")].map(b=>b.textContent),text:document.getElementById("chat").innerText}));
     check("Get ready for my review lists every area and their comments, then offers one thing at a time",prep1.rows>=7&&prep1.btns.includes("Skip for now")&&/One at a time/.test(prep1.text),JSON.stringify(prep1.btns));
@@ -182,6 +181,14 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("EPA mode ends when the chat closes",await page.evaluate(()=>!document.body.classList.contains("evia-epa")));
     await page.evaluate(()=>window.chat());await page.waitForSelector("#chat .ui-hello",{timeout:15000});
     check("Targets are set from Evia's stats",await page.evaluate(()=>{window.eviaTargets.ensure();return window.eviaTargets.mine().length>=3}));
+    // Evia's mind: reading what's typed, questions about the learner, follow-ups, comparisons, small talk and help.
+    check("Evia reads text-speak, number words and spelling mistakes",await page.evaluate(()=>{const R=window.eviaMind.read;return R("hw many hrs hav i dun this wk")==="how many hours have i done this week"&&R("morter for five hundred bricks")==="mortar for 500 bricks"&&R("bricks for a one brick wall").includes("one brick")&&R("wen is my reveiw")==="when is my review"&&R("you are useless")==="you are useless"}));
+    const said=async(q,re)=>{await page.fill(".chat-sheet .ui-ask input",q);await page.click(".chat-sheet .ui-ask button");
+      return page.waitForFunction(r=>{const c=document.getElementById("chat"),k=[...c.children],u=k.map(n=>n.classList.contains("user")).lastIndexOf(true);return !c.querySelector(".evia-thinking")&&new RegExp(r).test(k.slice(u+1).map(n=>n.innerText).join(" "))},re,{timeout:12000}).then(()=>true,()=>false)};
+    const mindOk={hours:await said("hw many hrs hav i dun this wk","This week you’ve logged"),review:await said("whens my review","review"),pace:await said("am i on track","of the way through your course"),
+      term:await said("whats a bolstr for","Bolster"),safe:await said("is it dangerous","take care with a bolster"),compare:await said("difference between a header and a stretcher","Header[\\s\\S]*Stretcher"),
+      who:await said("who are you","I’m Evia"),help:await said("what is epa","independent check"),act:await said("log my hours","What was it|What did you do|kind of learning"),unknown:await said("purple monkey dishwasher","beyond me|don’t know")};
+    check("Evia answers about the learner, follows up, compares, chats, explains and starts things when asked",Object.values(mindOk).every(Boolean),JSON.stringify(mindOk));
     // Ask Evia: her calculators, glossary and lessons, worked out on the phone.
     const calcs=await page.evaluate(()=>{const B=window.eviaBrain,C=B.calc;return {bricks:C.bricks({length:4,height:1.2}).big,cavity:C.bricks({length:4,height:1.2,type:"cavity"}).big,stairs:C.stairs({rise:2600}).big,
       fall:C.fall({length:6,ratio:40}).big,sq:C.square({a:3,b:4}).big,sum:C.sum("4.5 x 3.2").big,mortar:C.mortar({bricks:500,ratio:4}).big,
@@ -1148,10 +1155,9 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       await p9.evaluate(()=>{document.getElementById("app").classList.remove("welcome-app-hidden");const w=document.getElementById("welcome-screen");if(w)w.remove()});
       const cv={};
       await p9.evaluate(()=>window.chat());await p9.waitForTimeout(5000);
-      await p9.click('.ui-cat[data-cat="tools"]');
-      cv.first=await p9.evaluate(()=>{const b=document.querySelector(".ui-cat-panel .ui-cat-item");return !!b&&b.dataset.item==="checkin"});
+      cv.first=await p9.evaluate(()=>{const b=document.querySelector(".chat-sheet .ui-cat");return !!b&&b.dataset.quick==="checkin"});
       if(d9)await p9.locator(".ui-dock").screenshot({path:d9+"/checkin-action.png"}).catch(()=>{});
-      await p9.click('.ui-cat-item[data-item="checkin"]');await p9.waitForTimeout(1500);
+      await p9.click('[data-quick="checkin"]');await p9.waitForTimeout(1500);
       /* No camera here: straight to typing the code. */
       cv.typed=await p9.evaluate(()=>!!document.querySelector("#ci-view .ci-code"));
       await p9.fill("#ci-view .ci-code","abc 123");await p9.click('#ci-view .ci-form button[type=submit]');await p9.waitForTimeout(1500);

@@ -225,19 +225,23 @@
     k.say("I’m still learning to understand everything. Pick a topic below and I’ll help with that.");
     k.somethingElse();
   }
-  /* Ask Evia: typed questions go to her brain (evia-brain.js), which answers from Evia's own content. */
+  /* Ask Evia: typed questions go to her mind (evia-mind.js), which reads them and answers or hands on to her brain. */
   function input(sheet){
     if(sheet.querySelector(".ui-ask"))return;
     const form=document.createElement("form");form.className="ui-ask";
     form.innerHTML='<input type="text" placeholder="Ask Evia anything…" aria-label="Message Evia" enterkeyhint="send" autocomplete="off"><button type="submit" aria-label="Send"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></button>';
     sheet.appendChild(form);
     const field=form.querySelector("input");
+    /* Examples of what to ask, in turn, while the box is empty. */
+    const EG=["Ask Evia anything…","How many hours have I done this week?","What’s a bolster for?","When’s my review?","Bricks for a 4 m by 1.2 m wall","Am I on track?","Difference between a header and a stretcher"];
+    let egI=0;const egT=setInterval(()=>{if(!document.body.contains(field))return clearInterval(egT);if(field.value||document.activeElement===field)return;egI=(egI+1)%EG.length;field.placeholder=EG[egI]},3500);
     field.addEventListener("input",()=>{if(window.eviaLook)window.eviaLook(-4,-26,1600);form.classList.toggle("has-text",!!field.value.trim())});
     form.onsubmit=e=>{
       e.preventDefault();const text=field.value.trim();if(!text)return;
       field.value="";form.classList.remove("has-text");
       document.querySelectorAll("#chat .ui-actions,#chat .ui-replies").forEach(x=>x.remove());
-      K().userSays(text);if(window.eviaBrain)window.eviaBrain.answer(text);else understand(text);
+      document.body.classList.remove("evia-epa");
+      K().userSays(text);if(window.eviaMind)window.eviaMind.answer(text);else if(window.eviaBrain)window.eviaBrain.answer(text);else understand(text);
     };
   }
 
