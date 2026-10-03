@@ -2639,26 +2639,8 @@ html body .sd-evia{transform:scale(3.3);animation-name:sdBreathe3}
 .rm-sheet .rm-go:disabled{opacity:.45}
 
 /* ---------- Evia chat: a welcome, a category bar and short replies ---------- */
-#chat .ui-hello{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:18px 6px 6px}
-#chat .ui-hello-face{width:52px;height:52px;border-width:3px;margin-bottom:4px;animation:helloBob 3.6s ease-in-out infinite}
-#chat .ui-hello-face .evia-face{gap:6px}
-#chat .ui-hello-face .evia-face i{width:9px!important;height:12px!important}
-#chat .ui-hello h3{margin:0;font-size:24px;font-weight:800;letter-spacing:-.02em;color:var(--ink,#101828)}
-#chat .ui-hello>p{margin:0;font-size:13px;color:var(--ui-muted,#667085)}
-#chat .ui-next{display:flex;flex-direction:column;align-items:flex-start;gap:4px;width:100%;margin-top:14px;padding:14px 16px;border-radius:18px;border:1px solid var(--ui-line,#edf0f4);background:#fff;text-align:left;box-shadow:0 2px 10px rgba(16,24,40,.05);cursor:pointer;transition:transform .12s ease,box-shadow .15s ease}
-#chat .ui-next:active{transform:scale(.985)}
-#chat .ui-next small{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--yellow-ink,#7a5d00)}
-#chat .ui-next span{font-size:14.5px;line-height:1.4;color:var(--ink,#101828)}
-#chat .ui-next b{display:inline-flex;align-items:center;gap:2px;margin-top:2px;font-size:14px;color:var(--yellow-ink,#7a5d00)}
-#chat .ui-next b svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
-#chat .ui-next.done{cursor:default}
-#chat .ui-hello.used .ui-next{opacity:.55;box-shadow:none}
-#chat .ui-hello-hint{margin-top:12px!important;font-size:12.5px!important}
-#chat .ui-hello.used .ui-hello-hint{display:none}
-@keyframes helloBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 
 .ui-dock{flex:0 0 auto;position:relative;margin-top:10px}
-.ui-cat-menu{font-weight:800}
 .ui-cats{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;padding:1px}
 .ui-cats::-webkit-scrollbar{display:none}
 .ui-cat{flex:0 0 auto;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 13px;border-radius:18px;border:1px solid var(--ui-line,#e4e7ec);background:#fff;color:var(--ink,#344054);font-size:13px;font-weight:700;white-space:nowrap;cursor:pointer;position:relative;transition:background .15s ease,border-color .15s ease,color .15s ease}
@@ -2673,13 +2655,7 @@ html body .sd-evia{transform:scale(3.3);animation-name:sdBreathe3}
 #chat .ui-replies .ui-pill-more{background:transparent;border-style:dashed;box-shadow:none}
 
 body.evia-epa .ui-cat{background:#3a3f48;border-color:#4a505a;color:#eef0f3}
-@media (prefers-reduced-motion:reduce){#chat .ui-hello-face{animation:none}}
-html[data-a11y-motion="reduce"] #chat .ui-hello-face{animation:none!important}
 .chat-sheet:not(.ui-test-mode) .sheet-head .chat-kicker{display:none}
-#chat .ui-push{display:flex;align-items:center;gap:10px;width:100%;margin-top:8px;padding:10px 14px;border-radius:14px;border:1px dashed var(--ui-line,#d0d5dd);background:transparent;text-align:left;cursor:pointer;font-size:13px;color:var(--ui-muted,#667085)}
-#chat .ui-push svg{flex:0 0 auto;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-#chat .ui-push span{flex:1}
-#chat .ui-push b{color:var(--yellow-ink,#7a5d00)}
 #chat .mi-compare{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 #chat .mi-compare>div{min-width:0;display:flex;flex-direction:column;gap:4px}
 #chat .mi-compare>div+div{border-left:1px solid var(--ui-line,#edf0f4);padding-left:12px}
@@ -2689,12 +2665,18 @@ html[data-a11y-motion="reduce"] #chat .ui-hello-face{animation:none!important}
 #chat .mi-can p{margin:0;font-size:13.5px;line-height:1.45}
 #chat .mi-can b{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--yellow-ink,#7a5d00)}
 
-/* Evia's menu: four categories as tiles, evidence first. */
-#chat .mn-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-#chat .mn-tile{display:flex;align-items:center;gap:10px;min-height:58px;padding:12px;border-radius:16px;border:1px solid var(--ui-line,#e4e7ec);background:#fff;color:var(--ink,#101828);font-size:14.5px;font-weight:800;text-align:left;cursor:pointer;transition:transform .12s ease,background .15s ease}
-#chat .mn-tile:active{transform:scale(.98)}
-#chat .mn-tile svg{flex:0 0 auto;width:34px;height:34px;padding:8px;border-radius:11px;background:var(--soft,#fff7d6);color:var(--yellow-ink,#7a5d00);fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;box-sizing:border-box}
-#chat .mn-tile.core{border-color:var(--yellow,#f5c518);box-shadow:0 0 0 1px var(--yellow,#f5c518) inset}
 #chat .ui-replies .ui-pill-back{background:none;border:0;padding:6px 4px;color:var(--ui-muted,#667085);font-size:13.5px;font-weight:700;cursor:pointer}
-body.evia-epa #chat .mn-tile{background:#3a3f48;border-color:#4a505a;color:#eef0f3}
 body.evia-epa #chat .ui-replies .ui-pill-back{color:#b7bdc8}
+
+/* Evia's list: what needs doing, three at a time. */
+#chat .td-list{display:flex;flex-direction:column;gap:8px}
+#chat .td-item{display:flex;width:100%;padding:13px 15px;border-radius:16px;border:1px solid var(--ui-line,#e4e7ec);border-left:4px solid var(--yellow,#f5c518);background:#fff;text-align:left;cursor:pointer;color:var(--ink,#101828);transition:transform .12s ease}
+#chat .td-item:active{transform:scale(.985)}
+#chat .td-item.urgent{border-left-color:#e2564b}
+#chat .td-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
+#chat .td-copy strong{font-size:15px;line-height:1.3}
+#chat .td-copy small{font-size:13px;line-height:1.4;color:var(--ui-muted,#667085)}
+#chat .td-copy b{display:inline-flex;align-items:center;gap:2px;margin-top:4px;font-size:13.5px;color:var(--yellow-ink,#7a5d00)}
+#chat .td-copy b svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+#chat .td-used{opacity:.55}
+#chat .td-used .td-item{cursor:default}
