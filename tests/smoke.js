@@ -1127,6 +1127,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     // typed or scanned (jsQR reads it on phones without a built-in reader), and the tutor's finished register comes
     // back as college hours the learner can't change or delete.
     {
+      const state9={in:false};
       const d9=process.env.EVIA_SHOTS||"",c9=await browser.newContext({...devices["Pixel 7"],serviceWorkers:"block"}),p9=await c9.newPage(),e9=[],calls9=[];p9.on("pageerror",e=>e9.push(e.message));
       const b64=o=>Buffer.from(JSON.stringify(o)).toString("base64url"),now=Math.floor(Date.now()/1000);
       const tok=b64({alg:"HS256"})+"."+b64({sub:"u-learner",role:"authenticated",aal:"aal1",exp:now+3600})+".s";
@@ -1134,7 +1135,10 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
         const q=r.request(),u=new URL(q.url());calls9.push({m:q.method(),p:u.pathname,body:q.postData()||""});
         const json=d=>r.fulfill({status:200,contentType:"application/json",headers:{"access-control-allow-origin":"*"},body:JSON.stringify(d)});
         if(q.method()==="OPTIONS")return r.fulfill({status:200,headers:{"access-control-allow-origin":"*","access-control-allow-headers":"*","access-control-allow-methods":"*"}});
+        if(u.pathname==="/rest/v1/rpc/nisia_check_in"&&JSON.parse(q.postData()||"{}").p_scanned_at){state9.in=true;return json({session:"S1",class:"L2 Brickwork",at:JSON.parse(q.postData()).p_scanned_at,late:false,offline:true})}
         if(u.pathname==="/rest/v1/rpc/nisia_check_in"){const code=JSON.parse(q.postData()||"{}").p_code;return code==="ABC123"||/^NISI:IN:1:/.test(code)?json({class:"L2 Brickwork",lesson:"Cavity walls",at:new Date().toISOString(),late:false,again:false}):r.fulfill({status:400,contentType:"application/json",headers:{"access-control-allow-origin":"*"},body:JSON.stringify({message:"That code has changed. Scan the one on the screen now."})})}
+        if(u.pathname==="/rest/v1/rpc/nisia_my_sessions")return json([{id:"S1",session_date:new Date().toISOString().slice(0,10),starts_at:new Date(Date.now()-5*60e3).toISOString(),ends_at:new Date(Date.now()+3*36e5).toISOString(),class:"L2 Brickwork",room:"Workshop 2",lesson:"Cavity walls",status:"open",checked_in_at:state9.in?new Date().toISOString():null,late:false,reason:null,absence_id:null}]);
+        if(u.pathname==="/rest/v1/rpc/nisia_book_absence")return json({id:"AB1",from:JSON.parse(q.postData()).p_from,to:JSON.parse(q.postData()).p_to,reason:"Ill"});
         if(u.pathname==="/rest/v1/rpc/nisia_my_college")return json([{id:"A1",session_date:new Date().toISOString().slice(0,10),class:"L2 Brickwork",lesson:"Cavity walls",ksbs:["K5","S3"],minutes:375,status:"present",checked_in_at:new Date().toISOString()}]);
         if(u.pathname.startsWith("/rest/v1/rpc/"))return json([]);
         return r.fulfill({status:201,headers:{"access-control-allow-origin":"*"},body:""});
@@ -1180,8 +1184,29 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       await p9.evaluate(()=>{window.eviaChatKit&&window.eviaChatKit.closeChat();window.eviaOpenLearningLogs()});await p9.waitForTimeout(800);
       cv.locked=await p9.evaluate(()=>{const row=[...document.querySelectorAll(".ui-hours-item")].find(r=>/College · L2 Brickwork/.test(r.textContent));return !!row&&!row.querySelector("[data-rm-log]")&&!!row.querySelector(".ui-college-lock")&&/College register/.test(row.textContent)});
       if(d9)await p9.screenshot({path:d9+"/checkin-log.png"}).catch(()=>{});
+      /* Registers: during a class, checking in is the top of Evia's list; with no signal the scan is kept and sent later. */
+      await p9.evaluate(()=>{window.eviaChatKit.closeChat();window.chat()});await p9.waitForTimeout(4500);
+      cv.card=await p9.evaluate(()=>{const b=document.querySelector("#chat .td-item");return !!b&&b.classList.contains("td-k-checkin")&&/Check in to L2 Brickwork/.test(b.textContent)&&/Workshop 2/.test(b.textContent)});
+      if(d9)await p9.screenshot({path:d9+"/checkin-card.png"}).catch(()=>{});
+      await c9.setOffline(true);
+      await p9.click("#chat .td-item.td-k-checkin");await p9.waitForTimeout(1500);
+      await p9.fill("#ci-view .ci-code","XYZ789");await p9.click('#ci-view .ci-form button[type=submit]');await p9.waitForTimeout(800);
+      cv.kept=await p9.evaluate(()=>/no signal/i.test(document.getElementById("ci-view").textContent)&&window.eviaNisia.waitingCheckIns()===1&&!window.eviaTodo.list().some(x=>x.ic==="checkin"));
+      if(d9)await p9.locator("#ci-view .ci-sheet").screenshot({path:d9+"/checkin-saved.png"}).catch(()=>{});
+      await p9.click("#ci-view [data-ci-close]");
+      await c9.setOffline(false);await p9.evaluate(()=>window.eviaNisia.sync());await p9.waitForTimeout(1500);
+      cv.sentLater=calls9.some(x=>x.p==="/rest/v1/rpc/nisia_check_in"&&JSON.parse(x.body).p_code==="XYZ789"&&!!JSON.parse(x.body).p_scanned_at)&&await p9.evaluate(()=>window.eviaNisia.waitingCheckIns()===0&&!window.eviaTodo.list().some(x=>x.ic==="checkin"));
+      /* Can't make college: the days and why, and everyone is told. */
+      await p9.evaluate(()=>{window.eviaChatKit.closeChat();window.chat()});await p9.waitForTimeout(4500);
+      await p9.click("#chat .td-away");await p9.waitForTimeout(4500);
+      await p9.click('#chat .chat-pill:has-text("Tomorrow")');await p9.waitForTimeout(2000);
+      await p9.click('#chat .chat-pill:has-text("Ill")');await p9.waitForTimeout(2500);
+      await p9.fill("#chat .td-note input","Flu");await p9.click("#chat .td-note button");await p9.waitForTimeout(3500);
+      const bk=calls9.find(x=>x.p==="/rest/v1/rpc/nisia_book_absence"),tm=new Date(Date.now()+864e5),tmk=tm.getFullYear()+"-"+String(tm.getMonth()+1).padStart(2,"0")+"-"+String(tm.getDate()).padStart(2,"0");
+      cv.away=!!bk&&JSON.parse(bk.body).p_kind==="ill"&&JSON.parse(bk.body).p_reason==="Flu"&&JSON.parse(bk.body).p_from===tmk&&await p9.evaluate(()=>/is booked/.test(document.getElementById("chat").innerText)&&/tutor, assessor and employer/.test(document.getElementById("chat").innerText)&&window.eviaNisia.absences().length===1);
+      if(d9)await p9.screenshot({path:d9+"/away-booked.png"}).catch(()=>{});
       cv.noErrors=!e9.length;
-      check("Check in to class: Evia's first action when connected, a typed or scanned code checks in (jsQR reads it on iPhones), and the tutor's register comes back as college hours the learner can't delete",Object.values(cv).every(v=>v===true),JSON.stringify(cv)+" "+e9.join(" | "));
+      check("Check in to class: Evia's first action when connected, a typed or scanned code checks in (jsQR reads it on iPhones), the tutor's register comes back as college hours the learner can't delete, a class on now is top of Evia's list, a scan with no signal is kept and sent later, and a learner books a day off",Object.values(cv).every(v=>v===true),JSON.stringify(cv)+" "+e9.join(" | "));
       await c9.close();
     }
     // Remove all data from this phone: Evia's data goes, the other Nisia apps' (same website) stays, Evia starts again.
