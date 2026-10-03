@@ -420,7 +420,6 @@
     const signed=so.on?!!(so.signed&&so.signed.has(C)):inEvidence;
     const kind={K:"Knowledge",S:"Skill",B:"Behaviour"}[C[0]]||"KSB";
     const status=signed?'<span class="br-pill good">'+ICON.tick+(so.on?'Signed off':'Evidenced')+'</span>':inEvidence?'<span class="br-pill mid">In your evidence'+(so.on?", waiting for your assessor":"")+'</span>':'<span class="br-pill low">No evidence yet</span>';
-    mem.topic={kind:"ksb",name:C};
     K().say(pick(["Here’s "+esc(C)+" in plain words.",esc(C)+" is a "+kind.toLowerCase()+" on your course."]));
     K().widget('<div class="br-card"><div class="br-head"><span class="br-ic">'+ICON.ksb+'</span><strong>'+esc(C)+' · '+kind+'</strong>'+status+'</div><p class="br-def">'+esc(text)+'</p>'+
       '<p class="br-small">In '+units.map(u=>'<b>'+esc(u.name)+'</b>').join(", ")+'.</p></div>');
@@ -508,7 +507,7 @@
   }
 
   /* ---------- Understanding what was typed ---------- */
-  const mem={last:null,topic:null};
+  const mem={last:null};
   const has=(t,re)=>re.test(t);
   function follow(kind){
     const F={bricks:["And the mortar for it?","What about blockwork?"],mortar:["How many bricks for it?","What mix should I use?"],concrete:["What depth for a garden path?","Area and volume"],stairs:["What’s the going?","What’s a winder?"],square:["What’s 3-4-5?","Setting out"],fall:["What fall for a drain?","Area and volume"],area:["How many bricks for it?","Concrete for a slab"]}[kind]||[];
@@ -585,7 +584,6 @@
     /* Tools, materials and site terms. */
     const g=findTerm(text);
     if(g){
-      mem.topic={kind:"term",name:g[0],g,shown:0};
       const T=window.EVIA_TEACH||{},pic=g[3]&&T.pics&&T.pics[g[3]]?T.pics[g[3]]():"",les=findLesson(g[0]+" "+g[1].join(" "));
       K().say(pick(["Good question.","Sure.","Here you go."])+" <strong>"+esc(g[0])+"</strong>:");
       K().widget('<div class="br-card br-term">'+(pic?'<div class="br-pic">'+pic+'</div>':"")+'<div class="br-head"><span class="br-ic">'+ICON.book+'</span><strong>'+esc(g[0])+'</strong></div><p class="br-def">'+esc(g[2])+'</p>'+
@@ -596,13 +594,10 @@
     /* Anything in Teach me. */
     const les=findLesson(text);
     if(les){
-      mem.topic={kind:"lesson",name:les.l.title,les,shown:1,said:[les.snippet]};
       K().say(pick(["I cover that in Teach me.","Here’s what I teach about that."])+" From <strong>"+esc(les.l.title)+"</strong> ("+esc(les.unit)+"):");
       K().widget('<div class="br-card br-lesson"><div class="br-head"><span class="br-ic">'+ICON.book+'</span><strong>'+esc(les.l.title)+'</strong></div><p class="br-def">'+esc(les.snippet.length>320?les.snippet.slice(0,317)+"…":les.snippet)+'</p></div>');
       K().replies([{label:"Open the lesson",primary:true,run:()=>{K().closeChat();setTimeout(()=>window.eviaTeach&&window.eviaTeach.play(les.l.id),120)}},{label:"Ask something else",run:()=>suggestions()}]);return;
     }
-    /* Evia's mind searches everything she knows for the closest match before giving up. */
-    if(window.eviaMind&&window.eviaMind.fallback(text))return;
     /* Not yet. Kept on the phone, so the questions Evia can't answer yet can be added later. */
     try{const k="evia7-unanswered",q=JSON.parse(localStorage.getItem(k)||"[]");q.push({t:String(text).slice(0,200),at:Date.now()});localStorage.setItem(k,JSON.stringify(q.slice(-50)))}catch(_){}
     K().say(pick(["I don’t know that one yet, sorry.","That one’s beyond me for now."])+" I’m best with tools and materials, KSBs, calculations and your course. Try one of these:");
@@ -610,11 +605,10 @@
   }
   function suggestions(quiet){
     const b=!timber();
-    const list=b?["How many bricks for a 4 m by 1.2 m wall?","How many hours have I done this week?","What’s a bolster for?","Am I on track?","What’s K20?","Mortar for 500 bricks"]
-      :["What’s a mortice gauge?","How many hours have I done this week?","Stairs for a 2.6 m rise","Am I on track?","What’s S20?","Diagonal for 3 m by 4 m"];
+    const list=b?["How many bricks for a 4 m by 1.2 m wall?","What’s a bolster for?","What’s K20?","What should I do today?","Mortar for 500 bricks","Stairs for a 2.6 m rise"]
+      :["What’s a mortice gauge?","Stairs for a 2.6 m rise","What’s S20?","What should I do today?","Diagonal for 3 m by 4 m","Concrete for 3 m by 2 m by 100 mm"];
     if(!quiet)K().say(pick(["What else can I help with?","Anything else?"]));
     chips(list.slice(0,4));
   }
-  window.eviaBrain={answer,todayCard,calculators,open,suggest:suggestions,calc,findTerm,findLesson,lengths,glossary,lessons,STOP,stem,isWorry:t=>WORRY.test(norm(t)),worry,
-    topic:()=>mem.topic,setTopic:x=>{mem.topic=x}};
+  window.eviaBrain={answer,todayCard,calculators,open,suggest:suggestions,calc,findTerm,findLesson,lengths};
 })();

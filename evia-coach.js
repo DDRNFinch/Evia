@@ -201,51 +201,6 @@
     k.replies([a.quickest?{label:"Open "+a.quickest.name,run:()=>k.openUnitFromChat(a.quickest)}:null,{label:"Something else",run:k.somethingElse}].filter(Boolean));
   }
 
-  /* ---------- The message box: understands the common things apprentices ask ---------- */
-  function understand(text){
-    const k=K(),t=text.toLowerCase();
-    const flows=window.eviaCoachFlows;
-    if(/\b(otj|glh|off.?the.?job|learning hours|hours?|log|toolbox|college day)\b/.test(t))return logHours();
-    if(/\b(test|quiz|question me|mock|exam|epa)\b/.test(t))return window.eviaTestMe&&window.eviaTestMe();
-    if(/\b(review)\b/.test(t))return K().reviewFromMenu();
-    if(/\b(confiden|rate|rating)\w*/.test(t))return flows.confidence();
-    if(/\b(evidence|write.?up|photos?|portfolio|weak|check)\b/.test(t))return flows.evidence();
-    if(/\b(task|improve|practi[sc]e|upskill|better|learn|scenario)\w*/.test(t))return flows.upskill();
-    /* "How do I…" about a unit: what to capture and what to mention. */
-    const units=data().u.map((u,i)=>({name:u[0],i})),words=t.split(/\W+/).filter(w=>w.length>3);
-    const hit=units.map(u=>({u,n:words.filter(w=>u.name.toLowerCase().includes(w)).length})).sort((x,y)=>y.n-x.n)[0];
-    if(hit&&hit.n){
-      const p=((window.eviaLearnerPrompts||{})[course]||{})[hit.u.name]||{};
-      k.say("For <strong>"+esc(hit.u.name)+"</strong>, take photos of: "+esc(String(p.photos||"the start, middle and end of the job").split("·").map(x=>x.trim()).filter(Boolean).join(", "))+".");
-      if(p.writeup)k.say("In your write-up, mention: "+esc(String(p.writeup).split("·").map(x=>x.trim()).filter(Boolean).join(", "))+".");
-      k.replies([{label:"Open "+hit.u.name,primary:true,run:()=>k.openUnitFromChat({index:hit.u.i})},{label:"Something else",run:k.somethingElse}]);
-      return;
-    }
-    if(/\b(hi|hello|hey|thanks|thank you|cheers)\b/.test(t)){k.say(k.pick(["Any time. What’s next?","Happy to help. Anything else?"]));return k.somethingElse()}
-    k.say("I’m still learning to understand everything. Pick a topic below and I’ll help with that.");
-    k.somethingElse();
-  }
-  /* Ask Evia: typed questions go to her mind (evia-mind.js), which reads them and answers or hands on to her brain. */
-  function input(sheet){
-    if(sheet.querySelector(".ui-ask"))return;
-    const form=document.createElement("form");form.className="ui-ask";
-    form.innerHTML='<input type="text" placeholder="Ask Evia anything…" aria-label="Message Evia" enterkeyhint="send" autocomplete="off"><button type="submit" aria-label="Send"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></button>';
-    sheet.appendChild(form);
-    const field=form.querySelector("input");
-    /* Examples of what to ask, in turn, while the box is empty. */
-    const EG=["Ask Evia anything…","How many hours have I done this week?","What’s a bolster for?","When’s my review?","Bricks for a 4 m by 1.2 m wall","Am I on track?","Difference between a header and a stretcher"];
-    let egI=0;const egT=setInterval(()=>{if(!document.body.contains(field))return clearInterval(egT);if(field.value||document.activeElement===field)return;egI=(egI+1)%EG.length;field.placeholder=EG[egI]},3500);
-    field.addEventListener("input",()=>{if(window.eviaLook)window.eviaLook(-4,-26,1600);form.classList.toggle("has-text",!!field.value.trim())});
-    form.onsubmit=e=>{
-      e.preventDefault();const text=field.value.trim();if(!text)return;
-      field.value="";form.classList.remove("has-text");
-      document.querySelectorAll("#chat .ui-actions,#chat .ui-replies").forEach(x=>x.remove());
-      document.body.classList.remove("evia-epa");
-      K().userSays(text);if(window.eviaMind)window.eviaMind.answer(text);else if(window.eviaBrain)window.eviaBrain.answer(text);else understand(text);
-    };
-  }
-
-
   /* ---------- Shared: go to a place in the app from the chat ---------- */
   const nvqOn=()=>!!(window.eviaNvq&&window.eviaNvq.on());
   const waitFor=(sel,then,tries)=>{const el=document.querySelector(sel);if(el)return then(el);if((tries||0)<25)setTimeout(()=>waitFor(sel,then,(tries||0)+1),120)};
@@ -509,5 +464,5 @@
   /* EPA mode ends when the chat closes. */
   const mr=document.getElementById("modal-root");
   if(mr)new MutationObserver(()=>{if(!mr.querySelector(".chat-sheet"))epaMode(false)}).observe(mr,{childList:true});
-  window.eviaCoachFlows={hours:logHours,confidence,upskill,task:upskillTask,evidence,input,evidenceCheck,quickReview,prepare,targets,epa,epaMode};
+  window.eviaCoachFlows={hours:logHours,confidence,upskill,task:upskillTask,evidence,evidenceCheck,quickReview,prepare,targets,epa,epaMode,openUnitAt};
 })();

@@ -927,12 +927,6 @@ html body .chat-sheet .chat{flex:1 1 auto;height:auto!important;min-height:0;bac
 .ui-action-icon svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .chat-sheet .chat-options .ui-action:last-child:nth-child(odd){grid-column:auto}
 /* the message box */
-.ui-ask{flex:0 0 auto;display:flex;gap:8px;margin-top:10px}
-.ui-ask input{flex:1;min-width:0;height:46px;border:1.5px solid var(--ui-line);border-radius:23px;padding:0 16px;font-size:15px;background:#fff;transition:border-color .15s ease}
-.ui-ask input:focus{outline:none;border-color:var(--yellow)}
-.ui-ask button{flex:0 0 46px;height:46px;border-radius:50%;background:#eef1f5;color:var(--ui-muted);display:grid;place-items:center;transition:background .15s ease,transform .15s ease}
-.ui-ask.has-text button{background:var(--yellow);color:var(--ui-on-accent);transform:scale(1.05)}
-.ui-ask button svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 /* test answers stay, marked */
 #chat .rating-options.answered .rating-pill{opacity:.55}
 #chat .rating-options.answered .rating-pill.correct{opacity:1;background:var(--soft);border-color:var(--yellow);animation:ecFlash .5s ease}
@@ -2664,11 +2658,11 @@ html body .sd-evia{transform:scale(3.3);animation-name:sdBreathe3}
 @keyframes helloBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 
 .ui-dock{flex:0 0 auto;position:relative;margin-top:10px}
+.ui-cat-menu{font-weight:800}
 .ui-cats{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;padding:1px}
 .ui-cats::-webkit-scrollbar{display:none}
 .ui-cat{flex:0 0 auto;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 13px;border-radius:18px;border:1px solid var(--ui-line,#e4e7ec);background:#fff;color:var(--ink,#344054);font-size:13px;font-weight:700;white-space:nowrap;cursor:pointer;position:relative;transition:background .15s ease,border-color .15s ease,color .15s ease}
 .ui-cat svg{flex:0 0 auto;width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.chat-sheet .ui-ask{margin-top:8px}
 
 /* Replies: three or four in a column, the rest behind More. */
 #chat .ui-replies{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
@@ -2679,15 +2673,13 @@ html body .sd-evia{transform:scale(3.3);animation-name:sdBreathe3}
 #chat .ui-replies .ui-pill-more{background:transparent;border-style:dashed;box-shadow:none}
 
 body.evia-epa .ui-cat{background:#3a3f48;border-color:#4a505a;color:#eef0f3}
-@media (prefers-reduced-motion:reduce){#chat .ui-hello-face,.ui-ask-hint input{animation:none}}
-html[data-a11y-motion="reduce"] #chat .ui-hello-face,html[data-a11y-motion="reduce"] .ui-ask-hint input{animation:none!important}
+@media (prefers-reduced-motion:reduce){#chat .ui-hello-face{animation:none}}
+html[data-a11y-motion="reduce"] #chat .ui-hello-face{animation:none!important}
 .chat-sheet:not(.ui-test-mode) .sheet-head .chat-kicker{display:none}
 #chat .ui-push{display:flex;align-items:center;gap:10px;width:100%;margin-top:8px;padding:10px 14px;border-radius:14px;border:1px dashed var(--ui-line,#d0d5dd);background:transparent;text-align:left;cursor:pointer;font-size:13px;color:var(--ui-muted,#667085)}
 #chat .ui-push svg{flex:0 0 auto;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 #chat .ui-push span{flex:1}
 #chat .ui-push b{color:var(--yellow-ink,#7a5d00)}
-.ui-ask-hint input{animation:askHint 1s ease both}
-@keyframes askHint{0%,100%{border-color:var(--ui-line,#e4e7ec)}35%{border-color:var(--yellow,#f5c518);box-shadow:0 0 0 3px color-mix(in srgb,var(--yellow,#f5c518) 30%,transparent)}}
 #chat .mi-compare{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 #chat .mi-compare>div{min-width:0;display:flex;flex-direction:column;gap:4px}
 #chat .mi-compare>div+div{border-left:1px solid var(--ui-line,#edf0f4);padding-left:12px}
@@ -2696,3 +2688,13 @@ html[data-a11y-motion="reduce"] #chat .ui-hello-face,html[data-a11y-motion="redu
 @media (max-width:360px){#chat .mi-compare{grid-template-columns:1fr}#chat .mi-compare>div+div{border-left:0;padding-left:0;border-top:1px solid var(--ui-line,#edf0f4);padding-top:10px}}
 #chat .mi-can p{margin:0;font-size:13.5px;line-height:1.45}
 #chat .mi-can b{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--yellow-ink,#7a5d00)}
+
+/* Evia's menu: four categories as tiles, evidence first. */
+#chat .mn-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#chat .mn-tile{display:flex;align-items:center;gap:10px;min-height:58px;padding:12px;border-radius:16px;border:1px solid var(--ui-line,#e4e7ec);background:#fff;color:var(--ink,#101828);font-size:14.5px;font-weight:800;text-align:left;cursor:pointer;transition:transform .12s ease,background .15s ease}
+#chat .mn-tile:active{transform:scale(.98)}
+#chat .mn-tile svg{flex:0 0 auto;width:34px;height:34px;padding:8px;border-radius:11px;background:var(--soft,#fff7d6);color:var(--yellow-ink,#7a5d00);fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;box-sizing:border-box}
+#chat .mn-tile.core{border-color:var(--yellow,#f5c518);box-shadow:0 0 0 1px var(--yellow,#f5c518) inset}
+#chat .ui-replies .ui-pill-back{background:none;border:0;padding:6px 4px;color:var(--ui-muted,#667085);font-size:13.5px;font-weight:700;cursor:pointer}
+body.evia-epa #chat .mn-tile{background:#3a3f48;border-color:#4a505a;color:#eef0f3}
+body.evia-epa #chat .ui-replies .ui-pill-back{color:#b7bdc8}

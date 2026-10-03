@@ -402,11 +402,14 @@
     queue=queue.then(()=>{
       const c=chatBox();if(!c||gen!==chatGen)return;
       if(opt&&opt.turns!=null&&opt.turns!==userTurns)return;
-      /* At most four at a time. "Something else" is left out: the message box is always there. */
-      const shown=list.filter(r=>r&&r.label!=="Something else");if(!shown.length)return;
+      /* Four at a time, the rest behind More. "Something else" and "Back" are a small link back to Evia's menu. */
+      const items=list.filter(Boolean),back=items.find(r=>r.back)||(items.some(r=>r.label==="Something else")?{label:"Menu",back:true,run:somethingElse}:null);
+      const shown=items.filter(r=>!r.back&&r.label!=="Something else");
+      if(!shown.length&&back){back.run();return}
       const box=document.createElement("div");box.className="chat-options ui-replies";
       shown.forEach((r,i)=>{const b=document.createElement("button");b.type="button";b.className="chat-pill"+(r.primary?" ui-pill-primary":"")+(i>=3&&shown.length>4?" ui-pill-extra":"");b.innerHTML="<strong>"+escHtml(r.label)+"</strong>";b.onclick=()=>{box.remove();userSays(r.label);r.run()};box.appendChild(b)});
       if(shown.length>4){const m=document.createElement("button");m.type="button";m.className="chat-pill ui-pill-more";m.innerHTML="<strong>More</strong>";m.onclick=()=>{box.classList.add("show-all");m.remove();scrollChat()};box.appendChild(m)}
+      if(back){const b=document.createElement("button");b.type="button";b.className="ui-pill-back";b.textContent="‹ "+back.label;b.onclick=()=>{box.remove();back.run()};box.appendChild(b)}
       c.appendChild(box);scrollChat();
     });
   }
@@ -598,11 +601,10 @@
     replies([...(task?[{label:"Show me the task",primary:true,run:()=>{closeChat();setTimeout(()=>window.eviaPractice.openTask(0),60)}}]:[]),{label:"See all my stats",primary:!task,run:()=>{closeChat();setTimeout(showStats,60)}},{label:"Check my write-ups",run:writeups},{label:"Which KSBs am I missing?",run:ksbGaps},{label:"Something else",run:somethingElse}]);
   }
   const hrsText=n=>window.eviaHM(n);
-  /* "Something else" is whatever they type next, so it just points at the message box. */
+  /* "Something else" brings back Evia's four categories. */
   function somethingElse(){
     document.body.classList.remove("evia-epa");
-    const gen=chatGen;
-    queue=queue.then(()=>{if(gen!==chatGen)return;const f=document.querySelector(".chat-sheet .ui-ask");if(!f)return;f.classList.remove("ui-ask-hint");void f.offsetWidth;f.classList.add("ui-ask-hint")});
+    if(window.eviaMenu)window.eviaMenu.menu();
   }
   function statsFromMenu(){userSays("My stats");myStats()}
   /* My targets: the targets from the latest review, or a new set from Evia if there aren't any. */
@@ -664,41 +666,37 @@
   /* ---------- Above the message box: only what the chat alone does ----------
      Everything else has its own place in the app (My progress, Teach me, the unit pages) and can be typed here. */
   const SVG=p=>'<svg viewBox="0 0 24 24" aria-hidden="true">'+p+'</svg>';
-  const QUICK={
-    calc:["Calculators",'<rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8M8.5 11h.01M12 11h.01M15.5 11h.01M8.5 14.5h.01M12 14.5h.01M15.5 14.5h.01M8.5 18h.01M12 18h3.5"/>'],
-    checkin:["Check in to class",'<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2.5v2.5H14zM17.5 17.5H20V20h-2.5zM14 19v1M19 14h1"/>']
-  };
-  const connectedLive=()=>{const e=window.eviaNisia&&window.eviaNisia.joined();return !!(e&&e.live&&window.eviaCheckIn)};
+  /* The EPA tile in Teach me: Evia's chat, dark, straight into EPA practice. */
   window.eviaOpenEpa=()=>{window.chat({quiet:true});setTimeout(()=>{const C=window.eviaCoachFlows;if(C&&C.epa)C.epa()},60)};
-  function runQuick(id){
-    document.body.classList.remove("evia-epa");
-    document.querySelectorAll("#chat .ui-replies").forEach(x=>x.remove());
-    if(id==="checkin"){closeChat();setTimeout(()=>window.eviaCheckIn&&window.eviaCheckIn.open(),80);return}
-    userSays("Calculators");say("Which one do you need?");if(window.eviaBrain)window.eviaBrain.calculators();
-  }
-  function buildDock(sheet){
-    const form=sheet.querySelector(".ui-ask");if(!form||sheet.querySelector(".ui-dock"))return;
-    const ids=(connectedLive()?["checkin"]:[]).concat(["calc"]);
+  const connectedLive=()=>{const e=window.eviaNisia&&window.eviaNisia.joined();return !!(e&&e.live&&window.eviaCheckIn)};
+  /* There's no typing: the bar at the bottom brings back Evia's menu, and checks in to class when connected. */
+  function buildBar(sheet){
+    if(sheet.querySelector(".ui-dock"))return;
     const dock=document.createElement("div");dock.className="ui-dock";
-    dock.innerHTML='<div class="ui-cats" role="toolbar" aria-label="Quick tools">'+ids.map(id=>'<button type="button" class="ui-cat" data-quick="'+id+'">'+SVG(QUICK[id][1])+'<span>'+escHtml(QUICK[id][0])+'</span></button>').join("")+'</div>';
-    form.before(dock);
-    dock.querySelectorAll("[data-quick]").forEach(b=>b.onclick=()=>runQuick(b.dataset.quick));
+    dock.innerHTML='<div class="ui-cats" role="toolbar" aria-label="Evia">'+
+      '<button type="button" class="ui-cat ui-cat-menu" data-quick="menu">'+SVG('<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/>')+'<span>Menu</span></button>'+
+      (connectedLive()?'<button type="button" class="ui-cat" data-quick="checkin">'+SVG('<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2.5v2.5H14zM17.5 17.5H20V20h-2.5zM14 19v1M19 14h1"/>')+'<span>Check in to class</span></button>':"")+'</div>';
+    sheet.appendChild(dock);
+    dock.querySelectorAll("[data-quick]").forEach(b=>b.onclick=()=>{
+      document.querySelectorAll("#chat .ui-replies").forEach(x=>x.remove());
+      if(b.dataset.quick==="checkin"){closeChat();setTimeout(()=>window.eviaCheckIn&&window.eviaCheckIn.open(),80);return}
+      somethingElse();
+    });
   }
   /* The opening: Evia, a hello, where they are, and the one thing she'd do next. */
   function welcome(name){
-    const S=window.eviaStats;let s=null,n=null;
-    try{s=S.compute();n=S.nudges(s)[0]}catch(_){}
-    const a=s&&s.a,bits=s?[a&&a.timePct!=null?a.timePct+"% through":"",a?a.ksbPct+"% of KSBs":"",(s.otjWeek?window.eviaHM(s.otjWeek):"0h")+" learning this week"].filter(Boolean):[];
-    if(n&&n.celebrate&&window.eviaMood)window.eviaMood("happy");
+    const S=window.eviaStats;let s=null,f=null;
+    try{s=S.compute()}catch(_){}
+    try{f=window.eviaMenu&&window.eviaMenu.focus()}catch(_){}
+    const a=s&&s.a,T=window.eviaTerm?window.eviaTerm().many:"KSBs",bits=s?[a?a.ksbPct+"% of "+T+" evidenced":"",(s.otjWeek?window.eviaHM(s.otjWeek):"0h")+" learning this week",a&&a.timePct!=null?a.timePct+"% through":""].filter(Boolean):[];
     const askPush=!!(window.eviaPush&&window.eviaPush.state()==="off"&&!window.eviaPush.asked());
     widget('<div class="ui-hello"><span class="evia-mini ui-hello-face" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span>'+
       '<h3>'+escHtml(partOfDay()+(name?", "+name:""))+'</h3>'+(bits.length?'<p>'+bits.map(escHtml).join(" · ")+'</p>':"")+
-      (n?'<button type="button" class="ui-next"><small>'+(n.celebrate?"Nice one":"Up next")+'</small><span>'+n.text+'</span><b>'+escHtml(n.action.label)+SVG('<path d="m9 6 6 6-6 6"/>')+'</b></button>'
-        :'<div class="ui-next done"><small>All good</small><span>You’re on track. Nothing urgent today.</span></div>')+
+      (f?'<button type="button" class="ui-next"><small>Today’s focus · '+escHtml(f.kicker)+'</small><span>'+f.text+'</span><b>'+escHtml(f.label)+SVG('<path d="m9 6 6 6-6 6"/>')+'</b></button>':"")+
       (askPush?'<button type="button" class="ui-push" id="br-push">'+SVG('<path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15Z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>')+'<span>Get told when your assessor signs something off</span><b>Turn on</b></button>':"")+
-      '<p class="ui-hello-hint">Ask me anything: your course, the trade, or a sum.</p></div>',el=>{
+      '<p class="ui-hello-hint">Or pick something:</p></div>',el=>{
       const b=el.querySelector("button.ui-next");
-      if(b)b.onclick=()=>{if(n.achievements&&S.markSeen)S.markSeen(n.achievements);b.disabled=true;el.querySelector(".ui-hello").classList.add("used");userSays(n.action.label);runNudge(n)};
+      if(b)b.onclick=()=>{b.disabled=true;el.querySelector(".ui-hello").classList.add("used");f.run()};
       const pb=el.querySelector("#br-push");
       if(pb)pb.onclick=async()=>{
         pb.disabled=true;let ok=false;try{ok=await window.eviaPush.on()}catch(_){}
@@ -733,8 +731,8 @@
     const name=firstName(),sheet=c.closest(".chat-sheet");
     const head=sheet&&sheet.querySelector(".sheet-head h2");if(head)head.textContent="Evia";
     c.innerHTML="";
-    if(!(opts&&opts.quiet===true))welcome(name);
-    if(sheet&&window.eviaCoachFlows&&window.eviaCoachFlows.input){window.eviaCoachFlows.input(sheet);buildDock(sheet)}
+    if(!(opts&&opts.quiet===true)){welcome(name);if(window.eviaMenu)window.eviaMenu.menu({quiet:true})}
+    if(sheet)buildBar(sheet);
   }
   /* After a test: celebrate a good score and offer what to do next. */
   window.addEventListener("evia:test-saved",e=>{
