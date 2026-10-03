@@ -1208,6 +1208,11 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       cv.away=!!bk&&JSON.parse(bk.body).p_kind==="ill"&&JSON.parse(bk.body).p_reason==="Flu"&&JSON.parse(bk.body).p_from===tmk&&await p9.evaluate(()=>/is booked/.test(document.getElementById("chat").innerText)&&/tutor, assessor and employer/.test(document.getElementById("chat").innerText)&&window.eviaNisia.absences().length===1);
       if(d9)await p9.screenshot({path:d9+"/away-booked.png"}).catch(()=>{});
       /* From the employer (Paros): the witness testimony is in Supporting evidence, and their view is in My progress. */
+      cv.behaviours=await p9.evaluate(()=>{const x=window.eviaData.list("supporting").find(r=>r.id==="emp-BR1");return !!x&&x.title==="Employer feedback: behaviours"&&x.witness&&x.witness.role==="Employer"&&/pdf|plain/.test(x.mime)});
+      await p9.evaluate(()=>openSupportingDetails("emp-BR1",false));await p9.waitForTimeout(400);
+      cv.behavioursOpen=await p9.evaluate(()=>{const t=(document.querySelector(".sd-sheet")||{}).textContent||"";return /Your behaviours/.test(t)&&/Excellent/.test(t)&&/Developing/.test(t)&&/Reliable and keen/.test(t)});
+      if(d9)await p9.screenshot({path:d9+"/employer-behaviours.png"}).catch(()=>{});
+      await p9.evaluate(()=>{document.getElementById("modal-root").innerHTML=""});
       cv.witness=await p9.evaluate(()=>{const x=window.eviaData.list("supporting").find(r=>r.id==="emp-W1");return !!x&&/Jointing Styles/.test(x.title)&&x.witness&&x.witness.role==="Employer"&&!(x.criteria||[]).length});
       await p9.evaluate(()=>{window.eviaChatKit.closeChat();window.eviaOpenEmployer()});await p9.waitForTimeout(1200);
       cv.employer=await p9.evaluate(()=>{const t=document.querySelector(".pv-sheet")?document.querySelector(".pv-sheet").textContent:"";return /Reliable and keen/.test(t)&&/bucket handle joint/.test(t)&&/Excellent/.test(t)&&/Supporting evidence/.test(t)&&!window.eviaEmployer.unseen()});
