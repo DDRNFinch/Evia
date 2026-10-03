@@ -222,14 +222,14 @@
       return;
     }
     if(/\b(hi|hello|hey|thanks|thank you|cheers)\b/.test(t)){k.say(k.pick(["Any time. What’s next?","Happy to help. Anything else?"]));return k.somethingElse()}
-    k.say("I’m still learning to understand everything, but I can help with these:");
+    k.say("I’m still learning to understand everything. Pick a topic below and I’ll help with that.");
     k.somethingElse();
   }
   /* Ask Evia: typed questions go to her brain (evia-brain.js), which answers from Evia's own content. */
   function input(sheet){
     if(sheet.querySelector(".ui-ask"))return;
     const form=document.createElement("form");form.className="ui-ask";
-    form.innerHTML='<input type="text" placeholder="Ask about tools, KSBs, sums…" aria-label="Message Evia" enterkeyhint="send" autocomplete="off"><button type="submit" aria-label="Send"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></button>';
+    form.innerHTML='<input type="text" placeholder="Ask Evia anything…" aria-label="Message Evia" enterkeyhint="send" autocomplete="off"><button type="submit" aria-label="Send"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></button>';
     sheet.appendChild(form);
     const field=form.querySelector("input");
     field.addEventListener("input",()=>{if(window.eviaLook)window.eviaLook(-4,-26,1600);form.classList.toggle("has-text",!!field.value.trim())});
@@ -505,38 +505,5 @@
   /* EPA mode ends when the chat closes. */
   const mr=document.getElementById("modal-root");
   if(mr)new MutationObserver(()=>{if(!mr.querySelector(".chat-sheet"))epaMode(false)}).observe(mr,{childList:true});
-  /* ---------- Main menu: minimal options grouped by category ---------- */
-  function mainMenu(){
-    const k=K();
-    k.say(k.pick(["What can I help with?","What's on your mind?","What shall we do?"]));
-    k.replies([
-      {label:"📚 Learning",run:()=>categoryMenu("learning")},
-      {label:"✓ Review progress",run:()=>categoryMenu("review")},
-      {label:"🧠 Skills & confidence",run:()=>categoryMenu("skills")}
-    ]);
-  }
-  function categoryMenu(category){
-    const k=K();
-    const menus={
-      learning:[
-        {label:"Log my hours",run:logHours},
-        {label:"Upskill with a task",run:upskill},
-        {label:"Check evidence",run:evidence}
-      ],
-      review:[
-        {label:"Quick review",run:quickReview},
-        {label:"Get ready for my review",run:prepare},
-        {label:"My targets",run:targets}
-      ],
-      skills:[
-        {label:"Rate my skills",run:confidence},
-        {label:"EPA practice",run:epa},
-        {label:"Check one piece of evidence",run:evidenceCheck}
-      ]
-    };
-    const options=menus[category]||[];
-    k.replies([...options,{label:"← Back",run:mainMenu}]);
-  }
-
-  window.eviaCoachFlows={hours:logHours,confidence,upskill,evidence,input,evidenceCheck,quickReview,prepare,targets,epa,epaMode,mainMenu,categoryMenu};
+  window.eviaCoachFlows={hours:logHours,confidence,upskill,task:upskillTask,evidence,input,evidenceCheck,quickReview,prepare,targets,epa,epaMode};
 })();

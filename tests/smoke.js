@@ -120,24 +120,25 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     await page.evaluate(()=>nav("home"));await page.waitForTimeout(450);
     await page.evaluate(()=>window.chat());
     await page.waitForFunction(()=>{const c=document.getElementById("chat");return c&&!c.querySelector(".evia-thinking")},null,{timeout:15000});
-    await page.waitForSelector("#chat .ui-action",{timeout:15000});
-    await page.waitForSelector("#chat .br-today",{timeout:15000});
-    check("Evia opens with Today (her picks for the day), four actions and the Ask Evia box (EPA practice is in Teach me)",await page.evaluate(()=>{const t=[...document.querySelectorAll("#chat .ui-action")].map(b=>b.innerText.trim());return t.join().replace(/\d+$/,"").replace(/review\d+,/,"review,")==="Evidence check,Get ready for review,Show targets,Calculators"&&/of learning this week/i.test(document.querySelector("#chat .br-today").innerText)&&!!document.querySelector("#chat .br-today .br-todo")&&!!document.querySelector(".chat-sheet .ui-ask input")}));
-    await page.click('#chat .ui-action[data-action="evidence"]');
-    await page.waitForFunction(()=>[...document.querySelectorAll("#chat .ui-replies button")].length>=2,null,{timeout:15000});
+    await page.waitForSelector("#chat .ui-hello",{timeout:15000});
+    check("Evia opens with a hello, one thing to do next, four topics above the Ask Evia box, and nothing else",await page.evaluate(()=>{const t=[...document.querySelectorAll(".chat-sheet .ui-cat")].map(b=>b.innerText.trim());return t.join()==="Evidence,Review,Learning,Tools"&&/learning this week/i.test(document.querySelector("#chat .ui-hello").innerText)&&!!document.querySelector("#chat .ui-hello .ui-next")&&!document.querySelector("#chat .ui-replies,#chat .ui-actions,#chat .br-today")&&!!document.querySelector(".chat-sheet .ui-ask input")}));
+    await page.click('.ui-cat[data-cat="review"]');
+    check("A topic opens a small panel of three or four things",await page.evaluate(()=>{const p=document.querySelector(".ui-cat-panel");const n=p.querySelectorAll(".ui-cat-item").length;return !p.hidden&&n>=3&&n<=4}));
+    await page.click('.ui-cat[data-cat="evidence"]');await page.click('.ui-cat-item[data-item="evidence"]');
+    check("Picking one closes the panel and the welcome makes way",await page.evaluate(()=>document.querySelector(".ui-cat-panel").hidden&&!document.querySelector("#chat .ui-hello")));
+    await page.waitForFunction(()=>[...document.querySelectorAll("#chat .ui-replies button")].length>=1,null,{timeout:15000});
     await page.evaluate(()=>document.querySelector("#chat .ui-replies button").click());
     await page.waitForFunction(()=>!!document.querySelector("#chat .ev-check")&&[...document.querySelectorAll("#chat .ui-replies button")].some(b=>/Add photos/.test(b.textContent)),null,{timeout:15000});
     check("Evidence check rates a piece of evidence, lists what's still to mention and offers ways to fix it",await page.evaluate(()=>{const t=[...document.querySelectorAll("#chat .ui-replies button")].map(b=>b.textContent);return /Weak|Good|Strong/.test(document.querySelector("#chat .ev-check").textContent)&&["Add photos","Improve my write-up","Let Evia guide me","Check another"].every(x=>t.includes(x))}));
-    await page.evaluate(()=>[...document.querySelectorAll("#chat .ui-replies button")].find(b=>b.textContent==="Something else").click());
-    await page.waitForSelector('#chat .ui-actions .ui-action[data-action="prep"]',{timeout:15000});await page.click('#chat .ui-actions .ui-action[data-action="prep"]');
+    check("Replies never offer Something else: the topics are always there",await page.evaluate(()=>![...document.querySelectorAll("#chat .ui-replies button")].some(b=>b.textContent==="Something else")));
+    await page.click('.ui-cat[data-cat="review"]');await page.click('.ui-cat-item[data-item="prep"]');
     await page.waitForSelector("#chat .qr.prep",{timeout:15000});await page.waitForFunction(()=>[...document.querySelectorAll("#chat .ui-replies button")].some(b=>b.textContent==="Skip for now"),null,{timeout:15000});
     const prep1=await page.evaluate(()=>({rows:document.querySelectorAll("#chat .qr.prep .qr-row").length,btns:[...document.querySelectorAll("#chat .ui-replies button")].map(b=>b.textContent),text:document.getElementById("chat").innerText}));
     check("Get ready for my review lists every area and their comments, then offers one thing at a time",prep1.rows>=7&&prep1.btns.includes("Skip for now")&&/One at a time/.test(prep1.text),JSON.stringify(prep1.btns));
-    for(let i=0;i<8;i++){const b=await page.evaluate(()=>[...document.querySelectorAll("#chat .ui-replies button")].map(x=>x.textContent));if(!b.includes("Skip for now"))break;const n0=await page.evaluate(()=>document.querySelectorAll("#chat .ui-replies").length);await page.evaluate(()=>[...document.querySelectorAll("#chat .ui-replies button")].find(x=>x.textContent==="Skip for now").click());await page.waitForFunction(n=>document.querySelectorAll("#chat .ui-replies button").length&&[...document.querySelectorAll("#chat .ui-replies button")].every(b=>!b.disabled)&&document.querySelectorAll("#chat .ui-replies").length>=1,n0,{timeout:15000});await page.waitForTimeout(1500)}
+    for(let i=0;i<8;i++){const b=await page.evaluate(()=>[...document.querySelectorAll("#chat .ui-replies button")].map(x=>x.textContent));if(!b.includes("Skip for now"))break;const n0=await page.evaluate(()=>document.querySelectorAll("#chat .ui-replies").length);await page.evaluate(()=>[...document.querySelectorAll("#chat .ui-replies button")].find(x=>x.textContent==="Skip for now").click());await page.waitForFunction(n=>(document.querySelectorAll("#chat .ui-replies button").length&&[...document.querySelectorAll("#chat .ui-replies button")].every(b=>!b.disabled)&&document.querySelectorAll("#chat .ui-replies").length>=1)||/You’re ready for your review/.test(document.getElementById("chat").innerText),n0,{timeout:15000});await page.waitForTimeout(1500)}
     const endBtns=await page.evaluate(()=>[...document.querySelectorAll("#chat .ui-replies button")].map(b=>b.textContent));
     await page.waitForTimeout(2500);const endTxt=await page.evaluate(()=>document.getElementById("chat").innerText);
     check("…skipping moves on to the end: their comments for the assessor, or ready if they're in",(await page.evaluate(()=>[...document.querySelectorAll("#chat .ui-replies button")].some(b=>b.textContent==="Add my comments")))||/You’re ready for your review/.test(endTxt),JSON.stringify(endBtns)+" "+(await page.evaluate(()=>document.getElementById("chat").innerText.slice(-400))));
-    await page.evaluate(()=>[...document.querySelectorAll("#chat .ui-replies button")].find(b=>b.textContent==="Something else").click());
     await page.click('#x');await page.waitForTimeout(400);await page.evaluate(()=>nav("teach"));await page.waitForSelector("#tg-epa",{timeout:10000});
     if(process.env.EVIA_SHOTS)await page.screenshot({path:process.env.EVIA_SHOTS+"/teach-epa.png",fullPage:true});
     check("Teach me: Skills sits beside a half-width EPA practice tile",await page.evaluate(()=>{const s=document.getElementById("tg-skills"),e=document.getElementById("tg-epa");if(!s||!e||s.parentNode!==e.parentNode)return false;const a=s.getBoundingClientRect(),b=e.getBoundingClientRect();return Math.abs(a.top-b.top)<2&&b.left>a.right-1&&Math.abs(a.width-b.width)<4}));
@@ -179,7 +180,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("Recorded discussions are graded from the transcript: a model answer scores high, a vague one low, and follow-up answers count",disc.strong>=75&&disc.weak<30&&disc.half,JSON.stringify(disc));
     await page.click('#x');await page.waitForTimeout(400);
     check("EPA mode ends when the chat closes",await page.evaluate(()=>!document.body.classList.contains("evia-epa")));
-    await page.evaluate(()=>window.chat());await page.waitForSelector("#chat .ui-action",{timeout:15000});
+    await page.evaluate(()=>window.chat());await page.waitForSelector("#chat .ui-hello",{timeout:15000});
     check("Targets are set from Evia's stats",await page.evaluate(()=>{window.eviaTargets.ensure();return window.eviaTargets.mine().length>=3}));
     // Ask Evia: her calculators, glossary and lessons, worked out on the phone.
     const calcs=await page.evaluate(()=>{const B=window.eviaBrain,C=B.calc;return {bricks:C.bricks({length:4,height:1.2}).big,cavity:C.bricks({length:4,height:1.2,type:"cavity"}).big,stairs:C.stairs({rise:2600}).big,
@@ -1091,7 +1092,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       pv.offFirst=await p8.evaluate(()=>window.eviaPush&&window.eviaPush.state());
       await p8.evaluate(()=>window.chat());await p8.waitForTimeout(4500);
       pv.todayAsks=await p8.evaluate(()=>!!document.querySelector("#chat #br-push"));
-      if(d8)await p8.locator("#chat .br-today").screenshot({path:d8+"/push-today.png"}).catch(()=>{});
+      if(d8)await p8.locator("#chat .ui-hello").screenshot({path:d8+"/push-today.png"}).catch(()=>{});
       await p8.click("#chat #br-push");await p8.waitForTimeout(3500);
       const up=calls8.filter(x=>x.p==="/rest/v1/device_tokens"&&x.m==="POST").map(x=>JSON.parse(x.body)).pop();
       pv.saved=!!up&&up.app==="evia"&&up.user_id==="u-learner"&&up.token===up.subscription.endpoint&&up.subscription.keys.auth==="au"&&await p8.evaluate(()=>window.__pushKey===65);
@@ -1147,9 +1148,10 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       await p9.evaluate(()=>{document.getElementById("app").classList.remove("welcome-app-hidden");const w=document.getElementById("welcome-screen");if(w)w.remove()});
       const cv={};
       await p9.evaluate(()=>window.chat());await p9.waitForTimeout(5000);
-      cv.first=await p9.evaluate(()=>{const b=document.querySelector("#chat .ui-actions .ui-action");return !!b&&b.dataset.action==="checkin"&&b.classList.contains("ui-action-wide")});
-      if(d9)await p9.locator("#chat .ui-actions").screenshot({path:d9+"/checkin-action.png"}).catch(()=>{});
-      await p9.click('#chat [data-action="checkin"]');await p9.waitForTimeout(1500);
+      await p9.click('.ui-cat[data-cat="tools"]');
+      cv.first=await p9.evaluate(()=>{const b=document.querySelector(".ui-cat-panel .ui-cat-item");return !!b&&b.dataset.item==="checkin"});
+      if(d9)await p9.locator(".ui-dock").screenshot({path:d9+"/checkin-action.png"}).catch(()=>{});
+      await p9.click('.ui-cat-item[data-item="checkin"]');await p9.waitForTimeout(1500);
       /* No camera here: straight to typing the code. */
       cv.typed=await p9.evaluate(()=>!!document.querySelector("#ci-view .ci-code"));
       await p9.fill("#ci-view .ci-code","abc 123");await p9.click('#ci-view .ci-form button[type=submit]');await p9.waitForTimeout(1500);
