@@ -2668,15 +2668,52 @@ body.evia-epa .ui-cat{background:#3a3f48;border-color:#4a505a;color:#eef0f3}
 #chat .ui-replies .ui-pill-back{background:none;border:0;padding:6px 4px;color:var(--ui-muted,#667085);font-size:13.5px;font-weight:700;cursor:pointer}
 body.evia-epa #chat .ui-replies .ui-pill-back{color:#b7bdc8}
 
-/* Evia's list: what needs doing, three at a time. */
-#chat .td-list{display:flex;flex-direction:column;gap:8px}
-#chat .td-item{display:flex;width:100%;padding:13px 15px;border-radius:16px;border:1px solid var(--ui-line,#e4e7ec);border-left:4px solid var(--yellow,#f5c518);background:#fff;text-align:left;cursor:pointer;color:var(--ink,#101828);transition:transform .12s ease}
-#chat .td-item:active{transform:scale(.985)}
-#chat .td-item.urgent{border-left-color:#e2564b}
-#chat .td-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
-#chat .td-copy strong{font-size:15px;line-height:1.3}
-#chat .td-copy small{font-size:13px;line-height:1.4;color:var(--ui-muted,#667085)}
-#chat .td-copy b{display:inline-flex;align-items:center;gap:2px;margin-top:4px;font-size:13.5px;color:var(--yellow-ink,#7a5d00)}
-#chat .td-copy b svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
-#chat .td-used{opacity:.55}
+/* Evia's list: what needs doing, three at a time, compact and alive. */
+#chat .td-list{display:flex;flex-direction:column;gap:6px}
+#chat .td-item{display:flex;align-items:center;gap:11px;width:100%;padding:9px 10px 9px 9px;border-radius:14px;border:1px solid var(--ui-line,#e4e7ec);background:#fff;text-align:left;cursor:pointer;color:var(--ink,#101828);
+  animation:tdIn .5s cubic-bezier(.2,1.4,.4,1) both;animation-delay:calc(.12s + var(--i,0)*.11s);transition:transform .15s ease,box-shadow .2s ease,opacity .2s ease}
+#chat .td-item:active{transform:scale(.97)}
+#chat .td-ic{position:relative;flex:0 0 auto;width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:var(--soft,#fff7d6);color:var(--yellow-ink,#7a5d00);
+  animation:tdPop .55s cubic-bezier(.3,1.8,.4,1) both;animation-delay:calc(.3s + var(--i,0)*.11s)}
+#chat .td-ic svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#chat .td-item.urgent .td-ic{background:#fde8e6;color:#c2382d}
+#chat .td-item.urgent .td-ic::after{content:"";position:absolute;top:-2px;right:-2px;width:9px;height:9px;border-radius:50%;background:#e2564b;box-shadow:0 0 0 2px #fff;animation:tdPing 1.8s ease-out infinite}
+#chat .td-copy{flex:1;display:flex;flex-direction:column;gap:1px;min-width:0}
+#chat .td-copy strong{font-size:14px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#chat .td-copy small{font-size:12.5px;line-height:1.3;color:var(--ui-muted,#667085);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#chat .td-go{flex:0 0 auto;color:var(--yellow-ink,#7a5d00);transition:transform .2s ease}
+#chat .td-go svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;display:block}
+#chat .td-item:first-child .td-go{animation:tdNudge 1.6s ease-in-out 1.2s 3}
 #chat .td-used .td-item{cursor:default}
+#chat .td-used .td-item:not(.td-picked){opacity:.4;transform:scale(.98)}
+#chat .td-item.td-picked{animation:tdGo .3s cubic-bezier(.5,0,.75,0) forwards;box-shadow:0 8px 24px rgba(16,24,40,.12)}
+#chat .td-count{display:inline-block;font-weight:800;animation:tdCount .6s cubic-bezier(.3,1.8,.4,1) .25s both}
+@keyframes tdIn{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes tdPop{0%{transform:scale(0) rotate(-20deg)}100%{transform:none}}
+@keyframes tdPing{0%{box-shadow:0 0 0 2px #fff,0 0 0 2px rgba(226,86,75,.6)}80%,100%{box-shadow:0 0 0 2px #fff,0 0 0 9px rgba(226,86,75,0)}}
+@keyframes tdNudge{0%,100%{transform:none}50%{transform:translateX(4px)}}
+@keyframes tdGo{to{opacity:0;transform:translateX(40px) scale(.98)}}
+@keyframes tdCount{0%{transform:scale(.3);opacity:0}100%{transform:none;opacity:1}}
+/* All caught up: a tick that draws itself, and confetti. */
+#chat .td-done{position:relative;display:grid;place-items:center;height:92px}
+#chat .td-done svg{width:64px;height:64px;fill:none;stroke-linecap:round;stroke-linejoin:round}
+#chat .td-done circle{stroke:#3cb371;stroke-width:3;stroke-dasharray:145;stroke-dashoffset:145;animation:tdDraw .6s ease-out .1s forwards;fill:#eaf8f0}
+#chat .td-done path{stroke:#3cb371;stroke-width:4;stroke-dasharray:40;stroke-dashoffset:40;animation:tdDraw .35s ease-out .6s forwards}
+#chat .td-confetti{position:absolute;left:50%;top:50%;pointer-events:none}
+#chat .td-confetti i{position:absolute;width:7px;height:11px;border-radius:2px;opacity:0;animation:tdBurst 1.1s cubic-bezier(.2,.8,.3,1) forwards;animation-delay:calc(.75s + var(--d))}
+@keyframes tdDraw{to{stroke-dashoffset:0}}
+@keyframes tdBurst{0%{opacity:1;transform:translate(0,0) rotate(0) scale(.6)}70%{opacity:1}100%{opacity:0;transform:translate(var(--x),calc(var(--y) + 40px)) rotate(var(--r)) scale(1)}}
+/* Evia in the header: she blinks. */
+.chat-sheet .sheet-head h2{display:flex;align-items:center;gap:10px}
+.chat-sheet .ev-head-face{width:30px;height:30px;border-width:2.5px;animation:evHeadIn .5s cubic-bezier(.3,1.8,.4,1) both}
+.chat-sheet .ev-head-face .evia-face{gap:4px}
+.chat-sheet .ev-head-face .evia-face i{width:6px!important;height:8px!important;transform-origin:50% 50%;animation:evBlink 4.2s ease-in-out 1s infinite}
+@keyframes evHeadIn{from{transform:scale(0) rotate(-30deg)}to{transform:none}}
+@keyframes evBlink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+/* The chat breathes: a soft glow drifts behind the conversation. */
+html body .chat-sheet .chat{background:radial-gradient(60% 45% at 15% 10%,color-mix(in srgb,var(--yellow,#f5c518) 9%,transparent),transparent 70%),radial-gradient(55% 40% at 90% 85%,color-mix(in srgb,var(--yellow,#f5c518) 7%,transparent),transparent 70%),#fafbfc;background-size:180% 180%;animation:evDrift 16s ease-in-out infinite alternate}
+@keyframes evDrift{0%{background-position:0% 0%,100% 100%}100%{background-position:60% 40%,30% 60%}}
+body.evia-epa .chat-sheet .chat{animation:none}
+@media (prefers-reduced-motion:reduce){#chat .td-item,#chat .td-ic,#chat .td-go,#chat .td-count,#chat .td-done circle,#chat .td-done path,.chat-sheet .ev-head-face,.chat-sheet .ev-head-face .evia-face i,html body .chat-sheet .chat,#chat .td-item.urgent .td-ic::after{animation:none!important}#chat .td-done circle,#chat .td-done path{stroke-dashoffset:0}}
+html[data-a11y-motion="reduce"] #chat .td-item,html[data-a11y-motion="reduce"] #chat .td-ic,html[data-a11y-motion="reduce"] #chat .td-go,html[data-a11y-motion="reduce"] #chat .td-count,html[data-a11y-motion="reduce"] .chat-sheet .ev-head-face,html[data-a11y-motion="reduce"] .chat-sheet .ev-head-face .evia-face i,html[data-a11y-motion="reduce"] body .chat-sheet .chat,html[data-a11y-motion="reduce"] #chat .td-item.urgent .td-ic::after{animation:none!important}
+html[data-a11y-motion="reduce"] #chat .td-done circle,html[data-a11y-motion="reduce"] #chat .td-done path{animation:none!important;stroke-dashoffset:0}

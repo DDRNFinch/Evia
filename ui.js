@@ -696,7 +696,7 @@
     const c=chatBox();if(!c)return;
     queue=Promise.resolve();chatGen++;
     const sheet=c.closest(".chat-sheet");
-    const head=sheet&&sheet.querySelector(".sheet-head h2");if(head)head.textContent="Evia";
+    const head=sheet&&sheet.querySelector(".sheet-head h2");if(head)head.innerHTML='<span class="evia-mini ev-head-face" aria-hidden="true"><span class="evia-face"><i></i><i></i></span></span>Evia';
     c.innerHTML="";
     /* Evia opens with what needs doing (evia-todo.js). */
     if(!(opts&&opts.quiet===true)&&window.eviaTodo)window.eviaTodo.show();
