@@ -505,5 +505,38 @@
   /* EPA mode ends when the chat closes. */
   const mr=document.getElementById("modal-root");
   if(mr)new MutationObserver(()=>{if(!mr.querySelector(".chat-sheet"))epaMode(false)}).observe(mr,{childList:true});
-  window.eviaCoachFlows={hours:logHours,confidence,upskill,evidence,input,evidenceCheck,quickReview,prepare,targets,epa,epaMode};
+  /* ---------- Main menu: minimal options grouped by category ---------- */
+  function mainMenu(){
+    const k=K();
+    k.say(k.pick(["What can I help with?","What's on your mind?","What shall we do?"]));
+    k.replies([
+      {label:"📚 Learning",run:()=>categoryMenu("learning")},
+      {label:"✓ Review progress",run:()=>categoryMenu("review")},
+      {label:"🧠 Skills & confidence",run:()=>categoryMenu("skills")}
+    ]);
+  }
+  function categoryMenu(category){
+    const k=K();
+    const menus={
+      learning:[
+        {label:"Log my hours",run:logHours},
+        {label:"Upskill with a task",run:upskill},
+        {label:"Check evidence",run:evidence}
+      ],
+      review:[
+        {label:"Quick review",run:quickReview},
+        {label:"Get ready for my review",run:prepare},
+        {label:"My targets",run:targets}
+      ],
+      skills:[
+        {label:"Rate my skills",run:confidence},
+        {label:"EPA practice",run:epa},
+        {label:"Check one piece of evidence",run:evidenceCheck}
+      ]
+    };
+    const options=menus[category]||[];
+    k.replies([...options,{label:"← Back",run:mainMenu}]);
+  }
+
+  window.eviaCoachFlows={hours:logHours,confidence,upskill,evidence,input,evidenceCheck,quickReview,prepare,targets,epa,epaMode,mainMenu,categoryMenu};
 })();
