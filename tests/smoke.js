@@ -1138,6 +1138,8 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
         if(u.pathname==="/rest/v1/rpc/nisia_check_in"&&JSON.parse(q.postData()||"{}").p_scanned_at){state9.in=true;return json({session:"S1",class:"L2 Brickwork",at:JSON.parse(q.postData()).p_scanned_at,late:false,offline:true})}
         if(u.pathname==="/rest/v1/rpc/nisia_check_in"){const code=JSON.parse(q.postData()||"{}").p_code;return code==="ABC123"||/^NISI:IN:1:/.test(code)?json({class:"L2 Brickwork",lesson:"Cavity walls",at:new Date().toISOString(),late:false,again:false}):r.fulfill({status:400,contentType:"application/json",headers:{"access-control-allow-origin":"*"},body:JSON.stringify({message:"That code has changed. Scan the one on the screen now."})})}
         if(u.pathname==="/rest/v1/rpc/nisia_my_sessions")return json([{id:"S1",session_date:new Date().toISOString().slice(0,10),starts_at:new Date(Date.now()-5*60e3).toISOString(),ends_at:new Date(Date.now()+3*36e5).toISOString(),class:"L2 Brickwork",room:"Workshop 2",lesson:"Cavity walls",status:"open",checked_in_at:state9.in?new Date().toISOString():null,late:false,reason:null,absence_id:null}]);
+        if(u.pathname==="/rest/v1/witness_testimonies"&&q.method()==="GET")return json([{id:"W1",unit:"Jointing Styles",statement:"Jo pointed a full elevation in a bucket handle joint, neat and consistent.",rating:3,ksbs:["S12","B6"],signed_at:new Date().toISOString(),created_at:new Date().toISOString()}]);
+        if(u.pathname==="/rest/v1/behaviour_ratings"&&q.method()==="GET")return json([{id:"BR1",ratings:{B1:3,B2:4,B3:2,B4:3,B5:3},comment:"Reliable and keen.",created_at:new Date().toISOString()}]);
         if(u.pathname==="/rest/v1/rpc/nisia_book_absence")return json({id:"AB1",from:JSON.parse(q.postData()).p_from,to:JSON.parse(q.postData()).p_to,reason:"Ill"});
         if(u.pathname==="/rest/v1/rpc/nisia_my_college")return json([{id:"A1",session_date:new Date().toISOString().slice(0,10),class:"L2 Brickwork",lesson:"Cavity walls",ksbs:["K5","S3"],minutes:375,status:"present",checked_in_at:new Date().toISOString()}]);
         if(u.pathname.startsWith("/rest/v1/rpc/"))return json([]);
@@ -1205,8 +1207,13 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       const bk=calls9.find(x=>x.p==="/rest/v1/rpc/nisia_book_absence"),tm=new Date(Date.now()+864e5),tmk=tm.getFullYear()+"-"+String(tm.getMonth()+1).padStart(2,"0")+"-"+String(tm.getDate()).padStart(2,"0");
       cv.away=!!bk&&JSON.parse(bk.body).p_kind==="ill"&&JSON.parse(bk.body).p_reason==="Flu"&&JSON.parse(bk.body).p_from===tmk&&await p9.evaluate(()=>/is booked/.test(document.getElementById("chat").innerText)&&/tutor, assessor and employer/.test(document.getElementById("chat").innerText)&&window.eviaNisia.absences().length===1);
       if(d9)await p9.screenshot({path:d9+"/away-booked.png"}).catch(()=>{});
+      /* From the employer (Paros): the witness testimony is in Supporting evidence, and their view is in My progress. */
+      cv.witness=await p9.evaluate(()=>{const x=window.eviaData.list("supporting").find(r=>r.id==="emp-W1");return !!x&&/Jointing Styles/.test(x.title)&&x.witness&&x.witness.role==="Employer"&&!(x.criteria||[]).length});
+      await p9.evaluate(()=>{window.eviaChatKit.closeChat();window.eviaOpenEmployer()});await p9.waitForTimeout(1200);
+      cv.employer=await p9.evaluate(()=>{const t=document.querySelector(".pv-sheet")?document.querySelector(".pv-sheet").textContent:"";return /Reliable and keen/.test(t)&&/bucket handle joint/.test(t)&&/Excellent/.test(t)&&/Supporting evidence/.test(t)&&!window.eviaEmployer.unseen()});
+      if(d9)await p9.screenshot({path:d9+"/employer-progress.png"}).catch(()=>{});
       cv.noErrors=!e9.length;
-      check("Check in to class: Evia's first action when connected, a typed or scanned code checks in (jsQR reads it on iPhones), the tutor's register comes back as college hours the learner can't delete, a class on now is top of Evia's list, a scan with no signal is kept and sent later, and a learner books a day off",Object.values(cv).every(v=>v===true),JSON.stringify(cv)+" "+e9.join(" | "));
+      check("Check in to class: Evia's first action when connected, a typed or scanned code checks in (jsQR reads it on iPhones), the tutor's register comes back as college hours the learner can't delete, a class on now is top of Evia's list, a scan with no signal is kept and sent later, a learner books a day off, and the employer's witness testimony and behaviour ratings arrive",Object.values(cv).every(v=>v===true),JSON.stringify(cv)+" "+e9.join(" | "));
       await c9.close();
     }
     // Remove all data from this phone: Evia's data goes, the other Nisia apps' (same website) stays, Evia starts again.
