@@ -1127,7 +1127,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     // typed or scanned (jsQR reads it on phones without a built-in reader), and the tutor's finished register comes
     // back as college hours the learner can't change or delete.
     {
-      const state9={in:false};
+      const state9={in:false,abs:[]};
       const d9=process.env.EVIA_SHOTS||"",c9=await browser.newContext({...devices["Pixel 7"],serviceWorkers:"block"}),p9=await c9.newPage(),e9=[],calls9=[];p9.on("pageerror",e=>e9.push(e.message));
       const b64=o=>Buffer.from(JSON.stringify(o)).toString("base64url"),now=Math.floor(Date.now()/1000);
       const tok=b64({alg:"HS256"})+"."+b64({sub:"u-learner",role:"authenticated",aal:"aal1",exp:now+3600})+".s";
@@ -1137,9 +1137,12 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
         if(q.method()==="OPTIONS")return r.fulfill({status:200,headers:{"access-control-allow-origin":"*","access-control-allow-headers":"*","access-control-allow-methods":"*"}});
         if(u.pathname==="/rest/v1/rpc/nisia_check_in"&&JSON.parse(q.postData()||"{}").p_scanned_at){state9.in=true;return json({session:"S1",class:"L2 Brickwork",at:JSON.parse(q.postData()).p_scanned_at,late:false,offline:true})}
         if(u.pathname==="/rest/v1/rpc/nisia_check_in"){const code=JSON.parse(q.postData()||"{}").p_code;return code==="ABC123"||/^NISI:IN:1:/.test(code)?json({class:"L2 Brickwork",lesson:"Cavity walls",at:new Date().toISOString(),late:false,again:false}):r.fulfill({status:400,contentType:"application/json",headers:{"access-control-allow-origin":"*"},body:JSON.stringify({message:"That code has changed. Scan the one on the screen now."})})}
+        if(u.pathname==="/rest/v1/rpc/nisia_whats_new")return json({college:[{id:"A1",session_date:new Date().toISOString().slice(0,10),class:"L2 Brickwork",lesson:"Cavity walls",ksbs:["K5","S3"],minutes:375,status:"present",checked_in_at:new Date().toISOString()}],
+          sessions:[{id:"S1",session_date:new Date().toISOString().slice(0,10),starts_at:new Date(Date.now()-5*60e3).toISOString(),ends_at:new Date(Date.now()+3*36e5).toISOString(),class:"L2 Brickwork",room:"Workshop 2",lesson:"Cavity walls",status:"open",checked_in_at:state9.in?new Date().toISOString():null,late:false,reason:null,absence_id:null}],absences:state9.abs});
         if(u.pathname==="/rest/v1/rpc/nisia_my_sessions")return json([{id:"S1",session_date:new Date().toISOString().slice(0,10),starts_at:new Date(Date.now()-5*60e3).toISOString(),ends_at:new Date(Date.now()+3*36e5).toISOString(),class:"L2 Brickwork",room:"Workshop 2",lesson:"Cavity walls",status:"open",checked_in_at:state9.in?new Date().toISOString():null,late:false,reason:null,absence_id:null}]);
         if(u.pathname==="/rest/v1/witness_testimonies"&&q.method()==="GET")return json([{id:"W1",unit:"Jointing Styles",statement:"Jo pointed a full elevation in a bucket handle joint, neat and consistent.",rating:3,ksbs:["S12","B6"],signed_at:new Date().toISOString(),created_at:new Date().toISOString()}]);
         if(u.pathname==="/rest/v1/behaviour_ratings"&&q.method()==="GET")return json([{id:"BR1",ratings:{B1:3,B2:4,B3:2,B4:3,B5:3},comment:"Reliable and keen.",created_at:new Date().toISOString()}]);
+        if(u.pathname==="/rest/v1/rpc/nisia_book_absence"){const b=JSON.parse(q.postData());state9.abs.push({id:"AB1",starts_on:b.p_from,ends_on:b.p_to,kind:b.p_kind,reason:b.p_reason||"Ill",booked_by:"Jo Bloggs",booked_by_role:"learner"})}
         if(u.pathname==="/rest/v1/rpc/nisia_book_absence")return json({id:"AB1",from:JSON.parse(q.postData()).p_from,to:JSON.parse(q.postData()).p_to,reason:"Ill"});
         if(u.pathname==="/rest/v1/rpc/nisia_my_college")return json([{id:"A1",session_date:new Date().toISOString().slice(0,10),class:"L2 Brickwork",lesson:"Cavity walls",ksbs:["K5","S3"],minutes:375,status:"present",checked_in_at:new Date().toISOString()}]);
         if(u.pathname.startsWith("/rest/v1/rpc/"))return json([]);
