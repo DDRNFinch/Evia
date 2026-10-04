@@ -845,8 +845,10 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
         if(u.pathname==="/rest/v1/evidence_files"&&q.method()==="GET"&&/OBS1/.test(u.search))return json([{storage_path:"O1/OBS1/observation.pdf",size_bytes:20}]);
         if(q.method()==="GET"&&/\/storage\/v1\/object\/.*observation\.pdf$/.test(u.pathname))return r.fulfill({status:200,contentType:"application/pdf",headers:{"access-control-allow-origin":"*"},body:"%PDF-1.4 observation"});
         if(u.pathname==="/rest/v1/targets"&&q.method()==="GET")return json([{id:"T1",review_id:"RV1",title:"Log 36 learning hours",description:"Log at least 36 hours in the next 6 weeks in Evia.",due_date:"2026-11-10",measure:{kind:"otj",target:36,baseline:0},created_at:"2026-09-28T10:00:00Z"}]);
-        if(u.pathname==="/rest/v1/rpc/nisia_whats_new"){const ev=calls.filter(x=>x.p==="/rest/v1/evidence"&&x.m==="POST").map(x=>JSON.parse(x.body)).pop();return json({college:[],sessions:[],absences:[],attendance:[],employer:{witness:[],ratings:[]},
-          feedback:ev?[{client_reference:ev.client_reference,unit:ev.title,decision:"accepted",feedback:"Well done Jo. Next time: more photos.",ksbs:["S1","K2"],assessed_at:"2026-09-28T12:00:00Z",assessor:"Mark Ellis"}]:[]})}
+        const fbList=()=>{const ev=calls.filter(x=>x.p==="/rest/v1/evidence"&&x.m==="POST").map(x=>JSON.parse(x.body)).pop();return ev?[{client_reference:ev.client_reference,unit:ev.title,decision:"accepted",feedback:"Well done Jo. Next time: more photos.",ksbs:["S1","K2"],assessed_at:"2026-09-28T12:00:00Z",assessor:"Mark Ellis"}]:[]};
+        /* calls.oldNisia: a Nisia without the stage 2 actions answers whatsNew with only the registers. */
+        if(u.pathname==="/rest/v1/rpc/nisia_whats_new")return json(calls.oldNisia?{college:[],sessions:[],absences:[]}:{college:[],sessions:[],absences:[],attendance:[],employer:{witness:[],ratings:[]},feedback:fbList()});
+        if(u.pathname==="/rest/v1/rpc/nisia_my_feedback")return json(fbList());
         if(u.pathname==="/rest/v1/rpc/nisia_game_score")return json(7);
         if(u.pathname==="/rest/v1/rpc/nisia_leaderboard")return json({month:"2026-09-01",players:3,top:[{place:1,name:"Kai P",score:14,me:false},{place:2,name:"Joanne B",score:7,me:true},{place:3,name:"Ali R",score:5,me:false}],me:{place:2,score:7}});
         if(u.pathname==="/rest/v1/rpc/nisia_claim_prizes"){calls.prizeAsks=(calls.prizeAsks||0)+1;return json(calls.prizeAsks===1?[{game:"showdown",month:"2026-08-01",place:1,coins:100}]:[])}
@@ -891,6 +893,8 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
         return !!f&&f.decision==="accepted"&&f.by==="Mark Ellis"&&f.ksbs.length===2&&!f.seen&&window.eviaFeedback.unseen().length===1&&n.some(x=>/^fb-/.test(x.id)&&/Mark signed off/.test(x.text))});
       lv.onlySignedCounts=await p6.evaluate(()=>{const a=window.eviaStats.compute().a,m=window.eviaMoreRequired();return a.signoff&&a.evidenced.has("K2")&&a.evidenced.has("S1")&&a.met===a.evidenced.size&&m.length>0&&!m.some(x=>x.code==="K2")&&window.eviaKsbAims.list().includes(m[0].code)});
       lv.moreRequiredShown=await p6.evaluate(()=>{const e=window.eviaData.list("evidence").pop();return /More required/.test(window.eviaFeedbackHtml(window.eviaFeedback.forEvidence(e.id),{k:e.ksbs}))});
+      calls.oldNisia=true;await p6.evaluate(()=>window.eviaNisia.sync());await p6.waitForTimeout(400);calls.oldNisia=false;
+      lv.signOffKeptOnOlderNisia=await p6.evaluate(()=>{const e=window.eviaData.list("evidence").pop(),f=e&&window.eviaFeedback.forEvidence(e.id);return !!f&&f.decision==="accepted"})&&calls.some(x=>x.p==="/rest/v1/rpc/nisia_my_feedback");
       /* Leaderboards: join with a name, scores go to Nisia with it, the board shows where they are, and last month's
          prize is paid once and celebrated. */
       await p6.evaluate(()=>{document.getElementById("modal-root").innerHTML="";window.eviaLeaderboard.open("showdown")});await p6.waitForTimeout(700);
