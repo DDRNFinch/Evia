@@ -849,6 +849,9 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
         /* calls.oldNisia: a Nisia without the stage 2 actions answers whatsNew with only the registers. */
         if(u.pathname==="/rest/v1/rpc/nisia_whats_new")return json(calls.oldNisia?{college:[],sessions:[],absences:[]}:{college:[],sessions:[],absences:[],attendance:[],employer:{witness:[],ratings:[]},feedback:fbList()});
         if(u.pathname==="/rest/v1/rpc/nisia_my_feedback")return json(fbList());
+        /* The learner's course pack: the same topics as Evia's own (as your packs are). Sent once; then "unchanged". */
+        if(u.pathname==="/rest/v1/rpc/nisia_my_pack"){calls.packAsks=(calls.packAsks||[]).concat([JSON.parse(body||"{}").p_have||null]);
+          return json(JSON.parse(body||"{}").p_have==="H1"?{id:"P1",hash:"H1",unchanged:true}:Object.assign({id:"P1",code:"nisia-bricklayer",version:1,hash:"H1",course:"bricklayer"},calls.packContent||{topics:[]}))}
         if(u.pathname==="/rest/v1/rpc/nisia_game_score")return json(7);
         if(u.pathname==="/rest/v1/rpc/nisia_leaderboard")return json({month:"2026-09-01",players:3,top:[{place:1,name:"Kai P",score:14,me:false},{place:2,name:"Joanne B",score:7,me:true},{place:3,name:"Ali R",score:5,me:false}],me:{place:2,score:7}});
         if(u.pathname==="/rest/v1/rpc/nisia_claim_prizes"){calls.prizeAsks=(calls.prizeAsks||0)+1;return json(calls.prizeAsks===1?[{game:"showdown",month:"2026-08-01",place:1,coins:100}]:[])}
@@ -861,6 +864,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       await p6.evaluate(()=>{localStorage.clear();sessionStorage.setItem("evia7-install-later","1");["evia7-theme-picked","evia7-shape-picked"].forEach(k=>localStorage.setItem(k,"1"))});
       await p6.goto(url+"?demo");await p6.waitForTimeout(2500);
       const lv={};
+      calls.packContent={topics:await p6.evaluate(()=>{course="bricklayer";return window.eviaPacks.pack("bricklayer").units.map(u=>({id:u.id,name:u.name,ksbs:u.ksbs}))})};
       await p6.fill("#ob-code","LIV-E234");await p6.click('#ob-lesson [data-ob="0"]');await p6.waitForTimeout(1200);
       lv.isThisYou=await p6.evaluate(()=>/Jo Bloggs/.test(document.getElementById("ob-lesson").textContent)&&/Walsall College/.test(document.getElementById("ob-lesson").textContent));
       await p6.click('#ob-lesson [data-ob="1"]');await p6.waitForTimeout(2500);
@@ -894,6 +898,9 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
       lv.onlySignedCounts=await p6.evaluate(()=>{const a=window.eviaStats.compute().a,m=window.eviaMoreRequired();return a.signoff&&a.evidenced.has("K2")&&a.evidenced.has("S1")&&a.met===a.evidenced.size&&m.length>0&&!m.some(x=>x.code==="K2")&&window.eviaKsbAims.list().includes(m[0].code)});
       lv.moreRequiredShown=await p6.evaluate(()=>{const e=window.eviaData.list("evidence").pop();return /More required/.test(window.eviaFeedbackHtml(window.eviaFeedback.forEvidence(e.id),{k:e.ksbs}))});
       calls.oldNisia=true;await p6.evaluate(()=>window.eviaNisia.sync());await p6.waitForTimeout(400);calls.oldNisia=false;
+      /* Its course pack from Nisia: kept, matches Evia's own topics, not downloaded again; evidence carries its topic's id. */
+      lv.packKept=await p6.evaluate(()=>{const p=window.eviaNisia.coursePack();return !!p&&p.code==="nisia-bricklayer"&&p.topics.length===10&&window.eviaNisia.coursePackMatches()===true})&&(calls.packAsks||[]).includes("H1");
+      lv.evidenceTopicId=calls.filter(x=>x.p==="/rest/v1/evidence"&&x.m==="POST").map(x=>JSON.parse(x.body)).some(b=>/^bricklayer\//.test((b.source_metadata||{}).unitId||""));
       lv.signOffKeptOnOlderNisia=await p6.evaluate(()=>{const e=window.eviaData.list("evidence").pop(),f=e&&window.eviaFeedback.forEvidence(e.id);return !!f&&f.decision==="accepted"})&&calls.some(x=>x.p==="/rest/v1/rpc/nisia_my_feedback");
       /* Leaderboards: join with a name, scores go to Nisia with it, the board shows where they are, and last month's
          prize is paid once and celebrated. */
