@@ -851,7 +851,7 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
         if(u.pathname==="/rest/v1/rpc/nisia_my_feedback")return json(fbList());
         /* The learner's course pack: the same topics as Evia's own (as your packs are). Sent once; then "unchanged". */
         if(u.pathname==="/rest/v1/rpc/nisia_my_pack"){calls.packAsks=(calls.packAsks||[]).concat([JSON.parse(body||"{}").p_have||null]);
-          return json(JSON.parse(body||"{}").p_have==="H1"?{id:"P1",hash:"H1",unchanged:true}:Object.assign({id:"P1",code:"nisia-bricklayer",version:1,hash:"H1",course:"bricklayer"},calls.packContent||{topics:[]}))}
+          const h=calls.packHash||"H1";return json(JSON.parse(body||"{}").p_have===h?{id:"P1",hash:h,unchanged:true}:Object.assign({id:"P1",code:calls.packCode||"nisia-bricklayer",title:calls.packTitle||"Bricklayer",version:1,hash:h,course:"bricklayer"},calls.packContent||{topics:[]}))}
         if(u.pathname==="/rest/v1/rpc/nisia_game_score")return json(7);
         if(u.pathname==="/rest/v1/rpc/nisia_leaderboard")return json({month:"2026-09-01",players:3,top:[{place:1,name:"Kai P",score:14,me:false},{place:2,name:"Joanne B",score:7,me:true},{place:3,name:"Ali R",score:5,me:false}],me:{place:2,score:7}});
         if(u.pathname==="/rest/v1/rpc/nisia_claim_prizes"){calls.prizeAsks=(calls.prizeAsks||0)+1;return json(calls.prizeAsks===1?[{game:"showdown",month:"2026-08-01",place:1,coins:100}]:[])}
@@ -953,6 +953,32 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
         await p6.evaluate(()=>{document.getElementById("modal-root").innerHTML="";window.openUnit(0)});await p6.waitForTimeout(700);
         await p6.screenshot({path:d+"/unit-more.png",fullPage:true});
         for(const t of [0,1,2,3]){await p6.locator(".ev-modes").screenshot({path:d+"/modes-"+t+".png"}).catch(()=>{});await p6.waitForTimeout(650)}}
+      /* A college's own pack: Evia's topics follow it (a topic renamed, a new one added), the learner's evidence moves to
+         its topic and is sent again, lessons come with their topic; and back to yours, everything returns. */
+      const mine0=calls.packContent.topics;
+      calls.packContent={topics:[Object.assign({},mine0[0],{name:"Mortar: mixing and gauging"}),{id:"college/gb",name:"Gauging boxes",ksbs:[mine0[0].ksbs[0]]}].concat(mine0.slice(1))};
+      calls.packHash="H2";calls.packCode="college-1";calls.packTitle="Brookfield bricklaying";
+      const bank0=await p6.evaluate(()=>{window.eviaRewards.sync();return window.eviaData.list("rewards")[0].state.bank});
+      await p6.evaluate(()=>{document.getElementById("modal-root").innerHTML="";document.querySelectorAll(".overlay,.pv-sheet").forEach(x=>x.remove());return window.eviaNisia.sync()});await p6.waitForTimeout(600);
+      const coll=await p6.evaluate(()=>{const ev=evidence.filter(e=>e.c==="bricklayer"),T=((window.EVIA_TEACH||{}).courses||{}).bricklayer||[];nav("course");
+        return {t0:data().u[0][0],t1:data().u[1][0],n:data().u.length,ev:ev.map(e=>e.u+"|"+e.uid),lessons:(T.find(l=>l.unit==="Mortar: mixing and gauging")||{lessons:[]}).lessons.length,newLessons:(T.find(l=>l.unit==="Gauging boxes")||{lessons:[]}).lessons.length,
+          following:window.eviaPacks.followingPack("bricklayer")}});
+      await p6.waitForTimeout(700);coll.page=await p6.evaluate(()=>document.getElementById("screen").textContent.includes("Gauging boxes")&&document.getElementById("screen").textContent.includes("Mortar: mixing and gauging"));
+      if(process.env.EVIA_SHOTS)await p6.screenshot({path:process.env.EVIA_SHOTS+"/college-pack.png"});
+      const sentNow=()=>calls.filter(x=>x.p==="/rest/v1/evidence"&&x.m==="POST").map(x=>JSON.parse(x.body)).some(b=>(b.source_metadata||{}).unit==="Mortar: mixing and gauging");
+      /* The moved evidence goes up on the next sync (Evia syncs again on its own; here it's asked to). */
+      for(let i=0;i<8&&!sentNow();i++){await p6.evaluate(()=>window.eviaNisia.sync()).catch(()=>{});await p6.waitForTimeout(500)}
+      const resent=calls.filter(x=>x.p==="/rest/v1/evidence"&&x.m==="POST").map(x=>JSON.parse(x.body)).some(b=>(b.source_metadata||{}).unit==="Mortar: mixing and gauging"&&b.source_metadata.unitId==="bricklayer/mixing-mortar");
+      lv.followsCollegePack=coll.t0==="Mortar: mixing and gauging"&&coll.t1==="Gauging boxes"&&coll.n===11&&coll.ev.length>0&&coll.ev.every(x=>x.startsWith("Mortar: mixing and gauging|bricklayer/mixing-mortar"))&&coll.lessons>0&&coll.newLessons>0&&coll.page&&resent&&!!coll.following;
+      if(!lv.followsCollegePack)console.log("COLLEGE",JSON.stringify(coll),resent);
+      /* Moving evidence to a renamed topic pays no coins: what was paid goes with it. */
+      lv.noCoinsForRename=await p6.evaluate(b=>{window.eviaRewards.sync();return window.eviaData.list("rewards")[0].state.bank===b},bank0);
+      calls.packContent={topics:mine0};calls.packHash="H3";calls.packCode="nisia-bricklayer";calls.packTitle="Bricklayer";
+      await p6.evaluate(()=>window.eviaNisia.sync());await p6.waitForTimeout(600);
+      const back=await p6.evaluate(()=>({t0:data().u[0][0],n:data().u.length,ev:evidence.filter(e=>e.c==="bricklayer").map(e=>e.u),lessons:(((window.EVIA_TEACH||{}).courses||{}).bricklayer||[]).some(l=>l.unit==="Gauging boxes"),following:window.eviaPacks.followingPack("bricklayer")}));
+      lv.backToYours=back.t0==="Mixing mortar"&&back.n===10&&back.ev.every(u=>u==="Mixing mortar")&&!back.lessons&&!back.following;
+      if(!lv.backToYours)console.log("BACK",JSON.stringify(back));
+      lv.noCoinsForBack=await p6.evaluate(b=>{window.eviaRewards.sync();return window.eviaData.list("rewards")[0].state.bank===b},bank0);
       lv.noErrors=!e6.length;
       check("Live Nisia: the assessor's code signs Evia in, every record, learning hours, evidence and photos go to the college, and name, safeguarding lead and review date come back",Object.values(lv).every(Boolean),JSON.stringify(lv)+" "+e6.join(" | "));
 
