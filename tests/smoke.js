@@ -38,6 +38,11 @@ const check=(name,ok,detail)=>{results.push({name,ok:!!ok});console.log((ok?"✓
     check("The app opens on My course; the nav is Course, Progress, Evia, Teach me and Rewards",await page.evaluate(()=>screen==="course"&&!!document.getElementById("ui-course-head")&&[...document.querySelectorAll("[data-nav]")].map(b=>b.textContent.trim()).join()==="Course,Progress,Teach me,Rewards"));
     for(const s of ["course","progress","portfolio","learning"]){await page.evaluate(s=>nav(s),s);await page.waitForTimeout(450)}
     await page.evaluate(()=>nav("progress"));await page.waitForTimeout(450);
+    /* On a computer screen the bottom bar sits in the middle, with Evia at its centre. */
+    {const vp=page.viewportSize();await page.setViewportSize({width:1280,height:800});await page.waitForTimeout(250);
+      const m=await page.evaluate(()=>{const n=document.querySelector(".bottom-nav").getBoundingClientRect(),f=document.querySelector(".evia-fab").getBoundingClientRect();return {l:Math.round(n.left),r:Math.round(innerWidth-n.right),fab:Math.round(f.left+f.width/2-innerWidth/2)}});
+      await page.setViewportSize(vp);await page.waitForTimeout(250);
+      check("On a computer the bottom bar is centred, with Evia in the middle of it",Math.abs(m.l-m.r)<=2&&m.l>0&&Math.abs(m.fab)<=2,JSON.stringify(m));}
     check("My progress starts with the progress review, and each section has its way in",await page.evaluate(()=>{const first=document.querySelector(".pv-grid .pv-card");return first&&first.id==="pv-review"&&!document.querySelector(".pv-grid .pv-act")}));
     const deepActs=await page.evaluate(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms)),out={};
       for(const id of ["review","otj","conf"]){document.getElementById("pv-"+id).click();await w(250);out[id]=[...document.querySelectorAll("#modal-root .pv-deep-acts .pv-act")].map(b=>b.textContent);document.getElementById("modal-root").innerHTML="";await w(50)}
